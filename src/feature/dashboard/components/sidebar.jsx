@@ -9,9 +9,11 @@ import {
     LogOut,
     ChevronDown,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export const Sidebar = () => {
+    const navigate = useNavigate();
+
     // Submenu para productos
     const [openProductos, setOpenProductos] = useState(false);
 
@@ -32,17 +34,20 @@ export const Sidebar = () => {
                     <div className='flex flex-col gap-1 px-3'>
 
                         {/* DASHBOARD */}
-                        <Link className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200'>
+                        <button 
+                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
+                            onClick={() => navigate("/dashboard")}
+                        >
                             <div className="flex items-center gap-3">
                                 <ChartNoAxesCombined size={18} />
                                 <span>Dashboard</span>
                             </div>
-                        </Link>
+                        </button>
 
                         {/* PRODUCTOS */}
                         <button
                             onClick={() => setOpenProductos(!openProductos)}
-                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200'
+                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
                         >
                             <div className="flex items-center gap-3">
                                 <Box size={18} />
@@ -56,24 +61,26 @@ export const Sidebar = () => {
                         </button>
 
                         {/* SUBMENU DE PRODUCTOS */}
-                        <div className={`
-                            flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
-                            overflow-hidden transition-all duration-300
-                            ${openProductos ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}
-                        `}>
-                            <Link className="px-4 py-2 rounded-xl hover:bg-gray-200 hover:shadow text-sm transition">
+                        <div className={`flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
+                        overflow-hidden transition-all duration-300
+                        ${openProductos ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}`}>
+                            <button
+                                className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
+                                onClick={() => navigate("/dashboard/product-category")}
+                            >
                                 Categoria de productos
-                            </Link>
+                            </button>
 
-                            <Link className="px-4 py-2 rounded-xl hover:bg-gray-200 hover:shadow text-sm transition">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
                                 Gestion de productos
-                            </Link>
+                            </button>
                         </div>
+
 
                         {/* COMPRAS */}
                         <button
                             onClick={() => setOpenCompras(!openCompras)}
-                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200'
+                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
                         >
                             <div className="flex items-center gap-3">
                                 <ShoppingCart size={18} />
@@ -92,19 +99,19 @@ export const Sidebar = () => {
                             overflow-hidden transition-all duration-300
                             ${openCompras ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}
                         `}>
-                            <Link className="px-3 py-2 rounded-lg hover:bg-gray-200 text-sm">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
                                 Gestion de compras
-                            </Link>
+                            </button>
 
-                            <Link className="px-3 py-2 rounded-lg hover:bg-gray-200 text-sm">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
                                 Proveedores
-                            </Link>
+                            </button>
                         </div>
 
                         {/* VENTAS */}
                         <button
                             onClick={() => setOpenVentas(!openVentas)}
-                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200'
+                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
                         >
                             <div className="flex items-center gap-3">
                                 <BadgeDollarSign size={18} />
@@ -121,27 +128,27 @@ export const Sidebar = () => {
                         <div className={`
                             flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
                             overflow-hidden transition-all duration-300
-                            ${openVentas ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}
+                            ${openVentas ? "max-h-80 opacity-100" : "max-h-0 opacity-0"}
                         `}>
-                            <Link className="px-3 py-2 rounded-lg hover:bg-gray-200 text-sm">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
                                 Clientes
-                            </Link>
+                            </button>
 
-                            <Link className="px-3 py-2 rounded-lg hover:bg-gray-200 text-sm">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
                                 Pedidos
-                            </Link>
+                            </button>
 
-                            <Link className="px-3 py-2 rounded-lg hover:bg-gray-200 text-sm">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
                                 Gestion de ventas
-                            </Link>
+                            </button>
 
-                            <Link className="px-3 py-2 rounded-lg hover:bg-gray-200 text-sm">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
                                 Pagos y abonos
-                            </Link>
+                            </button>
 
-                            <Link className="px-3 py-2 rounded-lg hover:bg-gray-200 text-sm">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
                                 Devoluciones
-                            </Link>
+                            </button>
                         </div>
                     </div>
 
@@ -149,24 +156,24 @@ export const Sidebar = () => {
 
                     {/* ADMINISTRACION */}
                     <div className='flex flex-col gap-1 px-3'>
-                        <Link className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200'>
+                        <button className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'>
                             <UsersRound size={18} />
                             <span>Usuarios</span>
-                        </Link>
+                        </button>
 
-                        <Link className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200'>
+                        <button className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'>
                             <ShieldCheck size={18} />
                             <span>Roles</span>
-                        </Link>
+                        </button>
                     </div>
 
                     <div className="h-0.5 bg-yellow-400 mx-4"></div>
 
                 </div>
 
-                {/* Logout */}
+                {/* CERRAR SESION */}
                 <div className='p-4'>
-                    <button className='w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-2 rounded-xl shadow'>
+                    <button className='w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-2 rounded-xl shadow cursor-pointer'>
                         <LogOut size={18} />
                         Cerrar sesión
                     </button>
