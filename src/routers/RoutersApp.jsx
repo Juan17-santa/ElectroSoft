@@ -4,6 +4,8 @@ import Layout from "../feature/dashboard/layout";
 import Dahsboard from "../feature/dashboard/pages/dashboard/Dashboard";
 import ProductCategory from "../feature/dashboard/pages/productCategory/ProductCategory";
 import CreateProductCategory from "../feature/dashboard/pages/productCategory/CreateProductCategory";
+import Shopping from "../feature/dashboard/pages/shopping/shopping";
+import CreateShopping from "../feature/dashboard/pages/shopping/CreateShopping";
 
 export default function RoutersApp() {
     return (
@@ -14,6 +16,8 @@ export default function RoutersApp() {
                 <Route index element={<Dahsboard />} />
                 <Route path="product-category" element={<ProductCategory />} />
                 <Route path="product-category/create" element={<CreateProductCategory />} />
+                <Route path="shopping" element={<Shopping />} />
+                <Route path="shopping/create" element={<CreateShopping />} />
             </Route>
 
 
