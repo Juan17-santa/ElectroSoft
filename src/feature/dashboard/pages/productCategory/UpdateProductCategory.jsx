@@ -1,15 +1,25 @@
 import { User, FileText, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ServiceProductCategory } from "./services/ServicesProductCategory";
 
-export default function CreateProductCategory() {
+export default function UpdateProductCategory() {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
+        id: "",
         nombre: "",
-        descripcion: ""
-    })
+        descripcion: "",
+        estado: true
+    });
+
+    useEffect(() => {
+        const data = localStorage.getItem("categoryToEdit");
+
+        if (data) {
+            setFormData(JSON.parse(data));
+        }
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -34,11 +44,12 @@ export default function CreateProductCategory() {
                 return;
             }
 
-            ServiceProductCategory.create(formData);
+            ServiceProductCategory.update(formData);
 
-            alert("Categoría creada correctamente!");
+            alert("Categoría actualizada correctamente!");
 
-            setFormData({ nombre: "", descripcion: "" });
+            // LIMPIEZA: Borramos el rastro del localStorage
+            localStorage.removeItem("categoryToEdit");
 
             navigate("/dashboard/product-category");
 
@@ -54,7 +65,7 @@ export default function CreateProductCategory() {
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-xl font-semibold mb-4">Crear nueva categoria <span className="text-yellow-400">de productos</span></p>
+                        <p className="text-xl font-semibold mb-4">Editar categoria <span className="text-yellow-400">de productos</span></p>
                         <p className="text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
 
@@ -68,10 +79,10 @@ export default function CreateProductCategory() {
 
                 {/* FORMULARIO */}
                 <form onSubmit={handleForm}>
-                    <div className="flex flex-col items-center gap-10 mt-6">
+                    <div className="flex flex-wrap gap-10 mt-6 justify-around mx-28">
 
                         {/* NOMBRE */}
-                        <div className="flex flex-col gap-3 w-lg">
+                        <div className="flex flex-col gap-3 w-80">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <User size={16} />
                                 <span>Nombre *</span>
@@ -87,7 +98,7 @@ export default function CreateProductCategory() {
                         </div>
 
                         {/* DESCRIPCION */}
-                        <div className="flex flex-col gap-3 w-lg">
+                        <div className="flex flex-col gap-3 w-80">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <FileText size={16} />
                                 <span>Descripción *</span>
@@ -108,7 +119,7 @@ export default function CreateProductCategory() {
                                 type="submit"
                                 className="items-center bg-linear-to-r from-white to-yellow-300 text-sm px-6 py-2 rounded-lg shadow transition cursor-pointer font-medium"
                             >
-                                Registrar Categoria
+                                Editar Categoria
                             </button>
                         </div>
                     </div>
