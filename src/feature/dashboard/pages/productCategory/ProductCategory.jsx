@@ -76,11 +76,7 @@ export default function ProductCategory() {
 
     return (
         <>
-<<<<<<< Updated upstream
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner">
-=======
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full min-h-142 shadow-inner">
->>>>>>> Stashed changes
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Control de categorias de productos</p>
 
@@ -184,11 +180,7 @@ export default function ProductCategory() {
                 </div>
 
                 {/* PAGINADOR */}
-<<<<<<< Updated upstream
-                <div className="flex justify-end mt-4">
-=======
                 <div className="flex justify-end mt-auto">
->>>>>>> Stashed changes
                     <div className="flex items-center gap-3 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow-xl">
 
                         {/* Flecha izquierda */}
