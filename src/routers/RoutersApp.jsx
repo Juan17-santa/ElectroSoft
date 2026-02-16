@@ -11,7 +11,11 @@ import Users from "../feature/dashboard/pages/users/Users";
 import CreateUser from "../feature/dashboard/pages/users/CreateUser";
 import UserDetail from "../feature/dashboard/pages/users/UserDetail";
 import EditUser from "../feature/dashboard/pages/users/EditUser";
-
+import Shopping from "../feature/dashboard/pages/shopping/shopping";
+import CreateShopping from "../feature/dashboard/pages/shopping/CreateShopping";
+import Providers from "../feature/dashboard/pages/providers/Providers";
+import Orders from "../feature/dashboard/pages/orders/Orders";
+import UpdateProductCategory from "../feature/dashboard/pages/productCategory/UpdateProductCategory";
 
 export default function RoutersApp() {
     return (
@@ -26,10 +30,20 @@ export default function RoutersApp() {
                 <Route index element={<Dahsboard />} />
                 <Route path="product-category" element={<ProductCategory />} />
                 <Route path="product-category/create" element={<CreateProductCategory />} />
+
                 <Route path="users" element={<Users />} />
                 <Route path="users/createUser" element={<CreateUser />} /> 
                 <Route path="users/:id" element={<UserDetail />} />        
                 <Route path="users/:id/edit" element={<EditUser />} />
+
+                <Route path="shopping" element={<Shopping />} />
+                <Route path="shopping/create" element={<CreateShopping />} />
+                <Route path="product-category/update" element={<UpdateProductCategory />} />
+
+                <Route path="providers" element={<Providers/>}/>
+
+                <Route path="orders" element={<Orders/>}/>
+
             </Route>
 
 
