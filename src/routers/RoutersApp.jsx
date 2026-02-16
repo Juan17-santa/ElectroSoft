@@ -4,6 +4,9 @@ import Layout from "../feature/dashboard/layout";
 import Dahsboard from "../feature/dashboard/pages/dashboard/Dashboard";
 import ProductCategory from "../feature/dashboard/pages/productCategory/ProductCategory";
 import CreateProductCategory from "../feature/dashboard/pages/productCategory/CreateProductCategory";
+import Providers from "../feature/dashboard/pages/providers/Providers";
+import Orders from "../feature/dashboard/pages/orders/Orders";
+import UpdateProductCategory from "../feature/dashboard/pages/productCategory/UpdateProductCategory";
 
 export default function RoutersApp() {
     return (
@@ -14,6 +17,11 @@ export default function RoutersApp() {
                 <Route index element={<Dahsboard />} />
                 <Route path="product-category" element={<ProductCategory />} />
                 <Route path="product-category/create" element={<CreateProductCategory />} />
+                <Route path="product-category/update" element={<UpdateProductCategory />} />
+
+                <Route path="providers" element={<Providers/>}/>
+
+                <Route path="orders" element={<Orders/>}/>
             </Route>
 
 
