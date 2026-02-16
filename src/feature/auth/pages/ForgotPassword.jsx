@@ -1,0 +1,92 @@
+import { useState } from "react";
+import { Mail, Lightbulb } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { requestPasswordReset } from "../services/authService";
+
+export default function ForgotPassword() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+
+  const handleSend = () => {
+    if (!email) {
+      alert("Ingresa un email");
+      return;
+    }
+
+    const ok = requestPasswordReset(email);
+
+    if (ok) {
+      alert("Código enviado por consola");
+      navigate("/verify-code");
+    } else {
+      alert("Ese email no existe");
+    }
+  };
+
+  return (
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-10">
+      {/* ===== LADO IZQUIERDO - IMAGEN (70%) ===== */}
+      <div
+        className="hidden md:block md:col-span-6 relative bg-cover bg-center"
+        style={{ backgroundImage: "url('/login-bg.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-y-0 right-0 w-40 bg-linear-to-l from-white via-white/70 to-transparent" />
+      </div>
+
+      {/* ===== LADO DERECHO - PANEL (30%) ===== */}
+      <div className="col-span-1 md:col-span-3 flex flex-col bg-white relative">
+        {/* HEADER */}
+        <div className="p-8 flex items-center gap-2 text-2xl font-bold">
+          <Lightbulb className="text-yellow-500" />
+          <span>Electro</span>
+          <span className="text-yellow-500">Soft</span>
+        </div>
+
+        {/* CONTENIDO */}
+        <div className="flex flex-1 items-center justify-center px-6">
+          <div className="w-full max-w-sm rounded-2xl shadow-xl p-8 bg-white/90 backdrop-blur-md">
+            {/* TÍTULO */}
+            <h2 className="text-2xl font-semibold text-center mb-2 tracking-wide">
+              Cambiar contraseña
+            </h2>
+            <p className="text-gray-500 text-sm text-center mb-8">
+              Ingresa tu correo y te enviaremos un código de verificación.
+            </p>
+
+            {/* EMAIL */}
+            <div className="mb-8">
+              <label className="flex items-center gap-2 text-sm font-medium text-yellow-600 mb-1">
+                <Mail size={16} /> Email
+              </label>
+              <input
+                type="email"
+                placeholder="Ingrese el email registrado"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-xl bg-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+              />
+            </div>
+
+            {/* BOTONES */}
+            <div className="flex gap-4">
+              <button
+                onClick={() => navigate("/")}
+                className="flex-1 bg-gray-200 hover:bg-gray-300 text-black font-semibold py-3 rounded-xl transition"
+              >
+                Volver
+              </button>
+
+              <button
+                onClick={handleSend}
+                className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 rounded-xl transition shadow-md hover:shadow-lg active:scale-[0.98]"
+              >
+                Enviar código
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
