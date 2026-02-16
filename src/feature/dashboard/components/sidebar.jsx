@@ -99,7 +99,10 @@ export const Sidebar = () => {
                             overflow-hidden transition-all duration-300
                             ${openCompras ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}
                         `}>
-                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
+                            <button
+                                className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
+                                onClick={() => navigate("/dashboard/shopping")}
+                            >
                                 Gestion de compras
                             </button>
 
