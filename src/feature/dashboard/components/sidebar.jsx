@@ -34,7 +34,7 @@ export const Sidebar = () => {
                     <div className='flex flex-col gap-1 px-3'>
 
                         {/* DASHBOARD */}
-                        <button 
+                        <button
                             className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
                             onClick={() => navigate("/dashboard")}
                         >
@@ -151,7 +151,8 @@ export const Sidebar = () => {
                                 Gestion de ventas
                             </button>
 
-                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
+                                onClick={() => navigate("/dashboard/pagos-abonos")}>
                                 Pagos y abonos
                             </button>
 
@@ -165,7 +166,9 @@ export const Sidebar = () => {
 
                     {/* ADMINISTRACION */}
                     <div className='flex flex-col gap-1 px-3'>
-                        <button className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'>
+                        <button className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
+                            onClick={() => navigate("/dashboard/users")}>
+
                             <UsersRound size={18} />
                             <span>Usuarios</span>
                         </button>
