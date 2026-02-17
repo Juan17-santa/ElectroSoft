@@ -117,7 +117,7 @@ export default function UpdateProductCategory() {
                         <div className="flex justify-end mt-6 w-full">
                             <button
                                 type="submit"
-                                className="items-center bg-linear-to-r from-white to-yellow-300 text-sm px-6 py-2 rounded-lg shadow transition cursor-pointer font-medium"
+                                className="items-center bg-linear-to-r from-white to-yellow-300 text-sm px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium"
                             >
                                 Editar Categoria
                             </button>
