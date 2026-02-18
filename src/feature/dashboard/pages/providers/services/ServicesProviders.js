@@ -1,0 +1,68 @@
+const KEY = "providers";
+
+export const ServicesProviders = {
+
+    get() {
+        const data = localStorage.getItem(KEY);
+        return data ? JSON.parse(data) : [];
+    },
+
+    create({ tipoDoc, documento, nombreProveedor, nombreContacto, telefonoContacto, categoriasAsociadas }) {
+
+        const proveedores = this.get();
+
+        const nuevoProveedor = {
+            id: Date.now(),
+            tipoDoc,
+            documento,
+            nombreProveedor,
+            nombreContacto,
+            telefonoContacto,
+            categoriasAsociadas,
+            estado: true
+        };
+
+        const nuevosProveedores = [...proveedores, nuevoProveedor];
+
+        localStorage.setItem(KEY, JSON.stringify(nuevosProveedores));
+
+        return nuevoProveedor;
+    },
+
+    update(proveedorActualizado) {
+
+        const proveedores = this.get();
+
+        const nuevosProveedores = proveedores.map(cat => cat.id === proveedorActualizado.id ? proveedorActualizado : cat);
+
+        localStorage.setItem(KEY, JSON.stringify(nuevosProveedores));
+
+        return nuevosProveedores;
+    },
+
+    delete(id) {
+
+        const data = JSON.parse(localStorage.getItem(KEY)) || [];
+
+        const newData = data.filter(cat => cat.id !== id);
+
+        localStorage.setItem(KEY, JSON.stringify(newData));
+
+        return newData;
+    },
+
+    toggleEstado(id) {
+
+        const proveedores = this.get();
+
+        const nuevosProveedores = proveedores.map(cat =>
+            cat.id === id
+                ? { ...cat, estado: !cat.estado }
+                : cat
+        );
+
+        localStorage.setItem(KEY, JSON.stringify(nuevosProveedores));
+
+        return nuevosProveedores;
+    },
+}
