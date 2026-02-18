@@ -1,26 +1,38 @@
 import { User, FileText, X, Plus, Trash } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
-import { ProductService } from "./services/ProductService";
-import AddProductModal from "./AddProductModal";
 
-export default function CreateSales() {
+export default function UpdateSales() {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
+        id: "",
         numeroDocumento: "",
         tipoVenta: "Contado",
         fecha: new Date().toISOString().split('T')[0],
         estado: "Vigente"
     });
 
-    const [productos, setProductos] = useState([]);
-    const [availableProducts, setAvailableProducts] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [productos, setProductos] = useState([
+        { id: 1, nombre: "", cantidad: 1, precio: 0 }
+    ]);
 
     useEffect(() => {
-        setAvailableProducts(ProductService.getAll());
+        const data = localStorage.getItem("saleToEdit");
+        if (data) {
+            const sale = JSON.parse(data);
+            setFormData({
+                id: sale.id,
+                numeroDocumento: sale.numeroDocumento,
+                tipoVenta: sale.tipoVenta,
+                fecha: sale.fecha,
+                estado: sale.estado
+            });
+            if (sale.productos && sale.productos.length > 0) {
+                setProductos(sale.productos);
+            }
+        }
     }, []);
 
     const handleChange = (e) => {
@@ -33,27 +45,19 @@ export default function CreateSales() {
 
     const handleProductChange = (index, field, value) => {
         const newProductos = [...productos];
-        newProductos[index][field] = field === 'cantidad' ? parseFloat(value) || 0 : value;
+        newProductos[index][field] = field === 'cantidad' || field === 'precio' ? parseFloat(value) || 0 : value;
         setProductos(newProductos);
     };
 
     const handleAddProduct = () => {
-        setIsModalOpen(true);
-    };
-
-    const handleSaveProduct = (selectedProduct, quantity) => {
-        const newProduct = {
-            id: Date.now(), // Generate a unique ID for the row
-            nombre: selectedProduct.nombre,
-            cantidad: quantity,
-            precio: selectedProduct.precio
-        };
-        setProductos([...productos, newProduct]);
-        setIsModalOpen(false);
+        const newId = Math.max(...productos.map(p => p.id), 0) + 1;
+        setProductos([...productos, { id: newId, nombre: "", cantidad: 1, precio: 0 }]);
     };
 
     const handleRemoveProduct = (index) => {
-        setProductos(productos.filter((_, i) => i !== index));
+        if (productos.length > 1) {
+            setProductos(productos.filter((_, i) => i !== index));
+        }
     };
 
     // Calcular totales
@@ -81,25 +85,35 @@ export default function CreateSales() {
                 return;
             }
 
+            // Validar que todos los productos tengan nombre y precio
+            const productoInvalido = productos.some(p => !p.nombre.trim() || p.precio <= 0);
+            if (productoInvalido) {
+                alert("Todos los productos deben tener nombre y precio");
+                return;
+            }
+
             const datosVenta = {
                 ...formData,
                 productos,
                 subtotal,
                 iva,
                 total,
-                montoPagado: formData.tipoVenta === 'Contado' ? total : 0,
-                montoPorPagar: formData.tipoVenta === 'Contado' ? 0 : total
+                montoPagado: formData.tipoVenta === 'Contado' ? total : (formData.montoPagado || 0),
+                montoPorPagar: formData.tipoVenta === 'Contado' ? 0 : (total - (formData.montoPagado || 0))
             };
 
-            SalesService.create(datosVenta);
+            SalesService.update(datosVenta);
 
-            alert("Venta creada correctamente!");
+            alert("Venta actualizada correctamente!");
+
+            // LIMPIEZA: Borramos el rastro del localStorage
+            localStorage.removeItem("saleToEdit");
 
             navigate("/dashboard/sales-management");
 
         } catch (error) {
             console.error(error);
-            alert("Error al crear la venta");
+            alert("Error al actualizar la venta");
         }
     };
 
@@ -109,7 +123,7 @@ export default function CreateSales() {
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-xl font-semibold mb-4">Crear nueva <span className="text-yellow-400">venta</span></p>
+                        <p className="text-xl font-semibold mb-4">Editar <span className="text-yellow-400">venta</span></p>
                         <p className="text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
 
@@ -123,7 +137,7 @@ export default function CreateSales() {
 
                 {/* FORMULARIO */}
                 <form onSubmit={handleForm} className="flex flex-col gap-6">
-
+                    
                     {/* FILA 1: NUMERO DOCUMENTO Y TIPO VENTA */}
                     <div className="grid grid-cols-2 gap-6">
                         {/* NUMERO DOCUMENTO */}
@@ -224,45 +238,52 @@ export default function CreateSales() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {productos.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
-                                                No hay productos agregados. Haga clic en "Agregar Producto".
+                                    {productos.map((producto, index) => (
+                                        <tr key={producto.id} className="border-b border-gray-200 hover:bg-gray-50">
+                                            <td className="px-4 py-3">
+                                                <input
+                                                    type="text"
+                                                    value={producto.nombre}
+                                                    onChange={(e) => handleProductChange(index, 'nombre', e.target.value)}
+                                                    placeholder="Nombre del producto"
+                                                    className="w-full bg-gray-100 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <input
+                                                    type="number"
+                                                    value={producto.cantidad}
+                                                    onChange={(e) => handleProductChange(index, 'cantidad', e.target.value)}
+                                                    min="1"
+                                                    className="w-full bg-gray-100 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <input
+                                                    type="number"
+                                                    value={producto.precio}
+                                                    onChange={(e) => handleProductChange(index, 'precio', e.target.value)}
+                                                    min="0"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    className="w-full bg-gray-100 rounded px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-semibold">
+                                                ${(producto.cantidad * producto.precio).toFixed(2)}
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveProduct(index)}
+                                                    disabled={productos.length === 1}
+                                                    className="p-1 hover:bg-red-100 rounded transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    <Trash size={16} className="text-red-600" />
+                                                </button>
                                             </td>
                                         </tr>
-                                    ) : (
-                                        productos.map((producto, index) => (
-                                            <tr key={producto.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                                <td className="px-4 py-3">
-                                                    <span className="text-gray-800">{producto.nombre}</span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <input
-                                                        type="number"
-                                                        value={producto.cantidad}
-                                                        onChange={(e) => handleProductChange(index, 'cantidad', e.target.value)}
-                                                        min="1"
-                                                        className="w-full bg-gray-100 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    ${parseFloat(producto.precio).toFixed(2)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-semibold">
-                                                    ${(producto.cantidad * producto.precio).toFixed(2)}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveProduct(index)}
-                                                        className="p-1 hover:bg-red-100 rounded transition cursor-pointer"
-                                                    >
-                                                        <Trash size={16} className="text-red-600" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
+                                    ))}
                                 </tbody>
                             </table>
                         </div>
@@ -297,18 +318,10 @@ export default function CreateSales() {
                             type="submit"
                             className="px-6 py-2 rounded-lg bg-linear-to-r from-white to-yellow-300 shadow-md hover:shadow-lg transition cursor-pointer font-medium"
                         >
-                            Registrar Venta
+                            Editar Venta
                         </button>
                     </div>
                 </form>
-
-                {/* MODAL PARA AGREGAR PRODUCTO */}
-                <AddProductModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    onAdd={handleSaveProduct}
-                    products={availableProducts}
-                />
             </div>
         </>
     );

@@ -149,7 +149,7 @@ export const Sidebar = () => {
                             </button>
 
                             <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                             onClick={() => navigate('/dashboard/salesmanagement')}>
+                             onClick={() => navigate('/dashboard/sales-management')}>
                                 Gestion de ventas
                             </button>
 
@@ -175,7 +175,8 @@ export const Sidebar = () => {
                             <span>Usuarios</span>
                         </button>
 
-                        <button className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'>
+                        <button className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
+                            onClick={() => navigate("/dashboard/roles")}>
                             <ShieldCheck size={18} />
                             <span>Roles</span>
                         </button>

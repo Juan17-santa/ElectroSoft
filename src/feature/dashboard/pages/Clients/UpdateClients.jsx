@@ -1,19 +1,30 @@
 import { User, FileText, X, Mail, Phone } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClientsService } from "./services/ClientsService";
 
-export default function CreateClients() {
+export default function UpdateClients() {
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
+        id: "",
         tipoDocumento: "",
         documento: "",
         nombres: "",
         apellidos: "",
         email: "",
-        telefono: ""
-    })
+        telefono: "",
+        totalCompras: 0,
+        estado: true
+    });
+
+    useEffect(() => {
+        const data = localStorage.getItem("clientToEdit");
+
+        if (data) {
+            setFormData(JSON.parse(data));
+        }
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -58,11 +69,12 @@ export default function CreateClients() {
                 return;
             }
 
-            ClientsService.create(formData);
+            ClientsService.update(formData);
 
-            alert("Cliente creado correctamente!");
+            alert("Cliente actualizado correctamente!");
 
-            setFormData({ tipoDocumento: "", documento: "", nombres: "", apellidos: "", email: "", telefono: "" });
+            // LIMPIEZA: Borramos el rastro del localStorage
+            localStorage.removeItem("clientToEdit");
 
             navigate("/dashboard/clients");
 
@@ -78,7 +90,7 @@ export default function CreateClients() {
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-xl font-semibold mb-4">Crear nuevo <span className="text-yellow-400">cliente</span></p>
+                        <p className="text-xl font-semibold mb-4">Editar <span className="text-yellow-400">cliente</span></p>
                         <p className="text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
 
