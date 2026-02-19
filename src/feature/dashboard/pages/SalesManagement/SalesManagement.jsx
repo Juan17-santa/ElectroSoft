@@ -270,31 +270,31 @@ export default function SalesManagement() {
 
                                             {/* DEVOLVER */}
                                             <button
-                                                className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                                                 onClick={() => handleReturn(sale)}
                                                 title="Devolver venta"
                                                 disabled={sale.estado === "Devuelto" || sale.estado === "Anulado"}
                                             >
-                                                <Undo2 size={17} className="text-yellow-600" />
+                                                <Undo2 size={18} className="text-yellow-600" />
                                             </button>
 
                                             {/* VER DETALLES */}
                                             <button
-                                                className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
                                                 onClick={() => handleViewDetails(sale)}
                                                 title="Ver detalles"
                                             >
-                                                <Eye size={17} className="text-yellow-600" />
+                                                <Eye size={18} className="text-blue-600" />
                                             </button>
 
                                             {/* ANULAR */}
                                             <button
-                                                className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                                                 onClick={() => handleAnull(sale.id)}
                                                 title="Anular venta"
                                                 disabled={sale.estado === "Anulado" || sale.estado === "Devuelto"}
                                             >
-                                                <Ban size={17} className="text-red-500" />
+                                                <Ban size={18} className="text-red-500" />
                                             </button>
 
                                             {/* TARJETA CRÉDITO - solo para ventas a crédito vigentes */}

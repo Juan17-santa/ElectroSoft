@@ -66,7 +66,7 @@ export default function Shopping() {
                 <div>
                     <button
                         onClick={handleGenerarReporte}
-                        className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50 transition duration-300 shadow-sm cursor-pointer"
+                        className="flex items-center gap-2 border border-gray-300 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50 transition duration-300 shadow-sm cursor-pointer"
                     >
                         <FileText size={18} className="text-gray-500" />
                         Generar reporte
@@ -113,13 +113,6 @@ export default function Shopping() {
                                                             ? "bg-green-100 text-green-700"
                                                             : "bg-red-100 text-red-600"
                                                         }`}
-
-                                                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                        compra.estado === "Activo"
-                                                            ? "bg-green-100 text-green-700"
-                                                            : "bg-red-100 text-red-600"
-                                                    }`}
-
                                                 >
                                                     {compra.estado}
                                                 </span>
@@ -129,9 +122,9 @@ export default function Shopping() {
                                                     {/* BOTON VER */}
                                                     <button
                                                         onClick={() => navigate(`/dashboard/shopping/details/${compra.id}`)}
-                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition duration-300 cursor-pointer"
+                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
                                                     >
-                                                        <Eye size={18} className="text-yellow-600" />
+                                                        <Eye size={18} className="text-blue-600" />
                                                     </button>
 
                                                     {/* BOTON ANULAR */}
@@ -143,13 +136,6 @@ export default function Shopping() {
                                                                 ? "bg-gray-100 cursor-not-allowed opacity-40"
                                                                 : "bg-red-100 hover:bg-red-200"
                                                             }`}
-
-                                                        className={`p-2 rounded-lg transition duration-300 cursor-pointer ${
-                                                            compra.estado === "Anulada"
-                                                                ? "bg-gray-100 cursor-not-allowed opacity-40"
-                                                                : "bg-red-100 hover:bg-red-200"
-                                                        }`}
-
                                                     >
                                                         <Ban size={18} className="text-red-600" />
                                                     </button>
@@ -184,13 +170,6 @@ export default function Shopping() {
                                             ? "bg-yellow-400 text-black shadow-sm"
                                             : "hover:bg-gray-300"
                                         }`}
-
-                                    className={`px-3 py-1 rounded-md font-medium transition ${
-                                        page === paginaActual
-                                            ? "bg-yellow-400 text-black shadow-sm"
-                                            : "hover:bg-gray-300"
-                                    }`}
-
                                 >
                                     {page}
                                 </button>
@@ -209,4 +188,5 @@ export default function Shopping() {
             </div>
         </>
     );
+}
 

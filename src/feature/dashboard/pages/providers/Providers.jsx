@@ -127,75 +127,88 @@ export default function Providers() {
                             </thead>
 
                             <tbody className="bg-white text-gray-700">
-                                {PresentRecords.map((provider, index) => (
-                                    <tr key={provider.id} className="border-b border-gray-300">
-                                        <td className="px-3 py-2 ">{index + 1}</td>
-                                        <td
-                                            className="px-3 py-2 "
-                                        >
-                                            {provider.tipoDoc}<br />
-                                            {provider.documento}
-                                        </td>
-                                        <td className="px-3 py-2">{provider.nombreProveedor}</td>
-                                        <td className="px-3 py-2">{provider.nombreContacto}</td>
-                                        <td className="px-3 py-2">{provider.telefonoContacto}</td>
-                                        <td className="px-3 py-2">
-                                            {provider.categoriasAsociadas
-                                                ?.map(id => {
-                                                    const cat = categorias.find(c => c.id === id);
-                                                    return cat?.nombre;
-                                                })
-                                                .join(", ")
-                                            }
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className={`w-2.5 h-2.5 rounded-full 
-                                                    ${provider.estado === true ? "bg-green-500" : "bg-red-500"}`}
-                                                ></span>
-                                                <span>
-                                                    {provider.estado ? "Activo" : "Inactivo"}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-1">
-                                            <div className="flex justify-center gap-4">
-
-                                                {/* BOTON EDITAR */}
-                                                <button
-                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                    onClick={() => handleEditNavigation(provider)}
-                                                >
-                                                    <Pencil size={18} className="text-yellow-600" />
-                                                </button>
-
-                                                <div className="flex justify-center items-center gap-2">
-                                                    <div
-                                                        onClick={() => handleToggleEstado(provider.id)}
-                                                        className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
-                                                        ${provider.estado ? "bg-green-500" : "bg-red-500"}`}
-                                                    >
-                                                        <div
-                                                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
-                                                            ${provider.estado ? "translate-x-4" : "translate-x-0"}`}
-                                                        >
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* BOTON ELIMINAR */}
-                                                <button
-                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                    onClick={() => handleDelete(provider.id)}
-                                                >
-                                                    <Trash size={18} className="text-red-600" />
-                                                </button>
-
-                                            </div>
+                                {PresentRecords.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="8" className="text-center py-4 text-gray-500">
+                                            No se encontraron proveedores.
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    PresentRecords.map((provider, index) => (
+                                        <tr key={provider.id} className="border-b border-gray-300">
+                                            <td className="px-3 py-2 ">{index + 1}</td>
+                                            <td
+                                                className="px-3 py-2 "
+                                            >
+                                                {provider.tipoDoc}<br />
+                                                {provider.documento}
+                                            </td>
+                                            <td className="px-3 py-2">{provider.nombreProveedor}</td>
+                                            <td className="px-3 py-2">{provider.nombreContacto}</td>
+                                            <td className="px-3 py-2">{provider.telefonoContacto}</td>
+                                            <td className="px-3 py-2">
+                                                {provider.categoriasAsociadas?.length > 0 ? (
+                                                    provider.categoriasAsociadas
+                                                        .map(id => {
+                                                            const cat = categorias.find(c => c.id === id);
+                                                            return cat?.nombre;
+                                                        })
+                                                        .join(", ")
+                                                ) : (
+                                                    <span className="text-gray-400 italic">
+                                                        Sin categorías asociadas
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className={`w-2.5 h-2.5 rounded-full 
+                                                    ${provider.estado === true ? "bg-green-500" : "bg-red-500"}`}
+                                                    ></span>
+                                                    <span>
+                                                        {provider.estado ? "Activo" : "Inactivo"}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-1">
+                                                <div className="flex justify-center gap-4">
+
+                                                    {/* BOTON EDITAR */}
+                                                    <button
+                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                        onClick={() => handleEditNavigation(provider)}
+                                                    >
+                                                        <Pencil size={18} className="text-yellow-600" />
+                                                    </button>
+
+                                                    <div className="flex justify-center items-center gap-2">
+                                                        <div
+                                                            onClick={() => handleToggleEstado(provider.id)}
+                                                            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
+                                                        ${provider.estado ? "bg-green-500" : "bg-red-500"}`}
+                                                        >
+                                                            <div
+                                                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                                                            ${provider.estado ? "translate-x-4" : "translate-x-0"}`}
+                                                            >
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* BOTON ELIMINAR */}
+                                                    <button
+                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                        onClick={() => handleDelete(provider.id)}
+                                                    >
+                                                        <Trash size={18} className="text-red-600" />
+                                                    </button>
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                    ))}
                             </tbody>
                         </table>
                     </div>

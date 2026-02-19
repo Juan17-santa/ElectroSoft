@@ -169,6 +169,7 @@ export default function CreateProducts() {
                         value={form.nombre}
                         onChange={handleChange}
                         type="text"
+                        placeholder="Ingresar nombre del producto"
                         className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
                     />
                 </div>
@@ -204,6 +205,7 @@ export default function CreateProducts() {
                         value={form.precio}
                         onChange={handleChange}
                         type="number"
+                        placeholder="Digite el precio"
                         className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
                     />
                 </div>
@@ -217,6 +219,7 @@ export default function CreateProducts() {
                         value={form.stock}
                         onChange={handleChange}
                         type="number"
+                        placeholder="Digite el stock"
                         className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
                     />
                 </div>
@@ -230,6 +233,7 @@ export default function CreateProducts() {
                         value={form.serial}
                         onChange={handleChange}
                         type="text"
+                        placeholder="Digite el serial"
                         className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
                     />
                 </div>
@@ -243,6 +247,7 @@ export default function CreateProducts() {
                         value={form.garantia}
                         onChange={handleChange}
                         type="text"
+                        placeholder="Digite la garantía"
                         className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
                     />
                 </div>
@@ -254,7 +259,7 @@ export default function CreateProducts() {
                 <div className="flex justify-end mb-4">
                     <button
                         onClick={() => setShowModal(true)}
-                        className="flex items-center gap-2 bg-gradient-to-r from-white to-yellow-300 px-6 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg"
+                        className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 px-6 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg"
                     >
                         <Plus size={16} /> Añadir Característica
                     </button>
@@ -331,7 +336,7 @@ export default function CreateProducts() {
                 <div className="flex justify-end mt-8">
                     <button
                         onClick={handleSubmit}
-                        className="bg-gradient-to-r from-white to-yellow-300 px-8 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg"
+                        className="bg-linear-to-r from-white to-yellow-300 px-8 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg"
                     >
                         Registrar
                     </button>
@@ -427,7 +432,7 @@ export default function CreateProducts() {
                             </button>
                             <button
                                 onClick={agregarCaracteristica}
-                                className="bg-gradient-to-r from-white to-yellow-300 px-8 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg"
+                                className="bg-linear-to-r from-white to-yellow-300 px-8 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg"
                             >
                                 {editingId ? "Actualizar" : "Guardar"}
                             </button>

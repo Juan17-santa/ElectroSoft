@@ -29,11 +29,6 @@ export default function CreateProductCategory() {
                 return;
             }
 
-            if (formData.descripcion.length < 10) {
-                alert("La descripción debe tener mínimo 10 caracteres");
-                return;
-            }
-
             ServiceProductCategory.create(formData);
 
             alert("Categoría creada correctamente!");
@@ -81,6 +76,7 @@ export default function CreateProductCategory() {
                                 name="nombre"
                                 value={formData.nombre}
                                 onChange={handleChange}
+                                required
                                 placeholder="Ingrese el nombre de la categoria"
                                 className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
                             />
@@ -90,7 +86,7 @@ export default function CreateProductCategory() {
                         <div className="flex flex-col gap-3 w-lg">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <FileText size={16} />
-                                <span>Descripción *</span>
+                                <span>Descripción</span>
                             </div>
                             <textarea
                                 name="descripcion"
