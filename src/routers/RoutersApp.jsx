@@ -19,6 +19,9 @@ import Providers from "../feature/dashboard/pages/providers/Providers";
 import CreateProvider from "../feature/dashboard/pages/providers/CreateProvider";
 import UpdateProvider from "../feature/dashboard/pages/providers/UpdateProvider";
 import Orders from "../feature/dashboard/pages/orders/Orders";
+import Products from "../feature/dashboard/pages/products/Products";
+import CreateProducts from "../feature/dashboard/pages/products/CreateProducts";
+import EditProducts from "../feature/dashboard/pages/products/EditProducts";
 
 
 
@@ -37,6 +40,10 @@ export default function RoutersApp() {
                 <Route path="product-category" element={<ProductCategory />} />
                 <Route path="product-category/create" element={<CreateProductCategory />} />
                 <Route path="product-category/update" element={<UpdateProductCategory />} />
+
+                <Route path="products" element={<Products />} />
+                <Route path="products/create" element={<CreateProducts />} />
+                <Route path="products/update/:id" element={<EditProducts />} />
 
                 <Route path="users" element={<Users />} />
                 <Route path="users/createUser" element={<CreateUser />} /> 
