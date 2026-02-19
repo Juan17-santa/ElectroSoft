@@ -121,59 +121,72 @@ export default function ProductCategory() {
                             </thead>
 
                             <tbody className="bg-white text-gray-700">
-                                {PresentRecords.map((category, index) => (
-                                    <tr key={category.id} className="border-b border-gray-300">
-                                        <td className="px-4 py-1">{index + 1}</td>
-                                        <td className="px-4 py-1">{category.nombre}</td>
-                                        <td className="px-4 py-1 max-w-md">{category.descripcion}</td>
-                                        <td className="px-4 py-1 w-28">
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className={`w-2.5 h-2.5 rounded-full 
-                                                    ${category.estado === true ? "bg-green-500" : "bg-red-500"}`}
-                                                ></span>
-                                                <span>
-                                                    {category.estado ? "Activo" : "Inactivo"}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-1">
-                                            <div className="flex justify-center gap-4">
-
-                                                {/* BOTON EDITAR */}
-                                                <button
-                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                    onClick={() => handleEditNavigation(category)}
-                                                >
-                                                    <Pencil size={18} className="text-yellow-600" />
-                                                </button>
-
-                                                <div className="flex justify-center items-center gap-2">
-                                                    <div
-                                                        onClick={() => handleToggleEstado(category.id)}
-                                                        className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
-                                                        ${category.estado ? "bg-green-500" : "bg-red-500"}`}
-                                                    >
-                                                        <div
-                                                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
-                                                            ${category.estado ? "translate-x-4" : "translate-x-0"}`}
-                                                        >
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* BOTON ELIMINAR */}
-                                                <button
-                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                    onClick={() => handleDelete(category.id)}
-                                                >
-                                                    <Trash size={18} className="text-red-600" />
-                                                </button>
-
-                                            </div>
+                                {PresentRecords.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" className="text-center py-4 text-gray-500">
+                                            No se encontraron categorias de productos.
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    PresentRecords.map((category, index) => (
+                                        <tr key={category.id} className="border-b border-gray-300">
+                                            <td className="px-4 py-1">{index + 1}</td>
+                                            <td className="px-4 py-1">{category.nombre}</td>
+                                            <td className="px-4 py-1 max-w-md">
+                                                {category.descripcion.length === 0 ? (
+                                                    <span className="text-gray-400 italic">Sin descripción</span>
+                                                ) : (category.descripcion)
+                                                }
+                                            </td>
+                                            <td className="px-4 py-1 w-28">
+                                                <div className="flex items-center gap-2">
+                                                    <span
+                                                        className={`w-2.5 h-2.5 rounded-full 
+                                                    ${category.estado === true ? "bg-green-500" : "bg-red-500"}`}
+                                                    ></span>
+                                                    <span>
+                                                        {category.estado ? "Activo" : "Inactivo"}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-1">
+                                                <div className="flex justify-center gap-4">
+
+                                                    {/* BOTON EDITAR */}
+                                                    <button
+                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                        onClick={() => handleEditNavigation(category)}
+                                                    >
+                                                        <Pencil size={18} className="text-yellow-600" />
+                                                    </button>
+
+                                                    <div className="flex justify-center items-center gap-2">
+                                                        <div
+                                                            onClick={() => handleToggleEstado(category.id)}
+                                                            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
+                                                        ${category.estado ? "bg-green-500" : "bg-red-500"}`}
+                                                        >
+                                                            <div
+                                                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                                                            ${category.estado ? "translate-x-4" : "translate-x-0"}`}
+                                                            >
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* BOTON ELIMINAR */}
+                                                    <button
+                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                        onClick={() => handleDelete(category.id)}
+                                                    >
+                                                        <Trash size={18} className="text-red-600" />
+                                                    </button>
+
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                    ))}
                             </tbody>
                         </table>
                     </div>

@@ -148,29 +148,29 @@ export default function Clients() {
 
                                                 {/* VER DETALLES */}
                                                 <button
-                                                    className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                    className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
                                                     onClick={() => handleViewDetails(client)}
                                                     title="Ver detalles"
                                                 >
-                                                    <Eye size={16} className="text-yellow-600" />
+                                                    <Eye size={18} className="text-blue-600" />
                                                 </button>
 
                                                 {/* EDITAR */}
                                                 <button
-                                                    className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
                                                     onClick={() => handleEditNavigation(client)}
                                                     title="Editar cliente"
                                                 >
-                                                    <Pencil size={16} className="text-yellow-600" />
+                                                    <Pencil size={18} className="text-yellow-600" />
                                                 </button>
 
                                                 {/* ELIMINAR */}
                                                 <button
-                                                    className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
                                                     onClick={() => handleDelete(client.id)}
                                                     title="Eliminar cliente"
                                                 >
-                                                    <Trash size={16} className="text-red-600" />
+                                                    <Trash size={18} className="text-red-600" />
                                                 </button>
 
                                             </div>

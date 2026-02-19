@@ -22,7 +22,7 @@ export default function Products() {
         const q = search.toLowerCase();
         const categoryName = getCategoryName(prod.categoriaId).toLowerCase();
         const estado = prod.estado ? "activo" : "inactivo";
-        
+
         return (
             prod.nombre.toLowerCase().includes(q) ||
             categoryName.includes(q) ||
@@ -99,13 +99,11 @@ export default function Products() {
 
                     <div>
                         <button
-                            className="flex items-center gap-3 bg-gray-100 border border-gray-300 rounded-xl px-3 py-1.5 hover:bg-gray-50 transition w-fit"
-                            aria-label="Generar reporte"
+
+                            className="flex items-center gap-2 border border-gray-300 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50 transition duration-300 shadow-sm cursor-pointer"
                         >
-                            <span className="flex items-center justify-center w-8 h-8 rounded-md bg-gray-100">
-                                <FileText size={15} className="text-gray-600" />
-                            </span>
-                            <span className="text-sm font-medium text-gray-600">Generar reporte</span>
+                            <FileText size={18} className="text-gray-500" />
+                            Generar reporte
                         </button>
                     </div>
                 </div>
@@ -128,111 +126,110 @@ export default function Products() {
 
                     <table className="w-full text-sm table-fixed">
 
-    <thead className="bg-gray-200">
-        <tr className="text-left border-b border-gray-300">
-            <th className="px-4 py-2 w-12">ID</th>
-            <th className="px-4 py-2 w-28">Nombre</th>
-            <th className="px-4 py-2 w-28">Categoría</th>
-            <th className="px-4 py-2 w-28">Precio</th>
-            <th className="px-4 py-2 w-24">Stock</th>
-            <th className="px-4 py-2 w-32">Estado</th>
-            <th className="px-4 py-2 text-center w-40">Acciones</th>
-        </tr>
-    </thead>
+                        <thead className="bg-gray-200">
+                            <tr className="text-left border-b border-gray-300">
+                                <th className="px-4 py-2 w-12">ID</th>
+                                <th className="px-4 py-2 w-28">Nombre</th>
+                                <th className="px-4 py-2 w-28">Categoría</th>
+                                <th className="px-4 py-2 w-28">Precio</th>
+                                <th className="px-4 py-2 w-24">Stock</th>
+                                <th className="px-4 py-2 w-32">Estado</th>
+                                <th className="px-4 py-2 text-center w-40">Acciones</th>
+                            </tr>
+                        </thead>
 
-    <tbody className="bg-white text-gray-700">
-        {PresentRecords.length > 0 ? (
-            PresentRecords.map((product, index) => (
-                <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                        <tbody className="bg-white text-gray-700">
+                            {PresentRecords.length > 0 ? (
+                                PresentRecords.map((product, index) => (
+                                    <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
 
-                {/* ID REAL PAGINADO */}
-                <td className="px-4 py-2">
-                    {firstIndex + index + 1}
-                </td>
+                                        {/* ID REAL PAGINADO */}
+                                        <td className="px-4 py-2">
+                                            {firstIndex + index + 1}
+                                        </td>
 
-                <td className="px-4 py-2 font-medium">
-                    {product.nombre}
-                </td>
+                                        <td className="px-4 py-2 font-medium">
+                                            {product.nombre}
+                                        </td>
 
-                <td className="px-4 py-2">
-                    {getCategoryName(product.categoriaId)}
-                </td>
+                                        <td className="px-4 py-2">
+                                            {getCategoryName(product.categoriaId)}
+                                        </td>
 
-                <td className="px-4 py-2">
-                    ${product.precio?.toLocaleString()}
-                </td>
+                                        <td className="px-4 py-2">
+                                            ${product.precio?.toLocaleString()}
+                                        </td>
 
-                <td className="px-4 py-2">
-                    {product.stock}
-                </td>
+                                        <td className="px-4 py-2">
+                                            {product.stock}
+                                        </td>
 
-                <td className="px-4 py-2">
-                    <div className="flex items-center gap-2">
-                        <span
-                            className={`w-2.5 h-2.5 rounded-full 
+                                        <td className="px-4 py-2">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className={`w-2.5 h-2.5 rounded-full 
                             ${product.estado ? "bg-green-500" : "bg-red-500"}`}
-                        />
-                        <span className="text-sm">
-                            {product.estado ? "Activo" : "Inactivo"}
-                        </span>
-                    </div>
-                </td>
+                                                />
+                                                <span className="text-sm">
+                                                    {product.estado ? "Activo" : "Inactivo"}
+                                                </span>
+                                            </div>
+                                        </td>
 
-                <td className="px-4 py-2">
-                    <div className="flex justify-center gap-3">
+                                        <td className="px-4 py-2">
+                                            <div className="flex justify-center gap-3 items-center">
 
-                        {/* VER DETALLE */}
-                        <button
-                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition"
-                            
-                        >
-                            <Eye size={18} className="text-blue-600" />
-                        </button>
+                                                {/* VER DETALLE */}
+                                                <button
+                                                    className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition"
 
-                        {/* EDITAR */}
-                        <button
-                            className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
-                            onClick={() => handleEditNavigation(product)}
-                        >
-                            <Pencil size={18} className="text-yellow-600" />
-                        </button>
+                                                >
+                                                    <Eye size={18} className="text-blue-600" />
+                                                </button>
 
-                        {/* TOGGLE */}
-                        <div
-                            onClick={() => handleToggleEstado(product.id)}
-                            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${
-                            product.estado ? "bg-green-500" : "bg-red-500"
-                          }`}
-                        >
-                            <div
-                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                                                {/* EDITAR */}
+                                                <button
+                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
+                                                    onClick={() => handleEditNavigation(product)}
+                                                >
+                                                    <Pencil size={18} className="text-yellow-600" />
+                                                </button>
+
+                                                {/* TOGGLE */}
+                                                <div
+                                                    onClick={() => handleToggleEstado(product.id)}
+                                                    className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${product.estado ? "bg-green-500" : "bg-red-500"
+                                                        }`}
+                                                >
+                                                    <div
+                                                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
                                 ${product.estado ? "translate-x-4" : "translate-x-0"}`}
-                            />
-                        </div>
+                                                    />
+                                                </div>
 
-                        {/* ELIMINAR */}
-                        <button
-                            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition"
-                            onClick={() => handleDelete(product.id)}
-                        >
-                            <Trash size={18} className="text-red-600" />
-                        </button>
+                                                {/* ELIMINAR */}
+                                                <button
+                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition"
+                                                    onClick={() => handleDelete(product.id)}
+                                                >
+                                                    <Trash size={18} className="text-red-600" />
+                                                </button>
 
-                    </div>
-                </td>
+                                            </div>
+                                        </td>
 
-            </tr>
-            ))
-        ) : (
-            <tr>
-                <td colSpan="7" className="text-center py-6 text-gray-400">
-                    No se encontraron productos
-                </td>
-            </tr>
-        )}
-    </tbody>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="7" className="text-center py-6 text-gray-400">
+                                        No se encontraron productos
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
 
-</table>
+                    </table>
 
                 </div>
             </div>

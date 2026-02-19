@@ -220,6 +220,7 @@ export default function CreateProvider() {
                                     name="nombreContacto"
                                     value={formData.nombreContacto}
                                     onChange={handleChange}
+                                    required
                                     placeholder="Ingrese el nombre de contacto"
                                     className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
                                 />
@@ -236,6 +237,7 @@ export default function CreateProvider() {
                                     name="telefonoContacto"
                                     value={formData.telefonoContacto}
                                     onChange={handleChange}
+                                    required
                                     placeholder="Ingrese el telefono"
                                     className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
                                 />

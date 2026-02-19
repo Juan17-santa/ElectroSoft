@@ -351,7 +351,7 @@ export default function CreditDetailsPage() {
                             </button>
                             <button
                                 onClick={handleAddPayment}
-                                className="px-6 py-2 bg-gradient-to-r from-white to-yellow-300 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
+                                className="px-6 py-2 bg-linear-to-r from-white to-yellow-300 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
                             >
                                 Añadir abono
                             </button>

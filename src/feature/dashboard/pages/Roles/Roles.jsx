@@ -135,28 +135,28 @@ export default function Roles() {
                                             {/* VER DETALLES */}
                                             <button
                                                 onClick={() => handleViewDetails(role)}
-                                                className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
                                                 title="Ver detalles"
                                             >
-                                                <Eye size={17} className="text-yellow-600" />
+                                                <Eye size={18} className="text-blue-600" />
                                             </button>
 
                                             {/* EDITAR */}
                                             <button
                                                 onClick={() => handleEditNavigation(role)}
-                                                className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
                                                 title="Editar"
                                             >
-                                                <Pencil size={17} className="text-yellow-600" />
+                                                <Pencil size={18} className="text-yellow-600" />
                                             </button>
 
                                             {/* ELIMINAR */}
                                             <button
                                                 onClick={() => handleDelete(role.id)}
-                                                className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
                                                 title="Eliminar"
                                             >
-                                                <Trash size={17} className="text-red-500" />
+                                                <Trash size={18} className="text-red-500" />
                                             </button>
                                         </div>
                                     </td>

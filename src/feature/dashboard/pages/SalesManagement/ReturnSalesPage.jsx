@@ -453,7 +453,7 @@ export default function ReturnSalesPage() {
                     </div>
                     <button
                         onClick={handleRegistrarDevolucion}
-                        className="px-6 py-2.5 bg-gradient-to-r from-white to-yellow-300 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
+                        className="px-6 py-2.5 bg-linear-to-r from-white to-yellow-300 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
                     >
                         Registrar Devolución
                     </button>
@@ -463,7 +463,7 @@ export default function ReturnSalesPage() {
             {/* MODAL PARA AGREGAR/EDITAR PRODUCTO DE DEVOLUCIÓN */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-                    <div className="bg-white rounded-2xl shadow-xl p-6 w-[440px]">
+                    <div className="bg-white rounded-2xl shadow-xl p-6 w-110">
                         <div className="flex justify-between items-center mb-5">
                             <h3 className="text-lg font-bold text-gray-800">
                                 {editingIndex !== null ? "Editar producto" : "Agregar a devolución"}
@@ -571,7 +571,7 @@ export default function ReturnSalesPage() {
                             </button>
                             <button
                                 onClick={handleConfirmModal}
-                                className="px-6 py-2 bg-gradient-to-r from-white to-yellow-300 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
+                                className="px-6 py-2 bg-linear-to-r from-white to-yellow-300 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
                             >
                                 {editingIndex !== null ? "Actualizar" : "Confirmar"}
                             </button>
