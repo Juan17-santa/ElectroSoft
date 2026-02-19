@@ -71,7 +71,9 @@ export const Sidebar = () => {
                                 Categoria de productos
                             </button>
 
-                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
+                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
+                                onClick={() => navigate("/dashboard/products")}
+                            >
                                 Gestion de productos
                             </button>
                         </div>

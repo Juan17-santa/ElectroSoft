@@ -202,8 +202,8 @@ export default function Providers() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-4">
-                    <div className="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow-xl">
+                <div className="flex justify-end mt-auto">
+                    <div className="flex items-center gap-3 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow-xl">
 
                         {/* Flecha izquierda */}
                         <button

@@ -76,7 +76,7 @@ export default function ProductCategory() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full min-h-142 shadow-inner">
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Control de categorias de productos</p>
 
@@ -112,21 +112,21 @@ export default function ProductCategory() {
 
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
-                                    <th className="px-3 py-2 font-semibold w-12">ID</th>
-                                    <th className="px-3 py-2 font-semibold w-44">Nombre</th>
-                                    <th className="px-3 py-2 font-semibold">Descripción</th>
-                                    <th className="px-3 py-2 font-semibold w-28">Estado</th>
-                                    <th className="px-3 py-2 font-semibold text-center w-36">Acciones</th>
+                                    <th className="px-4 py-2 font-semibold w-12">ID</th>
+                                    <th className="px-4 py-2 font-semibold w-44">Nombre</th>
+                                    <th className="px-4 py-2 font-semibold">Descripción</th>
+                                    <th className="px-4 py-2 font-semibold w-32">Estado</th>
+                                    <th className="px-4 py-2 font-semibold text-center w-40">Acciones</th>
                                 </tr>
                             </thead>
 
                             <tbody className="bg-white text-gray-700">
                                 {PresentRecords.map((category, index) => (
                                     <tr key={category.id} className="border-b border-gray-300">
-                                        <td className="px-3 py-2">{index + 1}</td>
-                                        <td className="px-3 py-2">{category.nombre}</td>
-                                        <td className="px-3 py-2 max-w-md">{category.descripcion}</td>
-                                        <td className="px-3 py-2 w-28">
+                                        <td className="px-4 py-1">{index + 1}</td>
+                                        <td className="px-4 py-1">{category.nombre}</td>
+                                        <td className="px-4 py-1 max-w-md">{category.descripcion}</td>
+                                        <td className="px-4 py-1 w-28">
                                             <div className="flex items-center gap-2">
                                                 <span
                                                     className={`w-2.5 h-2.5 rounded-full 
@@ -137,26 +137,26 @@ export default function ProductCategory() {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-3 py-2">
-                                            <div className="flex justify-center gap-2">
+                                        <td className="px-4 py-1">
+                                            <div className="flex justify-center gap-4">
 
                                                 {/* BOTON EDITAR */}
                                                 <button
-                                                    className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
                                                     onClick={() => handleEditNavigation(category)}
                                                 >
-                                                    <Pencil size={16} className="text-yellow-600" />
+                                                    <Pencil size={18} className="text-yellow-600" />
                                                 </button>
 
-                                                <div className="flex justify-center items-center">
+                                                <div className="flex justify-center items-center gap-2">
                                                     <div
                                                         onClick={() => handleToggleEstado(category.id)}
-                                                        className={`w-8 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition
+                                                        className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
                                                         ${category.estado ? "bg-green-500" : "bg-red-500"}`}
                                                     >
                                                         <div
-                                                            className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition
-                                                            ${category.estado ? "translate-x-3" : "translate-x-0"}`}
+                                                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                                                            ${category.estado ? "translate-x-4" : "translate-x-0"}`}
                                                         >
                                                         </div>
                                                     </div>
@@ -164,10 +164,10 @@ export default function ProductCategory() {
 
                                                 {/* BOTON ELIMINAR */}
                                                 <button
-                                                    className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
                                                     onClick={() => handleDelete(category.id)}
                                                 >
-                                                    <Trash size={16} className="text-red-600" />
+                                                    <Trash size={18} className="text-red-600" />
                                                 </button>
 
                                             </div>
@@ -180,8 +180,8 @@ export default function ProductCategory() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-4">
-                    <div className="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow-xl">
+                <div className="flex justify-end mt-auto">
+                    <div className="flex items-center gap-3 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow-xl">
 
                         {/* Flecha izquierda */}
                         <button
