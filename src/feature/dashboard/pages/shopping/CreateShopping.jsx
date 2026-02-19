@@ -26,6 +26,15 @@ export default function CreateShopping() {
 
     // ─── Cálculos ──────────────────────────────────────────────────────────────
     const subtotalSinIVA = productos.reduce((acc, p) => acc + p.subtotal, 0);
+
+    const iva = subtotalSinIVA * IVA_RATE;
+    const total = subtotalSinIVA + iva;
+    const totalVenta = productos.reduce((acc, p) => acc + p.cantidad * p.precioVenta, 0);
+
+    // ─── Paginación ────────────────────────────────────────────────────────────
+    const totalPages = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
+    const paginaActual = Math.min(currentPage, totalPages);
+
     const iva             = subtotalSinIVA * IVA_RATE;
     const total           = subtotalSinIVA + iva;
     const totalVenta      = productos.reduce((acc, p) => acc + p.cantidad * p.precioVenta, 0);
@@ -33,6 +42,7 @@ export default function CreateShopping() {
     // ─── Paginación ────────────────────────────────────────────────────────────
     const totalPages      = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
     const paginaActual    = Math.min(currentPage, totalPages);
+
     const productosPagina = productos.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
         paginaActual * ITEMS_PER_PAGE
@@ -243,9 +253,14 @@ export default function CreateShopping() {
                                     <button
                                         key={page}
                                         onClick={() => setCurrentPage(page)}
+
+                                        className={`px-3 py-1 rounded-md font-medium transition ${page === paginaActual ? "bg-yellow-400 text-black shadow-sm" : "hover:bg-gray-300"
+                                            }`}
+
                                         className={`px-3 py-1 rounded-md font-medium transition ${
                                             page === paginaActual ? "bg-yellow-400 text-black shadow-sm" : "hover:bg-gray-300"
                                         }`}
+
                                     >{page}</button>
                                 ))}
                                 <button
@@ -294,4 +309,4 @@ export default function CreateShopping() {
             </div>
         </>
     );
-}
+

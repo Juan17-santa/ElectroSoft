@@ -14,7 +14,7 @@ export default function Layout() {
 
                 <Sidebar />
 
-                <div className="flex-1 p-3 overflow-auto">
+                <div className="flex-1 p-3 overflow-auto flex flex-col">
                     <Outlet />
                 </div>
 

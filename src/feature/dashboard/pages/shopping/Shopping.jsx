@@ -10,8 +10,6 @@ export default function Shopping() {
     const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular } = useShopping();
     const [currentPage, setCurrentPage] = useState(1);
 
-
-
     // Paginación
     const totalPages = Math.max(1, Math.ceil(comprasFiltradas.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
@@ -90,6 +88,7 @@ export default function Shopping() {
                                     <th className="px-4 py-2 font-semibold text-center">Acciones</th>
                                 </tr>
                             </thead>
+
                             <tbody className="bg-white text-gray-700">
                                 {comprasPagina.length === 0 ? (
                                     <tr>
@@ -109,11 +108,18 @@ export default function Shopping() {
                                             <td className="px-4 py-1 border-b border-gray-300">{compra.total}</td>
                                             <td className="px-4 py-1 border-b border-gray-300">
                                                 <span
+
+                                                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${compra.estado === "Activo"
+                                                            ? "bg-green-100 text-green-700"
+                                                            : "bg-red-100 text-red-600"
+                                                        }`}
+
                                                     className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                                                         compra.estado === "Activo"
                                                             ? "bg-green-100 text-green-700"
                                                             : "bg-red-100 text-red-600"
                                                     }`}
+
                                                 >
                                                     {compra.estado}
                                                 </span>
@@ -132,11 +138,18 @@ export default function Shopping() {
                                                     <button
                                                         onClick={() => handleAnular(compra.id)}
                                                         disabled={compra.estado === "Anulada"}
+
+                                                        className={`p-2 rounded-lg transition duration-300 cursor-pointer ${compra.estado === "Anulada"
+                                                                ? "bg-gray-100 cursor-not-allowed opacity-40"
+                                                                : "bg-red-100 hover:bg-red-200"
+                                                            }`}
+
                                                         className={`p-2 rounded-lg transition duration-300 cursor-pointer ${
                                                             compra.estado === "Anulada"
                                                                 ? "bg-gray-100 cursor-not-allowed opacity-40"
                                                                 : "bg-red-100 hover:bg-red-200"
                                                         }`}
+
                                                     >
                                                         <Ban size={18} className="text-red-600" />
                                                     </button>
@@ -166,11 +179,18 @@ export default function Shopping() {
                                 <button
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
+
+                                    className={`px-3 py-1 rounded-md font-medium transition ${page === paginaActual
+                                            ? "bg-yellow-400 text-black shadow-sm"
+                                            : "hover:bg-gray-300"
+                                        }`}
+
                                     className={`px-3 py-1 rounded-md font-medium transition ${
                                         page === paginaActual
                                             ? "bg-yellow-400 text-black shadow-sm"
                                             : "hover:bg-gray-300"
                                     }`}
+
                                 >
                                     {page}
                                 </button>
@@ -189,4 +209,4 @@ export default function Shopping() {
             </div>
         </>
     );
-}
+
