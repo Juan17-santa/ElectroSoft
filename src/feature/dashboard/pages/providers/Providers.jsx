@@ -1,7 +1,12 @@
-import { Trash, Pencil, Plus, Search } from "lucide-react";
+import { Trash, Pencil, Plus, Search, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ServicesProviders } from "./services/ServicesProviders";
+import Pagination from "../../components/ui/Pagination";
+import SearchInput from "../../components/ui/SearchInput";
+import PrimaryButton from "../../components/ui/PrimaryButton";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import Alert from "../../components/ui/alert";
 
 export default function Providers() {
     // ESTADO PARA NAVEGAR
@@ -13,32 +18,48 @@ export default function Providers() {
     // ESTADO PARA EL BUSCADOR
     const [search, setSearch] = useState("");
 
-    // FILTRAR LOS PROVEEDORES POR NOMBRE
-    const filteredProviders = providers.filter(cat =>
-        cat.nombreProveedor.toLowerCase().includes(search.toLowerCase())
-    );
+    // ESTADO PARA EL MODAL DE CONFIRMACION
+    const [confirmData, setConfirmData] = useState(null);
+
+    // ESTADO PARA LA ALERTA DE EXITO O ERROR
+    const [alert, setAlert] = useState(null);
+
+    // FUNCION PARA MOSTRAR ALERTA
+    const showAlert = (type, message) => {
+        setAlert({ type, message });
+    };
 
     // FUNCION PAGINADOR, PAGINA ACTUAL DEL PAGINADOR
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
+
+    // FILTRAR LOS PROVEEDORES POR NOMBRE
+    const filteredProviders = providers.filter(pro => {
+        const query = search.toLowerCase();
+        const telefono = pro.telefonoContacto ? String(pro.telefonoContacto) : "";
+
+        return (
+            pro.nombreProveedor?.toLowerCase().includes(query) ||
+            pro.tipoDoc?.toLowerCase().includes(query) ||
+            pro.documento?.toLowerCase().includes(query) ||
+            pro.nombreContacto?.toLowerCase().includes(query) ||
+            telefono.includes(query) || // Ahora es un string garantizado            
+            (pro.estado ? "activo" : "inactivo").includes(query)
+        );
+    });
+
+    // CÁLCULO DE PAGINACIÓN
+    const totalPages = Math.ceil(filteredProviders.length / recordsPerPage);
     const lastIndex = presentPage * recordsPerPage;
     const firstIndex = lastIndex - recordsPerPage;
     const PresentRecords = filteredProviders.slice(firstIndex, lastIndex);
-    const totalPages = Math.ceil(filteredProviders.length / recordsPerPage);
 
-    const nextPage = () => {
-        if (presentPage < totalPages) setPresentPage(presentPage + 1);
-    };
-
-    const prevPage = () => {
-        if (presentPage > 1) setPresentPage(presentPage - 1);
-    };
-
-
+    // OBTENER PROVEEDORES AL CARGAR EL COMPONENTE
     useEffect(() => {
         getproviders();
     }, [])
 
+    // FUNCION PARA OBTENER PROVEEDORES
     const getproviders = async () => {
         try {
             const response = ServicesProviders.get();
@@ -51,16 +72,12 @@ export default function Providers() {
     // FUNCION PARA OBTENER CATEGORIAS PARA LA TABLA
     const categorias = JSON.parse(localStorage.getItem("productCategory")) || [];
 
-    // FUNCION PARA ELIMINAR UN PROVEEDOR
-    const handleDelete = (id) => {
-
-        const confirmDelete = window.confirm("¿Esta seguro de eliminar el proveedor?");
-        if (!confirmDelete) return;
-        alert("Proveedor eliminado correctamente")
-
-        const newData = ServicesProviders.delete(id);
-
-        setProviders(newData);
+    // FUNCION PARA PREPARAR LA VISTA DE DETALLES
+    const handleDetailsNavigation = (provider) => {
+        // Guardamos el proveedor seleccionado para que el otro componente la lea
+        localStorage.setItem("providerToView", JSON.stringify(provider));
+        // Navegamos
+        navigate("/dashboard/providers/detail");
     };
 
     // FUNCIÓN PARA PREPARAR LA EDICIÓN
@@ -71,40 +88,72 @@ export default function Providers() {
         navigate("/dashboard/providers/update");
     };
 
+    // FUNCION PARA ELIMINAR UN PROVEEDOR
+    const handleDelete = (id) => {
+        setConfirmData({
+            type: "delete",
+            title: "Eliminar proveedor",
+            message: "¿Seguro que deseas eliminar este proveedor? Esta acción no se puede deshacer.",
+            onConfirm: () => {
+                // Guardamos lo que devuelve el servicio (la lista sin el eliminado)
+                const nuevosProveedores = ServicesProviders.delete(id);
+
+                // Actualizamos el estado de React para que la lista cambie en pantalla
+                setProviders(nuevosProveedores);
+
+                // Cerramos el modal
+                setConfirmData(null);
+
+                // Lanzamos la alerta de éxito
+                showAlert("success", "Proveedor eliminado con éxito");
+            },
+            onCancel: () => setConfirmData(null)
+        });
+    };
+
     // FUNCION PARA CAMBIO DE ESTADO
     const handleToggleEstado = (id) => {
-        const nuevosProveedores = ServicesProviders.toggleEstado(id);
-        setProviders(nuevosProveedores);
+        setConfirmData({
+            type: "warning",
+            title: "Cambiar estado del proveedor",
+            message: "¿Seguro que deseas cambiar el estado de este proveedor?",
+            onConfirm: () => {
+                // Cambiamos el estado en el servicio y obtenemos la lista actualizada
+                const nuevosProveedores = ServicesProviders.toggleEstado(id);
+
+                // Actualizamos react
+                setProviders(nuevosProveedores);
+
+                // Cerramos el modal
+                setConfirmData(null);
+
+                // Lanzamos la alerta
+                showAlert("success", "Estado del proveedor actualizado con éxito");
+            },
+            onCancel: () => setConfirmData(null)
+        });
     };
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full min-h-142 shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner">
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Control de proveedores</p>
 
                 {/* BUSCADOR Y BOTON CREAR */}
                 <div className="flex justify-between">
-                    <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-2 w-4/5">
-                        <Search size={20} className="text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar proveedores.."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full outline-none text-md placeholder-gray-400"
-                        />
-                    </div>
-                    <div className="flex items-center bg-linear-to-r from-white to-yellow-300 px-4 py-2 rounded-lg font-medium cursor-pointer gap-2 shadow-md hover:bg-linear-to-r hover:shadow-lg transition">
-                        <Plus />
-                        <button
-                            type="button"
-                            className="cursor-pointer"
-                            onClick={() => navigate("/dashboard/providers/create")}
-                        >
-                            Crear proveedor
-                        </button>
-                    </div>
+                    <SearchInput
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Buscar proveedores..."
+                        className="w-4/5"
+                    />
+                    <PrimaryButton
+                        onClick={() => navigate("/dashboard/providers/create")}
+                        icon={Plus}
+                    >
+                        Crear proveedor
+                    </PrimaryButton>
                 </div>
 
                 {/* TABLA */}
@@ -119,7 +168,7 @@ export default function Providers() {
                                     <th className="px-3 py-2 font-semibold w-28">Documento</th>
                                     <th className="px-3 py-2 font-semibold w-36">Nombre proveedor</th>
                                     <th className="px-3 py-2 font-semibold w-32">Nombre contacto</th>
-                                    <th className="px-3 py-2 font-semibold w-32">Telefono contacto</th>
+                                    <th className="px-3 py-2 font-semibold w-28">Telefono contacto</th>
                                     <th className="px-3 py-2 font-semibold w-44">Categorias asociadas</th>
                                     <th className="px-3 py-2 font-semibold w-28">Estado</th>
                                     <th className="px-3 py-2 font-semibold">Acciones</th>
@@ -171,8 +220,16 @@ export default function Providers() {
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-1">
-                                                <div className="flex justify-center gap-4">
+                                            <td className="px-1 py-1">
+                                                <div className="flex justify-center gap-2">
+
+                                                    {/* BOTON DE VER DETALLE */}
+                                                    <button
+                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                        onClick={() => handleDetailsNavigation(provider)}
+                                                    >
+                                                        <Eye size={18} className="text-blue-600" />
+                                                    </button>
 
                                                     {/* BOTON EDITAR */}
                                                     <button
@@ -213,45 +270,33 @@ export default function Providers() {
                         </table>
                     </div>
                 </div>
-
-                {/* PAGINADOR */}
-                <div className="flex justify-end mt-auto">
-                    <div className="flex items-center gap-3 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow-xl">
-
-                        {/* Flecha izquierda */}
-                        <button
-                            onClick={prevPage}
-                            className="p-2 rounded-lg hover:bg-gray-300 transition"
-                        >
-                            ←
-                        </button>
-
-                        {/* Números de página */}
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                            <button
-                                key={page}
-                                onClick={() => setPresentPage(page)}
-                                className={`px-3 py-1 rounded-md transition
-                                    ${presentPage === page
-                                        ? "bg-yellow-400 text-black font-medium shadow-sm"
-                                        : "bg-gray-300"
-                                    }`}
-                            >
-                                {page}
-                            </button>
-                        ))}
-
-                        {/* Flecha derecha */}
-                        <button
-                            onClick={nextPage}
-                            className="p-2 rounded-lg hover:bg-gray-300 transition"
-                        >
-                            →
-                        </button>
-
-                    </div>
+                {/* PAGINACION */}
+                <div className="flex justify-end mt-auto pt-4">
+                    <Pagination
+                        currentPage={presentPage}
+                        totalPages={totalPages}
+                        onPageChange={(page) => setPresentPage(page)}
+                    />
                 </div>
             </div>
+            {/* MODAL DE CONFIRMACION */}
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={() => setConfirmData(null)}
+                />
+            )}
+            {/* ALERTA DE EXITO O ERROR */}
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
         </>
     )
 }
