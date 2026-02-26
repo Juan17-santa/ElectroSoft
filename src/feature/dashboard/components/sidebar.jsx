@@ -1,27 +1,44 @@
-import { useState } from "react";
-import {
-    ChartNoAxesCombined,
-    Box,
-    ShoppingCart,
-    BadgeDollarSign,
-    UsersRound,
-    ShieldCheck,
-    LogOut,
-    ChevronDown,
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, } from "react";
+import { useLocation, NavLink } from 'react-router-dom';
+import { ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck, LogOut, ChevronDown } from 'lucide-react';
 
 export const Sidebar = () => {
-    const navigate = useNavigate();
-
-    // Submenu para productos
-    const [openProductos, setOpenProductos] = useState(false);
+    const location = useLocation();
 
     // Submenu para compras
     const [openCompras, setOpenCompras] = useState(false);
 
     // Submenu para ventas
     const [openVentas, setOpenVentas] = useState(false);
+
+    // Función para determinar si una ruta está activa
+    const activeLink = (path, exact = false) => {
+        const baseStyle =
+            "flex items-center justify-between w-full px-3 py-2 rounded-lg transition";
+
+        const activeStyle = "bg-yellow-400 font-semibold text-black";
+        const normalStyle = "hover:bg-gray-200";
+
+        const isActive = exact
+            ? location.pathname === path
+            : location.pathname.startsWith(path);
+
+        return `${baseStyle} ${isActive ? activeStyle : normalStyle}`;
+    };
+
+    // Función para determinar si una ruta está activa (para botones del submenu)
+    const activeSubLink = (path) => {
+        const baseStyle =
+            "w-full px-4 py-2 rounded-lg text-sm transition text-left block";
+
+        const activeStyle = "bg-yellow-400 font-semibold";
+        const normalStyle = "hover:bg-gray-200";
+
+        return `${baseStyle} ${location.pathname.startsWith(path)
+            ? activeStyle
+            : normalStyle
+            }`;
+    };
 
     return (
         <aside className='w-64 border-r-2 border-yellow-300 shadow-[2px_0_6px_rgba(234,179,8,0.15)] flex flex-col'>
@@ -34,50 +51,15 @@ export const Sidebar = () => {
                     <div className='flex flex-col gap-1 px-3'>
 
                         {/* DASHBOARD */}
-                        <button
-                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
-                            onClick={() => navigate("/dashboard")}
+                        <NavLink
+                            to="/dashboard"
+                            className={activeLink("/dashboard", true)}
                         >
                             <div className="flex items-center gap-3">
                                 <ChartNoAxesCombined size={18} />
                                 <span>Dashboard</span>
                             </div>
-                        </button>
-
-                        {/* PRODUCTOS */}
-                        <button
-                            onClick={() => setOpenProductos(!openProductos)}
-                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
-                        >
-                            <div className="flex items-center gap-3">
-                                <Box size={18} />
-                                <span>Productos</span>
-                            </div>
-
-                            <ChevronDown
-                                size={16}
-                                className={`transition-transform ${openProductos ? "rotate-180" : ""}`}
-                            />
-                        </button>
-
-                        {/* SUBMENU DE PRODUCTOS */}
-                        <div className={`flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
-                        overflow-hidden transition-all duration-300
-                        ${openProductos ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}`}>
-                            <button
-                                className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                                onClick={() => navigate("/dashboard/product-category")}
-                            >
-                                Categoria de productos
-                            </button>
-
-                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                                onClick={() => navigate("/dashboard/products")}
-                            >
-                                Gestion de productos
-                            </button>
-                        </div>
-
+                        </NavLink>
 
                         {/* COMPRAS */}
                         <button
@@ -91,7 +73,7 @@ export const Sidebar = () => {
 
                             <ChevronDown
                                 size={16}
-                                className={`transition-transform ${openProductos ? "rotate-180" : ""}`}
+                                className={`transition-transform ${openCompras ? "rotate-180" : ""}`}
                             />
                         </button>
 
@@ -99,21 +81,32 @@ export const Sidebar = () => {
                         <div className={`
                             flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
                             overflow-hidden transition-all duration-300
-                            ${openCompras ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}
+                            ${openCompras ? "max-h-60 opacity-100" : "max-h-0 opacity-0"}
                         `}>
-                            <button
-                                className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                                onClick={() => navigate("/dashboard/shopping")}
+                            <NavLink
+                                to="/dashboard/product-category"
+                                className={activeSubLink("/dashboard/product-category")}
                             >
-                                Gestion de compras
-                            </button>
-
-                            <button 
-                                className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                                onClick={() => navigate("/dashboard/providers")}
+                                Categoria de productos
+                            </NavLink>
+                            <NavLink
+                                to="/dashboard/products"
+                                className={activeSubLink("/dashboard/products")}
+                            >
+                                Productos
+                            </NavLink>
+                            <NavLink
+                                to="/dashboard/providers"
+                                className={activeSubLink("/dashboard/providers")}
                             >
                                 Proveedores
-                            </button>
+                            </NavLink>
+                            <NavLink
+                                to="/dashboard/shopping"
+                                className={activeSubLink("/dashboard/shopping")}
+                            >
+                                Compras
+                            </NavLink>
                         </div>
 
                         {/* VENTAS */}
@@ -128,7 +121,7 @@ export const Sidebar = () => {
 
                             <ChevronDown
                                 size={16}
-                                className={`transition-transform ${openProductos ? "rotate-180" : ""}`}
+                                className={`transition-transform ${openVentas ? "rotate-180" : ""}`}
                             />
                         </button>
 
@@ -138,31 +131,40 @@ export const Sidebar = () => {
                             overflow-hidden transition-all duration-300
                             ${openVentas ? "max-h-80 opacity-100" : "max-h-0 opacity-0"}
                         `}>
-                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                             onClick={() => navigate('/dashboard/clients')}>
+                            <NavLink
+                                to="/dashboard/clients"
+                                className={activeSubLink("/dashboard/clients")}
+                            >
                                 Clientes
-                            </button>
+                            </NavLink>
 
-                            <button 
-                                className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                                onClick={() => navigate("/dashboard/orders")}    
+                            <NavLink
+                                to="/dashboard/orders"
+                                className={activeSubLink("/dashboard/orders")}
                             >
                                 Pedidos
-                            </button>
+                            </NavLink>
 
-                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                             onClick={() => navigate('/dashboard/sales-management')}>
-                                Gestion de ventas
-                            </button>
+                            <NavLink
+                                to="/dashboard/sales-management"
+                                className={activeSubLink("/dashboard/sales-management")}
+                            >
+                                Ventas
+                            </NavLink>
 
-                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left"
-                                onClick={() => navigate("/dashboard/pagos-abonos")}>
+                            <NavLink
+                                to="/dashboard/payments"
+                                className={activeSubLink("/dashboard/payments")}
+                            >
                                 Pagos y abonos
-                            </button>
+                            </NavLink>
 
-                            <button className="w-full px-4 py-2 rounded-lg hover:bg-gray-200 text-sm transition cursor-pointer text-left">
+                            <NavLink
+                                to="/dashboard/returns"
+                                className={activeSubLink("/dashboard/returns")}
+                            >
                                 Devoluciones
-                            </button>
+                            </NavLink>
                         </div>
                     </div>
 
@@ -170,18 +172,25 @@ export const Sidebar = () => {
 
                     {/* ADMINISTRACION */}
                     <div className='flex flex-col gap-1 px-3'>
-                        <button className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
-                            onClick={() => navigate("/dashboard/users")}>
+                        <NavLink
+                            to="/dashboard/users"
+                            className={activeLink("/dashboard/users")}
+                        >
+                            <div className="flex items-center gap-3">
+                                <UsersRound size={18} />
+                                <span>Usuarios</span>
+                            </div>
+                        </NavLink>
 
-                            <UsersRound size={18} />
-                            <span>Usuarios</span>
-                        </button>
-
-                        <button className='flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
-                            onClick={() => navigate("/dashboard/roles")}>
-                            <ShieldCheck size={18} />
-                            <span>Roles</span>
-                        </button>
+                        <NavLink
+                            to="/dashboard/roles"
+                            className={activeLink("/dashboard/roles")}
+                        >
+                            <div className="flex items-center gap-3">
+                                <ShieldCheck size={18} />
+                                <span>Roles</span>
+                            </div>
+                        </NavLink>
                     </div>
 
                     <div className="h-0.5 bg-yellow-400 mx-4"></div>
