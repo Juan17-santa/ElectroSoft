@@ -38,10 +38,13 @@ import Orders from "../feature/dashboard/pages/orders/Orders";
 import Products from "../feature/dashboard/pages/products/Products";
 import CreateProducts from "../feature/dashboard/pages/products/CreateProducts";
 import EditProducts from "../feature/dashboard/pages/products/EditProducts";
+import ProductCategoryDetails from "../feature/dashboard/pages/productCategory/ProductCategoryDetails";
+import ProviderDetails from "../feature/dashboard/pages/providers/ProviderDetails";
 
 export default function RoutersApp() {
     return (
         <Routes>
+            {/* ACCESO */}
             <Route path="/" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/verify-code" element={<VerifyCode />} />
@@ -50,67 +53,59 @@ export default function RoutersApp() {
             {/* DASHBOARD */}
             <Route path="/dashboard" element={<Layout />}>
                 <Route index element={<Dashboard />} />
+                {/* CATEGORIA DE PRODUCTOS */}
                 <Route path="product-category" element={<ProductCategory />} />
                 <Route path="product-category/create" element={<CreateProductCategory />} />
                 <Route path="product-category/update" element={<UpdateProductCategory />} />
+                <Route path="product-category/detail" element={<ProductCategoryDetails />} />
 
+                {/* CLIENTES */}
                 <Route path="clients" element={<Clients />} />
                 <Route path="clients/create" element={<CreateClients />} />
                 <Route path="clients/update" element={<UpdateClients />} />
                 <Route path="clients/details" element={<ClientDetailsPage />} />
+
+                {/* ROLES */}
                 <Route path="roles" element={<Roles />} />
                 <Route path="roles/create" element={<CreateRoles />} />
                 <Route path="roles/update" element={<UpdateRoles />} />
                 <Route path="roles/details" element={<RoleDetailsPage />} />
+
+                {/* GESTION DE VENTAS */}
                 <Route path="sales-management" element={<SalesManagement />} />
                 <Route path="sales-management/create" element={<CreateSales />} />
                 <Route path="sales-management/update" element={<UpdateSales />} />
                 <Route path="sales-management/credit-details" element={<CreditDetailsPage />} />
                 <Route path="sales-management/return" element={<ReturnSalesPage />} />
                 <Route path="sales-management/details" element={<SaleDetailsPage />} />
+
+                {/* USUARIOS */}
                 <Route path="users" element={<Users />} />
                 <Route path="users/createUser" element={<CreateUser />} />
                 <Route path="users/:id" element={<UserDetail />} />
                 <Route path="users/:id/edit" element={<EditUser />} />
-                {/* Compras */}
+
+                {/* COMPRAS */}
                 <Route path="shopping" element={<Shopping />} />
                 <Route path="shopping/create" element={<CreateShopping />} />
                 <Route path="shopping/details/:id" element={<ShoppingDetails />} />
+
+                {/* PROVEEDORES */}
                 <Route path="providers" element={<Providers />} />
                 <Route path="providers/create" element={<CreateProvider />} />
                 <Route path="providers/update" element={<UpdateProvider />} />
+                <Route path="providers/detail" element={<ProviderDetails />} />
+
+                {/* PRODUCTOS */}
+                <Route path="products" element={<Products />} />
+                <Route path="products/create" element={<CreateProducts />} />
+                <Route path="products/update/:id" element={<EditProducts />} />
+
+                {/* PEDIDOS */}
                 <Route path="orders" element={<Orders />} />
-                {/* Productos */}
-                <Route path="products" element={<Products />} />
-                <Route path="products/create" element={<CreateProducts />} />
-                <Route path="products/update/:id" element={<EditProducts />} />
-
-
-                <Route path="products" element={<Products />} />
-                <Route path="products/create" element={<CreateProducts />} />
-                <Route path="products/update/:id" element={<EditProducts />} />
-
-                <Route path="users" element={<Users />} />
-                <Route path="users/createUser" element={<CreateUser />} /> 
-                <Route path="users/:id" element={<UserDetail />} />        
-                <Route path="users/:id/edit" element={<EditUser />} />
-                {/* Compras */}
-                <Route path="shopping" element={<Shopping />} />
-                <Route path="shopping/create" element={<CreateShopping />} />
-
-                <Route path="shopping/details/:id" element={<ShoppingDetails />} />
-
-
-                <Route path="providers" element={<Providers/>}/>
-                <Route path="providers/create" element={<CreateProvider/>} />
-                <Route path="providers/update" element={<UpdateProvider/>} />
-
-
-                <Route path="orders" element={<Orders/>}/>
 
 
             </Route>
-
 
             {/* AYUDAS PARA LAS RUTAS PRIVADAS, ESTO ES UN EJEMPLO, NO BORRAR */}
 
