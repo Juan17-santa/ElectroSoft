@@ -2,6 +2,9 @@ import { User, FileText, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ServiceProductCategory } from "./services/ServicesProductCategory";
+import { Validations } from "../../../../utils/validations";
+import Alert from "../../components/ui/alert";
+import PrimaryButton from "../../components/ui/PrimaryButton";
 
 export default function UpdateProductCategory() {
     const navigate = useNavigate();
@@ -13,6 +16,12 @@ export default function UpdateProductCategory() {
         estado: true
     });
 
+    const [errors, setErrors] = useState({
+        nombre: ""
+    });
+
+    const [alert, setAlert] = useState(null);
+
     useEffect(() => {
         const data = localStorage.getItem("categoryToEdit");
 
@@ -22,31 +31,71 @@ export default function UpdateProductCategory() {
     }, []);
 
     const handleChange = (e) => {
-        const { name, value } = e.target
+        const { name, value } = e.target;
+
         setFormData((prev) => ({
             ...prev,
             [name]: value
-        }))
-    }
+        }));
+
+        // Validación en tiempo real
+        if (name === "nombre") {
+            if (!value.trim()) {
+                setErrors(prev => ({
+                    ...prev,
+                    nombre: "El nombre es obligatorio"
+                }));
+            } else if (!Validations.soloLetras(value)) {
+                setErrors(prev => ({
+                    ...prev,
+                    nombre: "El nombre no puede contener números"
+                }));
+            } else if (value.trim().length < 5) {
+                setErrors(prev => ({
+                    ...prev,
+                    nombre: "El nombre debe tener mínimo 5 caracteres"
+                }));
+            } else {
+                setErrors(prev => ({
+                    ...prev,
+                    nombre: ""
+                }));
+            }
+        }
+    };
 
     const handleForm = (e) => {
         e.preventDefault();
 
         try {
 
-            if (formData.nombre.length < 5) {
-                alert("El nombre debe tener mínimo 5 caracteres");
+            if (!Validations.soloLetras(formData.nombre)) {
+                setAlert({
+                    type: "error",
+                    message: "El nombre no puede contener números"
+                });
+                return;
+            }
+
+            if (formData.nombre.trim().length < 5) {
+                setAlert({
+                    type: "error",
+                    message: "El nombre debe tener mínimo 5 caracteres"
+                });
                 return;
             }
 
             ServiceProductCategory.update(formData);
 
-            alert("Categoría actualizada correctamente!");
+            setAlert({
+                type: "success",
+                message: "Categoría actualizada correctamente"
+            });
 
-            // LIMPIEZA: Borramos el rastro del localStorage
-            localStorage.removeItem("categoryToEdit");
-
-            navigate("/dashboard/product-category");
+            setTimeout(() => {
+                localStorage.removeItem("categoryToEdit"); // limpiamos localstorage
+                navigate("/dashboard/product-category");
+            }, 3000);
 
         } catch (error) {
             console.error(error);
@@ -74,10 +123,9 @@ export default function UpdateProductCategory() {
 
                 {/* FORMULARIO */}
                 <form onSubmit={handleForm}>
-                    <div className="flex flex-wrap gap-10 mt-6 justify-around mx-28">
-
+                    <div className="flex flex-col items-center gap-10 mt-6">
                         {/* NOMBRE */}
-                        <div className="flex flex-col gap-3 w-80">
+                        <div className="flex flex-col gap-3 w-lg">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <User size={16} />
                                 <span>Nombre *</span>
@@ -89,12 +137,20 @@ export default function UpdateProductCategory() {
                                 onChange={handleChange}
                                 required
                                 placeholder="Ingrese el nombre de la categoria"
-                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 
+                                    ${errors.nombre ? "focus:ring-red-500"
+                                        : "focus:ring-yellow-400"
+                                    }`}
                             />
+                            {errors.nombre && (
+                                <p className="text-red-500 text-xs mt-1">
+                                    {errors.nombre}
+                                </p>
+                            )}
                         </div>
 
                         {/* DESCRIPCION */}
-                        <div className="flex flex-col gap-3 w-80">
+                        <div className="flex flex-col gap-3 w-lg">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <FileText size={16} />
                                 <span>Descripción</span>
@@ -109,18 +165,33 @@ export default function UpdateProductCategory() {
                             />
                         </div>
 
-                        {/* BOTON */}
-                        <div className="flex justify-end mt-6 w-full">
+                        {/* BOTONES */}
+                        <div className="flex justify-end mt-6 w-full gap-4">
                             <button
+                                type="button"
+                                onClick={() => navigate("/dashboard/product-category")}
+                                className="px-5 py-2  text-sm rounded-lg shadow-md font-medium transition flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 hover:shadow-lg duration-300 cursor-pointer"
+                            >
+                                <X size={16} />
+                                Cancelar
+                            </button>
+                            <PrimaryButton
                                 type="submit"
-                                className="items-center bg-linear-to-r from-white to-yellow-300 text-sm px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium"
+                                disabled={!!errors.nombre}
                             >
                                 Editar Categoria
-                            </button>
+                            </PrimaryButton>
                         </div>
                     </div>
-                </form>
-            </div>
+                </form >
+            </div >
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
         </>
     );
 }
