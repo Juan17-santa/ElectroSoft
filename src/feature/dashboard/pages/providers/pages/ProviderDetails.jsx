@@ -1,24 +1,27 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Info, X } from "lucide-react";
-import { ServiceProductCategory } from "../productCategory/services/ServicesProductCategory";
+import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
+import { useLocation } from "react-router-dom";
+
+
 
 export default function ProviderDetails() {
     const navigate = useNavigate();
     const [provider, setProvider] = useState(null);
     const [categories, setCategories] = useState([]);
 
-    useEffect(() => {
-        const storedProvider = localStorage.getItem("providerToView");
+    const location = useLocation();
+    const providerDetail = location.state?.provider;
 
-        if (storedProvider) {
-            setProvider(JSON.parse(storedProvider));
+    useEffect(() => {
+        if (providerDetail) {
+            setProvider(providerDetail);
         }
 
         const allCategories = ServiceProductCategory.get();
         setCategories(allCategories);
-
-    }, []);
+    }, [providerDetail]);
 
     if (!provider) {
         return (
@@ -30,11 +33,7 @@ export default function ProviderDetails() {
         );
     }
 
-    console.log("Categories:", categories);
-    console.log("Provider categorias:", provider.categoriasAsociadas);
-
     const handleBack = () => {
-        localStorage.removeItem("providerToView"); // Limpiamos el rastrooo
         navigate("/dashboard/providers"); // Volvemos a la lista
     };
 
