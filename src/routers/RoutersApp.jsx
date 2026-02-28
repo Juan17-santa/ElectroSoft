@@ -31,15 +31,15 @@ import EditUser from "../feature/dashboard/pages/users/EditUser";
 import Shopping from "../feature/dashboard/pages/shopping/shopping";
 import CreateShopping from "../feature/dashboard/pages/shopping/CreateShopping";
 import ShoppingDetails from "../feature/dashboard/pages/shopping/ShoppingDetails";
-import Providers from "../feature/dashboard/pages/providers/Providers";
-import CreateProvider from "../feature/dashboard/pages/providers/CreateProvider";
-import UpdateProvider from "../feature/dashboard/pages/providers/UpdateProvider";
+import Providers from "../feature/dashboard/pages/providers/pages/Providers";
+import CreateProvider from "../feature/dashboard/pages/providers/pages/CreateProvider";
+import UpdateProvider from "../feature/dashboard/pages/providers/pages/UpdateProvider";
 import Orders from "../feature/dashboard/pages/orders/Orders";
 import Products from "../feature/dashboard/pages/products/Products";
 import CreateProducts from "../feature/dashboard/pages/products/CreateProducts";
 import EditProducts from "../feature/dashboard/pages/products/EditProducts";
 import ProductCategoryDetails from "../feature/dashboard/pages/productCategory/ProductCategoryDetails";
-import ProviderDetails from "../feature/dashboard/pages/providers/ProviderDetails";
+import ProviderDetails from "../feature/dashboard/pages/providers/pages/ProviderDetails";
 
 export default function RoutersApp() {
     return (
