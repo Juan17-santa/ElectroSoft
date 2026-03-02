@@ -84,8 +84,8 @@ export const Sidebar = () => {
                             ${openCompras ? "max-h-60 opacity-100" : "max-h-0 opacity-0"}
                         `}>
                             <NavLink
-                                to="/dashboard/product-category"
-                                className={activeSubLink("/dashboard/product-category")}
+                                to="/dashboard/productCategory"
+                                className={activeSubLink("/dashboard/productCategory")}
                             >
                                 Categoria de productos
                             </NavLink>

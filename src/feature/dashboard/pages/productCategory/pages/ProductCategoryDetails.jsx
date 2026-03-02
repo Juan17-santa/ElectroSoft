@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Info, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 export default function ProductCategoryDetails() {
+    // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
+
+    // ESTADO PARA LA CATEGORIA A MOSTRAR
     const [categoria, setCategoria] = useState(null);
 
-    useEffect(() => {
-        const stored = localStorage.getItem("categoryToView");
+    // ESTADO PARA RECIBIR LA CATEGORIA A MOSTRAR DESDE EL INDEX
+    const location = useLocation();
+    const categoryDetail = location.state?.category;
 
-        if (stored) {
-            setCategoria(JSON.parse(stored));
+    useEffect(() => {
+        if (categoryDetail) {
+            setCategoria(categoryDetail);
         }
-    }, []);
+    }, [categoryDetail]);
 
     if (!categoria) {
         return (
@@ -25,15 +31,14 @@ export default function ProductCategoryDetails() {
     }
 
     const handleBack = () => {
-        localStorage.removeItem("categoryToView"); // 🔥 limpiamos
-        navigate("/dashboard/product-category");
+        navigate("/dashboard/productCategory");
     };
 
     return (
         <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner">
 
             <div
-                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-125"
+                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-100"
                 style={{
                     backgroundImage: 'url("/background-shopping-details.png")',
                     backgroundSize: "cover",
@@ -52,9 +57,23 @@ export default function ProductCategoryDetails() {
                         </h2>
                     </div>
 
-                    <div className="bg-gray-50 rounded-2xl p-6 shadow-md">
+                    <div className="bg-gray-50 rounded-2xl p-6 shadow-md max-w-2xl w-full mx-auto">
 
                         <div className="flex flex-col gap-6">
+
+                            <div className="flex justify-between">
+                                <h3 className="text-sm font-bold uppercase text-gray-500 py-2">
+                                    Información General
+                                </h3>
+                                <div className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                    ${categoria.estado
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-red-100 text-red-700"
+                                    }`}
+                                >
+                                    {categoria.estado ? "Activo" : "Inactivo"}
+                                </div>
+                            </div>
 
                             <div>
                                 <p className="text-sm text-yellow-400 mb-1">Nombre</p>
@@ -70,20 +89,6 @@ export default function ProductCategoryDetails() {
                                 </p>
                             </div>
 
-                            <div>
-                                <p className="text-sm text-yellow-400 mb-1">Estado</p>
-                                <span
-                                    className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${categoria.estado === true
-                                        ? "bg-green-500"
-                                        : "bg-red-500"
-                                        }`}
-                                >
-                                </span>
-                                <span className="text-sm font-semibold text-gray-800">
-                                    {categoria.estado ? "Activo" : "Inactivo"}
-                                </span>
-                            </div>
-
                         </div>
 
                     </div>
@@ -95,7 +100,7 @@ export default function ProductCategoryDetails() {
                     onClick={handleBack}
                     className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                 >
-                    <X size={18} className="inline-block mr-2"/>
+                    <X size={18} className="inline-block mr-2" />
                     Volver
                 </button>
             </div>
