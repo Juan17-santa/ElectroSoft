@@ -1,4 +1,4 @@
-import { Trash, Pencil, Plus, Search, Eye } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ServicesProviders } from "../services/ServicesProviders";
@@ -8,7 +8,7 @@ import PrimaryButton from "../../../components/ui/PrimaryButton";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert from "../../../components/ui/alert";
 import ProvidersTable from "../components/ProvidersTable";
-import { useProvidersTable } from "../hooks/useProvidersTable";
+import useProvidersTable from "../hooks/useProvidersTable";
 
 export default function Providers() {
     // ESTADO PARA NAVEGAR
@@ -35,7 +35,7 @@ export default function Providers() {
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
-    // FILTRAR LOS PROVEEDORES POR NOMBRE
+    // FILTRAR LOS PROVEEDORES
     const filteredProviders = providers.filter(pro => {
         const query = search.toLowerCase();
         const telefono = pro.telefonoContacto ? String(pro.telefonoContacto) : "";
@@ -88,7 +88,7 @@ export default function Providers() {
         });
     };
 
-    // USAMOS EL HOOK PERSONALIZADO PARA OBTENER LAS FUNCIONES DE ELIMINAR Y TOGGLE ESTADO
+    // USAMOS EL HOOK PARA OBTENER LAS FUNCIONES DE ELIMINAR Y TOGGLE ESTADO
     const { deleteProvider, toggleEstado } =
         useProvidersTable({
             setProviders,

@@ -1,7 +1,6 @@
 /*
-============================================================
-ProviderForm.jsx
-------------------------------------------------------------
+ProviderForm
+
 Componente reutilizable que renderiza el formulario
 para crear o actualizar un proveedor.
 
@@ -17,11 +16,11 @@ Responsabilidades:
 ✔ Renderizar botones de acción
 
 No contiene lógica de negocio.
-============================================================
 */
 
 import PrimaryButton from "../../../components/ui/PrimaryButton"; // Botón principal reutilizable
 import { IdCard, FileText, User, ChevronDown, X } from "lucide-react"; // Iconos
+import { useState, useRef, useEffect } from "react";
 
 export default function ProviderForm({
     formData,              // Datos actuales del formulario
@@ -35,6 +34,22 @@ export default function ProviderForm({
     buttonText,            // Texto dinámico del botón (Crear / Actualizar)
     onCancel               // Función para cancelar
 }) {
+
+    const dropdownRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
 
     return (
         // Formulario principal
@@ -129,51 +144,53 @@ export default function ProviderForm({
                     </div>
 
                     {/* ================= CATEGORÍAS ASOCIADAS ================= */}
-                    <div className="flex flex-col gap-3 w-80 relative">
+                    <div ref={dropdownRef} className="relative">
+                        <div className="flex flex-col gap-3 w-80 relative">
 
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <User size={16} />
-                            <span>Categorías Asociadas</span>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setOpen(!open)}
-                            className="w-full bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md flex justify-between items-center"
-                        >
-                            <span>
-                                {formData.categoriasAsociadas.length > 0
-                                    ? `${formData.categoriasAsociadas.length} seleccionada(s)`
-                                    : "Seleccionar categorías"}
-                            </span>
-
-                            <ChevronDown
-                                size={18}
-                                className={`transition-transform ${open ? "rotate-180" : ""}`}
-                            />
-                        </button>
-
-                        {/* Dropdown de categorías */}
-                        {open && (
-                            <div className="absolute top-full mt-2 w-full bg-white shadow-lg rounded-xl p-3 max-h-48 overflow-y-auto z-20">
-
-                                {/* Mapear todas las categorías */}
-                                {categorias.map(cat => (
-                                    <label
-                                        key={cat.id}
-                                        className="flex items-center gap-2 py-1 cursor-pointer"
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.categoriasAsociadas.includes(cat.id)}
-                                            onChange={() => handleToggleCategoria(cat.id)}
-                                            className="accent-yellow-400"
-                                        />
-                                        {cat.nombre}
-                                    </label>
-                                ))}
+                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                                <User size={16} />
+                                <span>Categorías Asociadas</span>
                             </div>
-                        )}
+
+                            <button
+                                type="button"
+                                onClick={() => setOpen(!open)}
+                                className="w-full bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md flex justify-between items-center"
+                            >
+                                <span>
+                                    {formData.categoriasAsociadas.length > 0
+                                        ? `${formData.categoriasAsociadas.length} seleccionada(s)`
+                                        : "Seleccionar categorías"}
+                                </span>
+
+                                <ChevronDown
+                                    size={18}
+                                    className={`transition-transform ${open ? "rotate-180" : ""}`}
+                                />
+                            </button>
+
+                            {/* Dropdown de categorías */}
+                            {open && (
+                                <div className="absolute top-full mt-2 w-full bg-white shadow-lg rounded-xl p-3 max-h-48 overflow-y-auto z-20">
+
+                                    {/* Mapear todas las categorías */}
+                                    {categorias.map(cat => (
+                                        <label
+                                            key={cat.id}
+                                            className="flex items-center gap-2 py-1 cursor-pointer"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.categoriasAsociadas.includes(cat.id)}
+                                                onChange={() => handleToggleCategoria(cat.id)}
+                                                className="accent-yellow-400"
+                                            />
+                                            {cat.nombre}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

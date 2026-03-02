@@ -4,13 +4,17 @@ import { Info, X } from "lucide-react";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 import { useLocation } from "react-router-dom";
 
-
-
 export default function ProviderDetails() {
+    // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
+
+    // ESTADO PARA EL PROVEEDOR A MOSTRAR
     const [provider, setProvider] = useState(null);
+
+    // ESTADO PARA OBTENER LAS CATEGORIAS Y MOSTRAR LOS NOMBRES EN LUGAR DE LOS IDS
     const [categories, setCategories] = useState([]);
 
+    // ESTADO PARA RECIBIR EL PROVEEDOR A MOSTRAR DESDE EL INDEX
     const location = useLocation();
     const providerDetail = location.state?.provider;
 
@@ -34,7 +38,7 @@ export default function ProviderDetails() {
     }
 
     const handleBack = () => {
-        navigate("/dashboard/providers"); // Volvemos a la lista
+        navigate("/dashboard/providers");
     };
 
     return (

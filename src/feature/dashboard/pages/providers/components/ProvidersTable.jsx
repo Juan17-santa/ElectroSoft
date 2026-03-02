@@ -1,5 +1,29 @@
+/*
+ProviderTable
+
+Componente reutilizable que renderiza la tabla
+de proveedores dentro del dashboard.
+
+Este componente SOLO maneja la parte visual (UI).
+La lógica (obtención de datos, paginación, filtros,
+eliminación, navegación, etc.) se recibe desde
+el componente padre mediante props.
+
+Responsabilidades:
+✔ Renderizar encabezados de la tabla
+✔ Mostrar listado de proveedores
+✔ Renderizar mensaje cuando no existen registros en data
+✔ Ejecutar acciones enviadas por props (editar, eliminar)
+✔ Renderizar botones de acción
+
+No contiene lógica de negocio.
+No realiza llamadas a servicios.
+No maneja estado global.
+*/
+
 import { Trash, Pencil, Eye } from "lucide-react";
 
+// Componente para mostrar la tabla de proveedores
 export default function ProvidersTable({
     data,
     categorias,
@@ -92,7 +116,7 @@ export default function ProvidersTable({
                                                 <Pencil size={18} className="text-yellow-600" />
                                             </button>
 
-                                            {/* TOGGLE ESTADO */}
+                                            {/* SWITCH CAMBIAR ESTADO */}
                                             <div className="flex justify-center items-center gap-2">
                                                 <div
                                                     onClick={() => onToggleEstado(provider.id)}
