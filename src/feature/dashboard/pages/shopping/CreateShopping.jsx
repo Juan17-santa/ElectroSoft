@@ -1,46 +1,228 @@
-import { Plus, Trash, Truck, CalendarDays, ScanBarcode, Boxes } from "lucide-react";
-import { useState } from "react";
+import { Plus, Trash, Truck, CalendarDays, ScanBarcode, Boxes, ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
 import { formatCOP, IVA_RATE, getNextNumeroFactura } from "../shopping/helpers/shoppingHelpers";
 import AddProductModal from "../shopping/components/AddProductModal";
+import Pagination from '../../components/ui/Pagination';
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import { ServicesProviders } from "../providers/services/ServicesProviders";
+import Alert from "../../components/ui/Alert";
+import Calendar, { formatearFecha } from "../../components/ui/Calendar";
+import PrimaryButton from "../../components/ui/PrimaryButton";
+const ITEMS_PER_PAGE = 4;
 
-const ITEMS_PER_PAGE = 3;
+const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const DIAS_SEMANA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
+// ─── Validaciones ─────────────────────────────────────────────────────────────
+function validarProveedor(valor) {
+    if (!valor || valor === "") return { valido: false, mensaje: "Debes seleccionar un proveedor." };
+    return { valido: true, mensaje: "" };
+}
+
+function validarFecha(fecha) {
+    if (!fecha) return { valido: false, mensaje: "Debes seleccionar una fecha." };
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const sel = new Date(fecha);
+    sel.setHours(0, 0, 0, 0);
+    if (sel > hoy) return { valido: false, mensaje: "La fecha no puede ser futura." };
+    return { valido: true, mensaje: "" };
+}
+
+// ─── Mini-componente: Indicador de validación ─────────────────────────────────
+function FieldStatus({ estado }) {
+    if (estado === null) return null;
+    return (
+        <div
+            className={`flex items-center gap-1 text-xs mt-1 transition-all duration-300 ${estado.valido ? "text-green-500 opacity-100" : "text-red-500 opacity-100"
+                }`}
+            style={{ minHeight: "16px" }}
+        >
+            {estado.valido
+                ? <><CheckCircle2 size={12} /> <span>Listo</span></>
+                : <><AlertCircle size={12} /> <span>{estado.mensaje}</span></>
+            }
+        </div>
+    );
+}
+
+// ─── Calendario personalizado ─────────────────────────────────────────────────
+function Calendario({ fechaSeleccionada, onSeleccionar, onCerrar }) {
+    const hoy = new Date();
+    const [viewYear, setViewYear] = useState(fechaSeleccionada ? new Date(fechaSeleccionada + "T00:00:00").getFullYear() : hoy.getFullYear());
+    const [viewMonth, setViewMonth] = useState(fechaSeleccionada ? new Date(fechaSeleccionada + "T00:00:00").getMonth() : hoy.getMonth());
+    const [animDir, setAnimDir] = useState(null); // "left" | "right"
+    const [animKey, setAnimKey] = useState(0);
+
+
+    const navMes = (dir) => {
+        setAnimDir(dir === 1 ? "right" : "left");
+        setAnimKey(k => k + 1);
+        let m = viewMonth + dir;
+        let y = viewYear;
+        if (m > 11) { m = 0; y++; }
+        if (m < 0) { m = 11; y--; }
+        setViewMonth(m);
+        setViewYear(y);
+    };
+
+    const primerDia = new Date(viewYear, viewMonth, 1).getDay();
+    const diasEnMes = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const celdas = Array(primerDia).fill(null).concat(Array.from({ length: diasEnMes }, (_, i) => i + 1));
+
+    const esFuturo = (dia) => {
+        const fecha = new Date(viewYear, viewMonth, dia);
+        fecha.setHours(0, 0, 0, 0);
+        const h = new Date(); h.setHours(0, 0, 0, 0);
+        return fecha > h;
+    };
+
+    const esHoy = (dia) => {
+        return dia === hoy.getDate() && viewMonth === hoy.getMonth() && viewYear === hoy.getFullYear();
+    };
+
+    const esSeleccionado = (dia) => {
+        if (!fechaSeleccionada) return false;
+        const s = new Date(fechaSeleccionada + "T00:00:00");
+        return dia === s.getDate() && viewMonth === s.getMonth() && viewYear === s.getFullYear();
+    };
+
+    const handleDia = (dia) => {
+        if (esFuturo(dia)) return;
+        const mes = String(viewMonth + 1).padStart(2, "0");
+        const d = String(dia).padStart(2, "0");
+        onSeleccionar(`${viewYear}-${mes}-${d}`);
+        onCerrar();
+    };
+
+    return (
+        <div
+            className="absolute z-50 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 p-4 w-72"
+            style={{ animation: "fadeSlideDown 0.25s cubic-bezier(.4,0,.2,1)" }}
+        >
+            {/* Cabecera */}
+            <div className="flex items-center justify-between mb-3">
+                <button
+                    onClick={() => navMes(-1)}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 transition duration-300 cursor-pointer"
+                >
+                    <ChevronLeft size={18} className="text-gray-500" />
+                </button>
+                <span className="text-sm font-semibold text-gray-700 select-none">
+                    {MESES[viewMonth]} {viewYear}
+                </span>
+                <button
+                    onClick={() => navMes(1)}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 transition duration-300 cursor-pointer"
+                >
+                    <ChevronRight size={18} className="text-gray-500" />
+                </button>
+            </div>
+
+            {/* Días de semana */}
+            <div className="grid grid-cols-7 mb-1">
+                {DIAS_SEMANA.map(d => (
+                    <div key={d} className="text-center text-xs text-gray-400 font-medium py-1 select-none">{d}</div>
+                ))}
+            </div>
+
+            {/* Celdas del mes */}
+            <div
+                key={animKey}
+                className="grid grid-cols-7 gap-y-0.5"
+                style={{ animation: `slideIn${animDir === "right" ? "Right" : animDir === "left" ? "Left" : "Right"} 0.22s cubic-bezier(.4,0,.2,1)` }}
+            >
+                {celdas.map((dia, i) => {
+                    if (!dia) return <div key={`empty-${i}`} />;
+                    const futuro = esFuturo(dia);
+                    const hoyFlag = esHoy(dia);
+                    const sel = esSeleccionado(dia);
+                    return (
+                        <button
+                            key={dia}
+                            onClick={() => handleDia(dia)}
+                            disabled={futuro}
+                            className={`
+                                w-8 h-8 mx-auto flex items-center justify-center rounded-full text-xs font-medium
+                                transition-all duration-200 cursor-pointer
+                                ${sel ? "bg-yellow-400 text-black shadow-md scale-110" : ""}
+                                ${!sel && hoyFlag ? "border border-yellow-400 text-yellow-600" : ""}
+                                ${!sel && !hoyFlag && !futuro ? "hover:bg-yellow-100 hover:scale-105 text-gray-700" : ""}
+                                ${futuro ? "text-gray-300 cursor-not-allowed" : ""}
+                            `}
+                        >
+                            {dia}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Pie: ir a hoy */}
+            <div className="mt-3 pt-2 border-t border-gray-100 flex justify-center">
+                <button
+                    onClick={() => {
+                        const h = new Date();
+                        const mes = String(h.getMonth() + 1).padStart(2, "0");
+                        const d = String(h.getDate()).padStart(2, "0");
+                        onSeleccionar(`${h.getFullYear()}-${mes}-${d}`);
+                        onCerrar();
+                    }}
+                    className="text-xs text-yellow-600 hover:text-yellow-700 font-medium transition duration-300 cursor-pointer"
+                >
+                    Hoy
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
 export default function CreateShopping() {
     const navigate = useNavigate();
-
-    // ─── Hook — solo necesitamos guardarCompra ─────────────────────────────────
     const { guardarCompra } = useShopping();
 
     const [showModal, setShowModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+    const [proveedoresList, setProveedoresList] = useState([]);
+    const [confirmData, setConfirmData] = useState(null);
+    const [alert, setAlert] = useState(null);
 
     // Formulario superior
-    const [proveedor, setProveedor] = useState("Suministros ABC");
-    const [fechaFactura, setFechaFactura] = useState("");
+    const [proveedor, setProveedor] = useState("");
+    const [fechaISO, setFechaISO] = useState("");          // YYYY-MM-DD (interno)
+    const [proveedorTocado, setProveedorTocado] = useState(false);
+    const [fechaTocada, setFechaTocada] = useState(false);
     const [numeroFactura] = useState(() => getNextNumeroFactura());
 
     // Productos en tabla
     const [productos, setProductos] = useState([]);
 
-    // ─── Cálculos ──────────────────────────────────────────────────────────────
-    const subtotalSinIVA = productos.reduce((acc, p) => acc + p.subtotal, 0);
+    useEffect(() => {
+        const data = ServicesProviders.get();
+        setProveedoresList(data);
+    }, []);
 
+    // ─── Validaciones en tiempo real ──────────────────────────────────────────
+    const estadoProveedor = proveedorTocado ? validarProveedor(proveedor) : null;
+    const estadoFecha = fechaTocada ? validarFecha(fechaISO) : null;
+
+    // ─── Cálculos ─────────────────────────────────────────────────────────────
+    const subtotalSinIVA = productos.reduce((acc, p) => acc + p.subtotal, 0);
     const iva = subtotalSinIVA * IVA_RATE;
     const total = subtotalSinIVA + iva;
     const totalVenta = productos.reduce((acc, p) => acc + p.cantidad * p.precioVenta, 0);
 
-    // ─── Paginación ────────────────────────────────────────────────────────────
+    // ─── Paginación ───────────────────────────────────────────────────────────
     const totalPages = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
-
     const productosPagina = productos.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
         paginaActual * ITEMS_PER_PAGE
     );
 
-    // ─── Añadir producto (viene del modal via prop onAnadir) ───────────────────
+    // ─── Handlers ─────────────────────────────────────────────────────────────
     const handleAnadirProducto = (nuevoProducto) => {
         const updated = [...productos, nuevoProducto];
         setProductos(updated);
@@ -48,7 +230,6 @@ export default function CreateShopping() {
         setShowModal(false);
     };
 
-    // ─── Eliminar producto ─────────────────────────────────────────────────────
     const handleEliminar = (id) => {
         const updated = productos.filter((p) => p.id !== id);
         setProductos(updated);
@@ -56,33 +237,35 @@ export default function CreateShopping() {
         if (paginaActual > newTotal) setCurrentPage(newTotal);
     };
 
-    // ─── Crear compra ──────────────────────────────────────────────────────────
     const handleCrearCompra = () => {
-        if (!fechaFactura.trim()) {
-            alert("Por favor ingresa la fecha de la factura.");
-            return;
-        }
+        setProveedorTocado(true);
+        setFechaTocada(true);
+        setConfirmData(null); // cierra el modal de confirmación
+
+        const vProv = validarProveedor(proveedor);
+        const vFech = validarFecha(fechaISO);
+
+        if (!vProv.valido || !fechaISO || !vFech.valido) return;
+
         if (productos.length === 0) {
-            alert("Debes añadir al menos un producto a la compra.");
+            setAlert({ type: "error", message: "Debes añadir al menos un producto a la compra." });
             return;
         }
 
-        // Los productos se guardan SIN precioVenta (solo visual)
         const productosParaGuardar = productos.map(({ id, nombre, cantidad, precio, subtotal }) => ({
             id, nombre, cantidad, precio, subtotal,
         }));
 
-        // ✅ En lugar de escribir directo a localStorage, se llama al hook
         guardarCompra({
             numeroFactura,
-            fechaFactura,
+            fechaFactura: formatearFecha(fechaISO),
             proveedor,
             total,
             productos: productosParaGuardar,
         });
 
-        alert("Se ha creado la compra exitosamente.");
-        navigate("/dashboard/shopping");
+        setAlert({ type: "success", message: "La compra fue registrada correctamente." });
+        setTimeout(() => navigate("/dashboard/shopping"), 1500);
     };
 
     return (
@@ -96,10 +279,10 @@ export default function CreateShopping() {
                 </p>
 
                 {/* LÍNEA DIVISORA */}
-                <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent"></div>
+                <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-transparent"></div>
 
                 {/* CAMPOS SUPERIORES */}
-                <div className="flex flex-wrap gap-6 items-end">
+                <div className="flex flex-wrap gap-6 items-start">
 
                     {/* PROVEEDOR */}
                     <div className="flex flex-col gap-2">
@@ -108,17 +291,32 @@ export default function CreateShopping() {
                             <span>Proveedor *</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <select
-                                value={proveedor}
-                                onChange={(e) => setProveedor(e.target.value)}
-                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 w-52 cursor-pointer transition-shadow duration-300"
-                            >
-                                <option>Suministros ABC</option>
-                                <option>Distribuidora PDA</option>
-                            </select>
+                            <div className="flex flex-col">
+                                <select
+                                    value={proveedor}
+                                    onChange={(e) => {
+                                        setProveedor(e.target.value);
+                                        setProveedorTocado(true);
+                                    }}
+                                    onBlur={() => setProveedorTocado(true)}
+                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-52 cursor-pointer transition-all duration-300
+                                        ${estadoProveedor === null
+                                            ? "focus:ring-gray-400 text-gray-500"
+                                            : estadoProveedor.valido
+                                                ? "focus:ring-green-400 ring-1 ring-green-300 text-gray-700"
+                                                : "focus:ring-red-400 ring-1 ring-red-300 text-gray-500"
+                                        }`}
+                                >
+                                    <option value="">— No seleccionado —</option>
+                                    {proveedoresList.map((p) => (
+                                        <option key={p.id} value={p.nombreProveedor}>{p.nombreProveedor}</option>
+                                    ))}
+                                </select>
+                                <FieldStatus estado={estadoProveedor} />
+                            </div>
                             <button
                                 onClick={() => navigate("/dashboard/provider/create")}
-                                className="bg-yellow-400 hover:bg-yellow-500 transition duration-300 p-3 rounded-xl shadow-md cursor-pointer"
+                                className="bg-yellow-400 hover:bg-yellow-500 transition duration-300 p-3 rounded-xl shadow-md cursor-pointer self-start"
                             >
                                 <Plus size={18} className="text-white" />
                             </button>
@@ -127,17 +325,16 @@ export default function CreateShopping() {
 
                     {/* FECHA FACTURA */}
                     <div className="flex flex-col gap-2">
-                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                            <CalendarDays size={20} />
-                            <span>Fecha Factura *</span>
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Ejemplo: Día/Mes/Año"
-                            value={fechaFactura}
-                            onChange={(e) => setFechaFactura(e.target.value)}
-                            className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-gray-400 w-52 transition-shadow duration-300"
+                        <Calendar
+                            fechaISO={fechaISO}
+                            onFechaChange={(iso) => {
+                                setFechaISO(iso);
+                                setFechaTocada(true);
+                            }}
+                            label="Fecha Factura"
+                            required={true}
                         />
+                        <FieldStatus estado={estadoFecha} />
                     </div>
 
                     {/* NÚMERO FACTURA — solo lectura */}
@@ -218,7 +415,15 @@ export default function CreateShopping() {
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">{formatCOP(producto.subtotal)}</td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">
                                                 <button
-                                                    onClick={() => handleEliminar(producto.id)}
+                                                    onClick={() => setConfirmData({
+                                                        type: "delete",
+                                                        title: "Eliminar producto",
+                                                        message: `¿Seguro que deseas quitar "${producto.nombre}" de la compra?`,
+                                                        onConfirm: () => {
+                                                            handleEliminar(producto.id);
+                                                            setConfirmData(null);
+                                                        }
+                                                    })}
                                                     className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition duration-300 cursor-pointer"
                                                 >
                                                     <Trash size={16} className="text-red-600" />
@@ -234,30 +439,11 @@ export default function CreateShopping() {
                     {/* PAGINADOR E IVA/TOTAL */}
                     <div className="flex items-center justify-between mt-2">
 
-                        {totalPages > 1 ? (
-                            <div className="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow">
-                                <button
-                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                    disabled={paginaActual === 1}
-                                    className="p-1.5 rounded-lg hover:bg-gray-300 transition disabled:opacity-40"
-                                >←</button>
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                    <button
-                                        key={page}
-                                        onClick={() => setCurrentPage(page)}
-
-                                        className={`px-3 py-1 rounded-md font-medium transition ${page === paginaActual ? "bg-yellow-400 text-black shadow-sm" : "hover:bg-gray-300"
-                                            }`}
-
-                                    >{page}</button>
-                                ))}
-                                <button
-                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                    disabled={paginaActual === totalPages}
-                                    className="p-1.5 rounded-lg hover:bg-gray-300 transition disabled:opacity-40"
-                                >→</button>
-                            </div>
-                        ) : <div />}
+                        <Pagination
+                            currentPage={paginaActual}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
 
                         <div className="flex items-center gap-6 text-sm font-medium text-gray-700">
                             <span>Total venta: <span className="font-semibold text-blue-500">{formatCOP(Math.round(totalVenta))}</span></span>
@@ -271,30 +457,54 @@ export default function CreateShopping() {
                 {/* BOTONES CANCELAR Y CREAR */}
                 <div className="flex justify-end gap-3 mt-2">
                     <button
-                        onClick={() => navigate("/dashboard/shopping")}
+                        onClick={() => setConfirmData({
+                            type: "warning",
+                            title: "¿Cancelar compra?",
+                            message: "Si cancelas ahora perderás los datos ingresados. ¿Estás seguro?",
+                            onConfirm: () => navigate("/dashboard/shopping")
+                        })}
                         className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition duration-300 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                     >
                         <span>✕</span>
                         Cancelar
                     </button>
-                    <button
-                        onClick={handleCrearCompra}
-                        className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
-                    >
-                        <Plus size={16} />
+                    <PrimaryButton icon={Plus} onClick={() => setConfirmData({
+                        type: "info",
+                        title: "Confirmar compra",
+                        message: `¿Deseas registrar la compra con ${productos.length} producto(s)?`,
+                        onConfirm: handleCrearCompra
+                    })}>
                         Crear Compra
-                    </button>
+                    </PrimaryButton>
                 </div>
-
-                {/* ─── MODAL — ahora es un componente separado ─────────────────────────── */}
+                {/* MODAL AÑADIR PRODUCTO */}
                 {showModal && (
                     <AddProductModal
                         onClose={() => setShowModal(false)}
                         onAnadir={handleAnadirProducto}
+                        productosYaAgregados={productos}
+                    />
+                )}
+
+                {/* MODAL CONFIRMACION */}
+                {confirmData && (
+                    <ConfirmModal
+                        type={confirmData.type}
+                        title={confirmData.title}
+                        message={confirmData.message}
+                        onConfirm={confirmData.onConfirm}
+                        onCancel={() => setConfirmData(null)}
                     />
                 )}
 
             </div>
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
         </>
     );
 }

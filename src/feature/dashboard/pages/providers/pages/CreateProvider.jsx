@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useProviderForm } from "../hooks/useProviderForm";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import Alert from "../../../components/ui/alert";
+import Alert from "../../../components/ui/Alert";
 import ProviderForm from "../components/ProvidersForm";
+
 
 export default function CreateProvider() {
     // ESTADO PARA NAVEGAR

@@ -1,7 +1,13 @@
 import { useState } from 'react';
-import { FileText, Plus, Search, Eye, Ban } from "lucide-react";
+import { Eye, Ban, ShoppingCart } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { useShopping } from "../shopping/hooks/useShopping";
+import Searchbar from "../../components/ui/Searchbar";
+import Pagination from '../../components/ui/Pagination';
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import Alert from '../../components/ui/Alert';
+import { generatePDFReport } from '../../../../utils/PDFReportGenerator';
+
 
 const ITEMS_PER_PAGE = 8;
 
@@ -9,11 +15,21 @@ export default function Shopping() {
     const navigate = useNavigate();
     const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular } = useShopping();
     const [currentPage, setCurrentPage] = useState(1);
+    // MODAL DE CONFIRMACION
+    const [confirmData, setConfirmData] = useState(null);
+
+    // ALERTAS
+    const [alert, setAlert] = useState(null);
+
+    const showAlert = (type, message) => {
+        setAlert({ type, message });
+    };
 
     // Paginación
-    const totalPages = Math.max(1, Math.ceil(comprasFiltradas.length / ITEMS_PER_PAGE));
+    const comprasOrdenadas = [...comprasFiltradas].reverse();
+    const totalPages = Math.max(1, Math.ceil(comprasOrdenadas.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
-    const comprasPagina = comprasFiltradas.slice(
+    const comprasPagina = comprasOrdenadas.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
         paginaActual * ITEMS_PER_PAGE
     );
@@ -23,8 +39,55 @@ export default function Shopping() {
         setCurrentPage(1);
     };
 
+    const parseMoney = (value) => {
+        if (!value) return 0;
+
+        if (typeof value === "number") return value;
+
+        return Number(
+            String(value)
+                .replace(/\$/g, "")
+                .replace(/\./g, "")
+                .replace(/,/g, "")
+                .trim()
+        ) || 0;
+    };
     const handleGenerarReporte = () => {
-        alert("¿Estás seguro de que quieres descargar el reporte de compras?");
+        setConfirmData({
+            type: "info",
+            title: "Generar reporte",
+            message: "¿Estás seguro de que deseas descargar el reporte de compras?",
+            onConfirm: () => {
+
+                generatePDFReport({
+                    title: "Gestión de Compras - Reporte",
+                    fileName: "reporte_compras.pdf",
+                    columns: [
+                        "ID",
+                        "Número de Factura",
+                        "Fecha",
+                        "Proveedor",
+                        "Total",
+                        "Estado"
+                    ],
+                    data: comprasFiltradas.map((compra, index) => {
+                        const totalNumerico = parseMoney(compra.total);
+
+                        return [
+                            String(index + 1).padStart(2, '0'),
+                            compra.numeroFactura,
+                            compra.fechaCompra,
+                            compra.proveedor,
+                            `$${totalNumerico.toLocaleString()}`,
+                            compra.estado
+                        ];
+                    })
+                });
+
+                showAlert("success", "Reporte generado correctamente.");
+                setConfirmData(null);
+            }
+        });
     };
 
     const getPageNumbers = () => {
@@ -37,41 +100,21 @@ export default function Shopping() {
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
                 {/* TITULO */}
-                <p className="text-xl font-semibold">Gestión de Compras</p>
+                <p className="text-xl font-semibold flex items-center gap-2">
+                    <ShoppingCart size={22} className="text-yellow-500" />
+                    Gestión de Compras
+                </p>
 
-                {/* BUSCADOR Y BOTON CREAR */}
-                <div className="flex justify-between">
-                    <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-2 w-4/5">
-                        <Search size={20} className="text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por proveedor, número de factura o fecha..."
-                            className="w-full outline-none text-md placeholder-gray-400"
-                            value={searchTerm}
-                            onChange={handleSearch}
-                        />
-                    </div>
-                    <div
-                        className="flex items-center bg-linear-to-r from-white to-yellow-300 px-4 py-2 rounded-lg font-medium cursor-pointer gap-2 hover:shadow-lg transition duration-500"
-                        onClick={() => navigate("/dashboard/shopping/create")}
-                    >
-                        <Plus />
-                        <button type="button" className="cursor-pointer">
-                            Nueva Compra
-                        </button>
-                    </div>
-                </div>
-
-                {/* BOTON GENERAR REPORTE */}
-                <div>
-                    <button
-                        onClick={handleGenerarReporte}
-                        className="flex items-center gap-2 border border-gray-300 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50 transition duration-300 shadow-sm cursor-pointer"
-                    >
-                        <FileText size={18} className="text-gray-500" />
-                        Generar reporte
-                    </button>
-                </div>
+                {/* BUSCADOR, REPORTE Y BOTON CREAR */}
+                <Searchbar
+                    searchTerm={searchTerm}
+                    onSearchChange={handleSearch}
+                    placeholder="Buscar por proveedor, número de factura, fecha o estado..."
+                    onCreateClick={() => navigate("/dashboard/shopping/create")}
+                    createButtonText="Nueva Compra"
+                    showReportButton={true}
+                    onReportClick={handleGenerarReporte}
+                />
 
                 {/* TABLA */}
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
@@ -108,10 +151,9 @@ export default function Shopping() {
                                             <td className="px-4 py-1 border-b border-gray-300">{compra.total}</td>
                                             <td className="px-4 py-1 border-b border-gray-300">
                                                 <span
-
                                                     className={`px-2 py-0.5 rounded-full text-xs font-medium ${compra.estado === "Activo"
-                                                            ? "bg-green-100 text-green-700"
-                                                            : "bg-red-100 text-red-600"
+                                                        ? "bg-green-100 text-green-700"
+                                                        : "bg-red-100 text-red-600"
                                                         }`}
                                                 >
                                                     {compra.estado}
@@ -129,12 +171,22 @@ export default function Shopping() {
 
                                                     {/* BOTON ANULAR */}
                                                     <button
-                                                        onClick={() => handleAnular(compra.id)}
+                                                        onClick={() =>
+                                                            setConfirmData({
+                                                                type: "warning",
+                                                                title: "Anular compra",
+                                                                message: `¿Estás seguro de que deseas anular la compra ${compra.numeroFactura}?`,
+                                                                onConfirm: () => {
+                                                                    handleAnular(compra.id);
+                                                                    showAlert("success", "La compra fue anulada correctamente.");
+                                                                    setConfirmData(null);
+                                                                }
+                                                            })
+                                                        }
                                                         disabled={compra.estado === "Anulada"}
-
                                                         className={`p-2 rounded-lg transition duration-300 cursor-pointer ${compra.estado === "Anulada"
-                                                                ? "bg-gray-100 cursor-not-allowed opacity-40"
-                                                                : "bg-red-100 hover:bg-red-200"
+                                                            ? "bg-gray-100 cursor-not-allowed opacity-40"
+                                                            : "bg-red-100 hover:bg-red-200"
                                                             }`}
                                                     >
                                                         <Ban size={18} className="text-red-600" />
@@ -150,43 +202,34 @@ export default function Shopping() {
                 </div>
 
                 {/* PAGINADOR */}
-                {totalPages > 1 && (
-                    <div className="flex justify-end mt-4">
-                        <div className="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow-xl">
-                            <button
-                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                disabled={paginaActual === 1}
-                                className="p-2 rounded-lg hover:bg-gray-300 transition disabled:opacity-40"
-                            >
-                                ←
-                            </button>
-
-                            {getPageNumbers().map((page) => (
-                                <button
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-
-                                    className={`px-3 py-1 rounded-md font-medium transition ${page === paginaActual
-                                            ? "bg-yellow-400 text-black shadow-sm"
-                                            : "hover:bg-gray-300"
-                                        }`}
-                                >
-                                    {page}
-                                </button>
-                            ))}
-
-                            <button
-                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                disabled={paginaActual === totalPages}
-                                className="p-2 rounded-lg hover:bg-gray-300 transition disabled:opacity-40"
-                            >
-                                →
-                            </button>
-                        </div>
-                    </div>
-                )}
+                <div className="flex justify-end mt-4">
+                    <Pagination
+                        currentPage={paginaActual}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                </div>
             </div>
+            {/* MODAL DE CONFIRMACION */}
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={() => setConfirmData(null)}
+                />
+            )}
+
+            {/* ALERTA */}
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
+
         </>
     );
 }
-

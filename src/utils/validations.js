@@ -25,4 +25,9 @@ export const Validations = {
     alfanumericoNombre: (value) => {
         return /^(?=.*[a-zA-ZáéíóúÁÉÍÓÚñÑ])[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,&-]+$/.test(value);
     },
+    
+    // Valida que un campo no esté vacío
+    campoRequerido: (value) => {
+        return value !== null && value !== undefined && String(value).trim() !== "";
+    },
 };

@@ -2,8 +2,9 @@ import { Info } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatCOP} from "../shopping/helpers/shoppingHelpers";
+import Pagination from '../../components/ui/Pagination';
 
-const ITEMS_PER_PAGE = 3;
+const ITEMS_PER_PAGE = 8;
 
 export default function ShoppingDetails() {
     const navigate = useNavigate();
@@ -70,6 +71,45 @@ export default function ShoppingDetails() {
                         {/* CONTENEDOR BLANCO */}
                         <div className="bg-gray-50 rounded-2xl p-6 shadow-md">
 
+                            {/* INFORMACIÓN DE LA COMPRA — 6 datos en una fila */}
+                            <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Fecha Factura</p>
+                                    <p className="text-sm font-semibold text-gray-800">{compra.fechaCompra}</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Número de Factura</p>
+                                    <p className="text-sm font-semibold text-gray-800">{compra.numeroFactura}</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Proveedor</p>
+                                    <p className="text-sm font-semibold text-gray-800">{compra.proveedor}</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Estado</p>
+                                    <span className={`inline-block px-2 py-0.5 rounded-full text-sm font-medium ${compra.estado === "Activo"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-red-100 text-red-600"
+                                        }`}>
+                                        {compra.estado}
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">IVA (19%)</p>
+                                    <p className="text-sm font-semibold text-gray-800">{compra.iva ?? "—"}</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Total a pagar</p>
+                                    <p className="text-sm font-bold text-gray-800">{compra.total}</p>
+                                </div>
+
+                            </div>
                             {/* TABLA */}
                             <div>
                                 <h3 className="text-base font-semibold mb-4 text-gray-800">
@@ -120,81 +160,13 @@ export default function ShoppingDetails() {
                                 {/* PAGINADOR — solo si hay más de 3 productos */}
                                 {totalPages > 1 && (
                                     <div className="flex justify-end mt-3">
-                                        <div className="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow">
-                                            <button
-                                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                                disabled={paginaActual === 1}
-                                                className="p-1.5 rounded-lg hover:bg-gray-300 transition disabled:opacity-40"
-                                            >
-                                                ←
-                                            </button>
-                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                                <button
-                                                    key={page}
-                                                    onClick={() => setCurrentPage(page)}
-                                                    className={`px-3 py-1 rounded-md font-medium transition ${
-                                                        page === paginaActual
-                                                            ? "bg-yellow-400 text-black shadow-sm"
-                                                            : "hover:bg-gray-300"
-                                                    }`}
-                                                >
-                                                    {page}
-                                                </button>
-                                            ))}
-                                            <button
-                                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                                disabled={paginaActual === totalPages}
-                                                className="p-1.5 rounded-lg hover:bg-gray-300 transition disabled:opacity-40"
-                                            >
-                                                →
-                                            </button>
-                                        </div>
+                                        <Pagination
+                                            currentPage={paginaActual}
+                                            totalPages={totalPages}
+                                            onPageChange={setCurrentPage}
+                                        />
                                     </div>
                                 )}
-                            </div>
-
-                            {/* INFORMACIÓN DE LA COMPRA */}
-                            <div className="grid grid-cols-2 gap-6 mt-6">
-
-                                {/* COLUMNA IZQUIERDA */}
-                                <div className="flex flex-col gap-4">
-                                    <div>
-                                        <p className="text-sm text-yellow-400 mb-1">Fecha Factura</p>
-                                        <p className="text-sm font-semibold text-gray-800">{compra.fechaCompra}</p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm text-yellow-400 mb-1">Proveedor</p>
-                                        <p className="text-sm font-semibold text-gray-800">{compra.proveedor}</p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm text-yellow-400 mb-1">Total a pagar</p>
-                                        <p className="text-lg font-bold text-gray-800">{compra.total}</p>
-                                    </div>
-                                </div>
-
-                                {/* COLUMNA DERECHA */}
-                                <div className="flex flex-col gap-4">
-                                    <div>
-                                        <p className="text-sm text-yellow-400 mb-1">Número de factura</p>
-                                        <p className="text-sm font-semibold text-gray-800">{compra.numeroFactura}</p>
-                                    </div>
-
-                                    <div>
-                                        <p className="text-sm text-yellow-400 mb-1">Estado</p>
-                                        <span
-                                            className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                compra.estado === "Activo"
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-red-100 text-red-600"
-                                            }`}
-                                        >
-                                            {compra.estado}
-                                        </span>
-                                    </div>
-                                </div>
-
                             </div>
 
                         </div>
