@@ -53,7 +53,7 @@ export default function ProviderForm({
 
     return (
         // Formulario principal
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1">
 
             {/* Contenedor principal del formulario */}
             <div className="flex flex-col items-center gap-12 mt-6 justify-around mx-28">
@@ -250,7 +250,7 @@ export default function ProviderForm({
             </div>
 
             {/* ================= BOTONES ================= */}
-            <div className="flex justify-end mt-10 w-full gap-4">
+            <div className="flex justify-end gap-4 mt-auto">
 
                 {/* Botón Cancelar */}
                 <button

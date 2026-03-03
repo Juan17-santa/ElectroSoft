@@ -44,11 +44,11 @@ export default function ProvidersTable({
                             <th className="px-3 py-2 font-semibold w-12">ID</th>
                             <th className="px-3 py-2 font-semibold w-28">Documento</th>
                             <th className="px-3 py-2 font-semibold w-36">Nombre proveedor</th>
-                            <th className="px-3 py-2 font-semibold w-32">Nombre contacto</th>
+                            <th className="px-3 py-2 font-semibold w-36">Nombre contacto</th>
                             <th className="px-3 py-2 font-semibold w-28">Telefono contacto</th>
                             <th className="px-3 py-2 font-semibold w-44">Categorias asociadas</th>
                             <th className="px-3 py-2 font-semibold w-28">Estado</th>
-                            <th className="px-3 py-2 font-semibold">Acciones</th>
+                            <th className="px-3 py-2 font-semibold w-48 text-center">Acciones</th>
                         </tr>
                     </thead>
 
