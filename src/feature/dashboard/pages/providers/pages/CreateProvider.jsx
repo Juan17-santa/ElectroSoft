@@ -46,7 +46,7 @@ export default function CreateProvider() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner h-full">
 
                 {/* HEADER DE LA PÁGINA */}
                 <div className="flex justify-between items-start">
