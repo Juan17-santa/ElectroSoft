@@ -2,6 +2,7 @@ import { Info } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatCOP} from "../shopping/helpers/shoppingHelpers";
+import Pagination from '../../components/ui/Pagination';
 
 const ITEMS_PER_PAGE = 3;
 
@@ -120,35 +121,11 @@ export default function ShoppingDetails() {
                                 {/* PAGINADOR — solo si hay más de 3 productos */}
                                 {totalPages > 1 && (
                                     <div className="flex justify-end mt-3">
-                                        <div className="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow">
-                                            <button
-                                                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                                                disabled={paginaActual === 1}
-                                                className="p-1.5 rounded-lg hover:bg-gray-300 transition disabled:opacity-40"
-                                            >
-                                                ←
-                                            </button>
-                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                                <button
-                                                    key={page}
-                                                    onClick={() => setCurrentPage(page)}
-                                                    className={`px-3 py-1 rounded-md font-medium transition ${
-                                                        page === paginaActual
-                                                            ? "bg-yellow-400 text-black shadow-sm"
-                                                            : "hover:bg-gray-300"
-                                                    }`}
-                                                >
-                                                    {page}
-                                                </button>
-                                            ))}
-                                            <button
-                                                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                                                disabled={paginaActual === totalPages}
-                                                className="p-1.5 rounded-lg hover:bg-gray-300 transition disabled:opacity-40"
-                                            >
-                                                →
-                                            </button>
-                                        </div>
+                                        <Pagination
+                                            currentPage={paginaActual}
+                                            totalPages={totalPages}
+                                            onPageChange={setCurrentPage}
+                                        />
                                     </div>
                                 )}
                             </div>

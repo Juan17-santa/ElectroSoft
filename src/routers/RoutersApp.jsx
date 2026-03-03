@@ -28,7 +28,7 @@ import Users from "../feature/dashboard/pages/users/Users";
 import CreateUser from "../feature/dashboard/pages/users/CreateUser";
 import UserDetail from "../feature/dashboard/pages/users/UserDetail";
 import EditUser from "../feature/dashboard/pages/users/EditUser";
-import Shopping from "../feature/dashboard/pages/shopping/shopping";
+import Shopping from "../feature/dashboard/pages/shopping/Shopping";
 import CreateShopping from "../feature/dashboard/pages/shopping/CreateShopping";
 import ShoppingDetails from "../feature/dashboard/pages/shopping/ShoppingDetails";
 import Providers from "../feature/dashboard/pages/providers/pages/Providers";
