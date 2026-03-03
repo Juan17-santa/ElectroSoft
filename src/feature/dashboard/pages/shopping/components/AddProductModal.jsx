@@ -3,6 +3,7 @@ import { X, Box, Boxes, DollarSign, Plus, AlertCircle, CheckCircle2 } from "luci
 import { useNavigate } from "react-router-dom";
 import { formatCOP, parseCOP } from "../helpers/shoppingHelpers";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
+import PrimaryButton from "../../../components/ui/PrimaryButton";
 
 // ─── Mini-componente: Indicador de validación ─────────────────────────────────
 function FieldStatus({ estado }) {
@@ -283,12 +284,9 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         >
                             Cancelar
                         </button>
-                        <button
-                            onClick={handleSubmit}
-                            className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-4 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
-                        >
+                        <PrimaryButton onClick={handleSubmit}>
                             Añadir producto
-                        </button>
+                        </PrimaryButton>
                     </div>
 
                 </div>

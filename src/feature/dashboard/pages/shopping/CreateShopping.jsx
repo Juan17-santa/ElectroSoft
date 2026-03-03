@@ -8,7 +8,8 @@ import Pagination from '../../components/ui/Pagination';
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { ServicesProviders } from "../providers/services/ServicesProviders";
 import Alert from "../../components/ui/Alert";
-
+import Calendar, { formatearFecha } from "../../components/ui/Calendar";
+import PrimaryButton from "../../components/ui/PrimaryButton";
 const ITEMS_PER_PAGE = 4;
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -177,13 +178,6 @@ function Calendario({ fechaSeleccionada, onSeleccionar, onCerrar }) {
     );
 }
 
-// ─── Formatea fecha ISO → DD/MM/YYYY ─────────────────────────────────────────
-function formatearFecha(iso) {
-    if (!iso) return "";
-    const [y, m, d] = iso.split("-");
-    return `${d}/${m}/${y}`;
-}
-
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CreateShopping() {
     const navigate = useNavigate();
@@ -191,7 +185,6 @@ export default function CreateShopping() {
 
     const [showModal, setShowModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const [showCalendario, setShowCalendario] = useState(false);
     const [proveedoresList, setProveedoresList] = useState([]);
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert] = useState(null);
@@ -205,18 +198,6 @@ export default function CreateShopping() {
 
     // Productos en tabla
     const [productos, setProductos] = useState([]);
-
-    // Ref para cerrar calendario al hacer clic fuera
-    const calRef = useRef(null);
-    useEffect(() => {
-        const handler = (e) => {
-            if (calRef.current && !calRef.current.contains(e.target)) {
-                setShowCalendario(false);
-            }
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, []);
 
     useEffect(() => {
         const data = ServicesProviders.get();
@@ -289,22 +270,6 @@ export default function CreateShopping() {
 
     return (
         <>
-            {/* Animaciones globales del calendario */}
-            <style>{`
-                @keyframes fadeSlideDown {
-                    from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-                    to   { opacity: 1; transform: translateY(0) scale(1); }
-                }
-                @keyframes slideInRight {
-                    from { opacity: 0; transform: translateX(18px); }
-                    to   { opacity: 1; transform: translateX(0); }
-                }
-                @keyframes slideInLeft {
-                    from { opacity: 0; transform: translateX(-18px); }
-                    to   { opacity: 1; transform: translateX(0); }
-                }
-            `}</style>
-
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner relative">
 
                 {/* TITULO */}
@@ -358,47 +323,18 @@ export default function CreateShopping() {
                         </div>
                     </div>
 
-                    {/* FECHA FACTURA — con calendario */}
+                    {/* FECHA FACTURA */}
                     <div className="flex flex-col gap-2">
-                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                            <CalendarDays size={20} />
-                            <span>Fecha Factura *</span>
-                        </div>
-                        <div className="relative" ref={calRef}>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowCalendario(v => !v);
-                                    setFechaTocada(true);
-                                }}
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-52 text-left transition-all duration-300
-                                    focus:outline-none focus:ring-2 cursor-pointer flex items-center justify-between gap-2
-                                    ${estadoFecha === null
-                                        ? "focus:ring-gray-400 text-gray-400"
-                                        : estadoFecha.valido
-                                            ? "ring-1 ring-green-300 text-gray-700"
-                                            : "ring-1 ring-red-300 text-gray-400"
-                                    }`}
-                            >
-                                <span className={fechaISO ? "text-gray-700" : "text-gray-400"}>
-                                    {fechaISO ? formatearFecha(fechaISO) : "Seleccionar fecha"}
-                                </span>
-                                <CalendarDays size={16} className={`transition duration-300 ${showCalendario ? "text-yellow-500 rotate-6" : "text-gray-400"}`} />
-                            </button>
-                            <FieldStatus estado={estadoFecha} />
-
-                            {/* CALENDARIO DESPLEGABLE */}
-                            {showCalendario && (
-                                <Calendario
-                                    fechaSeleccionada={fechaISO}
-                                    onSeleccionar={(iso) => {
-                                        setFechaISO(iso);
-                                        setFechaTocada(true);
-                                    }}
-                                    onCerrar={() => setShowCalendario(false)}
-                                />
-                            )}
-                        </div>
+                        <Calendar
+                            fechaISO={fechaISO}
+                            onFechaChange={(iso) => {
+                                setFechaISO(iso);
+                                setFechaTocada(true);
+                            }}
+                            label="Fecha Factura"
+                            required={true}
+                        />
+                        <FieldStatus estado={estadoFecha} />
                     </div>
 
                     {/* NÚMERO FACTURA — solo lectura */}
@@ -532,18 +468,14 @@ export default function CreateShopping() {
                         <span>✕</span>
                         Cancelar
                     </button>
-                    <button
-                        onClick={() => setConfirmData({
-                            type: "info",
-                            title: "Confirmar compra",
-                            message: `¿Deseas registrar la compra con ${productos.length} producto(s)?`,
-                            onConfirm: handleCrearCompra
-                        })}
-                        className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
-                    >
-                        <Plus size={16} />
+                    <PrimaryButton icon={Plus} onClick={() => setConfirmData({
+                        type: "info",
+                        title: "Confirmar compra",
+                        message: `¿Deseas registrar la compra con ${productos.length} producto(s)?`,
+                        onConfirm: handleCrearCompra
+                    })}>
                         Crear Compra
-                    </button>
+                    </PrimaryButton>
                 </div>
                 {/* MODAL AÑADIR PRODUCTO */}
                 {showModal && (

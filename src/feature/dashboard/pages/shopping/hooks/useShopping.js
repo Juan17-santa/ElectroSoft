@@ -36,17 +36,17 @@ export function useShopping() {
             numeroFactura,
             fechaCompra: fechaFactura,
             proveedor,
+            iva: formatCOP(Math.round(total * (0.19 / 1.19))),
             total: formatCOP(Math.round(total)),
             estado: "Activo",
             productos,
         };
-
         const updated = [...compras, nuevaCompra];
         localStorage.setItem("compras", JSON.stringify(updated));
         setCompras(updated);
     };
 
-    /** Cambia el estado de una compra a "Anulada" */
+    /** Cambia el estado de una compra a "Anulada" llamar desde Shopping.jsx */
     const handleAnular = (id) => {
         const updated = compras.map((c) =>
             c.id === id ? { ...c, estado: "Anulada" } : c
