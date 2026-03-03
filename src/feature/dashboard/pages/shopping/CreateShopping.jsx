@@ -5,6 +5,9 @@ import { useShopping } from "../shopping/hooks/useShopping";
 import { formatCOP, IVA_RATE, getNextNumeroFactura } from "../shopping/helpers/shoppingHelpers";
 import AddProductModal from "../shopping/components/AddProductModal";
 import Pagination from '../../components/ui/Pagination';
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import { ServicesProviders } from "../providers/services/ServicesProviders";
+import Alert from "../../components/ui/Alert";
 
 const ITEMS_PER_PAGE = 4;
 
@@ -18,7 +21,7 @@ function validarProveedor(valor) {
 }
 
 function validarFecha(fecha) {
-    if (!fecha) return { valido: false, mensaje: "" }; // sin tocar aún → neutro
+    if (!fecha) return { valido: false, mensaje: "Debes seleccionar una fecha." };
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const sel = new Date(fecha);
@@ -51,6 +54,7 @@ function Calendario({ fechaSeleccionada, onSeleccionar, onCerrar }) {
     const [viewMonth, setViewMonth] = useState(fechaSeleccionada ? new Date(fechaSeleccionada + "T00:00:00").getMonth() : hoy.getMonth());
     const [animDir, setAnimDir] = useState(null); // "left" | "right"
     const [animKey, setAnimKey] = useState(0);
+
 
     const navMes = (dir) => {
         setAnimDir(dir === 1 ? "right" : "left");
@@ -188,6 +192,9 @@ export default function CreateShopping() {
     const [showModal, setShowModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [showCalendario, setShowCalendario] = useState(false);
+    const [proveedoresList, setProveedoresList] = useState([]);
+    const [confirmData, setConfirmData] = useState(null);
+    const [alert, setAlert] = useState(null);
 
     // Formulario superior
     const [proveedor, setProveedor] = useState("");
@@ -209,6 +216,11 @@ export default function CreateShopping() {
         };
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
+    }, []);
+
+    useEffect(() => {
+        const data = ServicesProviders.get();
+        setProveedoresList(data);
     }, []);
 
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
@@ -247,15 +259,15 @@ export default function CreateShopping() {
     const handleCrearCompra = () => {
         setProveedorTocado(true);
         setFechaTocada(true);
+        setConfirmData(null); // cierra el modal de confirmación
 
         const vProv = validarProveedor(proveedor);
         const vFech = validarFecha(fechaISO);
 
-        if (!vProv.valido) { return; }
-        if (!fechaISO) { return; }
-        if (!vFech.valido) { return; }
+        if (!vProv.valido || !fechaISO || !vFech.valido) return;
+
         if (productos.length === 0) {
-            alert("Debes añadir al menos un producto a la compra.");
+            setAlert({ type: "error", message: "Debes añadir al menos un producto a la compra." });
             return;
         }
 
@@ -271,8 +283,8 @@ export default function CreateShopping() {
             productos: productosParaGuardar,
         });
 
-        alert("Se ha creado la compra exitosamente.");
-        navigate("/dashboard/shopping");
+        setAlert({ type: "success", message: "La compra fue registrada correctamente." });
+        setTimeout(() => navigate("/dashboard/shopping"), 1500);
     };
 
     return (
@@ -331,8 +343,9 @@ export default function CreateShopping() {
                                         }`}
                                 >
                                     <option value="">— No seleccionado —</option>
-                                    <option value="Suministros ABC">Suministros ABC</option>
-                                    <option value="Distribuidora PDA">Distribuidora PDA</option>
+                                    {proveedoresList.map((p) => (
+                                        <option key={p.id} value={p.nombreProveedor}>{p.nombreProveedor}</option>
+                                    ))}
                                 </select>
                                 <FieldStatus estado={estadoProveedor} />
                             </div>
@@ -466,7 +479,15 @@ export default function CreateShopping() {
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">{formatCOP(producto.subtotal)}</td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">
                                                 <button
-                                                    onClick={() => handleEliminar(producto.id)}
+                                                    onClick={() => setConfirmData({
+                                                        type: "delete",
+                                                        title: "Eliminar producto",
+                                                        message: `¿Seguro que deseas quitar "${producto.nombre}" de la compra?`,
+                                                        onConfirm: () => {
+                                                            handleEliminar(producto.id);
+                                                            setConfirmData(null);
+                                                        }
+                                                    })}
                                                     className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition duration-300 cursor-pointer"
                                                 >
                                                     <Trash size={16} className="text-red-600" />
@@ -500,30 +521,58 @@ export default function CreateShopping() {
                 {/* BOTONES CANCELAR Y CREAR */}
                 <div className="flex justify-end gap-3 mt-2">
                     <button
-                        onClick={() => navigate("/dashboard/shopping")}
+                        onClick={() => setConfirmData({
+                            type: "warning",
+                            title: "¿Cancelar compra?",
+                            message: "Si cancelas ahora perderás los datos ingresados. ¿Estás seguro?",
+                            onConfirm: () => navigate("/dashboard/shopping")
+                        })}
                         className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition duration-300 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                     >
                         <span>✕</span>
                         Cancelar
                     </button>
                     <button
-                        onClick={handleCrearCompra}
+                        onClick={() => setConfirmData({
+                            type: "info",
+                            title: "Confirmar compra",
+                            message: `¿Deseas registrar la compra con ${productos.length} producto(s)?`,
+                            onConfirm: handleCrearCompra
+                        })}
                         className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                     >
                         <Plus size={16} />
                         Crear Compra
                     </button>
                 </div>
-
-                {/* MODAL */}
+                {/* MODAL AÑADIR PRODUCTO */}
                 {showModal && (
                     <AddProductModal
                         onClose={() => setShowModal(false)}
                         onAnadir={handleAnadirProducto}
+                        productosYaAgregados={productos}
+                    />
+                )}
+
+                {/* MODAL CONFIRMACION */}
+                {confirmData && (
+                    <ConfirmModal
+                        type={confirmData.type}
+                        title={confirmData.title}
+                        message={confirmData.message}
+                        onConfirm={confirmData.onConfirm}
+                        onCancel={() => setConfirmData(null)}
                     />
                 )}
 
             </div>
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
         </>
     );
 }

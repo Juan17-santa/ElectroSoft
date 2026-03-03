@@ -22,7 +22,8 @@ export function useShopping() {
         return (
             c.proveedor.toLowerCase().includes(term) ||
             c.numeroFactura.toLowerCase().includes(term) ||
-            c.fechaCompra.toLowerCase().includes(term)
+            c.fechaCompra.toLowerCase().includes(term) ||
+            c.estado.toLowerCase().includes(term)
         );
     });
 

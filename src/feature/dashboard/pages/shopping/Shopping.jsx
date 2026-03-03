@@ -26,9 +26,10 @@ export default function Shopping() {
     };
 
     // Paginación
-    const totalPages = Math.max(1, Math.ceil(comprasFiltradas.length / ITEMS_PER_PAGE));
+    const comprasOrdenadas = [...comprasFiltradas].reverse();
+    const totalPages = Math.max(1, Math.ceil(comprasOrdenadas.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
-    const comprasPagina = comprasFiltradas.slice(
+    const comprasPagina = comprasOrdenadas.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
         paginaActual * ITEMS_PER_PAGE
     );
