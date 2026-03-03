@@ -42,10 +42,10 @@ export default function ProviderDetails() {
     };
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner">
+        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner h-full">
 
             <div
-                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-120"
+                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
                 style={{
                     backgroundImage: 'url("/background-shopping-details.png")',
                     backgroundSize: "cover",
