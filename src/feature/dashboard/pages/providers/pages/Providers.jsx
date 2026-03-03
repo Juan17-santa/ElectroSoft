@@ -1,14 +1,12 @@
-import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ServicesProviders } from "../services/ServicesProviders";
 import Pagination from "../../../components/ui/Pagination";
-import SearchInput from "../../../components/ui/SearchInput";
-import PrimaryButton from "../../../components/ui/PrimaryButton";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert from "../../../components/ui/alert";
 import ProvidersTable from "../components/ProvidersTable";
 import useProvidersTable from "../hooks/useProvidersTable";
+import SearchBar from "../../../components/ui/Searchbar";
 
 export default function Providers() {
     // ESTADO PARA NAVEGAR
@@ -103,20 +101,13 @@ export default function Providers() {
                 <p className="text-xl font-semibold">Control de proveedores</p>
 
                 {/* BUSCADOR Y BOTON CREAR */}
-                <div className="flex justify-between">
-                    <SearchInput
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar proveedores..."
-                        className="w-4/5"
-                    />
-                    <PrimaryButton
-                        onClick={() => navigate("/dashboard/providers/create")}
-                        icon={Plus}
-                    >
-                        Crear proveedor
-                    </PrimaryButton>
-                </div>
+                <SearchBar
+                    searchTerm={search}
+                    onSearchChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar proveedores..."
+                    onCreateClick={() => navigate("/dashboard/providers/create")}
+                    createButtonText="Crear proveedor"
+                />
 
                 {/* TABLA */}
                 <ProvidersTable

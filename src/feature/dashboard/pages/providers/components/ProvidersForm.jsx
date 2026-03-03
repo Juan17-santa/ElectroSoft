@@ -20,7 +20,7 @@ No contiene lógica de negocio.
 
 import PrimaryButton from "../../../components/ui/PrimaryButton"; // Botón principal reutilizable
 import { IdCard, FileText, User, ChevronDown, X } from "lucide-react"; // Iconos
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 
 export default function ProviderForm({
     formData,              // Datos actuales del formulario
