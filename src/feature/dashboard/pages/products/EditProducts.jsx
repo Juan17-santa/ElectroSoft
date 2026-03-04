@@ -3,6 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ServicesProducts } from "./services/ServicesProducts";
 import { ServiceProductCategory } from "../productCategory/services/ServicesProductCategory";
+import Alert from "../../components/ui/alert";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import useProductEditForm from "./hooks/useProductEditForm";
 
 export default function EditProducts() {
 
@@ -10,26 +13,44 @@ export default function EditProducts() {
     const navigate = useNavigate();
 
     const [categorias, setCategorias] = useState([]);
-
-    const [form, setForm] = useState({
-        nombre: "",
-        categoriaId: "",
-        precio: "",
-        stock: "",
-        serial: "",
-        garantia: ""
-    });
-
+    const [ProductData, setProductData] = useState(null);
     const [caracteristicas, setCaracteristicas] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
     const itemsPerPage = 3;
+
+    // ESTADO PARA LA ALERTA DE EXITO O ERROR
+    const [alert, setAlert] = useState(null);
+
+    // USAR EL HOOK PERSONALIZADO PARA EL FORMULARIO
+    const {
+        formData,
+        errors,
+        handleChange,
+        handleSubmit: submitForm,
+        setFormData
+    } = useProductEditForm({
+        id: Number(id),
+        initialData: ProductData || {},
+        onSuccess: () => {
+            setAlert({
+                type: "success",
+                message: "Producto actualizado correctamente"
+            });
+
+            setTimeout(() => {
+                navigate("/dashboard/products");
+            }, 2000);
+        },
+        caracteristicas
+    });
 
     useEffect(() => {
         const producto = ServicesProducts.getById(Number(id));
         const cats = ServiceProductCategory.get();
 
         if (producto) {
-            setForm(producto);
+            setProductData(producto);
             setCaracteristicas(producto.caracteristicas || []);
         }
 
@@ -37,19 +58,18 @@ export default function EditProducts() {
 
     }, [id]);
 
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value
-        });
+    const eliminarCaracteristica = (id) => {
+        setDeleteConfirm(id);
     };
 
-    const eliminarCaracteristica = (id) => {
-        const confirmDelete = window.confirm("¿Estás seguro de eliminar esta característica?");
-        if (!confirmDelete) return;
-
-        setCaracteristicas(caracteristicas.filter(c => c.id !== id));
-        alert("Característica eliminada correctamente");
+    const confirmarEliminar = () => {
+        if (!deleteConfirm) return;
+        setCaracteristicas(caracteristicas.filter(c => c.id !== deleteConfirm));
+        setAlert({
+            type: "success",
+            message: "Característica eliminada correctamente"
+        });
+        setDeleteConfirm(null);
     };
 
     const toggleVisibilidad = (id) => {
@@ -62,16 +82,12 @@ export default function EditProducts() {
         );
     };
 
-    const handleSubmit = () => {
-        ServicesProducts.update({
-            ...form,
-            categoriaId: Number(form.categoriaId),
-            precio: Number(form.precio),
-            stock: Number(form.stock),
-            caracteristicas
-        });
-
-        navigate("/dashboard/products");
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        console.log("FormData:", formData);
+        console.log("Errors:", errors);
+        console.log("Características:", caracteristicas);
+        submitForm(e);
     };
 
     // Paginación de características
@@ -87,6 +103,7 @@ export default function EditProducts() {
                 <p className="text-xl font-semibold">Editar <span className="text-yellow-400">producto</span></p>
 
                 <button
+                    type="button"
                     onClick={() => navigate("/dashboard/products")}
                     className="cursor-pointer hover:bg-gray-200 p-2 rounded-lg transition"
                 >
@@ -94,7 +111,8 @@ export default function EditProducts() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-10 mt-6 px-20">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                <div className="grid grid-cols-2 gap-10 mt-6 px-20">
 
                 <div className="flex flex-col gap-3">
                     <label className="flex items-center gap-2 text-yellow-500 font-medium">
@@ -102,11 +120,16 @@ export default function EditProducts() {
                     </label>
                     <input
                         name="nombre"
-                        value={form.nombre}
+                        value={formData.nombre}
                         onChange={handleChange}
                         type="text"
-                        className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
+                        className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${
+                            errors.nombre ? 'border-red-500' : 'border-transparent'
+                        }`}
                     />
+                    {errors.nombre && (
+                        <p className="text-red-500 text-sm">{errors.nombre}</p>
+                    )}
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -116,9 +139,11 @@ export default function EditProducts() {
                     <div className="relative">
                         <select
                             name="categoriaId"
-                            value={form.categoriaId}
+                            value={formData.categoriaId}
                             onChange={handleChange}
-                            className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 border-2 ${
+                                errors.categoriaId ? 'border-red-500' : 'border-transparent'
+                            }`}
                         >
                             <option hidden value="">Seleccione una categoría</option>
                             {categorias.map(cat => (
@@ -129,6 +154,9 @@ export default function EditProducts() {
                         </select>
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                     </div>
+                    {errors.categoriaId && (
+                        <p className="text-red-500 text-sm">{errors.categoriaId}</p>
+                    )}
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -137,11 +165,16 @@ export default function EditProducts() {
                     </label>
                     <input
                         name="precio"
-                        value={form.precio}
+                        value={formData.precio}
                         onChange={handleChange}
                         type="number"
-                        className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
+                        className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${
+                            errors.precio ? 'border-red-500' : 'border-transparent'
+                        }`}
                     />
+                    {errors.precio && (
+                        <p className="text-red-500 text-sm">{errors.precio}</p>
+                    )}
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -150,11 +183,16 @@ export default function EditProducts() {
                     </label>
                     <input
                         name="stock"
-                        value={form.stock}
+                        value={formData.stock}
                         onChange={handleChange}
                         type="number"
-                        className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
+                        className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${
+                            errors.stock ? 'border-red-500' : 'border-transparent'
+                        }`}
                     />
+                    {errors.stock && (
+                        <p className="text-red-500 text-sm">{errors.stock}</p>
+                    )}
                 </div>
 
                 <div className="flex flex-col gap-3">
@@ -163,24 +201,41 @@ export default function EditProducts() {
                     </label>
                     <input
                         name="serial"
-                        value={form.serial}
+                        value={formData.serial}
                         onChange={handleChange}
                         type="text"
-                        className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
+                        className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${
+                            errors.serial ? 'border-red-500' : 'border-transparent'
+                        }`}
                     />
+                    {errors.serial && (
+                        <p className="text-red-500 text-sm">{errors.serial}</p>
+                    )}
                 </div>
 
                 <div className="flex flex-col gap-3">
                     <label className="flex items-center gap-2 text-yellow-500 font-medium">
                         <ShieldCheck size={16} /> Garantía *
                     </label>
-                    <input
-                        name="garantia"
-                        value={form.garantia}
-                        onChange={handleChange}
-                        type="text"
-                        className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md"
-                    />
+                    <div className="relative">
+                        <select
+                            name="garantia"
+                            value={formData.garantia}
+                            onChange={handleChange}
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 border-2 ${
+                                errors.garantia ? 'border-red-500' : 'border-transparent'
+                            }`}
+                        >
+                            <option hidden value="">Seleccione una garantía</option>
+                            <option value="3 meses">3 meses</option>
+                            <option value="6 meses">6 meses</option>
+                            <option value="12 meses">12 meses</option>
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                    </div>
+                    {errors.garantia && (
+                        <p className="text-red-500 text-sm">{errors.garantia}</p>
+                    )}
                 </div>
             </div>
 
@@ -208,7 +263,8 @@ export default function EditProducts() {
                                         <td className="px-4 py-3 text-gray-700">{item.valor}</td>
                                         <td className="px-4 py-3">
                                             <div className="flex justify-center gap-2">
-                                                <button 
+                                                <button
+                                                    type="button"
                                                     onClick={() => toggleVisibilidad(item.id)}
                                                     className={`p-2 rounded-lg flex items-center justify-center transition ${
                                                         item.visible 
@@ -220,7 +276,8 @@ export default function EditProducts() {
                                                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                                     </svg>
                                                 </button>
-                                                <button 
+                                                <button
+                                                    type="button"
                                                     className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition"
                                                     onClick={() => eliminarCaracteristica(item.id)}
                                                 >
@@ -268,18 +325,40 @@ export default function EditProducts() {
             {/* BOTONES */}
             <div className="px-20 flex justify-end gap-4 mb-6">
                 <button
+                    type="button"
                     onClick={() => navigate("/dashboard/products")}
                     className="px-6 py-2.5 rounded-lg font-medium transition shadow-md border-2 border-gray-300 hover:bg-gray-200"
                 >
                     Cancelar
                 </button>
                 <button
-                    onClick={handleSubmit}
-                    className="bg-gradient-to-r from-white to-yellow-300 px-6 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg"
+                    type="submit"
+                    disabled={Object.values(errors).some(error => error)}
+                    className="bg-gradient-to-r from-white to-yellow-300 px-6 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Guardar
                 </button>
             </div>
+            </form>
+
+            {/* CONFIRM MODAL PARA ELIMINAR CARACTERISTICA */}
+            {deleteConfirm && (
+                <ConfirmModal
+                    title="Eliminar característica"
+                    message="¿Estás seguro de eliminar esta característica?"
+                    onConfirm={confirmarEliminar}
+                    onCancel={() => setDeleteConfirm(null)}
+                />
+            )}
+
+            {/* ALERTA DE EXITO O ERROR */}
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
         </div>
     );
 }

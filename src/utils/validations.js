@@ -30,4 +30,9 @@ export const Validations = {
     campoRequerido: (value) => {
         return value !== null && value !== undefined && String(value).trim() !== "";
     },
+     // Para nombres de productos: permite letras, números y espacios
+    // Debe contener al menos una letra (no solo números)
+    nombreProducto: (value) => {
+        return /^(?=.*[a-zA-ZáéíóúÁÉÍÓÚñÑ])[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]*$/.test(value);
+    },
 };
