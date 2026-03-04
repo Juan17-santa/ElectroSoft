@@ -1,13 +1,14 @@
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ServiceProductCategory } from "../services/ServicesProductCategory";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert from "../../../components/ui/alert";
 import Pagination from "../../../components/ui/Pagination";
-import SearchBar from "../../../components/ui/Searchbar";
+import SearchInput from "../../../components/ui/SearchInput";
+import PrimaryButton from "../../../components/ui/PrimaryButton";
 import ProductCategoryTable from "../components/ProductCategoryTable";
 import useProductCategoryTable from "../hooks/UseProductCategoryTable";
-import ProductCategoryModal from "../components/ProductCategoryModal";
 
 export default function ProductCategory() {
     // ESTADO PARA NAVEGAR
@@ -29,10 +30,6 @@ export default function ProductCategory() {
     const showAlert = (type, message) => {
         setAlert({ type, message });
     };
-
-    // NUEVOS ESTADOS PARA LA MODAL ÚNICA
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState(null);
 
     // PAGINACIÓN 
     const [presentPage, setPresentPage] = useState(1);
@@ -67,49 +64,53 @@ export default function ProductCategory() {
     // FUNCION PARA PREPARAR LA VISTA DE DETALLES
     const handleDetailsNavigation = (category) => {
         navigate("/dashboard/productCategory/detail", {
-            state: { category },
+            state: {category},
         })
     };
 
-    // FUNCIONES PARA ABRIR MODAL (CREAR / EDITAR) 
-    const handleOpenCreate = () => {
-        setSelectedCategory(null); // Limpiamos selección para que sea "Crear"
-        setIsModalOpen(true);
-    };
-
-    const handleOpenEdit = (category) => {
-        setSelectedCategory(category); // Cargamos la categoría para que sea "Editar"
-        setIsModalOpen(true);
+    // FUNCIÓN PARA PREPARAR LA EDICIÓN
+    const handleEditNavigation = (category) => {
+        navigate("/dashboard/productCategory/update", {
+            state: {category},
+        })
     };
 
     // USAMOS EL HOOK PARA OBTENER LAS FUNCIONES DE ELIMINAR Y CAMBIAR ESTADO
     const { deleteCategory, toggleEstado } =
         useProductCategoryTable({
             setCategories,
-            setConfirmData,
+            setConfirmData, 
             showAlert,
         })
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full min-h-142 shadow-inner">
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Control de categorias de productos</p>
 
                 {/* BUSCADOR Y BOTON CREAR */}
-                <SearchBar
-                    searchTerm={search}
-                    onSearchChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar categorias de productos..."
-                    onCreateClick={() => handleOpenCreate(true)}
-                    createButtonText="Crear categoria"
-                />
+                <div className="flex justify-between gap-4">
+                    <SearchInput
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Buscar categorías de productos..."
+                        className="w-4/5"
+                    />
+
+                    <PrimaryButton
+                        onClick={() => navigate("/dashboard/productCategory/create")}
+                        icon={Plus}
+                    >
+                        Crear categoría
+                    </PrimaryButton>
+                </div>
 
                 {/* TABLA */}
-                <ProductCategoryTable
+                <ProductCategoryTable 
                     data={presentRecords}
                     onDetails={handleDetailsNavigation}
-                    onEdit={handleOpenEdit}
+                    onEdit={handleEditNavigation}
                     onDelete={deleteCategory}
                     onToggleEstado={toggleEstado}
                 />
@@ -123,19 +124,6 @@ export default function ProductCategory() {
                     />
                 </div>
             </div>
-
-            {/* LA MODAL ÚNICA */}
-            {isModalOpen && (
-                <ProductCategoryModal
-                    categoryData={selectedCategory} // Si es null crea, si tiene datos edita
-                    onClose={() => setIsModalOpen(false)}
-                    onSave={() => {
-                        getProductCategories(); // Refresca la tabla tras guardar/editar
-                        showAlert("success", `Categoría ${selectedCategory ? 'actualizada' : 'creada'} con éxito`);
-                    }}
-                />
-            )}
-
             {/* MODAL DE CONFIRMACION */}
             {confirmData && (
                 <ConfirmModal
