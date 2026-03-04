@@ -6,8 +6,6 @@ import ResetPassword from "../feature/auth/pages/ResetPassword";
 import Layout from "../feature/dashboard/layout";
 import Dashboard from "../feature/dashboard/pages/dashboard/Dashboard";
 import ProductCategory from "../feature/dashboard/pages/productCategory/pages/ProductCategory";
-import CreateProductCategory from "../feature/dashboard/pages/productCategory/pages/CreateProductCategory";
-import UpdateProductCategory from "../feature/dashboard/pages/productCategory/pages/UpdateProductCategory";
 
 import Clients from "../feature/dashboard/pages/Clients/Clients";
 import CreateClients from "../feature/dashboard/pages/Clients/CreateClients";
@@ -56,8 +54,6 @@ export default function RoutersApp() {
                 <Route index element={<Dashboard />} />
                 {/* CATEGORIA DE PRODUCTOS */}
                 <Route path="productCategory" element={<ProductCategory />} />
-                <Route path="productCategory/create" element={<CreateProductCategory />} />
-                <Route path="productCategory/update" element={<UpdateProductCategory />} />
                 <Route path="productCategory/detail" element={<ProductCategoryDetails />} />
 
                 {/* CLIENTES */}
