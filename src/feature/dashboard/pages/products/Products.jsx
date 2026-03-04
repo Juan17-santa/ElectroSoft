@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ServicesProducts } from "./services/ServicesProducts";
 import { ServiceProductCategory } from "../productCategory/services/ServicesProductCategory";
+import Alert from "../../components/ui/alert";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
+import useProductTable from "./hooks/useProductTable";
 
 
 
@@ -12,6 +16,17 @@ export default function Products() {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [search, setSearch] = useState("");
+
+    // ESTADO PARA EL MODAL DE CONFIRMACION
+    const [confirmData, setConfirmData] = useState(null);
+
+    // ESTADO PARA LA ALERTA DE EXITO O ERROR
+    const [alert, setAlert] = useState(null);
+
+    // FUNCION PARA MOSTRAR ALERTA
+    const showAlert = (type, message) => {
+        setAlert({ type, message });
+    };
 
     const getCategoryName = (id) => {
         const categoria = categories.find(cat => cat.id === Number(id) || cat.id === id);
@@ -58,14 +73,16 @@ export default function Products() {
         setProducts(response);
     };
 
+    // USAMOS EL HOOK PARA OBTENER LAS FUNCIONES DE ELIMINAR Y CAMBIAR ESTADO
+    const { deleteProduct, toggleEstado } =
+        useProductTable({
+            setProducts,
+            setConfirmData, 
+            showAlert,
+        })
+
     const handleDelete = (id) => {
-        const confirmDelete = window.confirm("¿Esta seguro de eliminar producto?");
-        if (!confirmDelete) return;
-
-        alert("Producto eliminado correctamente");
-
-        const newData = ServicesProducts.delete(id);
-        setProducts(newData);
+        deleteProduct(id);
     };
 
     const handleEditNavigation = (product) => {
@@ -73,13 +90,53 @@ export default function Products() {
         navigate(`/dashboard/products/update/${product.id}`);
     };
 
+    const handleViewNavigation = (product) => {
+        navigate(`/dashboard/products/details/${product.id}`, { state: { product } });
+    };
+
     const handleToggleEstado = (id) => {
-        const nuevosProductos = ServicesProducts.toggleEstado(id);
-        setProducts(nuevosProductos);
+        toggleEstado(id);
+    };
+
+    /** Genera reporte PDF de productos filtrados */
+    const handleGenerateReport = () => {
+        setConfirmData({
+            type: "info",
+            title: "Generar reporte",
+            message: "¿Deseas descargar el reporte de productos?",
+            onConfirm: () => {
+                generatePDFReport({
+                    title: "Gestión de Productos - Reporte",
+                    fileName: "reporte_productos.pdf",
+                    columns: [
+                        "Nombre",
+                        "Categoría",
+                        "Precio",
+                        "Stock",
+                        "Serial",
+                        "Garantía",
+                        "Estado"
+                    ],
+                    data: filteredProducts.map(prod => [
+                        prod.nombre,
+                        getCategoryName(prod.categoriaId),
+                        `$${prod.precio?.toLocaleString()}`,
+                        prod.stock,
+                        prod.serial,
+                        prod.garantia,
+                        prod.estado ? "Activo" : "Inactivo"
+                    ])
+                });
+
+                showAlert("success", "Reporte generado correctamente.");
+                setConfirmData(null);
+            }
+        });
     };
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full min-h-142 shadow-inner">
+        <>
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full min-h-142 shadow-inner">
 
             <p className="text-xl font-semibold">Control de productos</p>
 
@@ -99,10 +156,11 @@ export default function Products() {
 
                     <div>
                         <button
-
-                            className="flex items-center gap-2 border border-gray-300 px-4 py-3 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50 transition duration-300 shadow-sm cursor-pointer"
+                            type="button"
+                            onClick={handleGenerateReport}
+                            className="flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition cursor-pointer w-fit"
                         >
-                            <FileText size={18} className="text-gray-500" />
+                            <FileText size={16} />
                             Generar reporte
                         </button>
                     </div>
@@ -182,7 +240,7 @@ export default function Products() {
                                                 {/* VER DETALLE */}
                                                 <button
                                                     className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition"
-
+                                                    onClick={() => handleViewNavigation(product)}
                                                 >
                                                     <Eye size={18} className="text-blue-600" />
                                                 </button>
@@ -268,5 +326,26 @@ export default function Products() {
                 </div>
             </div>
         </div>
+
+        {/* MODAL DE CONFIRMACION */}
+        {confirmData && (
+            <ConfirmModal
+                type={confirmData.type}
+                title={confirmData.title}
+                message={confirmData.message}
+                onConfirm={confirmData.onConfirm}
+                onCancel={() => setConfirmData(null)}
+            />
+        )}
+
+        {/* ALERTA DE EXITO O ERROR */}
+        {alert && (
+            <Alert
+                type={alert.type}
+                message={alert.message}
+                onClose={() => setAlert(null)}
+            />
+        )}
+    </>
     );
 }

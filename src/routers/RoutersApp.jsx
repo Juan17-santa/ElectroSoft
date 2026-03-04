@@ -38,6 +38,7 @@ import Orders from "../feature/dashboard/pages/orders/Orders";
 import Products from "../feature/dashboard/pages/products/Products";
 import CreateProducts from "../feature/dashboard/pages/products/CreateProducts";
 import EditProducts from "../feature/dashboard/pages/products/EditProducts";
+import ProductDetails from "../feature/dashboard/pages/products/ProductDetails";
 import ProductCategoryDetails from "../feature/dashboard/pages/productCategory/pages/ProductCategoryDetails";
 import ProviderDetails from "../feature/dashboard/pages/providers/pages/ProviderDetails";
 
@@ -100,7 +101,7 @@ export default function RoutersApp() {
                 <Route path="products" element={<Products />} />
                 <Route path="products/create" element={<CreateProducts />} />
                 <Route path="products/update/:id" element={<EditProducts />} />
-
+                <Route path="products/details/:id" element={<ProductDetails />} />
                 {/* PEDIDOS */}
                 <Route path="orders" element={<Orders />} />
 
