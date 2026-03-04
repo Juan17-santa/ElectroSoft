@@ -95,7 +95,7 @@ export default function Devolutions() {
                     onSearchChange={handleSearch}
                     placeholder="Buscar por ID, por devolución, por cliente..."
                     onCreateClick={() => navigate("/dashboard/devolutions/create")}
-                    createButtonText="Nueva Devolución"
+                    createButtonText="Crear Devolución"
                     showReportButton={true}
                     onReportClick={handleGenerarReporte}
                 />
@@ -130,27 +130,27 @@ export default function Devolutions() {
                                             <td className="px-3 py-1.5">
                                                 {String((paginaActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                             </td>
-                                            <td className="px-3 py-1.5">{d.idVenta || "—"}</td>
-                                            <td className="px-3 py-1.5">{d.motivo || "—"}</td>
-                                            <td className="px-3 py-1.5">{d.condicionProducto || "—"}</td>
-                                            <td className="px-3 py-1.5">{d.gestion || "—"}</td>
-                                            <td className="px-3 py-1.5">{d.responsable || "—"}</td>
-                                            <td className="px-3 py-1.5">{d.fecha || "—"}</td>
-                                            <td className="px-3 py-1.5">
+                                            <td className="px-4 py-1">{d.idVenta || "—"}</td>
+                                            <td className="px-4 py-1">{d.motivo || "—"}</td>
+                                            <td className="px-4 py-1">{d.condicionProducto || "—"}</td>
+                                            <td className="px-4 py-1">{d.gestion || "—"}</td>
+                                            <td className="px-4 py-1">{d.responsable || "—"}</td>
+                                            <td className="px-4 py-1">{d.fecha || "—"}</td>
+                                            <td className="px-4 py-1">
                                                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getEstadoColor(d.estadoResolucion)}`}>
                                                     {d.estadoResolucion || "—"}
                                                 </span>
                                             </td>
-                                            <td className="px-3 py-1.5">
+                                            <td className="px-4 py-1">
                                                 <div className="flex justify-center gap-2">
 
                                                     {/* VER */}
                                                     <button
                                                         title="Ver detalle"
                                                         onClick={() => navigate(`/dashboard/devolutions/details/${d.id}`)}
-                                                        className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
                                                     >
-                                                        <Eye size={16} className="text-yellow-600" />
+                                                        <Eye size={18} className="text-blue-600" />
                                                     </button>
 
                                                     {/* EDITAR */}
@@ -158,13 +158,13 @@ export default function Devolutions() {
                                                         title="Editar"
                                                         onClick={() => navigate(`/dashboard/devolutions/edit/${d.id}`)}
                                                         disabled={d.estadoResolucion === "Anulada"}
-                                                        className={`p-1.5 rounded-lg transition cursor-pointer ${
+                                                        className={`p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer ${
                                                             d.estadoResolucion === "Anulada"
                                                                 ? "bg-gray-100 opacity-40 cursor-not-allowed"
                                                                 : "bg-blue-100 hover:bg-blue-200"
                                                         }`}
                                                     >
-                                                        <Pencil size={16} className="text-blue-600" />
+                                                        <Pencil size={18} className="text-yellow-600" />
                                                     </button>
 
                                                     {/* ANULAR */}
@@ -172,13 +172,13 @@ export default function Devolutions() {
                                                         title="Anular"
                                                         onClick={() => handleAnular(d)}
                                                         disabled={d.estadoResolucion === "Anulada"}
-                                                        className={`p-1.5 rounded-lg transition cursor-pointer ${
+                                                        className={`p-2 rounded-lg transition duration-300 cursor-pointer bg-red-100 hover:bg-red-200 ${
                                                             d.estadoResolucion === "Anulada"
                                                                 ? "bg-gray-100 opacity-40 cursor-not-allowed"
                                                                 : "bg-red-100 hover:bg-red-200"
                                                         }`}
                                                     >
-                                                        <Ban size={16} className="text-red-600" />
+                                                        <Ban size={18} className="text-red-600" />
                                                     </button>
 
                                                 </div>

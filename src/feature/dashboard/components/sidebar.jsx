@@ -160,8 +160,8 @@ export const Sidebar = () => {
                             </NavLink>
 
                             <NavLink
-                                to="/dashboard/returns"
-                                className={activeSubLink("/dashboard/returns")}
+                                to="/dashboard/Devolutions"
+                                className={activeSubLink("/dashboard/Devolutions")}
                             >
                                 Devoluciones
                             </NavLink>

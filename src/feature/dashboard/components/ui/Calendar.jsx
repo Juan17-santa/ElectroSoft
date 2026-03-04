@@ -209,9 +209,9 @@ export default function Calendar({
                 <button
                     type="button"
                     onClick={() => setShowCalendario(v => !v)}
-                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-52 text-left transition-all duration-300
+                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full text-left transition-all duration-300
                         focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer flex items-center justify-between gap-2
-                        ${fechaISO ? "text-gray-700" : "text-gray-400"}`}
+                        ${fechaISO ? "text-gray-500" : "text-gray-400"}`}
                 >
                     <span>
                         {fechaISO ? formatearFecha(fechaISO) : "Seleccionar fecha"}
