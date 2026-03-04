@@ -21,34 +21,42 @@ Dependencias:
 - Validations → Para reglas de validación reutilizables
 */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ServiceProductCategory } from "../services/ServicesProductCategory";
 
-// HOOK PERSONALIZADO PARA MANEJAR EL FORMULARIO DE CREACION Y EDICION DE CATEGORIAS DE PRODUCTOS
-export default function useProductCategoryForm({
-    initialData = {},
+export default function useProductCategoryModal({
+    initialData = null,
     onSuccess,
+    onClose, // Agregamos onClose para cerrar tras éxito
     mode
 }) {
-
-    // ESTADO PARA LOS DATOS DEL FORMULARIO
-    const [formData, setFormData] = useState({
+    // Estado inicial limpio
+    const defaultState = {
         nombre: "",
         descripcion: "",
-        ...initialData
-    });
+        estado: true
+    };
 
-    // ESTADO PARA LOS ERRORES DE VALIDACIÓN
+    const [formData, setFormData] = useState(defaultState);
     const [errors, setErrors] = useState({});
 
-    // VALIDACIÓN INDIVIDUAL
+    // IMPORTANTE: Sincroniza el formulario cuando initialData cambie
+    useEffect(() => {
+        if (initialData && mode === "update") {
+            setFormData({
+                ...defaultState,
+                ...initialData,
+            });
+        } else {
+            setFormData(defaultState);
+        }
+        setErrors({}); // Limpiar errores al cambiar de modo/datos
+    }, [initialData, mode]);
+
     const validateField = (name, value) => {
-
         let error = "";
-
         switch (name) {
-
             case "nombre":
                 if (!value.trim()) {
                     error = "El nombre es obligatorio";
@@ -58,65 +66,52 @@ export default function useProductCategoryForm({
                     error = "El nombre debe tener mínimo 5 caracteres";
                 }
                 break;
-
             default:
                 break;
         }
-
         return error;
     };
 
-    // HANDLE CHANGE CON VALIDACIÓN EN TIEMPO REAL
     const handleChange = (e) => {
-
         const { name, value } = e.target;
-
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
 
         const error = validateField(name, value);
-
-        setErrors(prev => ({
-            ...prev,
-            [name]: error
-        }));
+        setErrors(prev => ({ ...prev, [name]: error }));
     };
 
-    // VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
-
         let newErrors = {};
-
-        Object.keys(formData).forEach(key => {
-            const error = validateField(key, formData[key]);
-            if (error) newErrors[key] = error;
-        });
+        // Validamos solo los campos que nos interesan (nombre en este caso)
+        const errorNombre = validateField("nombre", formData.nombre);
+        if (errorNombre) newErrors.nombre = errorNombre;
 
         setErrors(newErrors);
-
         return Object.keys(newErrors).length === 0;
     };
 
-    // HANDLE SUBMIT PARA CREAR O ACTUALIZAR SEGUN EL MODO
     const handleSubmit = (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
 
         if (!validateForm()) return;
 
-        if (mode === "create") {
-            ServiceProductCategory.create(formData);
-        }
+        try {
+            if (mode === "create") {
+                ServiceProductCategory.create(formData);
+            } else if (mode === "update") {
+                ServiceProductCategory.update(formData);
+            }
 
-        if (mode === "update") {
-            ServiceProductCategory.update(formData);
-        }
+            // Si la API responde bien, ejecutamos el éxito y cerramos
+            if (onSuccess) onSuccess();
+            if (onClose) onClose();
 
-        onSuccess();
+        } catch (error) {
+            console.error("Error al procesar la categoría:", error);
+            // Aquí podrías setear un error general si tuvieras un estado para ello
+        }
     };
 
-    // RETORNAMOS LOS DATOS Y FUNCIONES NECESARIAS PARA EL FORMULARIO
     return {
         formData,
         errors,
