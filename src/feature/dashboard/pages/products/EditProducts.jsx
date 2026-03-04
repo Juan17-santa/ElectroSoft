@@ -97,7 +97,7 @@ export default function EditProducts() {
     const displayedCaracteristicas = caracteristicas.slice(startIndex, endIndex);
 
     return (
-        <div className="w-full min-h-screen bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border">
+        <div className="w-full h-full bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border overflow-y-auto">
 
             <div className="flex justify-between items-start">
                 <p className="text-xl font-semibold">Editar <span className="text-yellow-400">producto</span></p>
@@ -334,7 +334,7 @@ export default function EditProducts() {
                 <button
                     type="submit"
                     disabled={Object.values(errors).some(error => error)}
-                    className="bg-gradient-to-r from-white to-yellow-300 px-6 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-linear-to-r from-white to-yellow-300 px-6 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Guardar
                 </button>

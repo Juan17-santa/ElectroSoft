@@ -170,7 +170,7 @@ export default function CreateProducts() {
     const displayedCaracteristicas = caracteristicas.slice(startIndex, endIndex);
 
     return (
-        <div className="w-full min-h-screen bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border">
+        <div className="w-full h-full bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border overflow-y-auto">
 
             <div className="flex justify-between items-start">
                 <p className="text-xl font-semibold">
@@ -325,6 +325,10 @@ export default function CreateProducts() {
                         type="button"
                         onClick={() => {
                             setShowModal(true);
+                            setModalForm({ nombre: "", medida: "", valor: "" });
+                            // recargar opciones desde el servicio en cada apertura
+                            setCharacteristicOptions(ServicesCharacteristics.getCharacteristics());
+                            setMeasureOptions(ServicesCharacteristics.getMeasures());
                             setCharDropdownOpen(true);
                             setMeasDropdownOpen(true);
                         }}
@@ -467,6 +471,7 @@ export default function CreateProducts() {
                                     name="nombre"
                                     value={modalForm.nombre}
                                     onChange={(e) => { handleModalChange(e); }}
+                                    onClick={() => setCharDropdownOpen(true)}
                                     onFocus={() => setCharDropdownOpen(true)}
                                     onBlur={() => setTimeout(() => setCharDropdownOpen(false), 200)}
                                     className="bg-gray-100 rounded-lg px-3 py-2.5 text-sm border border-gray-300 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200"
@@ -475,10 +480,10 @@ export default function CreateProducts() {
                                     <div className="w-full bg-white border border-gray-200 rounded-lg shadow-md max-h-48 overflow-auto">
                                         {characteristicOptions
                                             .filter(o => !modalForm.nombre.trim() || o.nombre.toLowerCase().includes(modalForm.nombre.toLowerCase()))
-                                            .slice(-3)
+                                            .slice(0, 6)
                                             .map(opt => (
-                                            <div key={opt.id} className="flex justify-between items-center px-3 py-2 border-b border-gray-200 cursor-pointer text-sm text-gray-700 hover:bg-yellow-100 transition">
-                                                <span onClick={() => handleSelectCharacteristic(opt.nombre)}>{opt.nombre}</span>
+                                            <div key={opt.id} onClick={() => handleSelectCharacteristic(opt.nombre)} className="flex justify-between items-center px-3 py-2 border-b border-gray-200 cursor-pointer text-sm text-gray-700 hover:bg-yellow-100 transition">
+                                                <span>{opt.nombre}</span>
                                                 <Trash size={12} className="text-red-500 hover:text-red-700 ml-2" onClick={(e) => { e.stopPropagation(); removeCharacteristicOption(opt.id); }} />
                                             </div>
                                         ))}
@@ -501,6 +506,7 @@ export default function CreateProducts() {
                                     name="medida"
                                     value={modalForm.medida}
                                     onChange={(e) => { handleModalChange(e); }}
+                                    onClick={() => setMeasDropdownOpen(true)}
                                     onFocus={() => setMeasDropdownOpen(true)}
                                     onBlur={() => setTimeout(() => setMeasDropdownOpen(false), 200)}
                                     className="bg-gray-100 rounded-lg px-3 py-2.5 text-sm border border-gray-300 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200"
@@ -509,10 +515,10 @@ export default function CreateProducts() {
                                     <div className="w-full bg-white border border-gray-200 rounded-lg shadow-md max-h-48 overflow-auto">
                                         {measureOptions
                                             .filter(o => !modalForm.medida.trim() || o.nombre.toLowerCase().includes(modalForm.medida.toLowerCase()))
-                                            .slice(-3)
+                                            .slice(0, 6)
                                             .map(opt => (
-                                            <div key={opt.id} className="flex justify-between items-center px-3 py-2 border-b border-gray-200 cursor-pointer text-sm text-gray-700 hover:bg-yellow-100 transition">
-                                                <span onClick={() => handleSelectMeasure(opt.nombre)}>{opt.nombre}</span>
+                                            <div key={opt.id} onClick={() => handleSelectMeasure(opt.nombre)} className="flex justify-between items-center px-3 py-2 border-b border-gray-200 cursor-pointer text-sm text-gray-700 hover:bg-yellow-100 transition">
+                                                <span>{opt.nombre}</span>
                                                 <Trash size={12} className="text-red-500 hover:text-red-700 ml-2" onClick={(e) => { e.stopPropagation(); removeMeasureOption(opt.id); }} />
                                             </div>
                                         ))}
@@ -528,7 +534,7 @@ export default function CreateProducts() {
 
                             <div className="flex flex-col gap-2">
                                 <label className="flex items-center gap-2 text-yellow-500 font-medium text-sm">
-                                    <DollarSign size={14} /> Valor
+                                    <Hash size={14} /> Valor
                                 </label>
                                 <input
                                     type="text"
