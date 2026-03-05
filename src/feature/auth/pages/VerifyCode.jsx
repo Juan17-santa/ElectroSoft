@@ -40,16 +40,14 @@ export default function VerifyCode() {
         style={{ backgroundImage: "url('/login-bg.jpg')" }}
       >
         <div className="absolute inset-0 bg-black/30" />
-        <div className="absolute inset-y-0 right-0 w-40 bg-linear-to-l from-white via-white/70 to-transparent" />
       </div>
 
       {/* ===== LADO DERECHO - PANEL (30%) ===== */}
-      <div className="col-span-1 md:col-span-3 flex flex-col bg-white relative">
+      <div className="col-span-1 md:col-span-4 flex flex-col bg-linear-to-b from-white to-yellow-300 relative">
         {/* HEADER */}
         <div className="p-8 flex items-center gap-2 text-2xl font-bold">
           <Lightbulb className="text-yellow-500" />
-          <span>Electro</span>
-          <span className="text-yellow-500">Soft</span>
+          <span>Electro<span className="text-yellow-500">Soft</span></span>
         </div>
 
         {/* CONTENIDO */}
