@@ -90,19 +90,7 @@ export function updateProfile(updatedData) {
 // RECUPERAR CONTRASEÑA
 // ===============================
 
-  const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-
-  const updatedUsers = users.map((user) =>
-    user.email === authUser.email ? { ...user, ...updatedData } : user
-  );
-
-  localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-
-  const updatedAuthUser = { ...authUser, ...updatedData };
-  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedAuthUser));
-
-  return { ok: true, user: updatedAuthUser };
-
+  
 
 // ── Recuperar contraseña — envía código real por EmailJS ─────────────────────
 export async function requestPasswordReset(email) {
