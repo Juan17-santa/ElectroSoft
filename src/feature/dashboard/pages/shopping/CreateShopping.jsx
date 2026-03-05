@@ -279,7 +279,7 @@ export default function CreateShopping() {
                 </p>
 
                 {/* LÍNEA DIVISORA */}
-                <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-transparent"></div>
+                <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent"></div>
 
                 {/* CAMPOS SUPERIORES */}
                 <div className="flex flex-wrap gap-6 items-start">
