@@ -1,10 +1,11 @@
 import {
     AlertTriangle, Box, Boxes, Wrench, User,
-    ShieldCheck, FileText, CalendarDays, ClipboardList, Tag
+    ShieldCheck, FileText, CalendarDays, ClipboardList, Tag, Receipt
 } from "lucide-react";
 import Calendar, { formatearFecha } from "../../../components/ui/Calendar";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import GarantiaCheckbox from "./GarantiaCheckbox";
+import VentaSearchSelect from "./VentaSearchSelect";
 import {
     MOTIVOS, CONDICIONES_PRODUCTO, GESTIONES,
     RESPONSABLES, ESTADOS_RESOLUCION
@@ -12,7 +13,7 @@ import {
 
 /**
  * ⚠️  Definido FUERA del componente principal para evitar que React
- *     lo desmonte/remonte en cada render, lo que causaría scroll reset.
+ *     lo desmonte/remonte en cada render (scroll reset).
  */
 function Field({ icon: Icon, label, children }) {
     return (
@@ -31,10 +32,11 @@ export default function DevolutionForm({
     onChange,
     onSubmit,
     onCancel,
-    readOnly   = false,
-    title      = "Devolución",
-    submitText = "Guardar",
+    readOnly      = false,
+    title         = "Devolución",
+    submitText    = "Guardar",
     productosList = [],
+    ventasList    = [],
 }) {
     const fieldBase = `
         bg-gray-200 text-gray-500 rounded-xl px-4 py-3 text-sm w-full shadow-sm
@@ -55,9 +57,23 @@ export default function DevolutionForm({
                 <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-transparent mt-3" />
             </div>
 
-            {/* ── FILA 1: Motivo · Producto · Cantidad ───────────────────────── */}
-            <div className="grid grid-cols-3 gap-x-8">
+            {/* ── FILA 1: ID Venta · Motivo · Producto · Cantidad ────────────── */}
+            <div className="grid grid-cols-4 gap-x-8 px-10">
 
+                {/* ID VENTA — combobox con búsqueda */}
+                <Field icon={Receipt} label="ID Venta *">
+                    {readOnly ? (
+                        <input type="text" value={form.idVenta} readOnly className={fieldBase} />
+                    ) : (
+                        <VentaSearchSelect
+                            value={form.idVenta}
+                            onChange={(id) => onChange("idVenta", id)}
+                            ventasList={ventasList}
+                        />
+                    )}
+                </Field>
+
+                {/* MOTIVO */}
                 <Field icon={AlertTriangle} label="Motivo *">
                     <select value={form.motivo} onChange={(e) => onChange("motivo", e.target.value)} disabled={readOnly} className={fieldBase}>
                         <option value="">Seleccionar...</option>
@@ -65,6 +81,7 @@ export default function DevolutionForm({
                     </select>
                 </Field>
 
+                {/* PRODUCTO */}
                 <Field icon={Box} label="Producto *">
                     {readOnly ? (
                         <input type="text" value={form.producto} readOnly className={fieldBase} />
@@ -76,6 +93,7 @@ export default function DevolutionForm({
                     )}
                 </Field>
 
+                {/* CANTIDAD */}
                 <Field icon={Boxes} label="Cantidad *">
                     <select value={form.cantidad} onChange={(e) => onChange("cantidad", e.target.value)} disabled={readOnly} className={fieldBase}>
                         <option value="">Seleccionar...</option>
@@ -86,7 +104,7 @@ export default function DevolutionForm({
             </div>
 
             {/* ── FILA 2: Condición · Gestión · Responsable ─────────────────── */}
-            <div className="grid grid-cols-3 gap-x-8">
+            <div className="grid grid-cols-3 gap-x-8 px-10">
 
                 <Field icon={Wrench} label="Condición producto *">
                     <select value={form.condicionProducto} onChange={(e) => onChange("condicionProducto", e.target.value)} disabled={readOnly} className={fieldBase}>
@@ -111,10 +129,9 @@ export default function DevolutionForm({
 
             </div>
 
-            {/* ── FILA 3: [Estado resolución] | [Fecha · Garantía apilados] ─── */}
-            <div className="grid grid-cols-2 gap-x-10">
+            {/* ── FILA 3: Estado resolución | [Fecha · Garantía] ────────────── */}
+            <div className="grid grid-cols-2 gap-x-10 px-10">
 
-                {/* Columna izquierda: Estado resolución */}
                 <Field icon={Tag} label="Estado resolución">
                     <select value={form.estadoResolucion} onChange={(e) => onChange("estadoResolucion", e.target.value)} disabled={readOnly} className={fieldBase}>
                         <option value="">Seleccionar...</option>
@@ -122,7 +139,6 @@ export default function DevolutionForm({
                     </select>
                 </Field>
 
-                {/* Columna derecha: Fecha | Garantía lado a lado */}
                 <div className="grid grid-cols-2 gap-x-8">
 
                     {readOnly ? (
@@ -150,11 +166,10 @@ export default function DevolutionForm({
                     </Field>
 
                 </div>
-
             </div>
 
             {/* ── FILA 4: Descripción · Observaciones ───────────────────────── */}
-            <div className="grid grid-cols-2 gap-x-10">
+            <div className="grid grid-cols-2 gap-x-10 px-10">
 
                 <Field icon={FileText} label="Descripción *">
                     <textarea

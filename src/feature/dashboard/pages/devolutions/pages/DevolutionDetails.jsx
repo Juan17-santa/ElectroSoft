@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useDevolutions } from "../hooks/useDevolutions";
+import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import DevolutionForm from "../components/DevolutionForm";
 
 export default function DevolutionDetails() {
     const navigate = useNavigate();
     const { id } = useParams();
-    const { getDevolucionById } = useDevolutions();
 
     const [form, setForm] = useState(null);
 
     useEffect(() => {
-        const found = getDevolucionById(id);
+        // ⚠️ Lee directamente de ServicesDevolutions para no depender del estado
+        // del hook (que puede aún no haberse cargado al montar la página).
+        const found = ServicesDevolutions.getById(id);
         if (found) setForm(found);
     }, [id]);
 
-    // No encontrada
     if (form === null) {
         return (
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-4 items-center justify-center shadow-inner min-h-40">
@@ -31,8 +31,6 @@ export default function DevolutionDetails() {
     }
 
     return (
-        // readOnly=true: DevolutionForm deshabilita todos los campos y
-        // oculta el botón principal, solo muestra "Volver"
         <DevolutionForm
             form={form}
             onChange={() => {}}

@@ -28,18 +28,22 @@ export default function CreateDevolution() {
 
     const [form, setForm]                   = useState(EMPTY_FORM);
     const [productosList, setProductosList] = useState([]);
+    const [ventasList, setVentasList]       = useState([]);
     const [confirmData, setConfirmData]     = useState(null);
     const [alert, setAlert]                 = useState(null);
 
     useEffect(() => {
         setProductosList(ServicesProducts.get().filter((p) => p.estado !== false));
+        // Lee las ventas directamente del localStorage con la clave "sales" (SalesService)
+        const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
+        setVentasList(ventas.filter((v) => v.estado !== "Anulado"));
     }, []);
 
     const handleChange = (field, value) =>
         setForm((prev) => ({ ...prev, [field]: value }));
 
     const handleSubmit = () => {
-        if (!form.motivo || !form.producto || !form.responsable) {
+        if (!form.idVenta || !form.motivo || !form.producto || !form.responsable) {
             setAlert({ type: "error", message: "Completa los campos obligatorios marcados con *" });
             return;
         }
@@ -75,6 +79,7 @@ export default function CreateDevolution() {
                 title="Crear nueva Devolución"
                 submitText="Guardar"
                 productosList={productosList}
+                ventasList={ventasList}
             />
 
             {confirmData && (

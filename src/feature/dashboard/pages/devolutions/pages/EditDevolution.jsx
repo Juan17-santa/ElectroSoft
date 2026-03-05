@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
+import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import DevolutionForm from "../components/DevolutionForm";
 import ConfirmModal   from "../../../components/ui/ConfirmModal";
 import Alert          from "../../../components/ui/Alert";
@@ -9,29 +10,31 @@ import { ServicesProducts } from "../../products/services/ServicesProducts";
 export default function EditDevolution() {
     const navigate = useNavigate();
     const { id } = useParams();
-    const { getDevolucionById, editarDevolucion } = useDevolutions();
+    const { editarDevolucion } = useDevolutions();
 
     const [form, setForm]                   = useState(null);
     const [productosList, setProductosList] = useState([]);
+    const [ventasList, setVentasList]       = useState([]);
     const [confirmData, setConfirmData]     = useState(null);
     const [alert, setAlert]                 = useState(null);
 
     useEffect(() => {
         setProductosList(ServicesProducts.get().filter((p) => p.estado !== false));
-        const found = getDevolucionById(id);
-        if (found) {
-            // fechaISO se usa internamente en el Calendar, pero la devolución
-            // guarda "fecha" en formato DD/MM/YYYY; al editar se puede dejar vacío
-            // y solo se actualizará si el usuario elige una nueva fecha.
-            setForm({ ...found, fechaISO: "" });
-        }
+
+        const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
+        setVentasList(ventas.filter((v) => v.estado !== "Anulado"));
+
+        // ⚠️ Lee directamente de ServicesDevolutions para no depender del estado
+        // del hook (que puede aún no haberse cargado al montar la página).
+        const found = ServicesDevolutions.getById(id);
+        if (found) setForm({ ...found, fechaISO: "" });
     }, [id]);
 
     const handleChange = (field, value) =>
         setForm((prev) => ({ ...prev, [field]: value }));
 
     const handleSubmit = () => {
-        if (!form.motivo || !form.producto || !form.responsable) {
+        if (!form.idVenta || !form.motivo || !form.producto || !form.responsable) {
             setAlert({ type: "error", message: "Completa los campos obligatorios marcados con *" });
             return;
         }
@@ -57,7 +60,6 @@ export default function EditDevolution() {
         });
     };
 
-    // No encontrada
     if (form === null) {
         return (
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-4 items-center justify-center shadow-inner min-h-40">
@@ -82,6 +84,7 @@ export default function EditDevolution() {
                 title="Editar Devolución"
                 submitText="Guardar"
                 productosList={productosList}
+                ventasList={ventasList}
             />
 
             {confirmData && (
