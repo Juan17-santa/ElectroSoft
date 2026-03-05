@@ -22,10 +22,10 @@ import CreateRoles from "../feature/dashboard/pages/Roles/CreateRoles";
 import UpdateRoles from "../feature/dashboard/pages/Roles/UpdateRoles";
 import RoleDetailsPage from "../feature/dashboard/pages/Roles/RoleDetailsPage";
 
-import Users from "../feature/dashboard/pages/users/Users";
-import CreateUser from "../feature/dashboard/pages/users/CreateUser";
-import UserDetail from "../feature/dashboard/pages/users/UserDetail";
-import EditUser from "../feature/dashboard/pages/users/EditUser";
+import Users from "../feature/dashboard/pages/users/pages/Users";
+import CreateUser from "../feature/dashboard/pages/users/pages/CreateUser";
+import UserDetail from "../feature/dashboard/pages/users/pages/UserDetail";
+import UpdateUser from "../feature/dashboard/pages/users/pages/UpdateUser";
 import Shopping from "../feature/dashboard/pages/shopping/Shopping";
 import CreateShopping from "../feature/dashboard/pages/shopping/CreateShopping";
 import ShoppingDetails from "../feature/dashboard/pages/shopping/ShoppingDetails";
@@ -85,7 +85,7 @@ export default function RoutersApp() {
                 <Route path="users" element={<Users />} />
                 <Route path="users/createUser" element={<CreateUser />} />
                 <Route path="users/:id" element={<UserDetail />} />
-                <Route path="users/:id/edit" element={<EditUser />} />
+                <Route path="users/:id/update" element={<UpdateUser />} />
 
                 {/* COMPRAS */}
                 <Route path="shopping" element={<Shopping />} />
