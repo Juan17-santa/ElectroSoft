@@ -17,12 +17,16 @@ import { X, Plus, Ban, FileText } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Alert from "../../components/ui/Alert";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function CreditDetailsPage() {
     const navigate = useNavigate();
     const [sale, setSale] = useState(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentAmount, setPaymentAmount] = useState("");
+    const [alert, setAlert] = useState(null);
+    const [confirmData, setConfirmData] = useState(null);
 
     useEffect(() => {
         const data = localStorage.getItem("saleToView");
@@ -101,46 +105,66 @@ export default function CreditDetailsPage() {
      * Se descarga como "credito_[numero].pdf".
      */
     const handleGenerateReport = () => {
-        const doc = new jsPDF();
+        setConfirmData({
+            type: "info",
+            title: "Generar reporte",
+            message: "¿Deseas descargar el reporte de este crédito?",
+            onConfirm: () => {
+                const doc = new jsPDF();
 
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("Detalles del Crédito", 14, 22);
+                doc.setFontSize(18);
+                doc.setFont("helvetica", "bold");
+                doc.text("Detalles del Crédito", 14, 22);
 
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Cliente: ${sale.cliente || '-'}`, 14, 36);
-        doc.text(`Numero de venta: ${sale.numeroDocumento}`, 14, 44);
-        doc.text(`Estado: ${sale.estado}`, 14, 52);
-        doc.text(`Monto Total: $${sale.total?.toLocaleString()}`, 120, 36);
-        doc.text(`Monto Pagado: $${sale.montoPagado?.toLocaleString()}`, 120, 44);
-        doc.text(`Monto por pagar: $${sale.montoPorPagar?.toLocaleString()}`, 120, 52);
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Cliente: ${sale.cliente || '-'}`, 14, 36);
+                doc.text(`Numero de venta: ${sale.numeroDocumento}`, 14, 44);
+                doc.text(`Estado: ${sale.estado}`, 14, 52);
+                doc.text(`Monto Total: $${sale.total?.toLocaleString()}`, 120, 36);
+                doc.text(`Monto Pagado: $${sale.montoPagado?.toLocaleString()}`, 120, 44);
+                doc.text(`Monto por pagar: $${sale.montoPorPagar?.toLocaleString()}`, 120, 52);
 
-        const rows = getPaymentRows();
-        if (rows.length > 0) {
-            autoTable(doc, {
-                startY: 62,
-                head: [["Fecha", "Abono", "Saldo pendiente"]],
-                body: rows.map(r => [
-                    r.fecha,
-                    `$${r.monto.toLocaleString()}`,
-                    `$${r.saldoPendiente.toLocaleString()}`
-                ]),
-                styles: { fontSize: 10 },
-                headStyles: { fillColor: [234, 179, 8] }
-            });
-        }
+                const rows = getPaymentRows();
+                if (rows.length > 0) {
+                    autoTable(doc, {
+                        startY: 62,
+                        head: [["Fecha", "Abono", "Saldo pendiente"]],
+                        body: rows.map(r => [
+                            r.fecha,
+                            `$${r.monto.toLocaleString()}`,
+                            `$${r.saldoPendiente.toLocaleString()}`
+                        ]),
+                        styles: { fontSize: 10 },
+                        headStyles: { fillColor: [234, 179, 8] }
+                    });
+                }
 
-        doc.save(`credito_${sale.numeroDocumento}.pdf`);
+                doc.save(`credito_${sale.numeroDocumento}.pdf`);
+                setAlert({ type: "success", message: "Reporte generado correctamente." });
+                setConfirmData(null);
+            },
+            onCancel: () => setConfirmData(null)
+        });
     };
 
     const paymentRows = getPaymentRows();
 
     return (
         <>
-            <div className="h-full rounded-2xl shadow-lg relative overflow-hidden"
-                style={{ background: 'linear-gradient(145deg, #f5f5f0 0%, #ffffff 35%, #f8f7f2 65%, #f0efe8 100%)' }}
+            <div
+                className="h-full rounded-2xl shadow-lg relative overflow-hidden"
+                style={{
+                    backgroundImage: 'url("/background-shopping-details.png")',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat'
+                }}
             >
+                {/* ALERTA FLOTANTE EN PARTE SUPERIOR */}
+                {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
+
+                <div className="absolute inset-0 bg-white/55 rounded-2xl pointer-events-none"></div>
                 {/* ═══ DECORACIONES DORADAS ═══ */}
 
                 {/* Esquina superior izquierda — arcos finos + punta */}
@@ -358,6 +382,16 @@ export default function CreditDetailsPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={confirmData.onCancel}
+                />
             )}
         </>
     );
