@@ -45,15 +45,11 @@ import Devolutions from "../feature/dashboard/pages/devolutions/pages/Devolution
 import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/CreateDevolution";
 import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
 import DevolutionDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionDetails";
-<<<<<<< HEAD
 import DevolutionProductDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionProductDetails";
-=======
-import SaleDevolutionInfo from "../feature/dashboard/pages/devolutions/pages/SaleDevolutionInfo";
 import CreateOrder from "../feature/dashboard/pages/orders/pages/CreateOrder"
 import Payments from "../feature/dashboard/pages/payments/pages/Payments"
 import CreatePayment from "../feature/dashboard/pages/payments/pages/CreatePayment"
 import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDetail"
->>>>>>> 83c2d5c9e925f97d600df8e1470632eeb3ea1bbb
 
 export default function RoutersApp() {
     return (
