@@ -1,54 +1,85 @@
-import { User, FileText, X, Plus, Trash } from "lucide-react";
+import { User, FileText, X, Plus, Trash, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
 import { ProductService } from "./services/ProductService";
-import AddProductModal from "./AddProductModal";
+import AddProductModal from "../../../../components/AddProductModal";
+import Alert from "../../components/ui/Alert";
+
+// ─── Validaciones ─────────────────────────────────────────────────────────────
+function validarNumeroDocumento(v) {
+    if (!v || !v.trim()) return { valido: false, mensaje: "El número de documento es requerido." };
+    if (!/^\d+$/.test(v)) return { valido: false, mensaje: "Solo se permiten números." };
+    if (v.length !== 10) return { valido: false, mensaje: "El documento debe tener exactamente 10 dígitos." };
+    return { valido: true, mensaje: "" };
+}
+function validarFecha(v) {
+    if (!v) return { valido: false, mensaje: "La fecha es requerida." };
+    return { valido: true, mensaje: "" };
+}
+
+function FieldStatus({ estado }) {
+    if (estado === null || estado.valido) return null;
+    return (
+        <div className="flex items-center gap-1 text-xs mt-1 text-red-500">
+            <AlertCircle size={12} /><span>{estado.mensaje}</span>
+        </div>
+    );
+}
 
 export default function CreateSales() {
     const navigate = useNavigate();
+    const [alert, setAlert] = useState(null);
 
     const [formData, setFormData] = useState({
         numeroDocumento: "",
         tipoVenta: "Contado",
-        fecha: new Date().toISOString().split('T')[0],
+        fecha: new Date().toISOString().split("T")[0],
         estado: "Vigente"
     });
+
+    const [tocado, setTocado] = useState({ numeroDocumento: false, fecha: false });
+    const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
 
     const [productos, setProductos] = useState([]);
     const [availableProducts, setAvailableProducts] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [productosError, setProductosError] = useState("");
+
+    const estadoNumDoc = tocado.numeroDocumento ? validarNumeroDocumento(formData.numeroDocumento) : null;
+    const estadoFecha = tocado.fecha ? validarFecha(formData.fecha) : null;
+
+    const ringClass = (estado) => {
+        if (estado === null || estado.valido) return "focus:ring-yellow-400";
+        return "ring-1 ring-red-300 focus:ring-red-400";
+    };
 
     useEffect(() => {
         setAvailableProducts(ProductService.getAll());
     }, []);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value
-        }));
+        let { name, value } = e.target;
+        // Forzar solo dígitos en campos numéricos
+        if (name === "numeroDocumento") value = value.replace(/\D/g, "").slice(0, 10);
+        setFormData(prev => ({ ...prev, [name]: value }));
+        tocar(name);
     };
 
     const handleProductChange = (index, field, value) => {
         const newProductos = [...productos];
-        newProductos[index][field] = field === 'cantidad' ? parseFloat(value) || 0 : value;
+        newProductos[index][field] = field === "cantidad" ? parseFloat(value) || 0 : value;
         setProductos(newProductos);
     };
 
-    const handleAddProduct = () => {
-        setIsModalOpen(true);
-    };
-
     const handleSaveProduct = (selectedProduct, quantity) => {
-        const newProduct = {
-            id: Date.now(), // Generate a unique ID for the row
+        setProductos(prev => [...prev, {
+            id: Date.now(),
             nombre: selectedProduct.nombre,
             cantidad: quantity,
             precio: selectedProduct.precio
-        };
-        setProductos([...productos, newProduct]);
+        }]);
+        setProductosError("");
         setIsModalOpen(false);
     };
 
@@ -56,9 +87,8 @@ export default function CreateSales() {
         setProductos(productos.filter((_, i) => i !== index));
     };
 
-    // Calcular totales
     const calcularTotales = () => {
-        const subtotal = productos.reduce((sum, p) => sum + (p.cantidad * p.precio), 0);
+        const subtotal = productos.reduce((sum, p) => sum + p.cantidad * p.precio, 0);
         const iva = subtotal * 0.19;
         const total = subtotal + iva;
         return { subtotal, iva, total };
@@ -68,38 +98,34 @@ export default function CreateSales() {
 
     const handleForm = (e) => {
         e.preventDefault();
+        setTocado({ numeroDocumento: true, fecha: true });
+
+        const vDoc = validarNumeroDocumento(formData.numeroDocumento);
+        const vFech = validarFecha(formData.fecha);
+
+        if (!vDoc.valido || !vFech.valido) return;
+
+        if (productos.length === 0) {
+            setProductosError("Debe agregar al menos un producto.");
+            return;
+        }
 
         try {
-            // Validaciones
-            if (!formData.numeroDocumento.trim()) {
-                alert("El número de documento es requerido");
-                return;
-            }
-
-            if (productos.length === 0) {
-                alert("Debe agregar al menos un producto");
-                return;
-            }
-
             const datosVenta = {
                 ...formData,
                 productos,
                 subtotal,
                 iva,
                 total,
-                montoPagado: formData.tipoVenta === 'Contado' ? total : 0,
-                montoPorPagar: formData.tipoVenta === 'Contado' ? 0 : total
+                montoPagado: formData.tipoVenta === "Contado" ? total : 0,
+                montoPorPagar: formData.tipoVenta === "Contado" ? 0 : total
             };
-
             SalesService.create(datosVenta);
-
-            alert("Venta creada correctamente!");
-
-            navigate("/dashboard/sales-management");
-
+            setAlert({ type: "success", message: "Venta registrada correctamente." });
+            setTimeout(() => navigate("/dashboard/sales-management"), 1500);
         } catch (error) {
             console.error(error);
-            alert("Error al crear la venta");
+            setAlert({ type: "error", message: "Error al registrar la venta." });
         }
     };
 
@@ -112,42 +138,31 @@ export default function CreateSales() {
                         <p className="text-xl font-semibold mb-4">Crear nueva <span className="text-yellow-400">venta</span></p>
                         <p className="text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
-
-                    <button
-                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
-                        onClick={() => navigate("/dashboard/sales-management")}
-                    >
+                    <button className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer" onClick={() => navigate("/dashboard/sales-management")}>
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* FORMULARIO */}
                 <form onSubmit={handleForm} className="flex flex-col gap-6">
 
-                    {/* FILA 1: NUMERO DOCUMENTO Y TIPO VENTA */}
+                    {/* FILA 1 */}
                     <div className="grid grid-cols-2 gap-6">
-                        {/* NUMERO DOCUMENTO */}
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                                <FileText size={16} />
-                                <span>Número Documento *</span>
-                            </div>
+                        <div className="flex flex-col gap-0">
+                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Número Documento *</span></div>
                             <input
                                 type="text"
                                 name="numeroDocumento"
                                 value={formData.numeroDocumento}
                                 onChange={handleChange}
+                                onBlur={() => tocar("numeroDocumento")}
                                 placeholder="Ej: DOC-001"
-                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 ${ringClass(estadoNumDoc)}`}
                             />
+                            <FieldStatus estado={estadoNumDoc} />
                         </div>
 
-                        {/* TIPO VENTA */}
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                                <FileText size={16} />
-                                <span>Tipo Venta *</span>
-                            </div>
+                        <div className="flex flex-col gap-0">
+                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Tipo Venta *</span></div>
                             <select
                                 name="tipoVenta"
                                 value={formData.tipoVenta}
@@ -160,29 +175,23 @@ export default function CreateSales() {
                         </div>
                     </div>
 
-                    {/* FILA 2: FECHA Y ESTADO */}
+                    {/* FILA 2 */}
                     <div className="grid grid-cols-2 gap-6">
-                        {/* FECHA */}
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                                <FileText size={16} />
-                                <span>Fecha *</span>
-                            </div>
+                        <div className="flex flex-col gap-0">
+                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Fecha *</span></div>
                             <input
                                 type="date"
                                 name="fecha"
                                 value={formData.fecha}
                                 onChange={handleChange}
-                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                onBlur={() => tocar("fecha")}
+                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 ${ringClass(estadoFecha)}`}
                             />
+                            <FieldStatus estado={estadoFecha} />
                         </div>
 
-                        {/* ESTADO */}
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                                <FileText size={16} />
-                                <span>Estado *</span>
-                            </div>
+                        <div className="flex flex-col gap-0">
+                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Estado *</span></div>
                             <select
                                 name="estado"
                                 value={formData.estado}
@@ -199,18 +208,22 @@ export default function CreateSales() {
                     <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                                <FileText size={16} />
-                                <span>Productos *</span>
+                                <FileText size={16} /><span>Productos *</span>
                             </div>
                             <button
                                 type="button"
-                                onClick={handleAddProduct}
+                                onClick={() => setIsModalOpen(true)}
                                 className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium"
                             >
-                                <Plus size={16} />
-                                Agregar Producto
+                                <Plus size={16} />Agregar Producto
                             </button>
                         </div>
+
+                        {productosError && (
+                            <div className="flex items-center gap-1 text-xs text-red-500">
+                                <AlertCircle size={12} /><span>{productosError}</span>
+                            </div>
+                        )}
 
                         <div className="bg-white rounded-lg overflow-x-auto">
                             <table className="w-full text-sm">
@@ -226,37 +239,27 @@ export default function CreateSales() {
                                 <tbody>
                                     {productos.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                                            <td colSpan="5" className="px-4 py-8 text-center text-gray-400">
                                                 No hay productos agregados. Haga clic en "Agregar Producto".
                                             </td>
                                         </tr>
                                     ) : (
                                         productos.map((producto, index) => (
                                             <tr key={producto.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                                <td className="px-4 py-3">
-                                                    <span className="text-gray-800">{producto.nombre}</span>
-                                                </td>
+                                                <td className="px-4 py-3 text-gray-800">{producto.nombre}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <input
                                                         type="number"
                                                         value={producto.cantidad}
-                                                        onChange={(e) => handleProductChange(index, 'cantidad', e.target.value)}
+                                                        onChange={(e) => handleProductChange(index, "cantidad", e.target.value)}
                                                         min="1"
                                                         className="w-full bg-gray-100 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    ${parseFloat(producto.precio).toFixed(2)}
-                                                </td>
-                                                <td className="px-4 py-3 text-right font-semibold">
-                                                    ${(producto.cantidad * producto.precio).toFixed(2)}
-                                                </td>
+                                                <td className="px-4 py-3 text-right">${parseFloat(producto.precio).toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-right font-semibold">${(producto.cantidad * producto.precio).toFixed(2)}</td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveProduct(index)}
-                                                        className="p-1 hover:bg-red-100 rounded transition cursor-pointer"
-                                                    >
+                                                    <button type="button" onClick={() => handleRemoveProduct(index)} className="p-1 hover:bg-red-100 rounded transition cursor-pointer">
                                                         <Trash size={16} className="text-red-600" />
                                                     </button>
                                                 </td>
@@ -284,25 +287,19 @@ export default function CreateSales() {
                         </div>
                     </div>
 
-                    {/* BOTON GUARDAR */}
+                    {/* BOTONES */}
                     <div className="flex justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={() => navigate("/dashboard/sales-management")}
-                            className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition cursor-pointer font-medium"
-                        >
+                        <button type="button" onClick={() => navigate("/dashboard/sales-management")}
+                            className="px-6 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition cursor-pointer font-medium">
                             Cancelar
                         </button>
-                        <button
-                            type="submit"
-                            className="px-6 py-2 rounded-lg bg-linear-to-r from-white to-yellow-300 shadow-md hover:shadow-lg transition cursor-pointer font-medium"
-                        >
+                        <button type="submit"
+                            className="px-6 py-2 rounded-lg bg-linear-to-r from-white to-yellow-300 shadow-md hover:shadow-lg transition cursor-pointer font-medium">
                             Registrar Venta
                         </button>
                     </div>
                 </form>
 
-                {/* MODAL PARA AGREGAR PRODUCTO */}
                 <AddProductModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
@@ -310,6 +307,8 @@ export default function CreateSales() {
                     products={availableProducts}
                 />
             </div>
+
+            {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
         </>
     );
 }

@@ -195,11 +195,18 @@ export default function CreateRoles() {
                     })}
                 </div>
 
-                {/* BOTON REGISTRAR */}
-                <div className="flex justify-end mt-4">
+                {/* BOTON REGISTRAR y VOLVER */}
+                <div className="flex justify-end gap-4 mt-4">
+                    <button
+                        type="button"
+                        onClick={() => navigate("/dashboard/roles")}
+                        className="bg-gray-200 text-gray-700 font-bold py-3 px-8 rounded-xl shadow hover:bg-gray-300 transition cursor-pointer"
+                    >
+                        Volver
+                    </button>
                     <button
                         type="submit"
-                        className="bg-gradient-to-r from-yellow-100 to-yellow-400 text-gray-900 font-bold py-3 px-12 rounded-xl shadow-md hover:shadow-lg transition transform hover:scale-105"
+                        className="bg-gradient-to-r from-yellow-100 to-yellow-400 text-gray-900 font-bold py-3 px-12 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer"
                     >
                         Registrar Rol
                     </button>
