@@ -1,15 +1,13 @@
-import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { usersService } from "../services/usersService";
 
 import Pagination from "../../../components/ui/Pagination";
-import SearchInput from "../../../components/ui/SearchInput";
-import PrimaryButton from "../../../components/ui/PrimaryButton";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert from "../../../components/ui/Alert";
 import UsersTable from "../components/UsersTable";
 import { useUsersTable } from "../hooks/useUsersTable";
+import SearchBar from "../../../components/ui/Searchbar";
 
 export default function Users() {
 
@@ -63,17 +61,17 @@ export default function Users() {
 
     // NAVEGACIÓN
     // En Users.jsx
-const handleEditNavigation = (user) => {
-    navigate(`/dashboard/users/${user.id}/update`, {
-        state: { user },
-    });
-};
+    const handleEditNavigation = (user) => {
+        navigate(`/dashboard/users/${user.id}/update`, {
+            state: { user },
+        });
+    };
 
-const handleDetailsNavigation = (user) => {
-    navigate(`/dashboard/users/${user.id}`, {
-        state: { user },
-    });
-};
+    const handleDetailsNavigation = (user) => {
+        navigate(`/dashboard/users/${user.id}`, {
+            state: { user },
+        });
+    };
 
     // HOOK
     const { deleteUser, toggleEstado } = useUsersTable({
@@ -88,21 +86,13 @@ const handleDetailsNavigation = (user) => {
 
                 <p className="text-xl font-semibold">Gestión de usuarios</p>
 
-                <div className="flex justify-between">
-                    <SearchInput
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar usuarios..."
-                        className="w-4/5"
-                    />
-
-                    <PrimaryButton
-                        onClick={() => navigate("/dashboard/users/createUser")}
-                        icon={Plus}
-                    >
-                        Crear usuario
-                    </PrimaryButton>
-                </div>
+                <SearchBar
+                    searchTerm={search}
+                    onSearchChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar usuario ..."
+                    onCreateClick={() => navigate("/dashboard/users/create")}
+                    createButtonText="Crear usuario"
+                />
 
                 <UsersTable
                     data={currentRecords}

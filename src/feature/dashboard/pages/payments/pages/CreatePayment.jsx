@@ -1,19 +1,12 @@
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { X } from "lucide-react";
-
 import Alert from "../../../components/ui/Alert";
+import UserForm from "../../users/components/UserForm";
 
-import UserForm from "../components/UserForm";
-import { useUserForm } from "../hooks/useUserForm";
-
-export default function UpdateUser() {
+export default function CreatePayment() {
 
     const navigate = useNavigate();
-    const location = useLocation();
 
-    const userToEdit = location.state?.user;
-
-    
     const {
         formData,
         errors,
@@ -21,21 +14,15 @@ export default function UpdateUser() {
         setAlert,
         handleChange,
         validateForm,
-        updateUser
-    } = useUserForm({ userToEdit, navigate });
-
-    // Si no hay usuario, redirigir
-    if (!userToEdit) {
-        navigate("/dashboard/users");
-        return null;
-    }
+        createPayment
+    } = usePaymentForm({ navigate });
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
-        const success = updateUser();
+        const success = createPayment();
 
         if (success) {
             setTimeout(() => {
@@ -50,9 +37,9 @@ export default function UpdateUser() {
 
                 <div className="flex justify-between">
                     <div>
-                        <p className="text-xl font-semibold">Editar usuario</p>
+                        <p className="text-xl font-semibold">Crear usuario</p>
                         <p className="text-sm text-gray-600">
-                            Modifique los datos necesarios
+                            Complete todos los campos
                         </p>
                     </div>
 
@@ -67,7 +54,7 @@ export default function UpdateUser() {
                     handleChange={handleChange}
                     handleSubmit={handleSubmit}
                     onCancel={() => navigate("/dashboard/users")}
-                    buttonText="Actualizar usuario"
+                    buttonText="Crear usuario"
                 />
             </div>
 

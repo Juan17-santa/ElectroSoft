@@ -7,6 +7,12 @@ import Layout from "../feature/dashboard/layout";
 import Dashboard from "../feature/dashboard/pages/dashboard/Dashboard";
 import ProductCategory from "../feature/dashboard/pages/productCategory/pages/ProductCategory";
 
+import Users from "../feature/dashboard/pages/users/pages/Users";
+import UserDetail from "../feature/dashboard/pages/users/pages/UserDetail";
+import EditProfile from "../feature/auth/pages/EditProfile";
+import CreateUser from "../feature/dashboard/pages/users/pages/CreateUser";
+import UpdateUser from "../feature/dashboard/pages/users/pages/UpdateUser";
+
 import Clients from "../feature/dashboard/pages/Clients/Clients";
 import CreateClients from "../feature/dashboard/pages/Clients/CreateClients";
 import UpdateClients from "../feature/dashboard/pages/Clients/UpdateClients";
@@ -14,7 +20,7 @@ import ClientDetailsPage from "../feature/dashboard/pages/Clients/ClientDetailsP
 import CreateSales from "../feature/dashboard/pages/SalesManagement/CreateSales";
 import SalesManagement from "../feature/dashboard/pages/SalesManagement/SalesManagement";
 import UpdateSales from "../feature/dashboard/pages/SalesManagement/UpdateSales";
-import CreditDetailsPage from "../feature/dashboard/pages/SalesManagement/CreditDetailsModal";
+import CreditDetailsModal from "../feature/dashboard/pages/SalesManagement/CreditDetailsModal";
 import ReturnSalesPage from "../feature/dashboard/pages/SalesManagement/ReturnSalesPage";
 import SaleDetailsPage from "../feature/dashboard/pages/SalesManagement/SaleDetailsPage";
 import Roles from "../feature/dashboard/pages/Roles/Roles";
@@ -22,10 +28,6 @@ import CreateRoles from "../feature/dashboard/pages/Roles/CreateRoles";
 import UpdateRoles from "../feature/dashboard/pages/Roles/UpdateRoles";
 import RoleDetailsPage from "../feature/dashboard/pages/Roles/RoleDetailsPage";
 
-import Users from "../feature/dashboard/pages/users/Users";
-import CreateUser from "../feature/dashboard/pages/users/CreateUser";
-import UserDetail from "../feature/dashboard/pages/users/UserDetail";
-import EditUser from "../feature/dashboard/pages/users/EditUser";
 import Shopping from "../feature/dashboard/pages/shopping/Shopping";
 import CreateShopping from "../feature/dashboard/pages/shopping/CreateShopping";
 import ShoppingDetails from "../feature/dashboard/pages/shopping/ShoppingDetails";
@@ -44,6 +46,9 @@ import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/Creat
 import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
 import DevolutionDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionDetails";
 import SaleDevolutionInfo from "../feature/dashboard/pages/devolutions/pages/SaleDevolutionInfo";
+import Payments from "../feature/dashboard/pages/payments/pages/payments";
+import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDetail";
+import CreatePayment from "../feature/dashboard/pages/payments/pages/CreatePayment";
 
 export default function RoutersApp() {
     return (
@@ -77,15 +82,9 @@ export default function RoutersApp() {
                 <Route path="sales-management" element={<SalesManagement />} />
                 <Route path="sales-management/create" element={<CreateSales />} />
                 <Route path="sales-management/update" element={<UpdateSales />} />
-                <Route path="sales-management/credit-details" element={<CreditDetailsPage />} />
+                <Route path="sales-management/credit-details" element={<CreditDetailsModal />} />
                 <Route path="sales-management/return" element={<ReturnSalesPage />} />
                 <Route path="sales-management/details" element={<SaleDetailsPage />} />
-
-                {/* USUARIOS */}
-                <Route path="users" element={<Users />} />
-                <Route path="users/createUser" element={<CreateUser />} />
-                <Route path="users/:id" element={<UserDetail />} />
-                <Route path="users/:id/edit" element={<EditUser />} />
 
                 {/* COMPRAS */}
                 <Route path="shopping" element={<Shopping />} />
@@ -97,6 +96,13 @@ export default function RoutersApp() {
                 <Route path="providers/create" element={<CreateProvider />} />
                 <Route path="providers/update" element={<UpdateProvider />} />
                 <Route path="providers/detail" element={<ProviderDetails />} />
+
+                {/* Usuarios */}
+                <Route path="users" element={<Users />} />
+                <Route path="users/create" element={<CreateUser />} />
+                <Route path="users/:id" element={<UserDetail />} />
+                <Route path="users/:id/update" element={<UpdateUser />} />
+                <Route path="editprofile" element={<EditProfile />} />
 
                 {/* PRODUCTOS */}
                 <Route path="products" element={<Products />} />
@@ -114,6 +120,11 @@ export default function RoutersApp() {
                 <Route path="devolutions/details/:id" element={<DevolutionDetails />} />
                 <Route path="devolutions/sale-info/:id" element={<SaleDevolutionInfo />} />
 
+                {/* PAGOS Y ABONOS */}
+                <Route path="payments" element={<Payments />} />
+                <Route path="payments/create" element={<CreatePayment />} />
+                <Route path="payments/detail/:id" element={<PaymentDetail />} />
+                
             </Route>
 
             {/* AYUDAS PARA LAS RUTAS PRIVADAS, ESTO ES UN EJEMPLO, NO BORRAR */}
