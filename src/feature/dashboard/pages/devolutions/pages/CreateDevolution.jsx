@@ -64,8 +64,26 @@ function validarProducto(val, idVenta) {
     return { valido: true, mensaje: "" };
 }
 
-function validarCantidad(val) {
-    if (!val) return { valido: false, mensaje: "Selecciona la cantidad." };
+function validarCantidad(val, producto, idVenta, ventasList) {
+    if (!val) return { valido: false, mensaje: "Ingresa la cantidad." };
+    
+    const cantidad = Number(val);
+    if (isNaN(cantidad) || cantidad <= 0) 
+        return { valido: false, mensaje: "La cantidad debe ser mayor a 0." };
+    
+    // Validar que no supere la cantidad disponible en la venta
+    if (producto && idVenta) {
+        const venta = ventasList.find((v) => String(v.id) === String(idVenta));
+        const productoEnVenta = venta?.productos?.find((p) => p.nombre === producto);
+        
+        if (productoEnVenta && cantidad > productoEnVenta.cantidad) {
+            return { 
+                valido: false, 
+                mensaje: `No puedes devolver ${cantidad} unidades. Disponibles: ${productoEnVenta.cantidad}`
+            };
+        }
+    }
+    
     return { valido: true, mensaje: "" };
 }
 
@@ -230,7 +248,7 @@ export default function CreateDevolution() {
             case "motivo":            return validarMotivo(form.motivo);
             case "submotivo":         return validarSubmotivo(form.submotivo, form.motivo);
             case "producto":          return validarProducto(form.producto, form.idVenta);
-            case "cantidad":          return validarCantidad(form.cantidad);
+            case "cantidad":          return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList);
             case "condicionProducto": return validarCondicion(form.condicionProducto, form.motivo);
             case "gestion":           return validarGestion(form.gestion, form.motivo, form.submotivo);
             case "responsable":       return validarResponsable(form.responsable, form.motivo, form.garantiaProveedor);
@@ -249,7 +267,7 @@ export default function CreateDevolution() {
             validarMotivo(form.motivo),
             validarSubmotivo(form.submotivo, form.motivo),
             validarProducto(form.producto, form.idVenta),
-            validarCantidad(form.cantidad),
+            validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList),
             validarCondicion(form.condicionProducto, form.motivo),
             validarGestion(form.gestion, form.motivo, form.submotivo),
             validarResponsable(form.responsable, form.motivo, form.garantiaProveedor),

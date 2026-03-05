@@ -77,21 +77,25 @@ function ring(estado) {
  *  estadoCampo      — (campo) => { valido, mensaje } | null  (validación)
  *  onFieldBlur      — (campo) => void  (marcar campo como tocado al salir)
  *  sinProductos     — boolean: muestra aviso "sin productos disponibles"
+ *  readOnlyFields   — array: campos que no pueden editarse (ej: ["idVenta", "producto"])
  */
 export default function DevolutionForm({
     form,
     onChange,
     onSubmit,
     onCancel,
-    readOnly       = false,
-    title          = "Devolución",
-    submitText     = "Guardar",
-    productosList  = [],
-    ventasList     = [],
-    estadoCampo    = () => null,
-    onFieldBlur    = () => {},
-    sinProductos   = false,
+    readOnly         = false,
+    title            = "Devolución",
+    submitText       = "Guardar",
+    productosList    = [],
+    ventasList       = [],
+    estadoCampo      = () => null,
+    onFieldBlur      = () => {},
+    sinProductos     = false,
+    readOnlyFields   = [],
 }) {
+    // Helper para verificar si un campo debe estar readonly
+    const esReadOnly = (campo) => readOnly || readOnlyFields.includes(campo);
     // Opciones filtradas según reglas de negocio
     const gestionesDisponibles   = getGestionesPermitidas(form.motivo, form.submotivo);
     const condicionesDisponibles = getCondicionesPermitidas(form.motivo);
@@ -105,7 +109,7 @@ export default function DevolutionForm({
         bg-gray-200 text-gray-500 rounded-xl px-4 py-3 text-sm w-full shadow-sm
         focus:outline-none focus:ring-2
         transition-all duration-200
-        ${readOnly ? "opacity-75 cursor-not-allowed" : "cursor-pointer"}
+        ${esReadOnly(campo) ? "opacity-75 cursor-not-allowed" : "cursor-pointer"}
         ${ring(estadoCampo(campo))}
     `;
 
@@ -126,7 +130,7 @@ export default function DevolutionForm({
 
                 {/* ID VENTA */}
                 <Field icon={Receipt} label="ID Venta *">
-                    {readOnly ? (
+                    {esReadOnly("idVenta") ? (
                         <input type="text" value={form.idVenta} readOnly className={fieldBase("idVenta")} />
                     ) : (
                         <VentaSearchSelect
@@ -146,7 +150,7 @@ export default function DevolutionForm({
                         value={form.motivo}
                         onChange={(e) => onChange("motivo", e.target.value)}
                         onBlur={() => onFieldBlur("motivo")}
-                        disabled={readOnly}
+                        disabled={esReadOnly("motivo")}
                         className={fieldBase("motivo")}
                     >
                         <option value="">Seleccionar...</option>
@@ -157,7 +161,7 @@ export default function DevolutionForm({
 
                 {/* SUBMOTIVO — depende del motivo */}
                 <Field icon={GitBranch} label="Submotivo *">
-                    {readOnly ? (
+                    {esReadOnly("submotivo") ? (
                         <input type="text" value={form.submotivo || "—"} readOnly className={fieldBase("submotivo")} />
                     ) : (
                         <select
@@ -178,7 +182,7 @@ export default function DevolutionForm({
 
                 {/* PRODUCTO */}
                 <Field icon={Box} label="Producto *">
-                    {readOnly ? (
+                    {esReadOnly("producto") ? (
                         <input type="text" value={form.producto} readOnly className={fieldBase("producto")} />
                     ) : (
                         <select
@@ -196,7 +200,7 @@ export default function DevolutionForm({
                     )}
 
                     {/* Mensaje cuando no hay productos disponibles para devolver */}
-                    {sinProductos && !readOnly ? (
+                    {sinProductos && !esReadOnly("producto") ? (
                         <div className="flex items-center gap-1 text-xs mt-1 text-amber-600">
                             <AlertCircle size={12} />
                             <span>Todos los productos de esta venta ya tienen devolución registrada.</span>
@@ -213,18 +217,17 @@ export default function DevolutionForm({
 
                 {/* CANTIDAD */}
                 <Field icon={Boxes} label="Cantidad *">
-                    <select
+                    <input
+                        type="number"
+                        min="1"
+                        max="9999"
                         value={form.cantidad}
                         onChange={(e) => onChange("cantidad", e.target.value)}
                         onBlur={() => onFieldBlur("cantidad")}
-                        disabled={readOnly}
-                        className={fieldBase("cantidad")}
-                    >
-                        <option value="">Seleccionar...</option>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                            <option key={n} value={n}>{n}</option>
-                        ))}
-                    </select>
+                        readOnly={esReadOnly("cantidad")}
+                        placeholder="Ingresa cantidad..."
+                        className={`${fieldBase("cantidad")} ${esReadOnly("cantidad") ? "cursor-not-allowed" : ""}`}
+                    />
                     <FieldStatus estado={estadoCampo("cantidad")} />
                 </Field>
 
@@ -234,7 +237,7 @@ export default function DevolutionForm({
                         value={form.condicionProducto}
                         onChange={(e) => onChange("condicionProducto", e.target.value)}
                         onBlur={() => onFieldBlur("condicionProducto")}
-                        disabled={readOnly}
+                        disabled={esReadOnly("condicionProducto")}
                         className={fieldBase("condicionProducto")}
                     >
                         <option value="">Seleccionar...</option>
@@ -251,7 +254,7 @@ export default function DevolutionForm({
                         value={form.gestion}
                         onChange={(e) => onChange("gestion", e.target.value)}
                         onBlur={() => onFieldBlur("gestion")}
-                        disabled={readOnly || gestionesDisponibles.length === 0}
+                        disabled={esReadOnly("gestion") || gestionesDisponibles.length === 0}
                         className={`${fieldBase("gestion")} ${(!form.motivo || gestionesDisponibles.length === 0) ? "opacity-40" : ""}`}
                     >
                         <option value="">
@@ -274,7 +277,7 @@ export default function DevolutionForm({
                         value={form.responsable}
                         onChange={(e) => onChange("responsable", e.target.value)}
                         onBlur={() => onFieldBlur("responsable")}
-                        disabled={readOnly || form.motivo === "LOGISTICA" || form.motivo === "CLIENTE"}
+                        disabled={esReadOnly("responsable") || form.motivo === "LOGISTICA" || form.motivo === "CLIENTE"}
                         className={`${fieldBase("responsable")} ${(form.motivo === "LOGISTICA" || form.motivo === "CLIENTE") ? "opacity-60" : ""}`}
                     >
                         <option value="">Seleccionar...</option>
@@ -295,7 +298,7 @@ export default function DevolutionForm({
                         value={form.estadoResolucion}
                         onChange={(e) => onChange("estadoResolucion", e.target.value)}
                         onBlur={() => onFieldBlur("estadoResolucion")}
-                        disabled={readOnly}
+                        disabled={esReadOnly("estadoResolucion")}
                         className={fieldBase("estadoResolucion")}
                     >
                         <option value="">Seleccionar...</option>
@@ -309,7 +312,7 @@ export default function DevolutionForm({
                 <div className="grid grid-cols-2 gap-x-8">
 
                     {/* FECHA */}
-                    {readOnly ? (
+                    {esReadOnly("fecha") ? (
                         <Field icon={CalendarDays} label="Fecha">
                             <input type="text" value={form.fecha} readOnly className={fieldBase("fecha")} />
                         </Field>
@@ -343,7 +346,7 @@ export default function DevolutionForm({
                                         onChange("garantiaProveedor", val);
                                         onFieldBlur("garantiaProveedor");
                                     }}
-                                    readOnly={readOnly}
+                                    readOnly={esReadOnly("garantiaProveedor")}
                                 />
                                 <FieldStatus estado={estadoCampo("garantiaProveedor")} />
                             </>
@@ -361,7 +364,7 @@ export default function DevolutionForm({
                         value={form.descripcion}
                         onChange={(e) => onChange("descripcion", e.target.value)}
                         onBlur={() => onFieldBlur("descripcion")}
-                        readOnly={readOnly}
+                        readOnly={esReadOnly("descripcion")}
                         rows={4}
                         placeholder="Describe el motivo detallado de la devolución..."
                         className={`${fieldBase("descripcion")} resize-none`}
@@ -374,7 +377,7 @@ export default function DevolutionForm({
                         value={form.observaciones}
                         onChange={(e) => onChange("observaciones", e.target.value)}
                         onBlur={() => onFieldBlur("observaciones")}
-                        readOnly={readOnly}
+                        readOnly={esReadOnly("observaciones")}
                         rows={4}
                         placeholder="Observaciones adicionales sobre la devolución..."
                         className={`${fieldBase("observaciones")} resize-none`}

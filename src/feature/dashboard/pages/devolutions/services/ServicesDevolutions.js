@@ -27,6 +27,7 @@ export const ServicesDevolutions = {
             id:                 Date.now(),
             idVenta:            devolution.idVenta            ?? "",
             motivo:             devolution.motivo             ?? "",
+            submotivo:          devolution.submotivo          ?? "",
             producto:           devolution.producto           ?? "",
             cantidad:           devolution.cantidad           ?? "",
             condicionProducto:  devolution.condicionProducto  ?? "",
