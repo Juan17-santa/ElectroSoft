@@ -3,60 +3,59 @@ import { ChevronDown, Search } from "lucide-react";
 
 /**
  * Combobox de búsqueda para seleccionar una venta por número de documento.
- * Reemplaza el <select> nativo del campo ID Venta.
- *
- * ⚠️  Definido como componente de módulo (no global) ya que su lógica
- *     es específica del formato de las ventas.
  *
  * Props:
- *  value       — id de la venta actualmente seleccionada
+ *  value       — id de la venta seleccionada
  *  onChange    — (id: string) => void
+ *  onBlur      — () => void   (para marcar campo como tocado)
  *  ventasList  — array de ventas { id, numeroDocumento }
  *  disabled    — boolean
+ *  estado      — { valido, mensaje } | null  (para ring de validación)
  */
-export default function VentaSearchSelect({ value, onChange, ventasList = [], disabled = false }) {
-    const [query, setQuery]       = useState("");
-    const [open, setOpen]         = useState(false);
-    const containerRef            = useRef(null);
-    const inputRef                = useRef(null);
+export default function VentaSearchSelect({
+    value, onChange, onBlur, ventasList = [], disabled = false, estado = null,
+}) {
+    const [query, setQuery]   = useState("");
+    const [open, setOpen]     = useState(false);
+    const containerRef        = useRef(null);
+    const inputRef            = useRef(null);
 
-    // Etiqueta de la venta seleccionada actualmente
     const selectedLabel = (() => {
         const found = ventasList.find((v) => String(v.id) === String(value));
         if (!found) return "";
         return found.numeroDocumento || `#${String(found.id).slice(-6)}`;
     })();
 
-    // Opciones filtradas por lo que escribe el usuario
     const filtered = ventasList.filter((v) => {
         const doc = (v.numeroDocumento || "").toLowerCase();
         const id  = String(v.id).toLowerCase();
         return doc.includes(query.toLowerCase()) || id.includes(query.toLowerCase());
     });
 
-    // Cerrar al hacer click fuera
+    // Ring class según estado de validación
+    const ringClass = !estado
+        ? "focus-within:ring-2 focus-within:ring-gray-400"
+        : estado.valido
+            ? "ring-1 ring-green-300"
+            : "ring-1 ring-red-300";
+
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (containerRef.current && !containerRef.current.contains(e.target)) {
+                if (open) onBlur?.();
                 setOpen(false);
                 setQuery("");
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+    }, [open]);
 
     const handleSelect = (venta) => {
         onChange(String(venta.id));
         setQuery("");
         setOpen(false);
-    };
-
-    const handleInputChange = (e) => {
-        setQuery(e.target.value);
-        setOpen(true);
-        // Si el usuario borra todo, limpia la selección
-        if (e.target.value === "") onChange("");
+        onBlur?.();
     };
 
     const handleOpen = () => {
@@ -71,36 +70,31 @@ export default function VentaSearchSelect({ value, onChange, ventasList = [], di
     return (
         <div ref={containerRef} className="relative w-full">
 
-            {/* TRIGGER: muestra el valor seleccionado o el input de búsqueda */}
+            {/* TRIGGER */}
             <div
                 onClick={handleOpen}
                 className={`
                     flex items-center justify-between
                     bg-gray-200 rounded-xl px-4 py-3 text-sm w-full shadow-sm
                     transition-all duration-200
-                    ${disabled
-                        ? "opacity-75 cursor-not-allowed"
-                        : "cursor-pointer focus-within:ring-2 focus-within:ring-gray-400"
-                    }
-                    ${open ? "ring-2 ring-gray-400" : ""}
+                    ${disabled ? "opacity-75 cursor-not-allowed" : "cursor-pointer"}
+                    ${open ? "ring-2 ring-gray-400" : ringClass}
                 `}
             >
                 {open ? (
-                    // Modo búsqueda: muestra input con lupa
                     <div className="flex items-center gap-2 w-full">
                         <Search size={14} className="text-gray-400 shrink-0" />
                         <input
                             ref={inputRef}
                             type="text"
                             value={query}
-                            onChange={handleInputChange}
-                            placeholder="Buscar por ID venta"
+                            onChange={(e) => setQuery(e.target.value)}
+                            placeholder="Buscar por N° documento..."
                             onClick={(e) => e.stopPropagation()}
                             className="bg-transparent outline-none text-gray-700 placeholder-gray-400 w-full text-sm"
                         />
                     </div>
                 ) : (
-                    // Modo display: muestra la selección actual
                     <span className={selectedLabel ? "text-gray-700" : "text-gray-400"}>
                         {selectedLabel || "Seleccionar..."}
                     </span>
@@ -133,7 +127,7 @@ export default function VentaSearchSelect({ value, onChange, ventasList = [], di
                         </p>
                     ) : (
                         filtered.map((v) => {
-                            const label   = v.numeroDocumento || `#${String(v.id).slice(-6)}`;
+                            const label    = v.numeroDocumento || `#${String(v.id).slice(-6)}`;
                             const isActive = String(v.id) === String(value);
                             return (
                                 <button

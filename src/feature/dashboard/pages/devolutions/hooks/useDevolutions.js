@@ -1,20 +1,14 @@
 import { useState, useEffect } from "react";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
 
-/**
- * Hook centralizado para el módulo de devoluciones.
- * Maneja: carga desde localStorage, guardado, edición, anulación y búsqueda.
- */
 export function useDevolutions() {
     const [devolutions, setDevolutions] = useState([]);
     const [searchTerm, setSearchTerm]   = useState("");
 
-    // ─── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
         setDevolutions(ServicesDevolutions.get());
     }, []);
 
-    // ─── Filtrado ──────────────────────────────────────────────────────────────
     const devolucionesFiltradas = devolutions.filter((d) => {
         const term = searchTerm.toLowerCase().trim();
         if (!term) return true;
@@ -29,16 +23,12 @@ export function useDevolutions() {
         );
     });
 
-    // ─── Acciones ──────────────────────────────────────────────────────────────
-
-    /** Guarda una nueva devolución */
     const guardarDevolucion = (data) => {
         const nueva = ServicesDevolutions.create(data);
         setDevolutions((prev) => [...prev, nueva]);
         return nueva;
     };
 
-    /** Actualiza una devolución existente */
     const editarDevolucion = (data) => {
         ServicesDevolutions.update(data);
         setDevolutions((prev) =>
@@ -46,7 +36,11 @@ export function useDevolutions() {
         );
     };
 
-    /** Cambia el estadoResolucion a "Anulada" */
+    const eliminarDevolucion = (id) => {
+        ServicesDevolutions.delete(id);
+        setDevolutions((prev) => prev.filter((d) => String(d.id) !== String(id)));
+    };
+
     const anularDevolucion = (id) => {
         ServicesDevolutions.anular(id);
         setDevolutions((prev) =>
@@ -58,7 +52,6 @@ export function useDevolutions() {
         );
     };
 
-    /** Busca una devolución por id */
     const getDevolucionById = (id) =>
         devolutions.find((d) => String(d.id) === String(id)) || null;
 
@@ -69,6 +62,7 @@ export function useDevolutions() {
         setSearchTerm,
         guardarDevolucion,
         editarDevolucion,
+        eliminarDevolucion,
         anularDevolucion,
         getDevolucionById,
     };
