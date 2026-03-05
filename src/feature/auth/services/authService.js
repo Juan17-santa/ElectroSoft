@@ -6,26 +6,9 @@ const AUTH_USER_KEY = "auth_user";
 // Inicializar usuarios si no existen
 export function initUsers() {
   const users = JSON.parse(localStorage.getItem(USERS_KEY));
-
-  if (!users) {
-    const defaultUsers = [
-      {
-        id: 1,
-        documento: "C.C 123456789",
-        nombre: "Administrador",
-        email: "admin@gmail.com",
-        telefono: "3001234567",
-        rol: "Admin",
-        estado: true,
-        password: "123456",
-      },
-    ];
-
-    localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
-  }
 }
 
-// LOGIN (contraseña fija 123456)
+// LOGIN
 export function login(email, password) {
   const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 
@@ -41,9 +24,10 @@ export function login(email, password) {
     return { ok: false, message: "Usuario inactivo" };
   }
 
-  if (password !== "123456") {
+  if (user.password !== password) {
     return { ok: false, message: "Contraseña incorrecta" };
   }
+
 
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
 
@@ -58,6 +42,28 @@ export function getAuthUser() {
 // Cerrar sesión
 export function logout() {
   localStorage.removeItem(AUTH_USER_KEY);
+}
+
+// ACTUALIZAR PERFIL
+export function updateProfile(updatedData) {
+  const authUser = getAuthUser();
+  if (!authUser) return { ok: false, message: "No autenticado" };
+
+  const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+
+  const updatedUsers = users.map(user =>
+    user.email === authUser.email
+      ? { ...user, ...updatedData }
+      : user
+  );
+
+  localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+
+  // Actualizar también el usuario logueado
+  const updatedAuthUser = { ...authUser, ...updatedData };
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedAuthUser));
+
+  return { ok: true, user: updatedAuthUser };
 }
 
 // ===============================
@@ -99,4 +105,30 @@ export function resetPassword(newPassword) {
   localStorage.removeItem(RESET_EMAIL_KEY);
 
   return true;
+}
+
+// CAMBIAR CONTRASEÑA DESDE PERFIL
+export function changePassword(currentPassword, newPassword) {
+  const authUser = getAuthUser();
+  if (!authUser) return { ok: false, message: "No autenticado" };
+
+  if (authUser.password !== currentPassword) {
+    return { ok: false, message: "La contraseña actual es incorrecta" };
+  }
+
+  const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+
+  const updatedUsers = users.map(user =>
+    user.email === authUser.email
+      ? { ...user, password: newPassword }
+      : user
+  );
+
+  localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+
+  // actualizar sesión
+  const updatedAuthUser = { ...authUser, password: newPassword };
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedAuthUser));
+
+  return { ok: true };
 }

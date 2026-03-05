@@ -1,8 +1,12 @@
 import { ChevronDown, Lightbulb, Pencil } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
 export const Navbar = () => {
     const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
+
+    
 
     return (
         <header className="bg-white border-b-2 border-yellow-300 shadow-[0_2px_6px_rgba(234,179,8,0.15)]">
@@ -47,8 +51,10 @@ export const Navbar = () => {
                                     Último acceso: 20 oct 2025
                                 </span>
 
-                                <button className="flex items-center gap-1 text-blue-600 text-sm hover:underline">
-                                    <Pencil size={16} />
+                                <button className="flex items-center gap-1 text-blue-600 text-sm hover:underline"
+                                onClick={() => navigate("/dashboard/editprofile")}>
+                                    <Pencil size={16}  />
+                                    
                                     Editar perfil
                                 </button>
                             </div>
