@@ -5,9 +5,9 @@ import { getAuthUser, logout } from "../../auth/services/authService";
 import Alert from "./ui/Alert";
 
 export const Navbar = () => {
-    const [open, setOpen]     = useState(false);
-    const [user, setUser]     = useState(null);
-    const [alert, setAlert]   = useState(null);
+    const [open, setOpen] = useState(false);
+    const [user, setUser] = useState(null);
+    const [alert, setAlert] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -15,18 +15,16 @@ export const Navbar = () => {
         if (authUser) setUser(authUser);
     }, []);
 
-    const nombre    = user?.fullName || user?.nombre || "Usuario";
-    const email     = user?.email    || "";
-    const rol       = user?.role     || user?.rol    || "Sin rol";
-    const avatar    = user?.avatar   || null;
+    const nombre = user?.fullName || user?.nombre || "Usuario";
+    const email = user?.email || "";
+    const rol = user?.role || user?.rol || "Sin rol";
+    const avatar = user?.avatar || null;
     const ultimoAcc = user?.ultimoAcceso || null;
-
-    const nombreCorto = nombre.length > 18 ? nombre.slice(0, 18) + "..." : nombre;
 
     const handleLogout = () => {
         setOpen(false);
         setAlert({ type: "success", message: "Has cerrado sesión correctamente." });
-        // Navegar después de que el usuario vea la alerta (2s)
+
         setTimeout(() => {
             logout();
             navigate("/");
@@ -35,7 +33,6 @@ export const Navbar = () => {
 
     return (
         <>
-            {/* Alert toast */}
             {alert && (
                 <Alert
                     type={alert.type}
@@ -60,18 +57,22 @@ export const Navbar = () => {
                             className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
                         >
                             {avatar ? (
-                                <img src={avatar} alt="avatar"
-                                    className="w-9 h-9 rounded-full object-cover ring-2 ring-amber-300" />
+                                <img
+                                    src={avatar}
+                                    alt="avatar"
+                                    className="w-9 h-9 rounded-full object-cover"
+                                />
                             ) : (
-                                <div className="w-9 h-9 rounded-full bg-amber-100 ring-2 ring-amber-300
-                                                flex items-center justify-center text-amber-500 font-bold text-sm">
+                                <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center font-bold text-amber-500">
                                     {nombre.charAt(0).toUpperCase()}
                                 </div>
                             )}
+
                             <div className="text-left leading-tight">
-                                <p className="text-sm font-medium">{nombreCorto}</p>
+                                <p className="text-sm font-medium">{nombre}</p>
                                 <p className="text-xs text-gray-500">{rol}</p>
                             </div>
+
                             <ChevronDown size={18} className="text-gray-500" />
                         </button>
 
@@ -90,14 +91,18 @@ export const Navbar = () => {
 
                                     <div className="flex flex-col items-center text-center mb-5">
                                         {avatar ? (
-                                            <img src={avatar} alt="avatar"
-                                                className="w-24 h-24 rounded-full object-cover mb-3 ring-2 ring-amber-300" />
+                                            <img
+                                                src={avatar}
+                                                alt="avatar"
+                                                className="w-24 h-24 rounded-full object-cover mb-3 ring-2 ring-amber-300"
+                                            />
                                         ) : (
                                             <div className="w-24 h-24 rounded-full bg-amber-100 ring-2 ring-amber-300
-                                                            flex items-center justify-center text-amber-500 font-bold text-4xl mb-3">
+                                                flex items-center justify-center text-amber-500 font-bold text-4xl mb-3">
                                                 {nombre.charAt(0).toUpperCase()}
                                             </div>
                                         )}
+
                                         <p className="font-semibold text-lg">{nombre}</p>
                                         <p className="text-blue-600 text-sm">{email}</p>
                                         <p className="text-gray-500 text-sm mt-1">{rol}</p>
@@ -105,9 +110,12 @@ export const Navbar = () => {
 
                                     <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
                                         <button
-                                            onClick={() => { setOpen(false); navigate("/dashboard/editprofile"); }}
+                                            onClick={() => {
+                                                setOpen(false);
+                                                navigate("/dashboard/editprofile");
+                                            }}
                                             className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl
-                                                       text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
+                                            text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
                                         >
                                             <Pencil size={16} />
                                             Editar perfil
@@ -116,12 +124,13 @@ export const Navbar = () => {
                                         <button
                                             onClick={handleLogout}
                                             className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl
-                                                       text-sm font-medium text-red-500 hover:bg-red-50 transition"
+                                            text-sm font-medium text-red-500 hover:bg-red-50 transition"
                                         >
                                             <LogOut size={16} />
                                             Cerrar sesión
                                         </button>
                                     </div>
+
                                 </div>
                             </>
                         )}

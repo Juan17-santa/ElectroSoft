@@ -1,8 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { X } from "lucide-react";
-import Alert from "../../dashboard/components/ui/Alert";
-import PaymentForm from "../components/PaymentForm";
-import { usePaymentForm } from "../hooks/usePaymentForm";
+import Alert from "../../../components/ui/Alert";
+import UserForm from "../../users/components/UserForm";
 
 export default function CreatePayment() {
 
@@ -15,15 +14,15 @@ export default function CreatePayment() {
         setAlert,
         handleChange,
         validateForm,
-        createUser
-    } = useUserForm({ navigate });
+        createPayment
+    } = usePaymentForm({ navigate });
 
     const handleSubmit = (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
-        const success = createUser();
+        const success = createPayment();
 
         if (success) {
             setTimeout(() => {

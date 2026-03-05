@@ -46,6 +46,9 @@ import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/Creat
 import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
 import DevolutionDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionDetails";
 import SaleDevolutionInfo from "../feature/dashboard/pages/devolutions/pages/SaleDevolutionInfo";
+import Payments from "../feature/dashboard/pages/payments/pages/payments";
+import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDetail";
+import CreatePayment from "../feature/dashboard/pages/payments/pages/CreatePayment";
 
 export default function RoutersApp() {
     return (
@@ -117,6 +120,11 @@ export default function RoutersApp() {
                 <Route path="devolutions/details/:id" element={<DevolutionDetails />} />
                 <Route path="devolutions/sale-info/:id" element={<SaleDevolutionInfo />} />
 
+                {/* PAGOS Y ABONOS */}
+                <Route path="payments" element={<Payments />} />
+                <Route path="payments/create" element={<CreatePayment />} />
+                <Route path="payments/detail/:id" element={<PaymentDetail />} />
+                
             </Route>
 
             {/* AYUDAS PARA LAS RUTAS PRIVADAS, ESTO ES UN EJEMPLO, NO BORRAR */}

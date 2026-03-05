@@ -15,7 +15,7 @@ export function initUsers() {
   const users = JSON.parse(localStorage.getItem(USERS_KEY));
 }
 
-// ── LOGIN ────────────────────────────────────────────────────────────────────
+// LOGIN
 export function login(email, password) {
   const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 
@@ -40,7 +40,18 @@ export function login(email, password) {
   localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(userConAcceso));
 
-  return { ok: true, user: userConAcceso };
+  if (!user.estado) {
+    return { ok: false, message: "Usuario inactivo" };
+  }
+
+  if (user.password !== password) {
+    return { ok: false, message: "Contraseña incorrecta" };
+  }
+
+
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+
+  return { ok: true, user };
 }
 
 // ── Obtener usuario logueado ─────────────────────────────────────────────────
@@ -53,10 +64,31 @@ export function logout() {
   localStorage.removeItem(AUTH_USER_KEY);
 }
 
-// ── Actualizar perfil ────────────────────────────────────────────────────────
+// ACTUALIZAR PERFIL
 export function updateProfile(updatedData) {
   const authUser = getAuthUser();
   if (!authUser) return { ok: false, message: "No autenticado" };
+
+  const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+
+  const updatedUsers = users.map(user =>
+    user.email === authUser.email
+      ? { ...user, ...updatedData }
+      : user
+  );
+
+  localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
+
+  // Actualizar también el usuario logueado
+  const updatedAuthUser = { ...authUser, ...updatedData };
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedAuthUser));
+
+  return { ok: true, user: updatedAuthUser };
+}
+
+// ===============================
+// RECUPERAR CONTRASEÑA
+// ===============================
 
   const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 
@@ -70,7 +102,7 @@ export function updateProfile(updatedData) {
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedAuthUser));
 
   return { ok: true, user: updatedAuthUser };
-}
+
 
 // ── Recuperar contraseña — envía código real por EmailJS ─────────────────────
 export async function requestPasswordReset(email) {
@@ -120,22 +152,26 @@ export function resetPassword(newPassword) {
   return true;
 }
 
-// ── Cambiar contraseña desde perfil ─────────────────────────────────────────
+// CAMBIAR CONTRASEÑA DESDE PERFIL
 export function changePassword(currentPassword, newPassword) {
   const authUser = getAuthUser();
   if (!authUser) return { ok: false, message: "No autenticado" };
 
-  if (authUser.password !== currentPassword)
+  if (authUser.password !== currentPassword) {
     return { ok: false, message: "La contraseña actual es incorrecta" };
+  }
 
   const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
 
-  const updatedUsers = users.map((user) =>
-    user.email === authUser.email ? { ...user, password: newPassword } : user
+  const updatedUsers = users.map(user =>
+    user.email === authUser.email
+      ? { ...user, password: newPassword }
+      : user
   );
 
   localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
 
+  // actualizar sesión
   const updatedAuthUser = { ...authUser, password: newPassword };
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updatedAuthUser));
 

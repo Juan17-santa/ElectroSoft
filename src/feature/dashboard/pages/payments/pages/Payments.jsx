@@ -1,11 +1,8 @@
-import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import paymentsService from "../services/PaymentsService";
-
+import SearchBar from "../../../components/ui/Searchbar";
 import Pagination from "../../../components/ui/Pagination";
-import SearchInput from "../../../components/ui/SearchInput";
-import PrimaryButton from "../../../components/ui/PrimaryButton";
 import PaymentsTable from "../components/paymentsTable";
 import Alert from "../../../components/ui/Alert";
 import { useLocation } from "react-router-dom";
@@ -66,22 +63,13 @@ export default function Payments() {
 
                 <p className="text-xl font-semibold">Gestión de Pagos y Abonos</p>
 
-                <div className="flex justify-between">
-                    <SearchInput
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Buscar ventas..."
-                        className="w-4/5"
-                    />
-
-                    <PrimaryButton
-                        onClick={() => navigate("/dashboard/payments/createPayment")}
-                        icon={Plus}
-                    >
-                        Crear Abono
-                    </PrimaryButton>
-                </div>
-
+                <SearchBar
+                    searchTerm={search}
+                    onSearchChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar abonos ..."
+                    onCreateClick={() => navigate("/dashboard/payments/create")}
+                    createButtonText="Crear abono"
+                />
                 <PaymentsTable
                     data={currentRecords}
                     onDetails={handleDetails}
