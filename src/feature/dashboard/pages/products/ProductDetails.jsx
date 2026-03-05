@@ -35,7 +35,7 @@ export default function ProductDetails() {
     const handleBack = () => navigate("/dashboard/products");
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner">
+        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
 
             <div
                 className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-100"
