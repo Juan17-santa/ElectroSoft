@@ -1,100 +1,96 @@
-const STORAGE_KEY = "users";
+const KEY = "users";
 
-// Datos iniciales
-// const defaultUsers = [
-//   {
-//     id: 1,
-//     documento: "C.C 1203084765",
-//     nombre: "Juan Manuel Santa",
-//     email: "juan.santa@gmail.com",
-//     telefono: "3123456723",
-//     rol: "Admin",
-//     estado: true,
-//   },
-//   {
-//     id: 2,
-//     documento: "C.C 1035498525",
-//     nombre: "Manuel Esteban Sanchez",
-//     email: "manuelE@gmail.com",
-//     telefono: "3217645657",
-//     rol: "Empleado",
-//     estado: true,
-//   },
-// ];
+export const usersService = {
 
-// // Inicializa localStorage si está vacío
-// export function initUsers() {
-//   const data = localStorage.getItem(STORAGE_KEY);
-//   if (!data) {
-//     localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultUsers));
-//   }
-// }
+    // OBTENER TODOS
+    get() {
+        const data = localStorage.getItem(KEY);
+        return data ? JSON.parse(data) : [];
+    },
 
+    // GUARDAR
+    save(users) {
+        localStorage.setItem(KEY, JSON.stringify(users));
+    },
 
-//para cargar los datos iniciales solo la primera vez 
+    // CREAR
+    create(user) {
 
-// Obtener usuarios
-export function getUsers() {
-  const data = localStorage.getItem(STORAGE_KEY);
-  return data ? JSON.parse(data) : [];
-}
+        const users = this.get();
 
-// Guardar usuarios
-function saveUsers(users) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-}
+        // Validación básica
+        if (!user.nombre || !user.email) {
+            alert("Nombre y email son obligatorios");
+            return users;
+        }
 
-// ➕ Crear usuario
-export function addUser(user) {
-  const users = getUsers();
+        // Validar email duplicado
+        const existe = users.some(u => u.email === user.email);
+        if (existe) {
+            alert("El email ya existe");
+            return users;
+        }
 
-  const newUser = {
-    ...user,
-    id: Date.now(),
-    password: "123456",
-  };
+        const newUser = {
+            ...user,
+            id: Date.now(),
+            estado: true,
+            password: "123456"
+        };
 
-  const updated = [...users, newUser];
+        const updated = [...users, newUser];
 
-  saveUsers(updated);
+        this.save(updated);
 
-  return updated;
-}
+        return updated; // 🔥 IMPORTANTE
+    },
 
+    // ACTUALIZAR
+    update(userActualizado) {
 
+        const users = this.get();
 
-// ✏️ Actualizar usuario
-export function updateUser(id, updatedData) {
-  const users = getUsers();
+        const updated = users.map(u =>
+            u.id === userActualizado.id
+                ? { ...u, ...userActualizado }
+                : u
+        );
 
-  const updated = users.map((u) =>
-    u.id === Number(id) ? { ...u, ...updatedData } : u
-  );
+        this.save(updated);
 
-  saveUsers(updated);
-  return updated;
-}
+        return updated;
+    },
 
-// 🔎 Obtener usuario por ID
-export function getUserById(id) {
-  const users = getUsers();
-  return users.find((u) => u.id === Number(id));
-}
+    // ELIMINAR
+    delete(id) {
 
-// 🔄 Cambiar estado activo/inactivo
-export function toggleUserStatus(id) {
-  const users = getUsers();
-  const updated = users.map((u) =>
-    u.id === Number(id) ? { ...u, estado: !u.estado } : u
-  );
-  saveUsers(updated);
-  return updated;
-}
+        const users = this.get();
 
-// 🗑️ Eliminar usuario
-export function deleteUser(id) {
-  const users = getUsers();
-  const updated = users.filter((u) => u.id !== Number(id));
-  saveUsers(updated);
-  return updated;
-}
+        const updated = users.filter(u => u.id !== Number(id));
+
+        this.save(updated);
+
+        return updated;
+    },
+
+    // CAMBIAR ESTADO
+    toggleEstado(id) {
+
+        const users = this.get();
+
+        const updated = users.map(u =>
+            u.id === Number(id)
+                ? { ...u, estado: !u.estado }
+                : u
+        );
+
+        this.save(updated);
+
+        return updated;
+    },
+
+    // OBTENER POR ID
+    getById(id) {
+        return this.get().find(u => u.id === Number(id));
+    }
+};

@@ -7,6 +7,12 @@ import Layout from "../feature/dashboard/layout";
 import Dashboard from "../feature/dashboard/pages/dashboard/Dashboard";
 import ProductCategory from "../feature/dashboard/pages/productCategory/pages/ProductCategory";
 
+import Users from "../feature/dashboard/pages/users/pages/Users";
+import UserDetail from "../feature/dashboard/pages/users/pages/UserDetail";
+import EditProfile from "../feature/auth/pages/EditProfile";
+import CreateUser from "../feature/dashboard/pages/users/pages/CreateUser";
+import UpdateUser from "../feature/dashboard/pages/users/pages/UpdateUser";
+
 import Clients from "../feature/dashboard/pages/Clients/Clients";
 import CreateClients from "../feature/dashboard/pages/Clients/CreateClients";
 import UpdateClients from "../feature/dashboard/pages/Clients/UpdateClients";
@@ -14,7 +20,7 @@ import ClientDetailsPage from "../feature/dashboard/pages/Clients/ClientDetailsP
 import CreateSales from "../feature/dashboard/pages/SalesManagement/CreateSales";
 import SalesManagement from "../feature/dashboard/pages/SalesManagement/SalesManagement";
 import UpdateSales from "../feature/dashboard/pages/SalesManagement/UpdateSales";
-import CreditDetailsPage from "../feature/dashboard/pages/SalesManagement/CreditDetailsModal";
+import CreditDetailsModal from "../feature/dashboard/pages/SalesManagement/CreditDetailsModal";
 import ReturnSalesPage from "../feature/dashboard/pages/SalesManagement/ReturnSalesPage";
 import SaleDetailsPage from "../feature/dashboard/pages/SalesManagement/SaleDetailsPage";
 import Roles from "../feature/dashboard/pages/Roles/Roles";
@@ -22,10 +28,6 @@ import CreateRoles from "../feature/dashboard/pages/Roles/CreateRoles";
 import UpdateRoles from "../feature/dashboard/pages/Roles/UpdateRoles";
 import RoleDetailsPage from "../feature/dashboard/pages/Roles/RoleDetailsPage";
 
-import Users from "../feature/dashboard/pages/users/pages/Users";
-import CreateUser from "../feature/dashboard/pages/users/pages/CreateUser";
-import UserDetail from "../feature/dashboard/pages/users/pages/UserDetail";
-import UpdateUser from "../feature/dashboard/pages/users/pages/UpdateUser";
 import Shopping from "../feature/dashboard/pages/shopping/Shopping";
 import CreateShopping from "../feature/dashboard/pages/shopping/CreateShopping";
 import ShoppingDetails from "../feature/dashboard/pages/shopping/ShoppingDetails";
@@ -77,15 +79,9 @@ export default function RoutersApp() {
                 <Route path="sales-management" element={<SalesManagement />} />
                 <Route path="sales-management/create" element={<CreateSales />} />
                 <Route path="sales-management/update" element={<UpdateSales />} />
-                <Route path="sales-management/credit-details" element={<CreditDetailsPage />} />
+                <Route path="sales-management/credit-details" element={<CreditDetailsModal />} />
                 <Route path="sales-management/return" element={<ReturnSalesPage />} />
                 <Route path="sales-management/details" element={<SaleDetailsPage />} />
-
-                {/* USUARIOS */}
-                <Route path="users" element={<Users />} />
-                <Route path="users/createUser" element={<CreateUser />} />
-                <Route path="users/:id" element={<UserDetail />} />
-                <Route path="users/:id/update" element={<UpdateUser />} />
 
                 {/* COMPRAS */}
                 <Route path="shopping" element={<Shopping />} />
@@ -97,6 +93,13 @@ export default function RoutersApp() {
                 <Route path="providers/create" element={<CreateProvider />} />
                 <Route path="providers/update" element={<UpdateProvider />} />
                 <Route path="providers/detail" element={<ProviderDetails />} />
+
+                {/* Usuarios */}
+                <Route path="users" element={<Users />} />
+                <Route path="users/create" element={<CreateUser />} />
+                <Route path="users/:id" element={<UserDetail />} />
+                <Route path="users/:id/update" element={<UpdateUser />} />
+                <Route path="editprofile" element={<EditProfile />} />
 
                 {/* PRODUCTOS */}
                 <Route path="products" element={<Products />} />

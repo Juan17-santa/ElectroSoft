@@ -1,84 +1,133 @@
-import { ChevronDown, Lightbulb, Pencil } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, Lightbulb, Pencil, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { getAuthUser, logout } from "../../auth/services/authService";
+import Alert from "./ui/Alert";
 
 export const Navbar = () => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen]     = useState(false);
+    const [user, setUser]     = useState(null);
+    const [alert, setAlert]   = useState(null);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const authUser = getAuthUser();
+        if (authUser) setUser(authUser);
+    }, []);
+
+    const nombre    = user?.fullName || user?.nombre || "Usuario";
+    const email     = user?.email    || "";
+    const rol       = user?.role     || user?.rol    || "Sin rol";
+    const avatar    = user?.avatar   || null;
+    const ultimoAcc = user?.ultimoAcceso || null;
+
+    const nombreCorto = nombre.length > 18 ? nombre.slice(0, 18) + "..." : nombre;
+
+    const handleLogout = () => {
+        setOpen(false);
+        setAlert({ type: "success", message: "Has cerrado sesión correctamente." });
+        // Navegar después de que el usuario vea la alerta (2s)
+        setTimeout(() => {
+            logout();
+            navigate("/");
+        }, 2000);
+    };
 
     return (
-        <header className="bg-white border-b-2 border-yellow-300 shadow-[0_2px_6px_rgba(234,179,8,0.15)]">
-            <div className="flex items-center justify-between px-6 py-1">
+        <>
+            {/* Alert toast */}
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
 
-                {/* Logo */}
-                <div className="flex items-center gap-2">
-                    <div>
+            <header className="bg-white border-b-2 border-yellow-300 shadow-[0_2px_6px_rgba(234,179,8,0.15)]">
+                <div className="flex items-center justify-between px-6 py-1">
+
+                    <div className="flex items-center gap-2">
                         <Lightbulb size={35} className="text-yellow-400" />
+                        <span className="text-3xl font-semibold">
+                            Electro<span className="text-yellow-500">Soft</span>
+                        </span>
                     </div>
-                    <span className="text-3xl font-semibold">
-                        Electro<span className="text-yellow-500">Soft</span>
-                    </span>
-                </div>
 
-                <div className="relative">
-                    <button
-                        onClick={() => setOpen(!open)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
-                    >
-                        <img
-                            src="https://i.pravatar.cc/40"
-                            alt="avatar"
-                            className="w-9 h-9 rounded-full object-cover"
-                        />
-
-                        <div className="text-left leading-tight">
-                            <p className="text-sm font-medium">Andres Camilo S...</p>
-                            <p className="text-xs text-gray-500">Administrador</p>
-                        </div>
-
-                        <ChevronDown size={18} className="text-gray-500" />
-                    </button>
-
-                    {/* Card de perfil */}
-                    {open && (
-                        <div className="absolute right-0 mt-3 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-5 z-50">
-
-                            {/* Header card */}
-                            <div className="flex items-center justify-between mb-4">
-                                <span className="text-sm text-gray-400">
-                                    Último acceso: 20 oct 2025
-                                </span>
-
-                                <button className="flex items-center gap-1 text-blue-600 text-sm hover:underline">
-                                    <Pencil size={16} />
-                                    Editar perfil
-                                </button>
+                    <div className="relative">
+                        <button
+                            onClick={() => setOpen(!open)}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+                        >
+                            {avatar ? (
+                                <img src={avatar} alt="avatar"
+                                    className="w-9 h-9 rounded-full object-cover ring-2 ring-amber-300" />
+                            ) : (
+                                <div className="w-9 h-9 rounded-full bg-amber-100 ring-2 ring-amber-300
+                                                flex items-center justify-center text-amber-500 font-bold text-sm">
+                                    {nombre.charAt(0).toUpperCase()}
+                                </div>
+                            )}
+                            <div className="text-left leading-tight">
+                                <p className="text-sm font-medium">{nombreCorto}</p>
+                                <p className="text-xs text-gray-500">{rol}</p>
                             </div>
+                            <ChevronDown size={18} className="text-gray-500" />
+                        </button>
 
-                            {/* Contenido */}
-                            <div className="flex flex-col items-center text-center">
-                                <img
-                                    src="https://i.pravatar.cc/120"
-                                    alt="avatar"
-                                    className="w-24 h-24 rounded-full object-cover mb-3"
-                                />
+                        {open && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
 
-                                <p className="font-semibold text-lg">
-                                    Andres Camilo Santa Aguiar
-                                </p>
+                                <div className="absolute right-0 mt-3 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl p-5 z-50">
 
-                                <p className="text-blue-600 text-sm hover:underline cursor-pointer">
-                                    CamiloSanta20@gmail.com
-                                </p>
+                                    <p className="text-xs text-gray-400 mb-4">
+                                        Último acceso:{" "}
+                                        <span className="font-medium text-gray-500">
+                                            {ultimoAcc ?? "Sin registro"}
+                                        </span>
+                                    </p>
 
-                                <p className="text-gray-500 text-sm mt-1">
-                                    Administrador
-                                </p>
-                            </div>
+                                    <div className="flex flex-col items-center text-center mb-5">
+                                        {avatar ? (
+                                            <img src={avatar} alt="avatar"
+                                                className="w-24 h-24 rounded-full object-cover mb-3 ring-2 ring-amber-300" />
+                                        ) : (
+                                            <div className="w-24 h-24 rounded-full bg-amber-100 ring-2 ring-amber-300
+                                                            flex items-center justify-center text-amber-500 font-bold text-4xl mb-3">
+                                                {nombre.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <p className="font-semibold text-lg">{nombre}</p>
+                                        <p className="text-blue-600 text-sm">{email}</p>
+                                        <p className="text-gray-500 text-sm mt-1">{rol}</p>
+                                    </div>
 
-                        </div>
-                    )}
+                                    <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+                                        <button
+                                            onClick={() => { setOpen(false); navigate("/dashboard/editprofile"); }}
+                                            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl
+                                                       text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
+                                        >
+                                            <Pencil size={16} />
+                                            Editar perfil
+                                        </button>
+
+                                        <button
+                                            onClick={handleLogout}
+                                            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl
+                                                       text-sm font-medium text-red-500 hover:bg-red-50 transition"
+                                        >
+                                            <LogOut size={16} />
+                                            Cerrar sesión
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
-
-            </div>
-        </header>
+            </header>
+        </>
     );
 };

@@ -27,9 +27,9 @@ export default function SalesManagement() {
 
     /** Filtra las ventas por número de documento o nombre de cliente */
     const filteredSales = sales.filter(sale =>
-        sale.numeroDocumento.toLowerCase().includes(search.toLowerCase()) ||
-        (sale.cliente && sale.cliente.toLowerCase().includes(search.toLowerCase()))
-    );
+    (sale.numeroDocumento?.toLowerCase() || '').includes(search.toLowerCase()) ||
+    (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase())
+);
 
     /** Paginación: 8 registros por página */
     const [presentPage, setPresentPage] = useState(1);

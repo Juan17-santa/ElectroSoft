@@ -2,39 +2,51 @@ import { useState, useEffect } from "react";
 import { Mail, Lock, Eye, EyeOff, Lightbulb } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { login, initUsers } from "../services/authService";
+import Alert from "../../dashboard/components/ui/Alert"; // Asegúrate de que esta ruta sea correcta
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
+  const [alert, setAlert]       = useState(null);
 
   const navigate = useNavigate();
 
-  // Inicializa usuarios en localStorage
   useEffect(() => {
     initUsers();
   }, []);
 
   const handleLogin = () => {
-  if (!email || !password) {
-    alert("Completa todos los campos");
-    return;
-  }
+    if (!email || !password) {
+      setAlert({ type: "error", message: "Por favor completa todos los campos." });
+      return;
+    }
 
-  const result = login(email, password);
+    const result = login(email, password);
 
-  if (!result.ok) {
-    alert(result.message);
-    return;
-  }
+    if (!result.ok) {
+      setAlert({ type: "error", message: result.message });
+      return;
+    }
 
-  navigate("/dashboard");
-};
-
+    // Éxito: mostrar alerta y luego navegar
+    setAlert({ type: "success", message: `Bienvenido, ${result.user?.fullName || result.user?.nombre || "usuario"}.` });
+    setTimeout(() => navigate("/dashboard"), 2000);
+  };
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-10">
-      {/* ===== LADO IZQUIERDO - IMAGEN ===== */}
+
+      {/* Alert toast */}
+      {alert && (
+        <Alert
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
+      {/* LADO IZQUIERDO - IMAGEN */}
       <div
         className="hidden md:block md:col-span-6 relative bg-cover bg-center"
         style={{ backgroundImage: "url('/login-bg.jpg')" }}
@@ -42,8 +54,9 @@ export default function Login() {
         <div className="absolute inset-0 bg-black/30" />
       </div>
 
-      {/* ===== LADO DERECHO - LOGIN ===== */}
+      {/* LADO DERECHO - LOGIN */}
       <div className="col-span-1 md:col-span-4 flex flex-col bg-linear-to-b from-white to-yellow-300 relative">
+
         {/* HEADER */}
         <div className="p-8 flex items-center gap-3 text-2xl font-bold">
           <Lightbulb className="text-yellow-500" />
