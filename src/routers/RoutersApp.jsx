@@ -34,7 +34,7 @@ import ShoppingDetails from "../feature/dashboard/pages/shopping/ShoppingDetails
 import Providers from "../feature/dashboard/pages/providers/pages/Providers";
 import CreateProvider from "../feature/dashboard/pages/providers/pages/CreateProvider";
 import UpdateProvider from "../feature/dashboard/pages/providers/pages/UpdateProvider";
-import Orders from "../feature/dashboard/pages/orders/Orders";
+import Orders from "../feature/dashboard/pages/orders/pages/Orders";
 import Products from "../feature/dashboard/pages/products/Products";
 import CreateProducts from "../feature/dashboard/pages/products/CreateProducts";
 import EditProducts from "../feature/dashboard/pages/products/EditProducts";
@@ -46,9 +46,10 @@ import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/Creat
 import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
 import DevolutionDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionDetails";
 import SaleDevolutionInfo from "../feature/dashboard/pages/devolutions/pages/SaleDevolutionInfo";
-import Payments from "../feature/dashboard/pages/payments/pages/payments";
-import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDetail";
-import CreatePayment from "../feature/dashboard/pages/payments/pages/CreatePayment";
+import CreateOrder from "../feature/dashboard/pages/orders/pages/CreateOrder"
+import Payments from "../feature/dashboard/pages/payments/pages/Payments"
+import CreatePayment from "../feature/dashboard/pages/payments/pages/CreatePayment"
+import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDetail"
 
 export default function RoutersApp() {
     return (
@@ -101,7 +102,7 @@ export default function RoutersApp() {
                 <Route path="users" element={<Users />} />
                 <Route path="users/create" element={<CreateUser />} />
                 <Route path="users/:id" element={<UserDetail />} />
-                <Route path="users/:id/update" element={<UpdateUser />} />
+                <Route path="users/update/:id" element={<UpdateUser />} />
                 <Route path="editprofile" element={<EditProfile />} />
 
                 {/* PRODUCTOS */}
@@ -112,6 +113,7 @@ export default function RoutersApp() {
                 
                 {/* PEDIDOS */}
                 <Route path="orders" element={<Orders />} />
+                <Route path="orders/create" element={<CreateOrder />} />
 
                 {/* DEVOLUCIONES */}
                 <Route path="devolutions" element={<Devolutions />} />
