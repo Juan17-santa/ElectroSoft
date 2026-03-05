@@ -11,6 +11,16 @@ export const ServicesDevolutions = {
         return this.get().find((d) => String(d.id) === String(id)) || null;
     },
 
+    /** Todas las devoluciones asociadas a una venta */
+    getByIdVenta(idVenta) {
+        return this.get().filter((d) => String(d.idVenta) === String(idVenta));
+    },
+
+    /** Productos ya devueltos para una venta (nombres) */
+    getProductosDevueltosByVenta(idVenta) {
+        return this.getByIdVenta(idVenta).map((d) => d.producto);
+    },
+
     create(devolution) {
         const all = this.get();
         const nueva = {
@@ -41,6 +51,12 @@ export const ServicesDevolutions = {
         );
         localStorage.setItem(KEY, JSON.stringify(updated));
         return devolucionActualizada;
+    },
+
+    delete(id) {
+        const updated = this.get().filter((d) => String(d.id) !== String(id));
+        localStorage.setItem(KEY, JSON.stringify(updated));
+        return updated;
     },
 
     anular(id) {

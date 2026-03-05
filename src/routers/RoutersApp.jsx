@@ -43,7 +43,7 @@ import Devolutions from "../feature/dashboard/pages/devolutions/pages/Devolution
 import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/CreateDevolution";
 import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
 import DevolutionDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionDetails";
-import SaleDevolutionInfo from "../feature/dashboard/pages/devolutions/pages/SaleDevolutionInfo";
+import DevolutionProductDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionProductDetails";
 
 export default function RoutersApp() {
     return (
@@ -112,7 +112,7 @@ export default function RoutersApp() {
                 <Route path="devolutions/create" element={<CreateDevolution />} />
                 <Route path="devolutions/edit/:id" element={<EditDevolution />} />
                 <Route path="devolutions/details/:id" element={<DevolutionDetails />} />
-                <Route path="devolutions/sale-info/:id" element={<SaleDevolutionInfo />} />
+                <Route path="devolutions/product-details/:id" element={<DevolutionProductDetails />} />
 
             </Route>
 
