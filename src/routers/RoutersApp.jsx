@@ -39,6 +39,11 @@ import EditProducts from "../feature/dashboard/pages/products/EditProducts";
 import ProductDetails from "../feature/dashboard/pages/products/ProductDetails";
 import ProductCategoryDetails from "../feature/dashboard/pages/productCategory/pages/ProductCategoryDetails";
 import ProviderDetails from "../feature/dashboard/pages/providers/pages/ProviderDetails";
+import Devolutions from "../feature/dashboard/pages/devolutions/pages/Devolutions";
+import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/CreateDevolution";
+import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
+import DevolutionDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionDetails";
+import SaleDevolutionInfo from "../feature/dashboard/pages/devolutions/pages/SaleDevolutionInfo";
 
 export default function RoutersApp() {
     return (
@@ -98,9 +103,16 @@ export default function RoutersApp() {
                 <Route path="products/create" element={<CreateProducts />} />
                 <Route path="products/update/:id" element={<EditProducts />} />
                 <Route path="products/details/:id" element={<ProductDetails />} />
+                
                 {/* PEDIDOS */}
                 <Route path="orders" element={<Orders />} />
 
+                {/* DEVOLUCIONES */}
+                <Route path="devolutions" element={<Devolutions />} />
+                <Route path="devolutions/create" element={<CreateDevolution />} />
+                <Route path="devolutions/edit/:id" element={<EditDevolution />} />
+                <Route path="devolutions/details/:id" element={<DevolutionDetails />} />
+                <Route path="devolutions/sale-info/:id" element={<SaleDevolutionInfo />} />
 
             </Route>
 

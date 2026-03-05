@@ -83,6 +83,7 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar }) {
                 {/* Cabecera */}
                 <div className="flex items-center justify-between mb-3">
                     <button
+                        type="button"
                         onClick={() => navMes(-1)}
                         className="p-1.5 rounded-lg hover:bg-gray-100 transition duration-300 cursor-pointer"
                     >
@@ -92,6 +93,7 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar }) {
                         {MESES[viewMonth]} {viewYear}
                     </span>
                     <button
+                        type="button"
                         onClick={() => navMes(1)}
                         className="p-1.5 rounded-lg hover:bg-gray-100 transition duration-300 cursor-pointer"
                     >
@@ -119,6 +121,7 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar }) {
                         const sel = esSeleccionado(dia);
                         return (
                             <button
+                                type="button"
                                 key={dia}
                                 onClick={() => handleDia(dia)}
                                 disabled={futuro}
@@ -140,6 +143,7 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar }) {
                 {/* Pie: ir a hoy */}
                 <div className="mt-3 pt-2 border-t border-gray-100 flex justify-center">
                     <button
+                        type="button"
                         onClick={() => {
                             const h = new Date();
                             const mes = String(h.getMonth() + 1).padStart(2, "0");
@@ -209,9 +213,9 @@ export default function Calendar({
                 <button
                     type="button"
                     onClick={() => setShowCalendario(v => !v)}
-                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-52 text-left transition-all duration-300
+                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full text-left transition-all duration-300
                         focus:outline-none focus:ring-2 focus:ring-gray-400 cursor-pointer flex items-center justify-between gap-2
-                        ${fechaISO ? "text-gray-700" : "text-gray-400"}`}
+                        ${fechaISO ? "text-gray-500" : "text-gray-400"}`}
                 >
                     <span>
                         {fechaISO ? formatearFecha(fechaISO) : "Seleccionar fecha"}
