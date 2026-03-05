@@ -18,6 +18,7 @@ import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
+import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -32,9 +33,9 @@ export default function SalesManagement() {
     const showAlert = (type, message) => setAlert({ type, message });
 
     const filteredSales = sales.filter(sale =>
-    (sale.numeroDocumento?.toLowerCase() || '').includes(search.toLowerCase()) ||
-    (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase())
-);
+        (sale.numeroDocumento?.toLowerCase() || '').includes(search.toLowerCase()) ||
+        (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase())
+    );
 
     const totalPages = Math.max(1, Math.ceil(filteredSales.length / ITEMS_PER_PAGE));
     const pageActual = Math.min(currentPage, totalPages);
@@ -102,22 +103,27 @@ export default function SalesManagement() {
             title: "Generar reporte",
             message: "¿Deseas descargar el reporte de ventas?",
             onConfirm: () => {
-                generatePDFReport({
-                    title: "Gestión de Ventas - Reporte",
-                    fileName: "reporte_ventas.pdf",
-                    columns: ["# Venta", "Cliente", "Fecha", "Tipo", "Total", "Pagado", "Por Pagar", "Estado"],
-                    data: filteredSales.map(sale => [
-                        sale.numeroDocumento,
-                        sale.cliente || "-",
-                        sale.fecha,
-                        sale.tipoVenta,
-                        `$${sale.total?.toLocaleString() || "0"}`,
-                        `$${sale.montoPagado?.toLocaleString() || "0"}`,
-                        `$${sale.montoPorPagar?.toLocaleString() || "0"}`,
-                        sale.estado
-                    ])
+                const reportTitle = "Gestión de Ventas - Reporte";
+                const columns = ["# Venta", "Cliente", "Fecha", "Tipo", "Total", "Pagado", "Por Pagar", "Estado"];
+                const data = filteredSales.map(sale => [
+                    sale.numeroDocumento,
+                    sale.cliente || "-",
+                    sale.fecha,
+                    sale.tipoVenta,
+                    `$${sale.total?.toLocaleString() || "0"}`,
+                    `$${sale.montoPagado?.toLocaleString() || "0"}`,
+                    `$${sale.montoPorPagar?.toLocaleString() || "0"}`,
+                    sale.estado
+                ]);
+
+                generateExcelReport({
+                    title: reportTitle,
+                    fileName: "reporte_ventas.xlsx",
+                    columns: columns,
+                    data: data
                 });
-                showAlert("success", "Reporte generado correctamente.");
+
+                showAlert("success", "Reporte Excel generado correctamente.");
                 setConfirmData(null);
             }
         });

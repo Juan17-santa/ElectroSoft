@@ -7,6 +7,7 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import { Eye, Pencil, Trash } from "lucide-react";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
+import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -77,21 +78,26 @@ export default function Clients() {
             title: "Generar reporte",
             message: "¿Deseas descargar el reporte de clientes?",
             onConfirm: () => {
-                generatePDFReport({
-                    title: "Gestión de Clientes - Reporte",
-                    fileName: "reporte_clientes.pdf",
-                    columns: ["ID", "Tipo Doc", "Documento", "Nombre", "Email", "Teléfono", "Total Compras"],
-                    data: filteredClients.map((c, i) => [
-                        String(i + 1).padStart(2, "0"),
-                        c.tipoDocumento,
-                        c.documento,
-                        `${c.nombres} ${c.apellidos}`,
-                        c.email,
-                        c.telefono,
-                        `$${c.totalCompras?.toLocaleString("es-CO") || "0"}`
-                    ])
+                const reportTitle = "Gestión de Clientes - Reporte";
+                const columns = ["ID", "Tipo Doc", "Documento", "Nombre", "Email", "Teléfono", "Total Compras"];
+                const data = filteredClients.map((c, i) => [
+                    String(i + 1).padStart(2, "0"),
+                    c.tipoDocumento,
+                    c.documento,
+                    `${c.nombres} ${c.apellidos}`,
+                    c.email,
+                    c.telefono,
+                    `$${c.totalCompras?.toLocaleString("es-CO") || "0"}`
+                ]);
+
+                generateExcelReport({
+                    title: reportTitle,
+                    fileName: "reporte_clientes.xlsx",
+                    columns: columns,
+                    data: data
                 });
-                showAlert("success", "Reporte generado correctamente.");
+
+                showAlert("success", "Reporte Excel generado correctamente.");
                 setConfirmData(null);
             }
         });

@@ -14,6 +14,7 @@
     "@tailwindcss/vite": "^4.1.18",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
+    "xlsx": "^0.18.5",
     "lucide-react": "^0.563.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

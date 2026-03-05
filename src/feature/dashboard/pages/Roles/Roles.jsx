@@ -6,6 +6,7 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
+import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -69,6 +70,34 @@ export default function Roles() {
         navigate("/dashboard/roles/details");
     };
 
+    const handleGenerarReporte = () => {
+        setConfirmData({
+            type: "info",
+            title: "Generar reporte",
+            message: "¿Deseas descargar el reporte de roles?",
+            onConfirm: () => {
+                const reportTitle = "Gestión de Roles - Reporte";
+                const columns = ["ID", "Nombre", "Descripción", "Estado"];
+                const data = filteredRoles.map((r, i) => [
+                    String(i + 1).padStart(2, "0"),
+                    r.nombre,
+                    r.descripcion,
+                    r.estado ? "Activo" : "Inactivo"
+                ]);
+
+                generateExcelReport({
+                    title: reportTitle,
+                    fileName: "reporte_roles.xlsx",
+                    columns: columns,
+                    data: data
+                });
+
+                showAlert("success", "Reporte Excel generado correctamente.");
+                setConfirmData(null);
+            }
+        });
+    };
+
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
@@ -82,6 +111,8 @@ export default function Roles() {
                     placeholder="Buscar rol..."
                     onCreateClick={() => navigate("/dashboard/roles/create")}
                     createButtonText="Nuevo Rol"
+                    showReportButton={true}
+                    onReportClick={handleGenerarReporte}
                 />
 
                 {/* TABLA */}
