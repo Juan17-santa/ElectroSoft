@@ -22,12 +22,16 @@ export function useOrdersForm({ onSuccess }) {
         clienteNombre: "",
         clienteTipoDocumento: "",
         fechaPedido: todayFormatted,
+        formaPago: "",
         fechaVencimiento: calculateVencimiento(todayFormatted),
         productos: [],
         subtotal: 0,
         iva: 0,
         total: 0
     });
+
+    // PRODUCTOS DISPONIBLES
+    const [products, setProducts] = useState([]);
 
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
@@ -62,6 +66,13 @@ export function useOrdersForm({ onSuccess }) {
 
     }, [formData.documento]);
 
+    // CARGAR SOLO LOS PRODUCTOS QUE ESTEN ACTIVOS!!!
+    useEffect(() => {
+        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+        const activos = storedProducts.filter(p => p.estado === true);
+        setProducts(activos);
+    }, []);
+
     // VALIDACION INDIVIDUAL
     const validateField = (name, value) => {
 
@@ -78,6 +89,12 @@ export function useOrdersForm({ onSuccess }) {
                     error = "Debe tener entre 8 y 12 dígitos";
                 } else if (!formData.clienteId) {
                     error = "Cliente no encontrado";
+                }
+                break;
+
+            case "formaPago":
+                if (!value) {
+                    error = "La forma de pago es obligatoria";
                 }
                 break;
 
@@ -114,6 +131,56 @@ export function useOrdersForm({ onSuccess }) {
         }));
     };
 
+    // FUNCION PARA AÑADIR PRODUCTOS
+    const addProduct = (product, quantity) => {
+
+        const subtotalProducto = product.precio * quantity;
+
+        const newProduct = {
+            id: product.id,
+            nombre: product.nombre,
+            precio: product.precio,
+            cantidad: quantity,
+            subtotal: subtotalProducto
+        };
+
+        const nuevosProductos = [...formData.productos, newProduct];
+
+        // Calcular totales
+        const subtotal = nuevosProductos.reduce((acc, p) => acc + p.subtotal, 0);
+        const iva = subtotal * 0.19;
+        const total = subtotal + iva;
+
+        setFormData(prev => ({
+            ...prev,
+            productos: nuevosProductos,
+            subtotal,
+            iva,
+            total
+        }));
+
+        // LIMPIAR ERROR DE PRODUCTOS
+        setErrors(prev => ({
+            ...prev,
+            productos: ""
+        }));
+
+        // BAJAR STOCK
+        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+
+        const updatedProducts = storedProducts.map(p => {
+            if (p.id === product.id) {
+                return {
+                    ...p,
+                    stock: p.stock - quantity
+                };
+            }
+            return p;
+        });
+
+        localStorage.setItem("products", JSON.stringify(updatedProducts));
+    };
+
     // VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
 
@@ -124,12 +191,12 @@ export function useOrdersForm({ onSuccess }) {
             if (error) newErrors[field] = error;
         });
 
-        // if (!formData.productos.length) {
-        //     newErrors.productos = "Debe agregar al menos un producto";
-        // }
+        if (!formData.productos.length) {
+            newErrors.productos = "Debe agregar al menos un producto";
+        }
 
-        if (!formData.clienteId) {
-            newErrors.documento = "Debe seleccionar un cliente válido";
+        if (!formData.formaPago) {
+            newErrors.formaPago = "Debe seleccionar una forma de pago";
         }
 
         setErrors(newErrors);
@@ -153,6 +220,8 @@ export function useOrdersForm({ onSuccess }) {
         errors,
         handleChange,
         handleSubmit,
-        setFormData
+        setFormData,
+        products,
+        addProduct
     };
 }
