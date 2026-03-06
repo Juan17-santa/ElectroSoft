@@ -7,7 +7,7 @@ export const ServicesOrders = {
         return data ? JSON.parse(data) : [];
     },
 
-    create({ documento, clienteId, fechaPedido, fechaVencimiento, productos }) {
+    create({ documento, clienteId, fechaPedido, fechaVencimiento, productos, formaPago }) {
 
         const orders = this.get();
 
@@ -18,7 +18,8 @@ export const ServicesOrders = {
             fechaPedido,
             fechaVencimiento,
             productos,
-            estado: "Pendiente", // por defecto
+            formaPago,
+            estado: "Pendiente",
             fechaCreacion: new Date().toISOString()
         };
 

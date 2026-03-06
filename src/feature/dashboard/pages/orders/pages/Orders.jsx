@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useOrdersTable } from "../hooks/UseOrdersTable";
 import SearchBar from "../../../components/ui/Searchbar";
 import OrdersTable from "../components/OrdersTable";
+import Pagination from "../../../components/ui/Pagination"
 
 export default function Orders() {
 
@@ -12,6 +13,10 @@ export default function Orders() {
     // ESTADO DEL BUSCADOR
     const [search, setSearch] = useState("");
 
+    // FUNCION PAGINADOR, PAGINA ACTUAL DEL PAGINADOR
+    const [presentPage, setPresentPage] = useState(1);
+    const recordsPerPage = 6;
+
     // FUNCION PARA PREPARAR LA VISTA DE DETALLES
     const handleDetailsNavigation = (order) => {
         navigate("/dashboard/orders/detail", {
@@ -19,7 +24,7 @@ export default function Orders() {
         })
     };
 
-    const { data } = useOrdersTable(search);
+    const { data, totalPages } = useOrdersTable(search, presentPage, recordsPerPage);
 
     return (
         <>
@@ -48,6 +53,16 @@ export default function Orders() {
                     data={data}
                     onDetails={handleDetailsNavigation}
                 />
+
+                {/* PAGINACION */}
+                <div className="flex justify-end mt-auto pt-4">
+                    <Pagination
+                        currentPage={presentPage}
+                        totalPages={totalPages}
+                        onPageChange={(page) => setPresentPage(page)}
+                    />
+                </div>
+
             </div>
         </>
     )

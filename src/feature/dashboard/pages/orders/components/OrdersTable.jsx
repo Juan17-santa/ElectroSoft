@@ -19,14 +19,14 @@ No realiza llamadas a servicios.
 No maneja estado.
 */
 
-import { Eye } from "lucide-react";
+import { Ban, CircleCheck, Eye } from "lucide-react";
 
 export default function OrdersTable({
     data,
     onDetails
 }) {
     return (
-        <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
+        <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white ">
             <div className="bg-gray-100 rounded-2xl overflow-hidden">
 
                 <table className="w-full text-sm table-fixed">
@@ -35,13 +35,13 @@ export default function OrdersTable({
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
                             <th className="px-4 py-2 w-16 font-semibold">ID</th>
-                            <th className="px-4 py-2 w-64 font-semibold">Nombre cliente</th>
+                            <th className="px-4 py-2 w-60 font-semibold">Nombre cliente</th>
                             <th className="px-4 py-2 font-semibold">Fecha creación</th>
                             <th className="px-4 py-2 font-semibold">Total</th>
                             <th className="px-4 py-2 font-semibold">Fecha vencimiento</th>
-                            <th className="px-4 py-2 font-semibold">Tipo pago</th>
-                            <th className="px-4 py-2 font-semibold">Estado</th>
-                            <th className="px-4 py-2 text-center w-24 font-semibold">Acciones</th>
+                            <th className="px-4 py-2 font-semibold w-24">Forma Pago</th>
+                            <th className="px-4 py-2 font-semibold text-center">Estado</th>
+                            <th className="px-4 py-2 font-semibold w-36 text-center">Acciones</th>
                         </tr>
                     </thead>
 
@@ -90,13 +90,13 @@ export default function OrdersTable({
                                     {/* FECHA VENCIMIENTO */}
                                     <td className="px-4 py-2">
                                         {order.fechaVencimiento
-                                        ? new Date(order.fechaVencimiento).toLocaleDateString()
-                                        : "-"}
+                                            ? new Date(order.fechaVencimiento).toLocaleDateString()
+                                            : "-"}
                                     </td>
 
                                     {/* TIPO PAGO */}
                                     <td className="px-4 py-2">
-                                        {order.tipoPago || "-"}
+                                        {order.formaPago || "-"}
                                     </td>
 
                                     {/* ESTADO */}
@@ -104,13 +104,12 @@ export default function OrdersTable({
                                         <div className="flex items-center gap-2">
                                             <span
                                                 className={`w-2.5 h-2.5 rounded-full
-                                                ${
-                                                    order.estado === "Finalizado"
+                                                ${order.estado === "Finalizado"
                                                         ? "bg-green-500"
                                                         : order.estado === "Pendiente"
-                                                        ? "bg-yellow-400"
-                                                        : "bg-red-500"
-                                                }`}
+                                                            ? "bg-yellow-400"
+                                                            : "bg-red-500"
+                                                    }`}
                                             ></span>
                                             <span>{order.estado}</span>
                                         </div>
@@ -118,16 +117,34 @@ export default function OrdersTable({
 
                                     {/* ACCIONES */}
                                     <td className="px-4 py-2">
-                                        <div className="flex justify-center">
+                                        <div className="flex justify-center gap-2">
+
+                                            {/* PROCESAR VENTA */}
                                             <button
-                                                onClick={() => onDetails(order)}
-                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                // onClick={() => onProcess(order)}
+                                                className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition cursor-pointer"
                                             >
-                                                <Eye size={18} className="text-yellow-600" />
+                                                <CircleCheck size={18} className="text-green-600" />
                                             </button>
+
+                                            {/* VER DETALLE */}
+                                            <button
+                                                // onClick={() => onDetails(order)}
+                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                            >
+                                                <Eye size={18} className="text-blue-600" />
+                                            </button>
+
+                                            {/* ANULAR PEDIDO */}
+                                            <button
+                                                // onClick={() => onCancel(order)}
+                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                            >
+                                                <Ban size={18} className="text-red-600" />
+                                            </button>
+
                                         </div>
                                     </td>
-
                                 </tr>
                             ))
                         )}

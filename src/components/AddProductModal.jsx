@@ -49,7 +49,7 @@ export default function AddProductModal({ isOpen, onClose, onAdd, products }) {
                                         className="w-full bg-gray-200 rounded-xl px-4 py-3 text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer"
                                     >
                                         <option value="">Seleccione su producto...</option>
-                                        {products.map((p) => (
+                                        {(products || []).map((p) => (
                                             <option key={p.id} value={p.id}>
                                                 {p.nombre} - ${parseFloat(p.precio || 0).toLocaleString()}
                                             </option>
