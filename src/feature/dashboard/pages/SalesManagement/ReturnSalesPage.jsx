@@ -22,10 +22,14 @@ import { X, FileText, Undo2, Trash, Pencil } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Alert from "../../components/ui/Alert";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function ReturnSalesPage() {
+    const [alertMsg, setAlertMsg] = useState(null);
     const navigate = useNavigate();
     const [sale, setSale] = useState(null);
+    const [confirmData, setConfirmData] = useState(null);
     /** Lista de productos que el usuario ha seleccionado para devolver */
     const [productosParaDevolver, setProductosParaDevolver] = useState([]);
 
@@ -84,7 +88,7 @@ export default function ReturnSalesPage() {
     const handleOpenAddModal = (producto) => {
         const yaExiste = productosParaDevolver.find(p => p.nombre === producto.nombre);
         if (yaExiste) {
-            alert("Este producto ya está en la lista de devolución");
+            setAlertMsg({ type: "error", message: "Este producto ya está en la lista de devolución" });
             return;
         }
         setModalProduct(producto);
@@ -171,17 +175,23 @@ export default function ReturnSalesPage() {
      */
     const handleRegistrarDevolucion = () => {
         if (productosParaDevolver.length === 0) {
-            alert("Debe agregar al menos un producto para devolver");
+            setAlertMsg({ type: "error", message: "Debe agregar al menos un producto para devolver" });
             return;
         }
 
-        const confirm = window.confirm("¿Está seguro de registrar esta devolución?");
-        if (!confirm) return;
-
-        SalesService.returnSale(sale.id);
-        localStorage.removeItem("saleToReturn");
-        alert("Devolución registrada correctamente");
-        navigate("/dashboard/sales-management");
+        setConfirmData({
+            type: "warning",
+            title: "Registrar devolución",
+            message: "¿Está seguro de registrar esta devolución?",
+            onConfirm: () => {
+                SalesService.returnSale(sale.id);
+                localStorage.removeItem("saleToReturn");
+                setAlertMsg({ type: "success", message: "Devolución registrada correctamente" });
+                setConfirmData(null);
+                setTimeout(() => navigate("/dashboard/sales-management"), 1800);
+            },
+            onCancel: () => setConfirmData(null)
+        });
     };
 
     /** Cierra la vista de devolución y regresa a la lista de ventas */
@@ -198,62 +208,72 @@ export default function ReturnSalesPage() {
      * Se descarga como "devolucion_[numero].pdf".
      */
     const handleGenerateReport = () => {
-        const doc = new jsPDF();
+        setConfirmData({
+            type: "info",
+            title: "Generar reporte",
+            message: "¿Deseas descargar el reporte de esta devolución?",
+            onConfirm: () => {
+                const doc = new jsPDF();
 
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("Devolución de venta", 14, 22);
+                doc.setFontSize(18);
+                doc.setFont("helvetica", "bold");
+                doc.text("Devolución de venta", 14, 22);
 
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        doc.text(`ID venta: ${sale.numeroDocumento}`, 14, 36);
-        doc.text(`Fecha creación: ${sale.fecha}`, 14, 44);
-        doc.text(`Subtotal: $${sale.subtotal?.toLocaleString()}`, 100, 36);
-        doc.text(`IVA: $${sale.iva?.toLocaleString()}`, 140, 36);
-        doc.text(`Total: $${sale.total?.toLocaleString()}`, 170, 36);
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "normal");
+                doc.text(`ID venta: ${sale.numeroDocumento}`, 14, 36);
+                doc.text(`Fecha creación: ${sale.fecha}`, 14, 44);
+                doc.text(`Subtotal: $${sale.subtotal?.toLocaleString()}`, 100, 36);
+                doc.text(`IVA: $${sale.iva?.toLocaleString()}`, 140, 36);
+                doc.text(`Total: $${sale.total?.toLocaleString()}`, 170, 36);
 
-        // Tabla 1: Productos de la venta original
-        const prodTable = autoTable(doc, {
-            startY: 54,
-            head: [["Producto", "Precio", "Cantidad", "Subtotal"]],
-            body: productos.map(p => [
-                p.nombre,
-                `$${p.precio?.toLocaleString()}`,
-                p.cantidad,
-                `$${(p.precio * p.cantidad).toLocaleString()}`
-            ]),
-            styles: { fontSize: 9 },
-            headStyles: { fillColor: [234, 179, 8] }
+                // Tabla 1: Productos de la venta original
+                autoTable(doc, {
+                    startY: 54,
+                    head: [["Producto", "Precio", "Cantidad", "Subtotal"]],
+                    body: productos.map(p => [
+                        p.nombre,
+                        `$${p.precio?.toLocaleString()}`,
+                        p.cantidad,
+                        `$${(p.precio * p.cantidad).toLocaleString()}`
+                    ]),
+                    styles: { fontSize: 9 },
+                    headStyles: { fillColor: [234, 179, 8] }
+                });
+
+                // Tabla 2: Productos seleccionados para devolución (si hay alguno)
+                if (productosParaDevolver.length > 0) {
+                    const finalY = doc.lastAutoTable.finalY + 10;
+                    doc.setFontSize(12);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Productos para devolución", 14, finalY);
+
+                    autoTable(doc, {
+                        startY: finalY + 6,
+                        head: [["Producto", "Motivo", "Condición", "Responsable", "Precio", "Cantidad", "Subtotal"]],
+                        body: productosParaDevolver.map(p => [
+                            p.nombre,
+                            p.motivo,
+                            p.condicion,
+                            p.responsable,
+                            `$${p.precio?.toLocaleString()}`,
+                            p.cantidad,
+                            `$${p.subtotalDev?.toLocaleString()}`
+                        ]),
+                        styles: { fontSize: 8 },
+                        headStyles: { fillColor: [234, 179, 8] }
+                    });
+
+                    doc.setFontSize(12);
+                    doc.text(`Total devolución: $${totalDevolucion.toLocaleString()}`, 14, doc.lastAutoTable.finalY + 10);
+                }
+
+                doc.save(`devolucion_${sale.numeroDocumento}.pdf`);
+                setAlertMsg({ type: "success", message: "Reporte generado correctamente." });
+                setConfirmData(null);
+            },
+            onCancel: () => setConfirmData(null)
         });
-
-        // Tabla 2: Productos seleccionados para devolución (si hay alguno)
-        if (productosParaDevolver.length > 0) {
-            const finalY = prodTable.finalY + 10;
-            doc.setFontSize(12);
-            doc.setFont("helvetica", "bold");
-            doc.text("Productos para devolución", 14, finalY);
-
-            const devTable = autoTable(doc, {
-                startY: finalY + 6,
-                head: [["Producto", "Motivo", "Condición", "Responsable", "Precio", "Cantidad", "Subtotal"]],
-                body: productosParaDevolver.map(p => [
-                    p.nombre,
-                    p.motivo,
-                    p.condicion,
-                    p.responsable,
-                    `$${p.precio?.toLocaleString()}`,
-                    p.cantidad,
-                    `$${p.subtotalDev?.toLocaleString()}`
-                ]),
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [234, 179, 8] }
-            });
-
-            doc.setFontSize(12);
-            doc.text(`Total devolución: $${totalDevolucion.toLocaleString()}`, 14, devTable.finalY + 10);
-        }
-
-        doc.save(`devolucion_${sale.numeroDocumento}.pdf`);
     };
 
     /**
@@ -578,6 +598,24 @@ export default function ReturnSalesPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {alertMsg && (
+                <Alert
+                    type={alertMsg.type}
+                    message={alertMsg.message}
+                    onClose={() => setAlertMsg(null)}
+                />
+            )}
+
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={confirmData.onCancel}
+                />
             )}
         </>
     );

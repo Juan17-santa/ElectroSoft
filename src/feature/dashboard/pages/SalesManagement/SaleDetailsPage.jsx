@@ -15,10 +15,14 @@ import { useNavigate } from "react-router-dom";
 import { X, FileText } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Alert from "../../components/ui/Alert";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function SaleDetailsPage() {
     const navigate = useNavigate();
     const [sale, setSale] = useState(null);
+    const [alert, setAlert] = useState(null);
+    const [confirmData, setConfirmData] = useState(null);
 
     /** Lee los datos de la venta desde localStorage al montar el componente */
     useEffect(() => {
@@ -45,37 +49,47 @@ export default function SaleDetailsPage() {
      * Se descarga como "venta_[numero].pdf".
      */
     const handleGenerateReport = () => {
-        const doc = new jsPDF();
+        setConfirmData({
+            type: "info",
+            title: "Generar reporte",
+            message: "¿Deseas descargar el reporte de esta venta?",
+            onConfirm: () => {
+                const doc = new jsPDF();
 
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("Detalles de Venta", 14, 22);
+                doc.setFontSize(18);
+                doc.setFont("helvetica", "bold");
+                doc.text("Detalles de Venta", 14, 22);
 
-        doc.setFontSize(11);
-        doc.setFont("helvetica", "normal");
-        doc.text(`Cliente: ${sale.cliente || '-'}`, 14, 36);
-        doc.text(`Fecha creación: ${sale.fecha}`, 14, 44);
-        doc.text(`Estado: ${sale.estado}`, 14, 52);
-        doc.text(`Subtotal: $${sale.subtotal?.toLocaleString()}`, 120, 36);
-        doc.text(`IVA: $${sale.iva?.toLocaleString()}`, 120, 44);
-        doc.text(`Total: $${sale.total?.toLocaleString()}`, 120, 52);
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "normal");
+                doc.text(`Cliente: ${sale.cliente || '-'}`, 14, 36);
+                doc.text(`Fecha creación: ${sale.fecha}`, 14, 44);
+                doc.text(`Estado: ${sale.estado}`, 14, 52);
+                doc.text(`Subtotal: $${sale.subtotal?.toLocaleString()}`, 120, 36);
+                doc.text(`IVA: $${sale.iva?.toLocaleString()}`, 120, 44);
+                doc.text(`Total: $${sale.total?.toLocaleString()}`, 120, 52);
 
-        if (productos.length > 0) {
-            autoTable(doc, {
-                startY: 64,
-                head: [["Producto", "Precio", "Cantidad", "Subtotal"]],
-                body: productos.map(p => [
-                    p.nombre,
-                    `$${p.precio?.toLocaleString()}`,
-                    p.cantidad,
-                    `$${(p.precio * p.cantidad).toLocaleString()}`
-                ]),
-                styles: { fontSize: 10 },
-                headStyles: { fillColor: [234, 179, 8] }
-            });
-        }
+                if (productos.length > 0) {
+                    autoTable(doc, {
+                        startY: 64,
+                        head: [["Producto", "Precio", "Cantidad", "Subtotal"]],
+                        body: productos.map(p => [
+                            p.nombre,
+                            `$${p.precio?.toLocaleString()}`,
+                            p.cantidad,
+                            `$${(p.precio * p.cantidad).toLocaleString()}`
+                        ]),
+                        styles: { fontSize: 10 },
+                        headStyles: { fillColor: [234, 179, 8] }
+                    });
+                }
 
-        doc.save(`venta_${sale.numeroDocumento}.pdf`);
+                doc.save(`venta_${sale.numeroDocumento}.pdf`);
+                setAlert({ type: "success", message: "Reporte generado correctamente." });
+                setConfirmData(null);
+            },
+            onCancel: () => setConfirmData(null)
+        });
     };
 
     /**
@@ -93,9 +107,20 @@ export default function SaleDetailsPage() {
     };
 
     return (
-        <div className="h-full rounded-2xl shadow-lg relative overflow-hidden"
-            style={{ background: 'linear-gradient(145deg, #f5f5f0 0%, #ffffff 35%, #f8f7f2 65%, #f0efe8 100%)' }}
+        <div
+            className="h-full rounded-2xl shadow-lg relative overflow-hidden"
+            style={{
+                backgroundImage: 'url("/background-shopping-details.png")',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+            }}
         >
+            {/* ALERTA FLOTANTE EN PARTE SUPERIOR */}
+            {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
+
+            {/* Capa semitransparente para legibilidad */}
+            <div className="absolute inset-0 bg-white/55 rounded-2xl pointer-events-none"></div>
             {/* ═══ DECORACIONES DORADAS ═══ */}
 
             {/* Esquina superior izquierda — arcos finos + punta dorada */}
@@ -269,6 +294,16 @@ export default function SaleDetailsPage() {
                     )}
                 </div>
             </div>
+
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={confirmData.onCancel}
+                />
+            )}
         </div>
     );
 }

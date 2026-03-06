@@ -26,8 +26,7 @@ export default function AddProductModal({ isOpen, onClose, onAdd, products }) {
             onAdd(selectedProduct, parseFloat(quantity));
         }
     };
- 
-    
+
     return (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
             <div className="bg-gray-100 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
