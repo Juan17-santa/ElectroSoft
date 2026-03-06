@@ -134,51 +134,85 @@ export function useOrdersForm({ onSuccess }) {
     // FUNCION PARA AÑADIR PRODUCTOS
     const addProduct = (product, quantity) => {
 
-        const subtotalProducto = product.precio * quantity;
+        const productoExistente = formData.productos.find(
+            p => p.id === product.id
+        );
 
-        const newProduct = {
-            id: product.id,
-            nombre: product.nombre,
-            precio: product.precio,
-            cantidad: quantity,
-            subtotal: subtotalProducto
-        };
+        // si el producto ya está en el pedido
+        if (productoExistente) {
 
-        const nuevosProductos = [...formData.productos, newProduct];
+            const nuevaCantidad = productoExistente.cantidad + quantity;
 
-        // Calcular totales
-        const subtotal = nuevosProductos.reduce((acc, p) => acc + p.subtotal, 0);
-        const iva = subtotal * 0.19;
-        const total = subtotal + iva;
+            // validar stock total
+            if (nuevaCantidad > product.stock) {
+                setErrors(prev => ({
+                    ...prev,
+                    productos: `Solo hay ${product.stock} unidades disponibles`
+                }));
+                return;
+            }
 
-        setFormData(prev => ({
-            ...prev,
-            productos: nuevosProductos,
-            subtotal,
-            iva,
-            total
-        }));
+            const productosActualizados = formData.productos.map(p =>
+                p.id === product.id
+                    ? {
+                        ...p,
+                        cantidad: nuevaCantidad,
+                        subtotal: nuevaCantidad * p.precio
+                    }
+                    : p
+            );
 
-        // LIMPIAR ERROR DE PRODUCTOS
+            const subtotal = productosActualizados.reduce((acc, p) => acc + p.subtotal, 0);
+            const iva = subtotal * 0.19;
+            const total = subtotal + iva;
+
+            setFormData(prev => ({
+                ...prev,
+                productos: productosActualizados,
+                subtotal,
+                iva,
+                total
+            }));
+
+        } else {
+
+            if (quantity > product.stock) {
+                setErrors(prev => ({
+                    ...prev,
+                    productos: `Solo hay ${product.stock} unidades disponibles`
+                }));
+                return;
+            }
+
+            const subtotalProducto = product.precio * quantity;
+
+            const newProduct = {
+                id: product.id,
+                nombre: product.nombre,
+                precio: product.precio,
+                cantidad: quantity,
+                subtotal: subtotalProducto
+            };
+
+            const nuevosProductos = [...formData.productos, newProduct];
+
+            const subtotal = nuevosProductos.reduce((acc, p) => acc + p.subtotal, 0);
+            const iva = subtotal * 0.19;
+            const total = subtotal + iva;
+
+            setFormData(prev => ({
+                ...prev,
+                productos: nuevosProductos,
+                subtotal,
+                iva,
+                total
+            }));
+        }
+
         setErrors(prev => ({
             ...prev,
             productos: ""
         }));
-
-        // BAJAR STOCK
-        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
-
-        const updatedProducts = storedProducts.map(p => {
-            if (p.id === product.id) {
-                return {
-                    ...p,
-                    stock: p.stock - quantity
-                };
-            }
-            return p;
-        });
-
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
     };
 
     // VALIDAR TODO EL FORMULARIO
@@ -210,6 +244,30 @@ export function useOrdersForm({ onSuccess }) {
 
         if (!validateForm()) return;
 
+        // OBTENER PRODUCTOS DEL INVENTARIO
+        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+
+        // ACTUALIZAR STOCK SEGÚN LOS PRODUCTOS DEL PEDIDO
+        const updatedProducts = storedProducts.map(product => {
+
+            const productoPedido = formData.productos.find(
+                p => p.id === product.id
+            );
+
+            if (productoPedido) {
+                return {
+                    ...product,
+                    stock: product.stock - productoPedido.cantidad
+                };
+            }
+
+            return product;
+        });
+
+        // GUARDAR NUEVO STOCK
+        localStorage.setItem("products", JSON.stringify(updatedProducts));
+
+        // CREAR PEDIDO
         const nuevoPedido = ServicesOrders.create(formData);
 
         onSuccess(nuevoPedido);

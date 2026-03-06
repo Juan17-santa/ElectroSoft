@@ -104,9 +104,7 @@ export default function OrdersTable({
                                         <div className="flex items-center gap-2">
                                             <span
                                                 className={`w-2.5 h-2.5 rounded-full
-                                                ${order.estado === "Finalizado"
-                                                        ? "bg-green-500"
-                                                        : order.estado === "Pendiente"
+                                                ${order.estado === "Pendiente"
                                                             ? "bg-yellow-400"
                                                             : "bg-red-500"
                                                     }`}
@@ -129,7 +127,7 @@ export default function OrdersTable({
 
                                             {/* VER DETALLE */}
                                             <button
-                                                // onClick={() => onDetails(order)}
+                                                onClick={() => onDetails(order)}
                                                 className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
                                             >
                                                 <Eye size={18} className="text-blue-600" />

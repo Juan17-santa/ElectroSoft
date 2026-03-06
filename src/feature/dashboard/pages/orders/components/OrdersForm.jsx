@@ -1,4 +1,4 @@
-import { Boxes, CircleUser, FileText, Plus, X } from "lucide-react";
+import { Boxes, CircleUser, FileText, Plus, X, Trash } from "lucide-react";
 import { CreditCard, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
@@ -24,6 +24,14 @@ export default function OrdersForm({
     const [showPago, setShowPago] = useState(false);
     const pagoRef = useRef(null);
 
+    // FORMATEADOR DE MONEDA
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('es-CO', { // 'es-CO' para formato de Colombia (puntos en miles)
+            style: 'decimal',
+            minimumFractionDigits: 0,
+        }).format(value);
+    };
+
     useEffect(() => {
         const handler = (e) => {
             if (pagoRef.current && !pagoRef.current.contains(e.target)) {
@@ -34,6 +42,19 @@ export default function OrdersForm({
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
+    // FUNCION PARA ELIMINAR UN PRODUCTO DE LA TABLA AL PEDIR
+    const handleRemoveProduct = (index) => {
+        const nuevosProductos = formData.productos.filter((_, i) => i !== index);
+
+        // Llamamos a tu handleChange pasándole el nuevo array
+        handleChange({
+            target: {
+                name: "productos",
+                value: nuevosProductos
+            }
+        });
+    };
 
     return (
         <>
@@ -206,14 +227,13 @@ export default function OrdersForm({
                                 <span>Productos</span>
                             </div>
                             <div className="flex gap-3">
-                                <button
+                                <PrimaryButton
                                     type="button"
+                                    icon={Plus}
                                     onClick={() => setOpenProductModal(true)}
-                                    className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-4 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                                 >
-                                    <Plus size={16} />
                                     Añadir producto
-                                </button>
+                                </PrimaryButton>
                             </div>
                         </div>
 
@@ -241,22 +261,15 @@ export default function OrdersForm({
                                             <tr key={index}>
                                                 <td className="px-4 py-2 border-b">{producto.nombre}</td>
                                                 <td className="px-4 py-2 border-b text-center">{producto.cantidad}</td>
-                                                <td className="px-4 py-2 border-b text-center">{producto.precio}</td>
-                                                <td className="px-4 py-2 border-b text-center">{producto.subtotal}</td>
+                                                <td className="px-4 py-2 border-b text-center">{formatCurrency(producto.precio)}</td>
+                                                <td className="px-4 py-2 border-b text-center">{formatCurrency(producto.subtotal)}</td>
                                                 <td className="px-4 py-2 border-b text-center">
                                                     <button
-                                                        onClick={() => {
-                                                            const nuevos = formData.productos.filter((_, i) => i !== index);
-                                                            handleChange({
-                                                                target: {
-                                                                    name: "productos",
-                                                                    value: nuevos
-                                                                }
-                                                            });
-                                                        }}
-                                                        className="text-red-500"
+                                                        type="button"
+                                                        onClick={() => handleRemoveProduct(index)}
+                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-500 cursor-pointer"
                                                     >
-                                                        Eliminar
+                                                        <Trash size={18}/>
                                                     </button>
                                                 </td>
                                             </tr>
@@ -276,9 +289,9 @@ export default function OrdersForm({
                                 />
                             </div>
                             <div className="flex gap-6">
-                                <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formData.subtotal}</span></span>
-                                <span className="text-gray-600 text-sm">IVA (19%): <span className="font-bold text-blue-600">{formData.iva}</span></span>
-                                <span className="text-gray-600 text-sm">Total: <span className="font-bold text-green-600">{formData.total}</span></span>
+                                <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formatCurrency(formData.subtotal)}</span></span>
+                                <span className="text-gray-600 text-sm">IVA (19%): <span className="font-bold text-blue-600">{formatCurrency(formData.iva)}</span></span>
+                                <span className="text-gray-600 text-sm">Total: <span className="font-bold text-green-600">{formatCurrency(formData.total)}</span></span>
                             </div>
                         </div>
                     </div>
@@ -289,7 +302,7 @@ export default function OrdersForm({
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="px-5 py-2 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer"
+                            className="px-5 py-2.5 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer hover:shadow-lg"
                         >
                             <X size={16} />
                             Cancelar
@@ -310,11 +323,9 @@ export default function OrdersForm({
             <AddProductModal
                 isOpen={openProductModal}
                 onClose={() => setOpenProductModal(false)}
+                onAdd={addProduct}
                 products={products}
-                onAdd={(product, quantity) => {
-                    addProduct(product, quantity);
-                    setOpenProductModal(false);
-                }}
+                orderProducts={formData.productos}
             />
         </>
     );

@@ -42,6 +42,7 @@ import ClientDetailsPage from "../feature/dashboard/pages/Clients/ClientDetailsP
 // PEDIDOS
 import Orders from "../feature/dashboard/pages/orders/pages/Orders";
 import CreateOrder from "../feature/dashboard/pages/orders/pages/CreateOrder"
+import OrderDetails from "../feature/dashboard/pages/orders/pages/OrderDetails"
 
 // VENTAS
 import SalesManagement from "../feature/dashboard/pages/SalesManagement/SalesManagement";
@@ -119,6 +120,7 @@ export default function RoutersApp() {
                 {/* PEDIDOS */}
                 <Route path="orders" element={<Orders />} />
                 <Route path="orders/create" element={<CreateOrder />} />
+                <Route path="orders/detail" element={<OrderDetails />} />
 
                 {/* GESTION DE VENTAS */}
                 <Route path="sales-management" element={<SalesManagement />} />

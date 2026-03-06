@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useOrdersForm } from "../hooks/UseOrdersForm";
-import Alert from "../../../components/ui/Alert";
+import Alert from "../../../components/ui/alert";
 import OrdersForm from "../components/OrdersForm";
 import { useState } from "react";
 import ClientModal from "../components/ClientModal";

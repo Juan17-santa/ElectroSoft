@@ -226,7 +226,7 @@ export default function ClientModal({ onClose, onSave }) {
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="bg-gray-200 hover:bg-gray-300 transition px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
+                                className="bg-gray-200 hover:bg-gray-300 transition px-6 py-2.5 rounded-lg text-sm font-medium shadow cursor-pointer"
                             >
                                 Cancelar
                             </button>
