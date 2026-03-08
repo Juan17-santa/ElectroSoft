@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useOrdersForm } from "../hooks/UseOrdersForm";
-import Alert from "../../../components/ui/alert";
+import Alert from "../../../components/ui/Alert";
 import OrdersForm from "../components/OrdersForm";
 import { useState } from "react";
 import ClientModal from "../components/ClientModal";
@@ -23,6 +23,8 @@ export default function CreateOrder() {
         errors,
         handleChange,
         handleSubmit,
+        products,
+        addProduct,
     } = useOrdersForm({
         onSuccess: () => {
             setAlert({
@@ -55,13 +57,6 @@ export default function CreateOrder() {
                             Crear nuevo pedido
                         </p>
                     </div>
-
-                    <button
-                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
-                        onClick={() => navigate("/dashboard/orders")}
-                    >
-                        <X size={20} />
-                    </button>
                 </div>
 
                 {/* FORMULARIO */}
@@ -73,6 +68,8 @@ export default function CreateOrder() {
                     buttonText="Crear Pedido"
                     onCancel={() => navigate("/dashboard/orders")}
                     onOpenClientModal={() => setShowClientModal(true)}
+                    products={products}
+                    addProduct={addProduct}
                 />
             </div>
 

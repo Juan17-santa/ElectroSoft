@@ -1,8 +1,9 @@
-import { X, User, Mail, Phone, FileText, IdCard, CheckCircle2 } from "lucide-react";
+import { X, User, Mail, Phone, FileText, IdCard, CheckCircle2, Import } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { useClientModal } from "../hooks/UseClientModal";
 import { useState } from "react";
 import Alert from "../../../components/ui/alert";
+import ValidationMessage from "../../../components/ui/ValidationMessage";
 
 export default function ClientModal({ onClose, onSave }) {
 
@@ -14,7 +15,7 @@ export default function ClientModal({ onClose, onSave }) {
         errors,
         handleChange,
         handleSubmit
-    } = useClientModal((clienteRecibido) => { 
+    } = useClientModal((clienteRecibido) => {
         setAlert({
             type: "success",
             message: "Cliente creado exitosamente"
@@ -87,9 +88,11 @@ export default function ClientModal({ onClose, onSave }) {
                                     <option value="CE">C.E</option>
                                 </select>
 
-                                {errors.tipoDocumento && (
-                                    <p className="text-red-500 text-xs">{errors.tipoDocumento}</p>
-                                )}
+                                <ValidationMessage
+                                    error={errors.tipoDocumento}
+                                    success={formData.tipoDocumento}
+                                    successMessage="Tipo de documento válido"
+                                />
                             </div>
 
                             {/* DOCUMENTO */}
@@ -108,9 +111,11 @@ export default function ClientModal({ onClose, onSave }) {
                                     ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                                 />
 
-                                {errors.documento && (
-                                    <p className="text-red-500 text-xs">{errors.documento}</p>
-                                )}
+                                <ValidationMessage
+                                    error={errors.documento}
+                                    success={formData.documento}
+                                    successMessage="Documento válido"
+                                />
                             </div>
 
                         </div>
@@ -134,9 +139,11 @@ export default function ClientModal({ onClose, onSave }) {
                                     ${errors.nombres ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                                 />
 
-                                {errors.nombres && (
-                                    <p className="text-red-500 text-xs">{errors.nombres}</p>
-                                )}
+                                <ValidationMessage
+                                    error={errors.nombres}
+                                    success={formData.nombres}
+                                    successMessage="Nombres válidos"
+                                />
                             </div>
 
                             {/* APELLIDOS */}
@@ -154,10 +161,11 @@ export default function ClientModal({ onClose, onSave }) {
                                     className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
                                     ${errors.apellidos ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                                 />
-
-                                {errors.apellidos && (
-                                    <p className="text-red-500 text-xs">{errors.apellidos}</p>
-                                )}
+                                <ValidationMessage
+                                    error={errors.apellidos}
+                                    success={formData.apellidos}
+                                    successMessage="Apellidos válidos"
+                                />
                             </div>
 
                         </div>
@@ -181,9 +189,11 @@ export default function ClientModal({ onClose, onSave }) {
                                     ${errors.email ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                                 />
 
-                                {errors.email && (
-                                    <p className="text-red-500 text-xs">{errors.email}</p>
-                                )}
+                                <ValidationMessage
+                                    error={errors.email}
+                                    success={formData.email}
+                                    successMessage="Email válido"
+                                />
                             </div>
 
                             {/* TELEFONO */}
@@ -202,9 +212,11 @@ export default function ClientModal({ onClose, onSave }) {
                                     ${errors.telefono ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                                 />
 
-                                {errors.telefono && (
-                                    <p className="text-red-500 text-xs">{errors.telefono}</p>
-                                )}
+                                <ValidationMessage
+                                    error={errors.telefono}
+                                    success={formData.telefono}
+                                    successMessage="Telefono válido"
+                                />
                             </div>
 
                         </div>

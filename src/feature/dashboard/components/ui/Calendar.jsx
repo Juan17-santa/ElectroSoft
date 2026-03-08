@@ -10,8 +10,9 @@ const DIAS_SEMANA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
  * @param {string} fechaSeleccionada - Fecha en formato ISO (YYYY-MM-DD)
  * @param {function} onSeleccionar - Callback que recibe la fecha ISO seleccionada
  * @param {function} onCerrar - Callback para cerrar el calendario
+ * @param {boolean} readOnly - Si es true, permite ver el calendario pero bloquea la selección de fechas
  */
-function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar }) {
+function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar, readOnly }) {
     const hoy = new Date();
     const [viewYear, setViewYear] = useState(fechaSeleccionada ? new Date(fechaSeleccionada + "T00:00:00").getFullYear() : hoy.getFullYear());
     const [viewMonth, setViewMonth] = useState(fechaSeleccionada ? new Date(fechaSeleccionada + "T00:00:00").getMonth() : hoy.getMonth());
@@ -51,6 +52,7 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar }) {
     };
 
     const handleDia = (dia) => {
+        if (readOnly) return;
         if (esFuturo(dia)) return;
         const mes = String(viewMonth + 1).padStart(2, "0");
         const d = String(dia).padStart(2, "0");
@@ -116,7 +118,7 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar }) {
                 >
                     {celdas.map((dia, i) => {
                         if (!dia) return <div key={`empty-${i}`} />;
-                        const futuro = esFuturo(dia);
+                        const futuro = esFuturo(dia) || readOnly;
                         const hoyFlag = esHoy(dia);
                         const sel = esSeleccionado(dia);
                         return (
@@ -129,9 +131,10 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar }) {
                                     w-8 h-8 mx-auto flex items-center justify-center rounded-full text-xs font-medium
                                     transition-all duration-200 cursor-pointer
                                     ${sel ? "bg-yellow-400 text-black shadow-md scale-110" : ""}
-                                    ${!sel && hoyFlag ? "border border-yellow-400 text-yellow-600" : ""}
+                                    ${!sel && hoyFlag ? "border border-yellow-400 text-black" : ""} 
                                     ${!sel && !hoyFlag && !futuro ? "hover:bg-yellow-100 hover:scale-105 text-gray-700" : ""}
-                                    ${futuro ? "text-gray-300 cursor-not-allowed" : ""}
+                                    ${futuro && !hoyFlag ? "text-gray-300 cursor-not-allowed" : ""}
+                                    ${futuro && hoyFlag ? "cursor-not-allowed" : ""}
                                 `}
                             >
                                 {dia}
@@ -174,17 +177,19 @@ function formatearFecha(iso) {
  * Componente Calendar con input y dropdown
  * 
  * @param {string} fechaISO - Fecha en formato ISO (YYYY-MM-DD)
- * @param {function} onFechaChange - Callback que recibe la fecha ISO seleccionada
- * @param {string} label - Etiqueta del campo (default: "Fecha")
- * @param {boolean} required - Si el campo es obligatorio (default: false)
- * @param {string} className - Clases CSS adicionales para el contenedor
+ * @param {function} onFechaChange - Callback que recibe la fecha seleccionada
+ * @param {string} label - Texto del label
+ * @param {boolean} required - Si el campo es obligatorio
+ * @param {string} className - Clases CSS adicionales
+ * @param {boolean} readOnly - Si es true, el calendario se puede abrir pero no cambiar la fecha
  */
 export default function Calendar({
     fechaISO,
     onFechaChange,
     label = "Fecha",
     required = false,
-    className = ""
+    className = "",
+    readOnly = false
 }) {
     const [showCalendario, setShowCalendario] = useState(false);
     const calRef = useRef(null);
@@ -232,6 +237,7 @@ export default function Calendar({
                         fechaSeleccionada={fechaISO}
                         onSeleccionar={onFechaChange}
                         onCerrar={() => setShowCalendario(false)}
+                        readOnly={readOnly}
                     />
                 )}
             </div>
