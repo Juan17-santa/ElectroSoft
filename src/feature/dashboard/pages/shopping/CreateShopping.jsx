@@ -315,7 +315,7 @@ export default function CreateShopping() {
                                 <FieldStatus estado={estadoProveedor} />
                             </div>
                             <button
-                                onClick={() => navigate("/dashboard/provider/create")}
+                                onClick={() => navigate("/dashboard/providers/create")}
                                 className="bg-yellow-400 hover:bg-yellow-500 transition duration-300 p-3 rounded-xl shadow-md cursor-pointer self-start"
                             >
                                 <Plus size={18} className="text-white" />

@@ -134,7 +134,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                     <div className="flex items-start justify-between mb-1">
                         <div>
                             <p className="text-base font-semibold">
-                                Crear nuevo <span className="text-yellow-400">pedido</span>
+                                Añadir productos <span className="text-yellow-400">Compra</span>
                             </p>
                             <p className="text-xs text-gray-500 mt-0.5">
                                 Complete todos los campos del formulario
@@ -217,7 +217,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                                 <DollarSign size={16} />
-                                <span>Precio producto *</span>
+                                <span>Precio venta *</span>
                             </div>
                             <input
                                 type="number"
@@ -245,7 +245,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 text-sm font-medium">
                                 <DollarSign size={16} className="text-blue-400" />
-                                <span className="text-blue-400">Precio Venta</span>
+                                <span className="text-xs text-blue-400">Modificar precio Venta</span>
                                 <span className="text-xs text-gray-400 italic">(opcional)</span>
                             </div>
                             <input
