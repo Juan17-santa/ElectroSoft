@@ -55,35 +55,25 @@ export default function CancellationInfoTooltip({ cancelInfo }) {
                 >
                     {/* Contenido */}
                     <div className="space-y-3">
-                            <div>
-                                <p className="text-xs tracking-wide text-gray-500 font-semibold">
-                                    Anulado por
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    {cancelInfo.usuario}
-                                </p>
-                            </div>
+                        <div>
+                            <p className="text-xs tracking-wide text-gray-500 font-semibold">
+                                Fecha y Hora
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                                {formatDateTime(cancelInfo.fechaAnulacion)}
+                            </p>
+                        </div>
 
-                            <div className="border-t-2 border-yellow-300 pt-3">
-                                <p className="text-xs tracking-wide text-gray-500 font-semibold">
-                                    Fecha y Hora
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    {formatDateTime(cancelInfo.fechaAnulacion)}
-                                </p>
-                            </div>
-
-                            <div className="border-t-2 border-yellow-300 pt-3">
-                                <p className="text-xs tracking-wide text-gray-500 font-semibold">
-                                    Motivo
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                                    {cancelInfo.motivo}
-                                </p>
-                            </div>
+                        <div className="border-t-2 border-yellow-300 pt-3">
+                            <p className="text-xs tracking-wide text-gray-500 font-semibold">
+                                Motivo
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                                {cancelInfo.motivo}
+                            </p>
                         </div>
                     </div>
-                
+                </div>
             )}
         </div>
     );

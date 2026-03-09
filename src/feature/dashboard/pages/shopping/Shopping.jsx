@@ -6,7 +6,7 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from '../../components/ui/Pagination';
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from '../../components/ui/Alert';
-import CancelShoppingModal from "../shopping/components/CancelShoppingModal";
+import CancellationModal from "../../components/CancellationModal";
 import CancellationInfoTooltip from "../shopping/components/CancellationInfoTooltip";
 import { generatePDFReport } from '../../../../utils/PDFReportGenerator';
 
@@ -217,8 +217,14 @@ export default function Shopping() {
 
             {/* MODAL DE ANULACION */}
             {cancelModalData && (
-                <CancelShoppingModal
-                    compra={cancelModalData}
+                <CancellationModal
+                    title="Anular Compra"
+                    infoData={[
+                        { label: "Factura", value: cancelModalData?.numeroFactura ?? "F-00123" },
+                        { label: "Proveedor", value: cancelModalData?.proveedor ?? "Proveedor Ejemplo" }
+                    ]}
+                    placeholder="Describe el motivo de la anulación..."
+                    minLength={20}
                     onConfirm={(infoAnulacion) => {
                         handleAnular(cancelModalData.id, infoAnulacion);
                         showAlert("success", "La compra fue anulada correctamente.");
