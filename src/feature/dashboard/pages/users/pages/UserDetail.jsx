@@ -55,7 +55,7 @@ export default function UserDetail() {
                             <h3 className="text-sm font-bold uppercase text-gray-500 py-2">
                                 Información General
                             </h3>
-
+                            
                             <div
                                 className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md
                                 ${user.estado
@@ -63,12 +63,13 @@ export default function UserDetail() {
                                         : "bg-red-100 text-red-700"
                                     }`}
                             >
+
                                 {user.estado ? "Activo" : "Inactivo"}
                             </div>
                         </div>
 
                         {/* Datos */}
-                        <div className="flex flex-wrap gap-20">
+                        <div className="flex flex-col gap-5">
 
                             <div className="min-w-72">
                                 <p className="text-sm text-yellow-400 mb-1">Nombre</p>

@@ -1,5 +1,6 @@
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { IdCard, FileText, User, Mail, Phone, X } from "lucide-react";
+import ValidationMessage from "../../../components/ui/ValidationMessage";
 
 export default function UserForm({
     formData,
@@ -37,13 +38,15 @@ export default function UserForm({
                             <option value="" hidden>Seleccione un tipo</option>
                             <option value="CC">C.C</option>
                             <option value="CE">C.E</option>
+                            <option value="NIT">NIT</option>
+                            <option value="TI">T.I</option>
                         </select>
 
-                        {errors.tipoDoc && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.tipoDoc}
-                            </p>
-                        )}
+                        <ValidationMessage
+                            error={errors.tipoDoc}
+                            success={formData.tipoDoc}
+                            successMessage="Tipo de documento válido"
+                        />
                     </div>
 
                     {/* DOCUMENTO */}
@@ -64,11 +67,11 @@ export default function UserForm({
                             ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
 
-                        {errors.documento && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.documento}
-                            </p>
-                        )}
+                        <ValidationMessage
+                            error={errors.documento}
+                            success={formData.documento}
+                            successMessage="Documento válido"
+                        />
                     </div>
                 </div>
 
@@ -93,11 +96,11 @@ export default function UserForm({
                             ${errors.nombre ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
 
-                        {errors.nombre && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.nombre}
-                            </p>
-                        )}
+                        <ValidationMessage
+                            error={errors.nombre}
+                            success={formData.nombre}
+                            successMessage="Nombre válido"
+                        />
                     </div>
 
                     {/* EMAIL */}
@@ -118,11 +121,11 @@ export default function UserForm({
                             ${errors.email ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
 
-                        {errors.email && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.email}
-                            </p>
-                        )}
+                        <ValidationMessage
+                            error={errors.email}
+                            success={formData.email}
+                            successMessage="Email válido"
+                        />
                     </div>
                 </div>
 
@@ -147,11 +150,11 @@ export default function UserForm({
                             ${errors.telefono ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
 
-                        {errors.telefono && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.telefono}
-                            </p>
-                        )}
+                        <ValidationMessage
+                            error={errors.telefono}
+                            success={formData.telefono}
+                            successMessage="Teléfono válido"
+                        />
                     </div>
 
                     {/* ROL */}
@@ -174,11 +177,11 @@ export default function UserForm({
                             <option value="Empleado">Empleado</option>
                         </select>
 
-                        {errors.rol && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.rol}
-                            </p>
-                        )}
+                        <ValidationMessage
+                            error={errors.rol}
+                            success={formData.rol}
+                            successMessage="Rol válido"
+                        />
                     </div>
                 </div>
 
