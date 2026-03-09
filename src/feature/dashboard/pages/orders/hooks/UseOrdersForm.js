@@ -36,6 +36,25 @@ export function useOrdersForm({ onSuccess }) {
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
+    // Dentro de tu useOrdersForm.js (o como se llame tu hook)
+    const itemsPerPage = 4;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Cálculos de paginación
+    const totalPages = Math.ceil((formData.productos?.length || 0) / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+    // Los productos que realmente verá el usuario
+    const currentProducts = (formData.productos || []).slice(indexOfFirstItem, indexOfLastItem);
+
+    // Resetear página si queda vacía al borrar
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [formData.productos.length, totalPages]);
+
     // BUSCAR CLIENTE POR MEDIO DEL DOCUMENTO
     useEffect(() => {
         if (!formData.documento) return;
@@ -69,7 +88,7 @@ export function useOrdersForm({ onSuccess }) {
     // CARGAR SOLO LOS PRODUCTOS QUE ESTEN ACTIVOS!!!
     useEffect(() => {
         const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
-        const activos = storedProducts.filter(p => p.estado === true);
+        const activos = storedProducts.filter(p => p.estado === true && p.stock > 0);
         setProducts(activos);
     }, []);
 
@@ -161,19 +180,6 @@ export function useOrdersForm({ onSuccess }) {
                     }
                     : p
             );
-
-            const subtotal = productosActualizados.reduce((acc, p) => acc + p.subtotal, 0);
-            const iva = subtotal * 0.19;
-            const total = subtotal + iva;
-
-            setFormData(prev => ({
-                ...prev,
-                productos: productosActualizados,
-                subtotal,
-                iva,
-                total
-            }));
-
         } else {
 
             if (quantity > product.stock) {
@@ -184,14 +190,12 @@ export function useOrdersForm({ onSuccess }) {
                 return;
             }
 
-            const subtotalProducto = product.precio * quantity;
-
             const newProduct = {
                 id: product.id,
                 nombre: product.nombre,
                 precio: product.precio,
                 cantidad: quantity,
-                subtotal: subtotalProducto
+                subtotal: product.precio * quantity
             };
 
             const nuevosProductos = [...formData.productos, newProduct];
@@ -207,13 +211,15 @@ export function useOrdersForm({ onSuccess }) {
                 iva,
                 total
             }));
-        }
 
-        setErrors(prev => ({
-            ...prev,
-            productos: ""
-        }));
-    };
+            setErrors(prev => ({ ...prev, productos: "" }));
+
+            // Si la tabla estaba vacía o en otra página, volvemos a la 1 para ver el nuevo item
+            if (nuevosProductos.length > 0 && currentPage === 0) {
+                setCurrentPage(1);
+            }
+        };
+    }
 
     // VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
@@ -280,6 +286,12 @@ export function useOrdersForm({ onSuccess }) {
         handleSubmit,
         setFormData,
         products,
-        addProduct
+        addProduct,
+        currentPage,
+        setCurrentPage,
+        totalPages,
+        currentProducts,
+        indexOfFirstItem,
+        itemsPerPage
     };
 }

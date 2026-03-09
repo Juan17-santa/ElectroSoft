@@ -3,8 +3,9 @@ import { CreditCard, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Calendar from "../../../components/ui/Calendar";
-import AddProductModal from "../../../../../components/AddProductModal";
+import AddProductModal from "../../../components/ui/AddProductModal";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
+import Pagination from "../../../components/ui/Pagination";
 
 export default function OrdersForm({
     formData,
@@ -15,7 +16,13 @@ export default function OrdersForm({
     onCancel,
     onOpenClientModal,
     products,
-    addProduct
+    addProduct,
+    currentProducts,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    indexOfFirstItem,
+    itemsPerPage
 }) {
 
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
@@ -26,7 +33,7 @@ export default function OrdersForm({
 
     // FORMATEADOR DE MONEDA
     const formatCurrency = (value) => {
-        return new Intl.NumberFormat('es-CO', { // 'es-CO' para formato de Colombia (puntos en miles)
+        return new Intl.NumberFormat('es-CO', { // 'es-CO' PARA FORMATO COLOMBIANO (PUNTOS EN MILES)
             style: 'decimal',
             minimumFractionDigits: 0,
         }).format(value);
@@ -55,6 +62,19 @@ export default function OrdersForm({
             }
         });
     };
+
+    // FUNCION QUE CALCULA EL STOCK DEL MODAL
+    const getAvailableStock = (product) => {
+
+        // BUSCAR SI EL PRODUCTO YA ESTA EN LA ORDEN
+        const productInOrder = formData.productos?.find(p => p.id === product.id)
+
+        // CANTIDAD YA USADA
+        const usedStock = productInOrder ? productInOrder.cantidad : 0
+
+        // STOCK DISPONIBLE
+        return product.stock - usedStock
+    }
 
     return (
         <>
@@ -243,50 +263,66 @@ export default function OrdersForm({
                                 <thead className="bg-gray-100">
                                     <tr className="text-left border-b border-gray-200">
                                         <th className="px-4 py-2 font-semibold">Producto</th>
-                                        <th className="px-4 py-2 font-semibold text-center">Cantidad</th>
-                                        <th className="px-4 py-2 font-semibold text-center">Precio</th>
-                                        <th className="px-4 py-2 font-semibold text-center">Subtotal</th>
-                                        <th className="px-4 py-2 font-semibold text-center">Acciones</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-24">Cantidad</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-28">Precio Unit</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-28">Subtotal</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-16">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {(formData.productos || []).length === 0 ? (
+                                    {(!currentProducts || currentProducts.length === 0) ? (
                                         <tr>
                                             <td colSpan="5" className="text-center py-4 text-gray-400">
                                                 No hay productos agregados.
                                             </td>
                                         </tr>
                                     ) : (
-                                        formData.productos.map((producto, index) => (
-                                            <tr key={index}>
-                                                <td className="px-4 py-2 border-b">{producto.nombre}</td>
-                                                <td className="px-4 py-2 border-b text-center">{producto.cantidad}</td>
-                                                <td className="px-4 py-2 border-b text-center">{formatCurrency(producto.precio)}</td>
-                                                <td className="px-4 py-2 border-b text-center">{formatCurrency(producto.subtotal)}</td>
-                                                <td className="px-4 py-2 border-b text-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleRemoveProduct(index)}
-                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-500 cursor-pointer"
-                                                    >
-                                                        <Trash size={18}/>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        currentProducts.map((producto, index) => {
+                                            // Calculamos el índice real en el array original para eliminarlo correctamente
+                                            const realIndex = indexOfFirstItem + index;
+
+                                            return (
+                                                <tr key={producto.id || index} className="border-b border-gray-200">
+                                                    <td className="px-4 py-2 ">{producto.nombre}</td>
+                                                    <td className="px-4 py-2 text-center">{producto.cantidad}</td>
+                                                    <td className="px-4 py-2 text-center">{formatCurrency(producto.precio)}</td>
+                                                    <td className="px-4 py-2 text-center">{formatCurrency(producto.subtotal)}</td>
+                                                    <td className="px-4 py-2 text-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveProduct(realIndex)}
+                                                            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-500 cursor-pointer"
+                                                        >
+                                                            <Trash size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>
                         </div>
 
+                        {/* VALIDACIO DE PRODUCTOS */}
+                        <ValidationMessage
+                            error={errors.productos}
+                        />
+
                         {/* ================= TOTALES ================= */}
                         <div className="w-full flex px-6 py-3 justify-between items-center">
                             <div>
-                                <ValidationMessage
-                                    error={errors.productos}
-                                    success={formData.productos.length > 0}
-                                    successMessage="Productos agregados correctamente"
-                                />
+                                {/* PAGINADOR PARA LOS PRODUCTOS */}
+                                {(formData?.productos?.length || 0) > itemsPerPage && (
+                                    <div className="flex justify-center mt-4 mb-2">
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={(page) => setCurrentPage(page)}
+                                        />
+                                    </div>
+                                )}
+
                             </div>
                             <div className="flex gap-6">
                                 <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formatCurrency(formData.subtotal)}</span></span>
@@ -325,7 +361,7 @@ export default function OrdersForm({
                 onClose={() => setOpenProductModal(false)}
                 onAdd={addProduct}
                 products={products}
-                orderProducts={formData.productos}
+                getAvailableStock={getAvailableStock}
             />
         </>
     );

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
 import { ProductService } from "./services/ProductService";
-import AddProductModal from "../../../../components/AddProductModal";
+import AddProductModal from "../../components/ui/AddProductModal";
 import Alert from "../../components/ui/Alert";
 
 // ─── Validaciones ─────────────────────────────────────────────────────────────

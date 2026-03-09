@@ -23,7 +23,8 @@ import { Ban, CircleCheck, Eye } from "lucide-react";
 
 export default function OrdersTable({
     data,
-    onDetails
+    onDetails,
+    onCancel
 }) {
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white ">
@@ -105,8 +106,8 @@ export default function OrdersTable({
                                             <span
                                                 className={`w-2.5 h-2.5 rounded-full
                                                 ${order.estado === "Pendiente"
-                                                            ? "bg-yellow-400"
-                                                            : "bg-red-500"
+                                                        ? "bg-yellow-400"
+                                                        : "bg-red-500"
                                                     }`}
                                             ></span>
                                             <span>{order.estado}</span>
@@ -117,30 +118,36 @@ export default function OrdersTable({
                                     <td className="px-4 py-2">
                                         <div className="flex justify-center gap-2">
 
-                                            {/* PROCESAR VENTA */}
-                                            <button
-                                                // onClick={() => onProcess(order)}
-                                                className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition cursor-pointer"
-                                            >
-                                                <CircleCheck size={18} className="text-green-600" />
-                                            </button>
+                                            {/* PROCESAR VENTA SOLO SI NO ESTA ANULADO */}
+                                            {order.estado !== "Anulado" && (
+                                                <button
+                                                    // onClick={() => onProcess(order)}
+                                                    className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition cursor-pointer"
+                                                    title="Procesar venta"
+                                                >
+                                                    <CircleCheck size={18} className="text-green-600" />
+                                                </button>
+                                            )}
 
                                             {/* VER DETALLE */}
                                             <button
                                                 onClick={() => onDetails(order)}
                                                 className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                title="Ver detalle"
                                             >
                                                 <Eye size={18} className="text-blue-600" />
                                             </button>
 
-                                            {/* ANULAR PEDIDO */}
-                                            <button
-                                                // onClick={() => onCancel(order)}
-                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                            >
-                                                <Ban size={18} className="text-red-600" />
-                                            </button>
-
+                                            {/* ANULAR SOLO SI NO ESTA ANULADO */}
+                                            {order.estado !== "Anulado" && (
+                                                <button
+                                                    onClick={() => onCancel(order)}
+                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                    title="Anular pedido"
+                                                >
+                                                    <Ban size={18} className="text-red-600" />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

@@ -1,22 +1,39 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Info, X, Package, Calendar as CalendarIcon, User, CreditCard } from "lucide-react";
+import { Info, X, Package, Calendar as CalendarIcon, User, FileText } from "lucide-react";
+import PrimaryButton from "../../../components/ui/PrimaryButton";
+import Pagination from "../../../components/ui/Pagination";
 
 export default function OrderDetails() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Obtenemos el pedido desde el estado de la navegación
     const orderDetail = location.state?.order;
     const [order, setOrder] = useState(null);
 
+    // LÓGICA DE PAGINACIÓN
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 4;
+
     useEffect(() => {
         if (orderDetail) {
-            setOrder(orderDetail);
+            const storedCustomers = JSON.parse(localStorage.getItem("clients") || "[]");
+            const customerInfo = storedCustomers.find(c => c.documento === orderDetail.documento);
+
+            setOrder({
+                ...orderDetail,
+                nombres: customerInfo ? `${customerInfo.nombres} ${customerInfo.apellidos}` : "Cliente no encontrado",
+            });
         }
     }, [orderDetail]);
 
-    // Formateador de moneda
+    // CALCULOS PARA EL PAGINADOR
+    const totalItems = order?.productos?.length || 0;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentProducts = order?.productos?.slice(indexOfFirstItem, indexOfLastItem) || [];
+
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', {
             style: 'currency',
@@ -25,25 +42,14 @@ export default function OrderDetails() {
         }).format(value);
     };
 
-    if (!order) {
-        return (
-            <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
-                <p className="text-gray-500 text-sm">No hay información del pedido para mostrar.</p>
-            </div>
-        );
-    }
+    if (!order) return <div className="p-6 text-center text-gray-500">No hay información del pedido.</div>;
 
     const handleBack = () => navigate("/dashboard/orders");
 
     return (
         <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner min-h-full">
-
             <div className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden flex-1"
-                style={{
-                    backgroundImage: 'url("/background-shopping-details.png")',
-                    backgroundSize: "cover",
-                    backgroundPosition: "center"
-                }}>
+                style={{ backgroundImage: 'url("/background-shopping-details.png")', backgroundSize: "cover", backgroundPosition: "center" }}>
                 <div className="absolute inset-0 bg-white/40 rounded-3xl"></div>
 
                 <div className="relative z-10 flex flex-col gap-6">
@@ -53,108 +59,112 @@ export default function OrderDetails() {
                             <Info size={22} className="text-gray-700" />
                             <h2 className="text-xl font-semibold text-gray-800">Detalle del Pedido #{order.id}</h2>
                         </div>
-                        <div
-                            className={`px-5 py-1.5 rounded-full text-sm font-bold shadow-sm 
-                                ${order.estado === 'Pendiente' ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"
-                            }`}>
-                            {order.estado}
+                        <div className="flex items-center gap-3">
+                            <div className={`px-5 py-1.5 rounded-full text-sm font-bold shadow-sm ${order.estado === 'Pendiente' ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
+                                {order.estado}
+                            </div>
+
+                            <button
+                                // onClick={handleReport}
+                                className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 hover:bg-gray-100 text-gray-600  transition duration-300 shadow-sm cursor-pointer"
+                            >
+                                <FileText size={18} className="text-gray-500" />
+                                Imprimir
+                            </button>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                        {/* COLUMNA IZQUIERDA: INFO GENERAL */}
+                        {/* COLUMNA IZQUIERDA: CLIENTE Y FECHAS */}
                         <div className="lg:col-span-1 flex flex-col gap-6">
                             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100">
-                                <h3 className="text-xs font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
-                                    <User size={14} /> Datos del Cliente
-                                </h3>
-                                <p className="text-sm text-yellow-500 font-medium">Nombre</p>
+                                <h3 className="text-xs font-bold uppercase text-gray-400 mb-4 flex items-center gap-2"><User size={14} /> Datos del Cliente</h3>
+                                <p className="text-sm text-yellow-500 font-medium">Nombre completo</p>
                                 <p className="text-base font-semibold text-gray-800 mb-3">{order.nombres}</p>
-
                                 <p className="text-sm text-yellow-500 font-medium">Documento</p>
-                                <p className="text-base font-semibold text-gray-800">{order.documento}</p>
+                                <p className="text-base font-semibold text-gray-800">{order.tipoDocumento} - {order.documento}</p>
                             </div>
 
                             <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-gray-100">
-                                <h3 className="text-xs font-bold uppercase text-gray-400 mb-4 flex items-center gap-2">
-                                    <CalendarIcon size={14} /> Fechas y Pago
-                                </h3>
+                                <h3 className="text-xs font-bold uppercase text-gray-400 mb-4 flex items-center gap-2"><CalendarIcon size={14} /> Fechas y Pago</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <p className="text-xs text-yellow-500">Fecha Pedido</p>
+                                        <p className="text-sm text-yellow-500 font-medium">Fecha Pedido</p>
                                         <p className="text-sm font-semibold text-gray-800">{order.fechaPedido}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-yellow-500">Tipo de Pago</p>
+                                        <p className="text-sm text-yellow-500 font-medium">Tipo de Pago</p>
                                         <p className="text-sm font-semibold text-gray-800">{order.formaPago}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* COLUMNA DERECHA: TABLA DE PRODUCTOS */}
+                        {/* COLUMNA DERECHA: TABLA Y TU PAGINADOR */}
                         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-                            <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
-                                <Package size={18} className="text-yellow-500" />
-                                <span className="font-bold text-gray-700 text-sm uppercase">Artículos del Pedido</span>
+                            <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Package size={18} className="text-yellow-500" />
+                                    <span className="font-bold text-gray-700 text-sm uppercase">Productos del Pedido</span>
+                                </div>
+
+                                {/* PAGINADOR */}
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={setCurrentPage}
+                                />
                             </div>
 
-                            <div className="overflow-auto max-h-75">
+                            <div className="overflow-auto min-h-72">
                                 <table className="w-full text-left text-sm">
-                                    <thead className="bg-gray-50 text-gray-500 sticky top-0">
+                                    <thead className="text-gray-500 sticky top-0 bg-white border-b border-gray-100">
                                         <tr>
                                             <th className="px-4 py-3 font-semibold">Producto</th>
-                                            <th className="px-4 py-3 font-semibold text-center">Cant.</th>
-                                            <th className="px-4 py-3 font-semibold text-right">Precio Unit.</th>
-                                            <th className="px-4 py-3 font-semibold text-right">Subtotal</th>
+                                            <th className="px-4 py-3 font-semibold text-center w-24">Cant.</th>
+                                            <th className="px-4 py-3 font-semibold text-center w-32">Precio Unit.</th>
+                                            <th className="px-4 py-3 font-semibold text-center w-32">Subtotal</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {order.productos?.map((prod, idx) => (
-                                            <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                        {currentProducts.map((prod, idx) => (
+                                            <tr key={idx}>
                                                 <td className="px-4 py-3 font-medium text-gray-800">{prod.nombre}</td>
                                                 <td className="px-4 py-3 text-center">{prod.cantidad}</td>
-                                                <td className="px-4 py-3 text-right">{formatCurrency(prod.precio)}</td>
-                                                <td className="px-4 py-3 text-right font-semibold">{formatCurrency(prod.subtotal)}</td>
+                                                <td className="px-4 py-3 text-center">{formatCurrency(prod.precio)}</td>
+                                                <td className="px-4 py-3 text-center font-semibold">{formatCurrency(prod.subtotal)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
                             </div>
 
-                            {/* TOTALES AL PIE DE LA TABLA */}
-                            <div className="mt-auto bg-yellow-50 p-6 border-t border-yellow-100">
-                                <div className="flex flex-col items-end gap-2">
-                                    <div className="flex justify-between w-48 text-sm">
-                                        <span className="text-gray-500">Subtotal:</span>
-                                        <span className="font-semibold text-gray-800">{formatCurrency(order.subtotal)}</span>
+                            {/* TOTALES */}
+                            <div className="bg-gray-50 border-t border-gray-200 p-4 mt-auto">
+                                <div className="flex justify-end items-center gap-10 text-sm">
+                                    <div className="flex gap-2">
+                                        <span className="text-gray-500 uppercase">Subtotal:</span>
+                                        <span className="text-gray-800 font-semibold">{formatCurrency(order.subtotal)}</span>
                                     </div>
-                                    <div className="flex justify-between w-48 text-sm">
-                                        <span className="text-gray-500">IVA (19%):</span>
-                                        <span className="font-semibold text-blue-600">{formatCurrency(order.iva)}</span>
+                                    <div className="flex gap-2">
+                                        <span className="text-gray-500 uppercase">IVA (19%):</span>
+                                        <span className="text-blue-600 font-semibold">{formatCurrency(order.iva)}</span>
                                     </div>
-                                    <div className="flex justify-between w-56 text-lg border-t border-yellow-200 pt-2 mt-2">
-                                        <span className="font-bold text-gray-700">Total:</span>
-                                        <span className="font-bold text-green-600">{formatCurrency(order.total)}</span>
+                                    <div className="flex gap-2">
+                                        <span className="text-gray-700 uppercase font-bold">Total:</span>
+                                        <span className="text-green-600 font-bold">{formatCurrency(order.total)}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
 
-            {/* BOTÓN VOLVER */}
             <div className="flex justify-end">
-                <button
-                    onClick={handleBack}
-                    className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-300 px-8 py-2.5 rounded-xl text-sm font-bold shadow flex items-center gap-2 cursor-pointer border border-yellow-100"
-                >
-                    <X size={18} />
-                    Cerrar Detalle
-                </button>
+                <PrimaryButton type="button" onClick={handleBack}>
+                    <X size={18} className="inline-block mr-2" /> Volver
+                </PrimaryButton>
             </div>
         </div>
     );
