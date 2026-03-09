@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useOrdersForm } from "../hooks/UseOrdersForm";
 import { useState } from "react";
-import Alert from "../../../components/ui/alert";
+import Alert from "../../../components/ui/Alert";
 import OrdersForm from "../components/OrdersForm";
 import ClientModal from "../components/ClientModal";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
