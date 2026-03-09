@@ -28,3 +28,13 @@ export const getNextNumeroFactura = () => {
     const siguiente = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
     return String(siguiente).padStart(3, "0");
 };
+
+/**
+ * Verifica si un número de factura ya existe en las compras registradas.
+ * @param {string} numeroFactura - El número de factura a validar
+ * @returns {boolean} - true si existe, false si no existe
+ */
+export const numeroFacturaYaExiste = (numeroFactura) => {
+    const compras = JSON.parse(localStorage.getItem("compras") || "[]");
+    return compras.some((c) => String(c.numeroFactura) === String(numeroFactura));
+};
