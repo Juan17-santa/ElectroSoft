@@ -2,29 +2,39 @@ import { ChevronDown, Lightbulb, Pencil, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAuthUser, logout } from "../../auth/services/authService";
-import Alert from "./ui/Alert";
+import Alert from "./ui/alert";
 
 export const Navbar = () => {
-    const [open, setOpen] = useState(false);
-    const [user, setUser] = useState(null);
+    const [open,  setOpen]  = useState(false);
+    const [user,  setUser]  = useState(null);
     const [alert, setAlert] = useState(null);
     const navigate = useNavigate();
 
+    // Carga inicial
     useEffect(() => {
         const authUser = getAuthUser();
         if (authUser) setUser(authUser);
     }, []);
 
-    const nombre = user?.fullName || user?.nombre || "Usuario";
-    const email = user?.email || "";
-    const rol = user?.role || user?.rol || "Sin rol";
-    const avatar = user?.avatar || null;
+    // ✅ Escucha cuando el perfil se actualiza y recarga el usuario
+    useEffect(() => {
+        const handler = () => {
+            const authUser = getAuthUser();
+            if (authUser) setUser(authUser);
+        };
+        window.addEventListener("profile-updated", handler);
+        return () => window.removeEventListener("profile-updated", handler);
+    }, []);
+
+    const nombre    = user?.fullName  || user?.nombre || "Usuario";
+    const email     = user?.email     || "";
+    const rol       = user?.role      || user?.rol    || "Sin rol";
+    const avatar    = user?.avatar    || null;
     const ultimoAcc = user?.ultimoAcceso || null;
 
     const handleLogout = () => {
         setOpen(false);
         setAlert({ type: "success", message: "Has cerrado sesión correctamente." });
-
         setTimeout(() => {
             logout();
             navigate("/");
@@ -130,7 +140,6 @@ export const Navbar = () => {
                                             Cerrar sesión
                                         </button>
                                     </div>
-
                                 </div>
                             </>
                         )}
