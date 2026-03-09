@@ -1,152 +1,172 @@
 import { useState, useEffect } from "react";
 import paymentsService from "../services/PaymentsService";
-import { Validations } from "../../../../../utils/validations";
 
-export function usePaymentForm({ paymentToEdit, navigate, paymentId }) {
+export function usePaymentForm({ onSuccess }) {
 
-    // =========================
-    // STATE
-    // =========================
     const [formData, setFormData] = useState({
-        paymentMethod: "",
-        amount: "",
+        documento: "",
+        clienteNombre: "",
+        ventaId: null,
+        numeroVenta: "",
+        montoPorPagar: 0,
+        abonos: [],
+        metodoPago: "",
+        monto: "",
     });
 
+    const [allSales, setAllSales] = useState([]);
+    const [ventasDelDocumento, setVentasDelDocumento] = useState([]);
     const [errors, setErrors] = useState({});
-    const [alert, setAlert] = useState(null);
 
-    // =========================
-    // CARGAR ABONO (EDIT)
-    // =========================
+    const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
+
+    // Cargar ventas pendientes al montar
     useEffect(() => {
-        if (paymentToEdit) {
-            setFormData(paymentToEdit);
-        }
-    }, [paymentToEdit]);
+        setAllSales(paymentsService.getPending());
+    }, []);
 
-    // =========================
-    // VALIDAR CAMPO
-    // =========================
+    // Buscar automáticamente al escribir el documento
+    useEffect(() => {
+        if (!formData.documento.trim()) {
+            setVentasDelDocumento([]);
+            setFormData(prev => ({
+                ...prev,
+                clienteNombre: "",
+                ventaId: null,
+                numeroVenta: "",
+                montoPorPagar: 0,
+                abonos: [],
+            }));
+            return;
+        }
+
+        const encontradas = allSales.filter(
+            s => s.numeroDocumento === formData.documento.trim()
+        );
+
+        setVentasDelDocumento(encontradas);
+
+        if (encontradas.length === 1) {
+            const v = encontradas[0];
+            setFormData(prev => ({
+                ...prev,
+                clienteNombre: v.cliente,
+                ventaId: v.id,
+                numeroVenta: v.numeroVenta || `V-${v.id}`,
+                montoPorPagar: v.montoPorPagar,
+                abonos: v.abonos || [],
+            }));
+            setErrors(prev => ({ ...prev, documento: "" }));
+
+        } else if (encontradas.length > 1) {
+            setFormData(prev => ({
+                ...prev,
+                clienteNombre: encontradas[0].cliente,
+                ventaId: null,
+                numeroVenta: "",
+                montoPorPagar: 0,
+                abonos: [],
+            }));
+            setErrors(prev => ({ ...prev, documento: "" }));
+
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                clienteNombre: "",
+                ventaId: null,
+                numeroVenta: "",
+                montoPorPagar: 0,
+                abonos: [],
+            }));
+            setErrors(prev => ({
+                ...prev,
+                documento: "No se encontró ninguna venta pendiente para ese documento."
+            }));
+        }
+
+    }, [formData.documento, allSales]);
+
+    // ── Validación por campo ──────────────────────────────────────────────────
     const validateField = (name, value) => {
-
-        let error = "";
-
         switch (name) {
-
-            case "paymentMethod":
-                if (!value) error = "Seleccione un método de pago";
-                break;
-
-            case "amount":
-                if (!value) {
-                    error = "El monto es obligatorio";
-                } else if (!Validations.soloNumeros(value)) {
-                    error = "Solo números permitidos";
-                } else if (Number(value) <= 0) {
-                    error = "Debe ser mayor a 0";
-                }
-                break;
-
+            case "documento":
+                if (!value) return "El documento es obligatorio";
+                if (ventasDelDocumento.length === 0 && value) return "No se encontró ninguna venta pendiente";
+                return "";
+            case "ventaId":
+                if (!value) return "Selecciona una venta";
+                return "";
+            case "metodoPago":
+                if (!value) return "Selecciona un método de pago";
+                return "";
+            case "monto": {
+                const raw = parseFloat(String(value).replace(/\./g, "").replace(",", ".")) || 0;
+                if (!raw || raw <= 0) return "Ingresa un monto válido";
+                if (raw > formData.montoPorPagar) return `El monto no puede superar $${fmt(formData.montoPorPagar)}`;
+                return "";
+            }
             default:
-                break;
+                return "";
         }
-
-        return error;
     };
 
-    // =========================
-    // HANDLE CHANGE
-    // =========================
+    // ── Handlers ─────────────────────────────────────────────────────────────
     const handleChange = (e) => {
-
         const { name, value } = e.target;
-
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-
+        setFormData(prev => ({ ...prev, [name]: value }));
         const error = validateField(name, value);
-
-        setErrors(prev => ({
-            ...prev,
-            [name]: error
-        }));
+        setErrors(prev => ({ ...prev, [name]: error }));
     };
 
-    // =========================
-    // VALIDAR FORM COMPLETO
-    // =========================
+    const handleSelectVenta = (id) => {
+        const found = allSales.find(s => s.id === Number(id));
+        if (found) {
+            setFormData(prev => ({
+                ...prev,
+                ventaId: found.id,
+                numeroVenta: found.numeroVenta || `V-${found.id}`,
+                montoPorPagar: found.montoPorPagar,
+                abonos: found.abonos || [],
+            }));
+            setErrors(prev => ({ ...prev, ventaId: "" }));
+        }
+    };
+
+    // ── Validar formulario completo ───────────────────────────────────────────
     const validateForm = () => {
-
-        let newErrors = {};
-
-        Object.keys(formData).forEach(field => {
+        const newErrors = {};
+        ["documento", "ventaId", "metodoPago", "monto"].forEach(field => {
             const error = validateField(field, formData[field]);
             if (error) newErrors[field] = error;
         });
-
         setErrors(newErrors);
-
         return Object.keys(newErrors).length === 0;
     };
 
-    // =========================
-    // CREATE ABONO
-    // =========================
-    const createPayment = () => {
-
-        const updated = paymentsService.createAbono(paymentId, {
-            paymentMethod: formData.paymentMethod,
-            amount: formData.amount
-        });
-
-        if (!updated) {
-            setAlert({
-                type: "error",
-                message: "No se pudo registrar el abono"
-            });
-            return null;
-        }
-
-        setAlert({
-            type: "success",
-            message: "Abono registrado correctamente"
-        });
-
-        return updated;
-    };
-
-    // =========================
-    // HANDLE SUBMIT
-    // =========================
-    const handleSubmit = (e, mode) => {
-
+    // ── Submit ────────────────────────────────────────────────────────────────
+    const handleSubmit = (e) => {
         e.preventDefault();
-
         if (!validateForm()) return;
 
-        let updated;
+        const raw = parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0;
 
-        if (mode === "create") {
-            updated = createPayment();
-        }
+        const resultado = paymentsService.createAbono(
+            formData.documento,
+            formData.ventaId,
+            { paymentMethod: formData.metodoPago, amount: raw }
+        );
 
-        if (!updated) return;
+        if (!resultado) return;
 
-        setTimeout(() => {
-            navigate("/dashboard/payments");
-        }, 1500);
+        onSuccess();
     };
 
     return {
         formData,
         errors,
-        alert,
-        setAlert,
         handleChange,
-        validateForm,
-        createPayment,
-        handleSubmit
+        handleSelectVenta,
+        handleSubmit,
+        ventasDelDocumento,
     };
 }

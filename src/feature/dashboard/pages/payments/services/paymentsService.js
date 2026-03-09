@@ -1,143 +1,94 @@
-const KEY = "sales";
-
-
-const seedData = () => {
-
-    const existing = localStorage.getItem(KEY);
-
-    if (!existing) {
-
-        const mockSales = [
-            {
-                id: 1,
-                numeroVenta: "V-1001",
-                fecha: "01/03/2026",
-                fechaLimite: "01/04/2026",
-                documentoCliente: "12345678",
-                cliente: "Juan Pérez",
-                total: 1000000,
-                saldoPendiente: 600000,
-                estado: true,
-                abonos: [
-                    {
-                        id: 1,
-                        date: "05/03/2026",
-                        paymentMethod: "Efectivo",
-                        amount: 400000
-                    }
-                ]
-            },
-            {
-                id: 2,
-                numeroVenta: "V-1002",
-                fecha: "15/02/2026",
-                fechaLimite: "15/03/2026",
-                documentoCliente: "87654321",
-                cliente: "María Gómez",
-                total: 800000,
-                saldoPendiente: 0,
-                estado: false,
-                abonos: [
-                    {
-                        id: 1,
-                        date: "20/02/2026",
-                        paymentMethod: "Transferencia",
-                        amount: 800000
-                    }
-                ]
-            },
-            {
-                id: 3,
-                numeroVenta: "V-1003",
-                fecha: "10/01/2026",
-                fechaLimite: "10/02/2026",
-                documentoCliente: "45678912",
-                cliente: "Carlos Rodríguez",
-                total: 500000,
-                saldoPendiente: 500000,
-                estado: true,
-                abonos: []
-            }
-        ];
-
-        localStorage.setItem(KEY, JSON.stringify(mockSales));
-    }
-};
+import { SalesService } from "../../../../../feature/dashboard/pages/SalesManagement/services/SalesService";
 
 const paymentsService = {
 
-
-    // 🔹 Obtener todas las ventas
-    // get() {
-    //     return JSON.parse(localStorage.getItem(KEY)) || [];
-    // },
-
-    get() {
-        seedData(); // 🔥 Asegura datos iniciales
-        return JSON.parse(localStorage.getItem(KEY)) || [];
+    getPending() {
+        return SalesService.get()
+            .filter(s =>
+                (s.tipoVenta === "Crédito" || s.tipoVenta === "Credito") &&
+                s.estado === "Vigente"
+            )
+            .map(s => {
+                // ✅ Calculamos montoPorPagar en tiempo real por si Sales no lo guarda
+                const totalAbonado = (s.abonos || []).reduce((acc, a) => acc + Number(a.monto), 0);
+                const montoPorPagar = s.total - totalAbonado;
+                return {
+                    ...s,
+                    montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+                };
+            })
+            .filter(s => s.montoPorPagar > 0); // solo las que aún tienen saldo
     },
 
-    // 🔹 Guardar ventas
-    save(data) {
-        localStorage.setItem(KEY, JSON.stringify(data));
-    },
-
-    // 🔹 Obtener venta por ID
     getById(id) {
-        return this.get().find(sale => sale.id === Number(id));
+        return SalesService.getById(Number(id)) || null;
     },
 
-    // 🔹 Obtener venta por documento
-    getByDocument(document) {
-        return this.get().find(
-            sale => sale.documentoCliente === document
-        );
+    getByDocument(documento) {
+        return SalesService.get().filter(s => s.numeroDocumento === documento);
     },
 
-    // 🔹 Crear abono a una venta
-    createAbono(document, abonoData) {
+    createAbono(documento, ventaId, { paymentMethod, amount }) {
+        const sales = SalesService.get();
 
-        const sales = this.get();
-
-        const sale = sales.find(
-            s => s.documentoCliente === document
-        );
+        const sale = ventaId
+            ? sales.find(s => s.id === Number(ventaId))
+            : sales.find(s => s.numeroDocumento === documento);
 
         if (!sale) return null;
 
-        // Asegurar que exista el array
-        if (!sale.abonos) {
-            sale.abonos = [];
-        }
-
-        const newAbono = {
-            id: Date.now(),
-            date: new Date().toLocaleDateString(),
-            paymentMethod: abonoData.paymentMethod,
-            amount: Number(abonoData.amount)
+        const nuevoAbono = {
+            fecha: new Date().toISOString().split("T")[0],
+            monto: Number(amount),
+            metodoPago: paymentMethod,
         };
 
-        sale.abonos.push(newAbono);
+        const abonos = [...(sale.abonos || []), nuevoAbono];
+        const totalAbonado = abonos.reduce((acc, a) => acc + a.monto, 0);
+        const montoPorPagar = sale.total - totalAbonado;
 
-        // 🔥 Recalcular saldo correctamente
-        const totalAbonado = sale.abonos.reduce(
-            (acc, a) => acc + Number(a.amount),
-            0
-        );
+        const ventaActualizada = {
+            ...sale,
+            abonos,
+            montoPagado: totalAbonado,
+            montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+            estado: montoPorPagar <= 0 ? "Finalizado" : "Vigente",
+        };
 
-        sale.saldoPendiente = sale.total - totalAbonado;
+        SalesService.update(ventaActualizada);
+        return ventaActualizada;
+    },
 
-        if (sale.saldoPendiente <= 0) {
-            sale.saldoPendiente = 0;
-            sale.estado = false; // Finalizado
-        } else {
-            sale.estado = true; // Pendiente
-        }
+    buildAbonosTable(venta) {
+        if (!venta) return [];
 
-        this.save(sales);
+        const rows = [{
+            fecha: venta.fecha,
+            abono: 0,
+            saldoPendiente: venta.total,
+            tipo: "inicio",
+        }];
 
-        return sale;
-    }
+        let saldo = venta.total;
+
+        (venta.abonos || []).forEach((abono, i, arr) => {
+            saldo -= Number(abono.monto);
+            const esUltimo = i === arr.length - 1 && saldo <= 0;
+            rows.push({
+                fecha: abono.fecha,
+                abono: -Number(abono.monto),
+                saldoPendiente: Math.max(saldo, 0),
+                metodoPago: abono.metodoPago,
+                tipo: esUltimo ? "ultimo" : "abono",
+            });
+        });
+
+        return rows;
+    },
+
+    formatCurrency(value) {
+        return new Intl.NumberFormat("es-CO").format(value ?? 0);
+    },
 };
 
 export default paymentsService;

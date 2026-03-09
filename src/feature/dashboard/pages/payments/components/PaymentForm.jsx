@@ -1,209 +1,306 @@
+import { FileText, CircleUser, CreditCard, ChevronDown, X, DollarSign } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import ValidationMessage from "../../../components/ui/ValidationMessage";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
-import { IdCard, FileText, User, Mail, Phone, X } from "lucide-react";
+import paymentsService from "../services/PaymentsService";
+
+const METODOS_PAGO = ["Efectivo", "Transferencia", "Tarjeta Débito", "Tarjeta Crédito", "Cheque"];
+const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
 export default function PaymentForm({
     formData,
     errors,
     handleChange,
+    handleSelectVenta,
     handleSubmit,
-    buttonText,
-    onCancel
+    ventasDelDocumento,
+    onCancel,
 }) {
 
+    const [showMetodo, setShowMetodo] = useState(false);
+    const metodoRef = useRef(null);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (metodoRef.current && !metodoRef.current.contains(e.target)) {
+                setShowMetodo(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
+
+    const handleMontoChange = (e) => {
+        const raw = e.target.value.replace(/\D/g, "");
+        handleChange({
+            target: {
+                name: "monto",
+                value: raw ? fmt(Number(raw)) : ""
+            }
+        });
+    };
+
+    const abonosTable = formData.ventaId
+        ? paymentsService.buildAbonosTable({
+            ...formData,
+            id: formData.ventaId,
+            abonos: formData.abonos,
+            total: formData.saldoPendiente + (formData.abonos || []).reduce((acc, a) => acc + a.amount, 0),
+            fecha: formData.abonos?.[0]?.fecha || "-",
+        })
+        : [];
+
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+        <form onSubmit={handleSubmit}>
+            <div className="flex flex-col items-center gap-12 mt-6">
 
-            {/* CONTENEDOR PRINCIPAL */}
-            <div className="flex flex-col items-center gap-12 mt-6 justify-start flex-1 mx-28">
-
-                {/* ================= PRIMERA FILA ================= */}
-                <div className="flex gap-20">
-
-                    {/* TIPO DOCUMENTO */}
-                    <div className="flex flex-col gap-3 w-80">
-
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <IdCard size={16} />
-                            <span>Tipo documento *</span>
-                        </div>
-
-                        <select
-                            name="tipoDoc"
-                            value={formData.tipoDoc}
-                            onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.tipoDoc ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        >
-                            <option value="" hidden>Seleccione un tipo</option>
-                            <option value="CC">C.C</option>
-                            <option value="CE">C.E</option>
-                        </select>
-
-                        {errors.tipoDoc && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.tipoDoc}
-                            </p>
-                        )}
-                    </div>
+                {/* ===== PRIMERA FILA: Documento + Cliente ===== */}
+                <div className="flex gap-16">
 
                     {/* DOCUMENTO */}
                     <div className="flex flex-col gap-3 w-80">
-
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <FileText size={16} />
                             <span>Documento *</span>
                         </div>
-
                         <input
                             type="text"
                             name="documento"
                             value={formData.documento}
                             onChange={handleChange}
-                            placeholder="Ingrese el documento"
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
+                            placeholder="Ingrese documento"
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full
+                                ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
+                        <div className="h-4">
+                            <ValidationMessage
+                                error={errors.documento}
+                                success={formData.clienteNombre}
+                                successMessage="Cliente encontrado"
+                            />
 
-                        {errors.documento && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.documento}
-                            </p>
-                        )}
-                    </div>
-                </div>
-
-                {/* ================= SEGUNDA FILA ================= */}
-                <div className="flex gap-20">
-
-                    {/* NOMBRE */}
-                    <div className="flex flex-col gap-3 w-80">
-
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <User size={16} />
-                            <span>Nombre *</span>
                         </div>
+                    </div>
 
+                    {/* CLIENTE (auto) */}
+                    <div className="flex flex-col gap-3 w-80">
+                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                            <CircleUser size={16} />
+                            <span>Cliente</span>
+                        </div>
                         <input
                             type="text"
-                            name="nombre"
-                            value={formData.nombre}
-                            onChange={handleChange}
-                            placeholder="Ingrese el nombre"
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.nombre ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
+                            value={formData.clienteNombre || ""}
+                            disabled
+                            placeholder="Se autocompletará al buscar"
+                            className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full text-gray-500"
                         />
-
-                        {errors.nombre && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.nombre}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* EMAIL */}
-                    <div className="flex flex-col gap-3 w-80">
-
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <Mail size={16} />
-                            <span>Email *</span>
-                        </div>
-
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="Ingrese el email"
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.email ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        />
-
-                        {errors.email && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.email}
-                            </p>
-                        )}
                     </div>
                 </div>
 
-                {/* ================= TERCERA FILA ================= */}
-                <div className="flex gap-20">
+                {/* ===== SEGUNDA FILA: Venta + Método + Monto ===== */}
+                <div className="flex gap-16">
 
-                    {/* TELEFONO */}
-                    <div className="flex flex-col gap-3 w-80">
-
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <Phone size={16} />
-                            <span>Teléfono *</span>
+                    {/* NÚMERO DE VENTA */}
+                    <div className="flex flex-col gap-3 w-52">
+                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                            <FileText size={16} />
+                            <span>Número de venta *</span>
                         </div>
 
+                        {ventasDelDocumento.length > 1 && !formData.ventaId ? (
+                            <select
+                                defaultValue=""
+                                onChange={(e) => handleSelectVenta(e.target.value)}
+                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            >
+                                <option value="" disabled>Seleccionar</option>
+                                {ventasDelDocumento.map((v) => (
+                                    <option key={v.id} value={v.id}>
+                                        {v.numeroVenta} — ${fmt(v.saldoPendiente)}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                type="text"
+                                value={formData.numeroVenta || ""}
+                                disabled
+                                placeholder="—"
+                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md text-gray-500"
+                            />
+                        )}
+                        <div className="h-4">
+                            <ValidationMessage
+                                error={errors.ventaId}
+                                success={formData.ventaId}
+                                successMessage="Venta seleccionada"
+                            />
+                        </div>
+                    </div>
+
+                    {/* MÉTODO DE PAGO */}
+                    <div className="flex flex-col gap-2 w-52">
+                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                            <CreditCard size={20} />
+                            <span>Método de pago *</span>
+                        </div>
+
+                        <div className="relative" ref={metodoRef}>
+                            <button
+                                type="button"
+                                onClick={() => setShowMetodo((v) => !v)}
+                                className={`bg-gray-200 mb-4 rounded-xl px-4 py-3 text-sm shadow-md w-full text-left transition-all duration-300
+                                    focus:outline-none focus:ring-2 cursor-pointer flex items-center justify-between gap-2
+                                    ${errors.metodoPago ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
+                            >
+                                <span>{formData.metodoPago || "Seleccionar método"}</span>
+                                <ChevronDown
+                                    size={16}
+                                    className={`transition duration-300 ${showMetodo ? "rotate-180 text-yellow-500" : "text-gray-400"}`}
+                                />
+                            </button>
+
+                            {showMetodo && (
+                                <div className="absolute z-50 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 p-2 w-full">
+                                    {METODOS_PAGO.map((m) => (
+                                        <button
+                                            key={m}
+                                            type="button"
+                                            onClick={() => {
+                                                handleChange({ target: { name: "metodoPago", value: m } });
+                                                setShowMetodo(false);
+                                            }}
+                                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-yellow-100 text-sm transition"
+                                        >
+                                            {m}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="h-4">
+                                <ValidationMessage
+                                    error={errors.metodoPago}
+                                    success={formData.metodoPago}
+                                    successMessage="Método de pago válido"
+                                />
+
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* MONTO */}
+                    <div className="flex flex-col gap-3 w-52">
+                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                            <DollarSign size={16} />
+                            <span>
+                                Monto *
+                                {formData.ventaId && (
+                                    <span className="text-xs text-gray-400 font-normal ml-1">
+                                        máx: ${fmt(formData.saldoPendiente)}
+                                    </span>
+                                )}
+                            </span>
+                        </div>
                         <input
                             type="text"
-                            name="telefono"
-                            value={formData.telefono}
-                            onChange={handleChange}
-                            placeholder="Ingrese el teléfono"
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.telefono ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
+                            value={formData.monto}
+                            onChange={handleMontoChange}
+                            disabled={!formData.ventaId}
+                            placeholder="Ingrese el monto"
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 disabled:opacity-50
+                                ${errors.monto ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
+                        <div className="h-4">
+                            <ValidationMessage
+                                error={errors.monto}
+                                success={formData.monto && !errors.monto}
+                                successMessage="Monto válido"
+                            />
 
-                        {errors.telefono && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.telefono}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* ROL */}
-                    <div className="flex flex-col gap-3 w-80">
-
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <User size={16} />
-                            <span>Rol *</span>
                         </div>
-
-                        <select
-                            name="rol"
-                            value={formData.rol}
-                            onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.rol ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        >
-                            <option value="" hidden>Seleccione un rol</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Empleado">Empleado</option>
-                        </select>
-
-                        {errors.rol && (
-                            <p className="text-red-500 text-xs mt-1">
-                                {errors.rol}
-                            </p>
-                        )}
                     </div>
                 </div>
 
-            </div>
+                {/* ===== TABLA HISTORIAL DE ABONOS — siempre visible ===== */}
+                <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-3xl">
+                    <div className="flex items-center gap-2 text-yellow-400 font-semibold text-base mb-1">
+                        <FileText size={18} />
+                        <span>Historial de abonos</span>
+                        {formData.ventaId && (
+                            <span className="text-gray-400 text-sm font-normal ml-2">
+                                Saldo pendiente: <span className="font-bold text-gray-700">${fmt(formData.saldoPendiente)}</span>
+                            </span>
+                        )}
+                    </div>
 
-            {/* ================= BOTONES ================= */}
-            <div className="flex justify-end mt-auto gap-4">
+                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                        <table className="w-full text-sm">
+                            <thead className="bg-gray-100">
+                                <tr className="text-left border-b border-gray-200">
+                                    <th className="px-4 py-2 font-semibold">Fecha</th>
+                                    <th className="px-4 py-2 font-semibold">Método</th>
+                                    <th className="px-4 py-2 font-semibold text-center">Abono</th>
+                                    <th className="px-4 py-2 font-semibold text-center">Saldo pendiente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {!formData.ventaId ? (
+                                    <tr>
+                                        <td colSpan={4} className="text-center py-6 text-gray-400 italic text-sm">
+                                            Ingresa un documento para ver el historial
+                                        </td>
+                                    </tr>
+                                ) : abonosTable.length === 0 || (formData.abonos || []).length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="text-center py-6 text-gray-400 italic text-sm">
+                                            Sin abonos registrados
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    abonosTable.map((row, i) => (
+                                        <tr
+                                            key={i}
+                                            className={`border-b border-gray-100 ${row.tipo === "inicio" ? "text-red-500 font-medium" :
+                                                row.tipo === "ultimo" ? "text-blue-500 font-medium" :
+                                                    "text-gray-600"
+                                                }`}
+                                        >
+                                            <td className="px-4 py-2">{row.fecha}</td>
+                                            <td className="px-4 py-2 text-gray-400 text-xs">{row.metodoPago || "—"}</td>
+                                            <td className="px-4 py-2 text-center">
+                                                {row.abono === 0 ? "0"
+                                                    : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
+                                                        : `+${fmt(row.abono)}`}
+                                            </td>
+                                            <td className="px-4 py-2 text-center">{fmt(row.saldoPendiente)}</td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                {/* CANCELAR */}
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="px-5 py-2 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer"
-                >
-                    <X size={16} />
-                    Cancelar
-                </button>
+                {/* ===== BOTONES ===== */}
+                <div className="flex justify-end w-full gap-6">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-5 py-2 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer"
+                    >
+                        <X size={16} />
+                        Cancelar
+                    </button>
 
-                {/* BOTON PRINCIPAL */}
-                <PrimaryButton
-                    type="submit"
-                    disabled={Object.values(errors).some(error => error)}
-                >
-                    {buttonText}
-                </PrimaryButton>
+                    <PrimaryButton
+                        type="submit"
+                        disabled={Object.values(errors).some(Boolean)}
+                    >
+                        Crear abono
+                    </PrimaryButton>
+                </div>
             </div>
         </form>
     );

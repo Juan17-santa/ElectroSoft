@@ -133,7 +133,7 @@ export default function RoutersApp() {
                 {/* PAGOS Y ABONOS */}
                 <Route path="payments" element={<Payments />} />
                 <Route path="payments/create" element={<CreatePayment />} />
-                <Route path="payments/detail/:id" element={<PaymentDetail />} />
+                <Route path="payments/details/:id" element={<PaymentDetail />} />
 
                 {/* DEVOLUCIONES */}
                 <Route path="devolutions" element={<Devolutions />} />
@@ -146,7 +146,7 @@ export default function RoutersApp() {
                 <Route path="users" element={<Users />} />
                 <Route path="users/create" element={<CreateUser />} />
                 <Route path="users/:id" element={<UserDetail />} />
-                <Route path="users/update/:id" element={<UpdateUser />} />
+                <Route path="/dashboard/users/:id/update" element={<UpdateUser />} />
                 <Route path="editprofile" element={<EditProfile />} />
 
                 {/* ROLES */}
