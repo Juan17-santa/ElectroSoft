@@ -1,5 +1,5 @@
 import { Info } from 'lucide-react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatCOP} from "../shopping/helpers/shoppingHelpers";
 import Pagination from '../../components/ui/Pagination';

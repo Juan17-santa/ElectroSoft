@@ -6,6 +6,8 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from '../../components/ui/Pagination';
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from '../../components/ui/Alert';
+import CancelShoppingModal from "../shopping/components/CancelShoppingModal";
+import CancellationInfoTooltip from "../shopping/components/CancellationInfoTooltip";
 import { generatePDFReport } from '../../../../utils/PDFReportGenerator';
 
 
@@ -13,10 +15,12 @@ const ITEMS_PER_PAGE = 8;
 
 export default function Shopping() {
     const navigate = useNavigate();
-    const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular } = useShopping();
+    const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion } = useShopping();
     const [currentPage, setCurrentPage] = useState(1);
     // MODAL DE CONFIRMACION
     const [confirmData, setConfirmData] = useState(null);
+    // MODAL DE ANULACION
+    const [cancelModalData, setCancelModalData] = useState(null);
 
     // ALERTAS
     const [alert, setAlert] = useState(null);
@@ -90,15 +94,9 @@ export default function Shopping() {
         });
     };
 
-    const getPageNumbers = () => {
-        const pages = [];
-        for (let i = 1; i <= totalPages; i++) pages.push(i);
-        return pages;
-    };
-
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
                 {/* TITULO */}
                 <p className="text-xl font-semibold flex items-center gap-2">
                     <ShoppingCart size={22} className="text-yellow-500" />
@@ -169,28 +167,24 @@ export default function Shopping() {
                                                         <Eye size={18} className="text-blue-600" />
                                                     </button>
 
-                                                    {/* BOTON ANULAR */}
-                                                    <button
-                                                        onClick={() =>
-                                                            setConfirmData({
-                                                                type: "warning",
-                                                                title: "Anular compra",
-                                                                message: `¿Estás seguro de que deseas anular la compra ${compra.numeroFactura}?`,
-                                                                onConfirm: () => {
-                                                                    handleAnular(compra.id);
-                                                                    showAlert("success", "La compra fue anulada correctamente.");
-                                                                    setConfirmData(null);
+                                                    {/* BOTON ANULAR O TOOLTIP */}
+                                                    {compra.estado === "Anulada" ? (
+                                                        <CancellationInfoTooltip cancelInfo={compra.infoAnulacion} />
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => {
+                                                                const validacion = validarAnulacion(compra);
+                                                                if (validacion.puedeAnularse) {
+                                                                    setCancelModalData(compra);
+                                                                } else {
+                                                                    showAlert("error", validacion.razon);
                                                                 }
-                                                            })
-                                                        }
-                                                        disabled={compra.estado === "Anulada"}
-                                                        className={`p-2 rounded-lg transition duration-300 cursor-pointer ${compra.estado === "Anulada"
-                                                            ? "bg-gray-100 cursor-not-allowed opacity-40"
-                                                            : "bg-red-100 hover:bg-red-200"
-                                                            }`}
-                                                    >
-                                                        <Ban size={18} className="text-red-600" />
-                                                    </button>
+                                                            }}
+                                                            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition duration-300 cursor-pointer"
+                                                        >
+                                                            <Ban size={18} className="text-red-600" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -218,6 +212,19 @@ export default function Shopping() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
+                />
+            )}
+
+            {/* MODAL DE ANULACION */}
+            {cancelModalData && (
+                <CancelShoppingModal
+                    compra={cancelModalData}
+                    onConfirm={(infoAnulacion) => {
+                        handleAnular(cancelModalData.id, infoAnulacion);
+                        showAlert("success", "La compra fue anulada correctamente.");
+                        setCancelModalData(null);
+                    }}
+                    onCancel={() => setCancelModalData(null)}
                 />
             )}
 
