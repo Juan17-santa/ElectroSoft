@@ -1,10 +1,10 @@
-import { X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useOrdersForm } from "../hooks/UseOrdersForm";
-import Alert from "../../../components/ui/Alert";
-import OrdersForm from "../components/OrdersForm";
 import { useState } from "react";
+import Alert from "../../../components/ui/alert";
+import OrdersForm from "../components/OrdersForm";
 import ClientModal from "../components/ClientModal";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
 
 export default function CreateOrder() {
 
@@ -14,8 +14,11 @@ export default function CreateOrder() {
     // ESTADO PARA LA ALERTA DE ÉXITO O ERROR
     const [alert, setAlert] = useState(null);
 
-    // ESTADO PARA LA MODAL
+    // ESTADO PARA LA MODAL DE CREAR CLIENTE
     const [showClientModal, setShowClientModal] = useState(false);
+
+    // ESTADO PARA LA MODAL DE CANCELAR
+    const [showCancelModal, setShowCancelModal] = useState(false);
 
     // CONFIGURACIÓN DEL HOOK PERSONALIZADO PARA EL FORMULARIO
     const {
@@ -25,6 +28,12 @@ export default function CreateOrder() {
         handleSubmit,
         products,
         addProduct,
+        currentProducts = { currentProducts },
+        currentPage = { currentPage },
+        setCurrentPage = { setCurrentPage },
+        totalPages = { totalPages },
+        indexOfFirstItem = { indexOfFirstItem },
+        itemsPerPage = { itemsPerPage },
     } = useOrdersForm({
         onSuccess: () => {
             setAlert({
@@ -66,14 +75,20 @@ export default function CreateOrder() {
                     handleChange={handleChange}
                     handleSubmit={handleSubmit}
                     buttonText="Crear Pedido"
-                    onCancel={() => navigate("/dashboard/orders")}
+                    onCancel={() => setShowCancelModal(true)}
                     onOpenClientModal={() => setShowClientModal(true)}
                     products={products}
                     addProduct={addProduct}
+                    currentProducts={currentProducts}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    totalPages={totalPages}
+                    indexOfFirstItem={indexOfFirstItem}
+                    itemsPerPage={itemsPerPage}
                 />
             </div>
 
-            {/* MODAL */}
+            {/* MODAL PARA CREAR CLIENTE */}
             {showClientModal && (
                 <ClientModal
                     onClose={() => setShowClientModal(false)}
@@ -81,12 +96,23 @@ export default function CreateOrder() {
                 />
             )}
 
-            {/* ALERTA */}
+            {/* ALERTA EXITO O ERROR*/}
             {alert && (
                 <Alert
                     type={alert.type}
                     message={alert.message}
                     onClose={() => setAlert(null)}
+                />
+            )}
+
+            {/* MODAL PARA CANCELAR PEDIDO */}
+            {showCancelModal && (
+                <ConfirmModal
+                    type="info"
+                    title="Cancelar pedido"
+                    message="¿Seguro que deseas cancelar este pedido? Se perderán todos los cambios realizados."
+                    onConfirm={() => navigate("/dashboard/orders")}
+                    onCancel={() => setShowCancelModal(false)}
                 />
             )}
         </>

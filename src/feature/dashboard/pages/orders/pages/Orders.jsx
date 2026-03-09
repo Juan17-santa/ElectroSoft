@@ -4,6 +4,8 @@ import { useOrdersTable } from "../hooks/UseOrdersTable";
 import SearchBar from "../../../components/ui/Searchbar";
 import OrdersTable from "../components/OrdersTable";
 import Pagination from "../../../components/ui/Pagination"
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import Alert from "../../../components/ui/alert";
 
 export default function Orders() {
 
@@ -24,7 +26,29 @@ export default function Orders() {
         })
     };
 
-    const { data, totalPages } = useOrdersTable(search, presentPage, recordsPerPage);
+    // ESTADO ALERTA
+    const [alert, setAlert] = useState(null);
+
+    // ESTADO PARA CANCELAR UN PEDIDO
+    const [orderToCancel, setOrderToCancel] = useState(null);
+    const handleCancelOrder = () => {
+        if (!orderToCancel) return;
+
+        cancelOrder(orderToCancel);
+
+        setOrderToCancel(null);
+
+        setAlert({
+            type: "success",
+            message: "El pedido fue anulado y los productos regresaron al stock."
+        });
+
+        setTimeout(() => {
+            setAlert(null);
+        }, 2000);
+    };
+
+    const { data, totalPages, cancelOrder } = useOrdersTable(search, presentPage, recordsPerPage);
 
     return (
         <>
@@ -52,6 +76,7 @@ export default function Orders() {
                 <OrdersTable
                     data={data}
                     onDetails={handleDetailsNavigation}
+                    onCancel={(order) => setOrderToCancel(order)}
                 />
 
                 {/* PAGINACION */}
@@ -62,8 +87,26 @@ export default function Orders() {
                         onPageChange={(page) => setPresentPage(page)}
                     />
                 </div>
-
             </div>
+
+            {/* MODAL DE CONFIRMACION PARA CANCELAR UN PEDIDO */}
+            {orderToCancel && (
+                <ConfirmModal
+                    type="warning"
+                    title="Anular pedido"
+                    message="¿Seguro que deseas anular este pedido? Los productos volverán al stock."
+                    onConfirm={handleCancelOrder}
+                    onCancel={() => setOrderToCancel(null)}
+                />
+            )}
+            {/* ALERTA */}
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
         </>
     )
 }

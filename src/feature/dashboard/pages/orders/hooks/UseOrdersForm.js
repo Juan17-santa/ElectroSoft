@@ -36,6 +36,25 @@ export function useOrdersForm({ onSuccess }) {
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
+    // Dentro de tu useOrdersForm.js (o como se llame tu hook)
+    const itemsPerPage = 4;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    // Cálculos de paginación
+    const totalPages = Math.ceil((formData.productos?.length || 0) / itemsPerPage);
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+    // Los productos que realmente verá el usuario
+    const currentProducts = (formData.productos || []).slice(indexOfFirstItem, indexOfLastItem);
+
+    // Resetear página si queda vacía al borrar
+    useEffect(() => {
+        if (currentPage > totalPages && totalPages > 0) {
+            setCurrentPage(totalPages);
+        }
+    }, [formData.productos.length, totalPages]);
+
     // BUSCAR CLIENTE POR MEDIO DEL DOCUMENTO
     useEffect(() => {
         if (!formData.documento) return;
@@ -69,7 +88,7 @@ export function useOrdersForm({ onSuccess }) {
     // CARGAR SOLO LOS PRODUCTOS QUE ESTEN ACTIVOS!!!
     useEffect(() => {
         const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
-        const activos = storedProducts.filter(p => p.estado === true);
+        const activos = storedProducts.filter(p => p.estado === true && p.stock > 0);
         setProducts(activos);
     }, []);
 
@@ -134,52 +153,73 @@ export function useOrdersForm({ onSuccess }) {
     // FUNCION PARA AÑADIR PRODUCTOS
     const addProduct = (product, quantity) => {
 
-        const subtotalProducto = product.precio * quantity;
+        const productoExistente = formData.productos.find(
+            p => p.id === product.id
+        );
 
-        const newProduct = {
-            id: product.id,
-            nombre: product.nombre,
-            precio: product.precio,
-            cantidad: quantity,
-            subtotal: subtotalProducto
-        };
+        // si el producto ya está en el pedido
+        if (productoExistente) {
 
-        const nuevosProductos = [...formData.productos, newProduct];
+            const nuevaCantidad = productoExistente.cantidad + quantity;
 
-        // Calcular totales
-        const subtotal = nuevosProductos.reduce((acc, p) => acc + p.subtotal, 0);
-        const iva = subtotal * 0.19;
-        const total = subtotal + iva;
-
-        setFormData(prev => ({
-            ...prev,
-            productos: nuevosProductos,
-            subtotal,
-            iva,
-            total
-        }));
-
-        // LIMPIAR ERROR DE PRODUCTOS
-        setErrors(prev => ({
-            ...prev,
-            productos: ""
-        }));
-
-        // BAJAR STOCK
-        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
-
-        const updatedProducts = storedProducts.map(p => {
-            if (p.id === product.id) {
-                return {
-                    ...p,
-                    stock: p.stock - quantity
-                };
+            // validar stock total
+            if (nuevaCantidad > product.stock) {
+                setErrors(prev => ({
+                    ...prev,
+                    productos: `Solo hay ${product.stock} unidades disponibles`
+                }));
+                return;
             }
-            return p;
-        });
 
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
-    };
+            const productosActualizados = formData.productos.map(p =>
+                p.id === product.id
+                    ? {
+                        ...p,
+                        cantidad: nuevaCantidad,
+                        subtotal: nuevaCantidad * p.precio
+                    }
+                    : p
+            );
+        } else {
+
+            if (quantity > product.stock) {
+                setErrors(prev => ({
+                    ...prev,
+                    productos: `Solo hay ${product.stock} unidades disponibles`
+                }));
+                return;
+            }
+
+            const newProduct = {
+                id: product.id,
+                nombre: product.nombre,
+                precio: product.precio,
+                cantidad: quantity,
+                subtotal: product.precio * quantity
+            };
+
+            const nuevosProductos = [...formData.productos, newProduct];
+
+            const subtotal = nuevosProductos.reduce((acc, p) => acc + p.subtotal, 0);
+            const iva = subtotal * 0.19;
+            const total = subtotal + iva;
+
+            setFormData(prev => ({
+                ...prev,
+                productos: nuevosProductos,
+                subtotal,
+                iva,
+                total
+            }));
+
+            setErrors(prev => ({ ...prev, productos: "" }));
+
+            // Si la tabla estaba vacía o en otra página, volvemos a la 1 para ver el nuevo item
+            if (nuevosProductos.length > 0 && currentPage === 0) {
+                setCurrentPage(1);
+            }
+        };
+    }
 
     // VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
@@ -210,6 +250,30 @@ export function useOrdersForm({ onSuccess }) {
 
         if (!validateForm()) return;
 
+        // OBTENER PRODUCTOS DEL INVENTARIO
+        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+
+        // ACTUALIZAR STOCK SEGÚN LOS PRODUCTOS DEL PEDIDO
+        const updatedProducts = storedProducts.map(product => {
+
+            const productoPedido = formData.productos.find(
+                p => p.id === product.id
+            );
+
+            if (productoPedido) {
+                return {
+                    ...product,
+                    stock: product.stock - productoPedido.cantidad
+                };
+            }
+
+            return product;
+        });
+
+        // GUARDAR NUEVO STOCK
+        localStorage.setItem("products", JSON.stringify(updatedProducts));
+
+        // CREAR PEDIDO
         const nuevoPedido = ServicesOrders.create(formData);
 
         onSuccess(nuevoPedido);
@@ -222,6 +286,12 @@ export function useOrdersForm({ onSuccess }) {
         handleSubmit,
         setFormData,
         products,
-        addProduct
+        addProduct,
+        currentPage,
+        setCurrentPage,
+        totalPages,
+        currentProducts,
+        indexOfFirstItem,
+        itemsPerPage
     };
 }

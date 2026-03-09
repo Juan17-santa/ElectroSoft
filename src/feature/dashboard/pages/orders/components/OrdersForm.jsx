@@ -1,10 +1,11 @@
-import { Boxes, CircleUser, FileText, Plus, X } from "lucide-react";
+import { Boxes, CircleUser, FileText, Plus, X, Trash } from "lucide-react";
 import { CreditCard, ChevronDown } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Calendar from "../../../components/ui/Calendar";
-import AddProductModal from "../../../../../components/AddProductModal";
+import AddProductModal from "../../../components/ui/AddProductModal";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
+import Pagination from "../../../components/ui/Pagination";
 
 export default function OrdersForm({
     formData,
@@ -15,7 +16,13 @@ export default function OrdersForm({
     onCancel,
     onOpenClientModal,
     products,
-    addProduct
+    addProduct,
+    currentProducts,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    indexOfFirstItem,
+    itemsPerPage
 }) {
 
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
@@ -23,6 +30,14 @@ export default function OrdersForm({
 
     const [showPago, setShowPago] = useState(false);
     const pagoRef = useRef(null);
+
+    // FORMATEADOR DE MONEDA
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('es-CO', { // 'es-CO' PARA FORMATO COLOMBIANO (PUNTOS EN MILES)
+            style: 'decimal',
+            minimumFractionDigits: 0,
+        }).format(value);
+    };
 
     useEffect(() => {
         const handler = (e) => {
@@ -34,6 +49,32 @@ export default function OrdersForm({
         document.addEventListener("mousedown", handler);
         return () => document.removeEventListener("mousedown", handler);
     }, []);
+
+    // FUNCION PARA ELIMINAR UN PRODUCTO DE LA TABLA AL PEDIR
+    const handleRemoveProduct = (index) => {
+        const nuevosProductos = formData.productos.filter((_, i) => i !== index);
+
+        // Llamamos a tu handleChange pasándole el nuevo array
+        handleChange({
+            target: {
+                name: "productos",
+                value: nuevosProductos
+            }
+        });
+    };
+
+    // FUNCION QUE CALCULA EL STOCK DEL MODAL
+    const getAvailableStock = (product) => {
+
+        // BUSCAR SI EL PRODUCTO YA ESTA EN LA ORDEN
+        const productInOrder = formData.productos?.find(p => p.id === product.id)
+
+        // CANTIDAD YA USADA
+        const usedStock = productInOrder ? productInOrder.cantidad : 0
+
+        // STOCK DISPONIBLE
+        return product.stock - usedStock
+    }
 
     return (
         <>
@@ -206,14 +247,13 @@ export default function OrdersForm({
                                 <span>Productos</span>
                             </div>
                             <div className="flex gap-3">
-                                <button
+                                <PrimaryButton
                                     type="button"
+                                    icon={Plus}
                                     onClick={() => setOpenProductModal(true)}
-                                    className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-4 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                                 >
-                                    <Plus size={16} />
                                     Añadir producto
-                                </button>
+                                </PrimaryButton>
                             </div>
                         </div>
 
@@ -223,62 +263,71 @@ export default function OrdersForm({
                                 <thead className="bg-gray-100">
                                     <tr className="text-left border-b border-gray-200">
                                         <th className="px-4 py-2 font-semibold">Producto</th>
-                                        <th className="px-4 py-2 font-semibold text-center">Cantidad</th>
-                                        <th className="px-4 py-2 font-semibold text-center">Precio</th>
-                                        <th className="px-4 py-2 font-semibold text-center">Subtotal</th>
-                                        <th className="px-4 py-2 font-semibold text-center">Acciones</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-24">Cantidad</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-28">Precio Unit</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-28">Subtotal</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-16">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {(formData.productos || []).length === 0 ? (
+                                    {(!currentProducts || currentProducts.length === 0) ? (
                                         <tr>
                                             <td colSpan="5" className="text-center py-4 text-gray-400">
                                                 No hay productos agregados.
                                             </td>
                                         </tr>
                                     ) : (
-                                        formData.productos.map((producto, index) => (
-                                            <tr key={index}>
-                                                <td className="px-4 py-2 border-b">{producto.nombre}</td>
-                                                <td className="px-4 py-2 border-b text-center">{producto.cantidad}</td>
-                                                <td className="px-4 py-2 border-b text-center">{producto.precio}</td>
-                                                <td className="px-4 py-2 border-b text-center">{producto.subtotal}</td>
-                                                <td className="px-4 py-2 border-b text-center">
-                                                    <button
-                                                        onClick={() => {
-                                                            const nuevos = formData.productos.filter((_, i) => i !== index);
-                                                            handleChange({
-                                                                target: {
-                                                                    name: "productos",
-                                                                    value: nuevos
-                                                                }
-                                                            });
-                                                        }}
-                                                        className="text-red-500"
-                                                    >
-                                                        Eliminar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        currentProducts.map((producto, index) => {
+                                            // Calculamos el índice real en el array original para eliminarlo correctamente
+                                            const realIndex = indexOfFirstItem + index;
+
+                                            return (
+                                                <tr key={producto.id || index} className="border-b border-gray-200">
+                                                    <td className="px-4 py-2 ">{producto.nombre}</td>
+                                                    <td className="px-4 py-2 text-center">{producto.cantidad}</td>
+                                                    <td className="px-4 py-2 text-center">{formatCurrency(producto.precio)}</td>
+                                                    <td className="px-4 py-2 text-center">{formatCurrency(producto.subtotal)}</td>
+                                                    <td className="px-4 py-2 text-center">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveProduct(realIndex)}
+                                                            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-500 cursor-pointer"
+                                                        >
+                                                            <Trash size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>
                         </div>
 
+                        {/* VALIDACIO DE PRODUCTOS */}
+                        <ValidationMessage
+                            error={errors.productos}
+                        />
+
                         {/* ================= TOTALES ================= */}
                         <div className="w-full flex px-6 py-3 justify-between items-center">
                             <div>
-                                <ValidationMessage
-                                    error={errors.productos}
-                                    success={formData.productos.length > 0}
-                                    successMessage="Productos agregados correctamente"
-                                />
+                                {/* PAGINADOR PARA LOS PRODUCTOS */}
+                                {(formData?.productos?.length || 0) > itemsPerPage && (
+                                    <div className="flex justify-center mt-4 mb-2">
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={(page) => setCurrentPage(page)}
+                                        />
+                                    </div>
+                                )}
+
                             </div>
                             <div className="flex gap-6">
-                                <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formData.subtotal}</span></span>
-                                <span className="text-gray-600 text-sm">IVA (19%): <span className="font-bold text-blue-600">{formData.iva}</span></span>
-                                <span className="text-gray-600 text-sm">Total: <span className="font-bold text-green-600">{formData.total}</span></span>
+                                <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formatCurrency(formData.subtotal)}</span></span>
+                                <span className="text-gray-600 text-sm">IVA (19%): <span className="font-bold text-blue-600">{formatCurrency(formData.iva)}</span></span>
+                                <span className="text-gray-600 text-sm">Total: <span className="font-bold text-green-600">{formatCurrency(formData.total)}</span></span>
                             </div>
                         </div>
                     </div>
@@ -289,7 +338,7 @@ export default function OrdersForm({
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="px-5 py-2 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer"
+                            className="px-5 py-2.5 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer hover:shadow-lg"
                         >
                             <X size={16} />
                             Cancelar
@@ -310,11 +359,9 @@ export default function OrdersForm({
             <AddProductModal
                 isOpen={openProductModal}
                 onClose={() => setOpenProductModal(false)}
+                onAdd={addProduct}
                 products={products}
-                onAdd={(product, quantity) => {
-                    addProduct(product, quantity);
-                    setOpenProductModal(false);
-                }}
+                getAvailableStock={getAvailableStock}
             />
         </>
     );

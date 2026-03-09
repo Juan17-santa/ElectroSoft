@@ -62,8 +62,58 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
 
     const currentRecords = filteredOrders.slice(firstIndex, lastIndex);
 
+    // FUNCION PARA DEVOLVER UN PEDIDO
+    const cancelOrder = (orderToCancel) => {
+
+        // SI YA ESTA ANULADO NO HACER NADA
+        if (orderToCancel.estado === "Anulado") {
+            return;
+        }
+
+        const storedOrders = JSON.parse(localStorage.getItem("orders")) || [];
+        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+
+        // DEVOLVER STOCK
+        const updatedProducts = storedProducts.map(product => {
+
+            const productInOrder = orderToCancel.productos.find(
+                p => p.id === product.id
+            );
+
+            if (productInOrder) {
+                return {
+                    ...product,
+                    stock: product.stock + productInOrder.cantidad
+                };
+            }
+
+            return product;
+        });
+
+        localStorage.setItem("products", JSON.stringify(updatedProducts));
+
+        // CAMBIAR ESTADO DEL PEDIDO
+        const updatedOrders = storedOrders.map(order =>
+            order.id === orderToCancel.id
+                ? { ...order, estado: "Anulado" }
+                : order
+        );
+
+        localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+        // ACTUALIZAR ESTADO LOCAL
+        setOrders(prev =>
+            prev.map(order =>
+                order.id === orderToCancel.id
+                    ? { ...order, estado: "Anulado" }
+                    : order
+            )
+        );
+    };
+
     return {
         data: currentRecords,
-        totalPages
+        totalPages,
+        cancelOrder
     };
 }

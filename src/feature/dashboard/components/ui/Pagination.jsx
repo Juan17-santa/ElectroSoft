@@ -30,6 +30,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
         <div className="flex items-center gap-1 bg-[#E5E7EB] px-2 py-1 rounded-2xl w-fit shadow-sm">
             {/* Botón Anterior */}
             <button
+                type="button"
                 disabled={currentPage === 1}
                 onClick={() => onPageChange(currentPage - 1)}
                 className="p-1.5 rounded-lg hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
@@ -42,6 +43,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
                 {getPages().map((page, index) => (
                     <button
                         key={index}
+                        type="button"
                         disabled={page === "..."}
                         onClick={() => page !== "..." && onPageChange(page)}
                         className={`min-w-8 h-8 flex items-center justify-center rounded-lg text-sm font-semibold transition ${currentPage === page
@@ -58,6 +60,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
 
             {/* Botón Siguiente */}
             <button
+                type="button"
                 disabled={currentPage === totalPages}
                 onClick={() => onPageChange(currentPage + 1)}
                 className="p-1.5 rounded-lg hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
