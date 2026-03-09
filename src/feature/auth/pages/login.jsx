@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Mail, Lock, Eye, EyeOff, Lightbulb } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Lightbulb, CheckCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { login, initUsers } from "../services/authService";
-import Alert from "../../dashboard/components/ui/Alert"; // Asegúrate de que esta ruta sea correcta
+import { Validations } from "../../../utils/validations";
+import Alert from "../../dashboard/components/ui/alert";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,17 +11,76 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [alert, setAlert]       = useState(null);
 
+  // Estado para errores inline de cada campo
+  const [emailError, setEmailError]       = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  // Estado para saber si el campo fue tocado (evita mostrar errores antes de que el usuario escriba)
+  const [emailTouched, setEmailTouched]       = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     initUsers();
   }, []);
 
-  const handleLogin = () => {
-    if (!email || !password) {
-      setAlert({ type: "error", message: "Por favor completa todos los campos." });
-      return;
+  // ─── Validación en tiempo real del EMAIL ───────────────────────────────────
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    setEmailTouched(true);
+
+    if (!Validations.campoRequerido(value)) {
+      setEmailError("El email es obligatorio.");
+    } else if (!Validations.formatoEmail(value)) {
+      setEmailError("Ingresa un email válido (ej: usuario@correo.com).");
+    } else {
+      setEmailError(""); // Sin error
     }
+  };
+
+  // ─── Validación en tiempo real de la CONTRASEÑA ───────────────────────────
+  const handlePasswordChange = (e) => {
+    const value = e.target.value;
+    setPassword(value);
+    setPasswordTouched(true);
+
+    if (!Validations.campoRequerido(value)) {
+      setPasswordError("La contraseña es obligatoria.");
+    } else if (value.length < 6) {
+      setPasswordError("La contraseña debe tener al menos 6 caracteres.");
+    } else {
+      setPasswordError(""); // Sin error
+    }
+  };
+
+  // ─── Envío del formulario ──────────────────────────────────────────────────
+  const handleLogin = () => {
+    // Marcar ambos campos como tocados para mostrar errores si están vacíos
+    setEmailTouched(true);
+    setPasswordTouched(true);
+
+    // Validar manualmente antes de enviar
+    let valid = true;
+
+    if (!Validations.campoRequerido(email)) {
+      setEmailError("El email es obligatorio.");
+      valid = false;
+    } else if (!Validations.formatoEmail(email)) {
+      setEmailError("Ingresa un email válido (ej: usuario@correo.com).");
+      valid = false;
+    }
+
+    if (!Validations.campoRequerido(password)) {
+      setPasswordError("La contraseña es obligatoria.");
+      valid = false;
+    } else if (password.length < 6) {
+      setPasswordError("La contraseña debe tener al menos 6 caracteres.");
+      valid = false;
+    }
+
+    if (!valid) return;
 
     const result = login(email, password);
 
@@ -29,10 +89,22 @@ export default function Login() {
       return;
     }
 
-    // Éxito: mostrar alerta y luego navegar
-    setAlert({ type: "success", message: `Bienvenido, ${result.user?.fullName || result.user?.nombre || "usuario"}.` });
+    setAlert({
+      type: "success",
+      message: `Bienvenido, ${result.user?.fullName || result.user?.nombre || "usuario"}.`,
+    });
     setTimeout(() => navigate("/dashboard"), 2000);
   };
+
+  // ─── Helpers de estilo para inputs ────────────────────────────────────────
+  const inputClass = (touched, error) =>
+    `w-full px-4 py-3.5 rounded-xl bg-gray-100 shadow-sm focus:outline-none focus:ring-2 transition
+    ${touched && error
+      ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"
+      : touched && !error
+      ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400"
+      : "focus:ring-yellow-400"
+    }`;
 
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-10">
@@ -58,10 +130,9 @@ export default function Login() {
       <div className="col-span-1 md:col-span-4 flex flex-col bg-linear-to-b from-white to-yellow-300 relative">
 
         {/* HEADER */}
-        <div className="p-8 flex items-center gap-3 text-2xl font-bold">
+        <div className="p-8 flex items-center gap-2 text-2xl font-bold">
           <Lightbulb className="text-yellow-500" />
-          <span>Electro</span>
-          <span className="text-yellow-500">Soft</span>
+          <span>Electro<span className="text-yellow-500">Soft</span></span>
         </div>
 
         {/* CONTENIDO */}
@@ -80,9 +151,21 @@ export default function Login() {
                 type="email"
                 placeholder="Ingrese su email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3.5 rounded-xl bg-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+                onChange={handleEmailChange}
+                className={inputClass(emailTouched, emailError)}
               />
+              {/* Mensaje de error inline bajo el campo */}
+              {emailTouched && emailError && (
+                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle size={14} /> {emailError}
+                </p>
+              )}
+              {/* Mensaje de validación exitosa */}
+              {emailTouched && !emailError && email && (
+                <p className="mt-1.5 text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle size={14} /> Email válido
+                </p>
+              )}
             </div>
 
             {/* CONTRASEÑA */}
@@ -105,8 +188,8 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Ingrese su contraseña"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3.5 rounded-xl bg-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+                  onChange={handlePasswordChange}
+                  className={inputClass(passwordTouched, passwordError)}
                 />
                 <button
                   type="button"
@@ -116,6 +199,19 @@ export default function Login() {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              {/* Mensaje de error inline bajo el campo */}
+              {passwordTouched && passwordError && (
+                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle size={14} /> {passwordError}
+                </p>
+              )}
+              {/* Mensaje de validación exitosa */}
+              {passwordTouched && !passwordError && password && (
+                <p className="mt-1.5 text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle size={14} /> Contraseña válida
+                </p>
+              )}
             </div>
 
             {/* BOTÓN */}
