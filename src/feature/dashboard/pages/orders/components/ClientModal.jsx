@@ -2,7 +2,7 @@ import { X, User, Mail, Phone, FileText, IdCard, CheckCircle2, Import } from "lu
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { useClientModal } from "../hooks/UseClientModal";
 import { useState } from "react";
-import Alert from "../../../components/ui/alert";
+import Alert from "../../../components/ui/Alert";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 
 export default function ClientModal({ onClose, onSave }) {
