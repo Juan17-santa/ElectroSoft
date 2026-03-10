@@ -1,12 +1,14 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useOrdersTable } from "../hooks/UseOrdersTable";
+import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 import SearchBar from "../../../components/ui/Searchbar";
 import OrdersTable from "../components/OrdersTable";
 import Pagination from "../../../components/ui/Pagination"
 import Alert from "../../../components/ui/Alert";
 import CancellationModal from "../../../components/ui/CancellationModal";
 import ConfirmSaleModal from "../components/ConfirmSaleModal";
+import ConfirmModal from "../../../components/ui/ConfirmModal"
 
 export default function Orders() {
 
@@ -16,16 +18,28 @@ export default function Orders() {
     // ESTADO DEL BUSCADOR
     const [search, setSearch] = useState("");
 
-    // ESTADO PARA PROCESAR VENTA (MODAL Y SELECCION)
+    // ESTADO PARA PROCESAR VENTA
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [orderToProcess, setOrderToProcess] = useState(null);
 
-    // FUNCION PAGINADOR, PAGINA ACTUAL DEL PAGINADOR
+    // FUNCION PAGINADOR
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
     // ESTADO ALERTA
     const [alert, setAlert] = useState(null);
+
+    // ESTADO PARA CONTROLAR LA MODAL DE CONFIRMACIÓN DE EXPORTACIÓN
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+    // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA COLOMBIANA
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+        }).format(value);
+    };
 
     // FUNCION PARA PREPARAR LA VISTA DE DETALLES
     const handleDetailsNavigation = (order) => {
@@ -43,7 +57,7 @@ export default function Orders() {
     // FUNCION PARA CONFIRMAR LA VENTA Y REDIRIGIR
     const handleConfirmSale = (order) => {
         try {
-            // EJECUTAR LOGICA DE GUARDADO Y ELIMINACION
+            // EJECUTA LA LÓGICA DEL HOOK (GUARDAR EN VENTAS Y ELIMINAR DE PEDIDOS)
             processOrderToSale(order);
             setIsSaleModalOpen(false);
 
@@ -68,21 +82,79 @@ export default function Orders() {
 
     // ESTADO PARA CANCELAR UN PEDIDO
     const [orderToCancel, setOrderToCancel] = useState(null);
+
+    // FUNCION PARA ANULAR UN PEDIDO Y DEVOLVER STOCK
     const handleCancelOrder = ({ motivo, fechaAnulacion }) => {
         if (!orderToCancel) return;
 
-        cancelOrder(orderToCancel, motivo, fechaAnulacion);
+        try {
+            // LLAMADO A LA FUNCIÓN DEL HOOK PARA ACTUALIZAR STOCK Y ESTADO
+            cancelOrder(orderToCancel, motivo, fechaAnulacion);
 
-        setOrderToCancel(null);
+            setOrderToCancel(null);
+
+            // MOSTRAR ALERTA DE EXITO
+            setAlert({
+                type: "success",
+                message: "El pedido fue anulado y los productos regresaron al stock."
+            });
+
+            // REDIRIGIR TRAS 2 SEGUNDOS PARA VER LA ALERTA
+            setTimeout(() => {
+                setAlert(null);
+            }, 2000);
+        } catch (error) {
+            setAlert({
+                type: "error",
+                message: "No se pudo anular el pedido correctamente.."
+            });
+        }
+    };
+
+    // ABRIR LA MODAL DE CONFIRMAR EL GENERAR REPORTE
+    const handleOpenExportConfirm = () => {
+        setIsExportModalOpen(true);
+    };
+
+    // EJECUTAR EL GENERAR REPORTE Y CERRAR LA MODAL
+    const handleExecuteExport = () => {
+        const columns = [
+            "📑 ID",
+            "👤 NOMBRE DEL CLIENTE           ",
+            "🪪 DOCUMENTO          ",
+            "📅 FECHA CREACIÓN     ",
+            "💰 TOTAL PEDIDO      ",
+            "⏳ VENCIMIENTO      ",
+            "💳 FORMA PAGO      ",
+            "🚩 ESTADO      "
+        ];
+
+        const excelData = data.map((order, index) => [
+            String(index + 1),
+            String(order.nombreCliente || "Sin nombre"),
+            String(`${order.tipoDocumento || ""} ${order.documento || ""}`),
+            String(order.fechaCreacion ? new Date(order.fechaCreacion).toLocaleDateString() : "-"),
+            String(formatCurrency(order.total || 0)),
+            String(order.fechaVencimiento ? new Date(order.fechaVencimiento).toLocaleDateString() : "-"),
+            String(order.formaPago || "-"),
+            String(order.estado)
+        ]);
+
+        generateExcelReport({
+            title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
+            fileName: `Reporte_Pedidos_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`,
+            columns: columns,
+            data: excelData
+        });
+
+        setIsExportModalOpen(false);
 
         setAlert({
             type: "success",
-            message: "El pedido fue anulado y los productos regresaron al stock."
+            message: "Reporte de Excel generado correctamente."
         });
 
-        setTimeout(() => {
-            setAlert(null);
-        }, 2000);
+        setTimeout(() => setAlert(null), 3000);
     };
 
     // LOGICA DEL HOOK
@@ -103,18 +175,13 @@ export default function Orders() {
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Control de pedidos</p>
 
-                {/* BUSCADOR Y BOTON CREAR */}
+                {/* BARRA DE BÚSQUEDA Y ACCIONES PRINCIPALES */}
                 <SearchBar
                     searchTerm={search}
                     onSearchChange={(e) => setSearch(e.target.value)}
                     placeholder="Buscar pedidos..."
-
-                    showReportButton={true}   // 👈 ACTIVAR BOTÓN
-                    onReportClick={() => {
-                        console.log("Generar reporte");
-                        // aquí luego puedes exportar PDF o Excel
-                    }}
-
+                    showReportButton={true}
+                    onReportClick={handleOpenExportConfirm}
                     onCreateClick={() => navigate("/dashboard/orders/create")}
                     createButtonText="Crear pedido"
                 />
@@ -137,7 +204,18 @@ export default function Orders() {
                 </div>
             </div>
 
-            {/* MODAL DE CONFIRMACION PARA PROCESAR VENTA (NUEVA) */}
+            {/* MODAL DE CONFIRMACION PARA LA EXPORTACION DE DATOS */}
+            {isExportModalOpen && (
+                <ConfirmModal
+                    type="info"
+                    title="Confirmar generar reporte"
+                    message="¿Estás seguro de que deseas descargar el reporte de pedidos?"
+                    onConfirm={handleExecuteExport}
+                    onCancel={() => setIsExportModalOpen(false)}
+                />
+            )}
+
+            {/* MODAL PARA PROCESAR EL PEDIDO COMO UNA VENTA FINAL */}
             <ConfirmSaleModal
                 isOpen={isSaleModalOpen}
                 onClose={() => setIsSaleModalOpen(false)}
@@ -152,7 +230,7 @@ export default function Orders() {
                     infoData={[
                         { label: "Pedido", value: orderToCancel.id },
                         { label: "Cliente", value: orderToCancel.nombreCliente || orderToCancel.cliente || "Sin nombre" },
-                        { label: "Total", value: `$${orderToCancel.total}` }
+                        { label: "Total", value: formatCurrency(orderToCancel.total) }
                     ]}
                     placeholder="Describe el motivo de la anulación del pedido..."
                     onConfirm={handleCancelOrder}

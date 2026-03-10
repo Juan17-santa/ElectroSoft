@@ -2,25 +2,27 @@ import { useState, useEffect } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ServicesOrders } from "../services/ServicesOrders";
 
+// HOOK PERSONALIZADO PARA GESTIONAR LA LÓGICA DEL FORMULARIO DE PEDIDOS
 export function useOrdersForm({ onSuccess }) {
 
     // FECHA ACTUAL
     const today = new Date();
     const todayFormatted = today.toISOString().split("T")[0];
 
-    // FUNCION PARA CALCULAR EL VENCIMIENTO DE LA FECHA
+    // FUNCION PARA CALCULAR EL VENCIMIENTO DE LA FECHA (15 DESPUES)
     const calculateVencimiento = (fecha) => {
         const date = new Date(fecha);
         date.setDate(date.getDate() + 15);
         return date.toISOString().split("T")[0];
     };
 
-    // ESTADO PARA LOS DATOS DEL FORMULARIO
+    // ESTADO INICIAL DEL FORMULARIO DE PEDIDOS
     const [formData, setFormData] = useState({
         documento: "",
         clienteId: null,
         clienteNombre: "",
         clienteTipoDocumento: "",
+        clienteTotalCompras: 0,
         fechaPedido: todayFormatted,
         formaPago: "",
         fechaVencimiento: calculateVencimiento(todayFormatted),
@@ -30,30 +32,58 @@ export function useOrdersForm({ onSuccess }) {
         total: 0
     });
 
-    // PRODUCTOS DISPONIBLES
+    // ESTADO PARA LOS PRODUCTOS DISPONIBLES
     const [products, setProducts] = useState([]);
 
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
-    // Dentro de tu useOrdersForm.js (o como se llame tu hook)
+    // CÁLCULO DINÁMICO DE OPCIONES DE PAGO SEGÚN HISTORIAL DEL CLIENTE
+    const totalCompras = Number(formData.clienteTotalCompras) || 0;
+
+    // SI EL CLIENTE TIENE COMPRAS > 1M, SE HABILITA EL CRÉDITO
+    const paymentOptions =
+        totalCompras > 1000000
+            ? [
+                { value: "Contado", label: "Contado" },
+                { value: "Credito", label: "Credito" }
+            ]
+            : [
+                { value: "Contado", label: "Contado" }
+            ];
+
+    // SI EL CLIENTE NO APLICA A CRÉDITO, RESETEAR A CONTADO
+    useEffect(() => {
+        if (
+            formData.clienteTotalCompras <= 1000000 &&
+            formData.formaPago === "Credito"
+        ) {
+            setFormData(prev => ({
+                ...prev,
+                formaPago: "Contado"
+            }));
+        }
+
+    }, [formData.clienteTotalCompras]);
+
+    // PAGINADOR PARA LA LISTA DE PRODUCTOS AGREGADOS
     const itemsPerPage = 4;
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Cálculos de paginación
+    // CÁLCULOS LÓGICOS DE PAGINACIÓN
     const totalPages = Math.ceil((formData.productos?.length || 0) / itemsPerPage);
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 
-    // Los productos que realmente verá el usuario
+    // SUB-LISTA DE PRODUCTOS A MOSTRAR EN LA PÁGINA ACTUAL
     const currentProducts = (formData.productos || []).slice(indexOfFirstItem, indexOfLastItem);
 
-    // Resetear página si queda vacía al borrar
+    // CORREGIR PÁGINA ACTUAL SI SE ELIMINAN ELEMENTOS
     useEffect(() => {
         if (currentPage > totalPages && totalPages > 0) {
             setCurrentPage(totalPages);
         }
-    }, [formData.productos.length, totalPages]);
+    }, [formData.productos, totalPages]);
 
     // BUSCAR CLIENTE POR MEDIO DEL DOCUMENTO
     useEffect(() => {
@@ -70,29 +100,33 @@ export function useOrdersForm({ onSuccess }) {
                 ...prev,
                 clienteId: clienteEncontrado.id,
                 clienteNombre: `${clienteEncontrado.nombres} ${clienteEncontrado.apellidos}`,
-                clienteTipoDocumento: clienteEncontrado.tipoDocumento
+                clienteTipoDocumento: clienteEncontrado.tipoDocumento,
+                clienteTotalCompras: Number(clienteEncontrado.totalCompras) || 0
             }));
 
             setErrors(prev => ({ ...prev, documento: "" }));
         } else {
+            // SI NO EXISTE, RESETEAR CAMPOS RELACIONADOS AL CLIENTE
             setFormData(prev => ({
                 ...prev,
                 clienteId: null,
                 clienteNombre: "",
-                clienteTipoDocumento: ""
+                clienteTipoDocumento: "",
+                clienteTotalCompras: 0,
+                formaPago: ""
             }));
         }
 
     }, [formData.documento]);
 
-    // CARGAR SOLO LOS PRODUCTOS QUE ESTEN ACTIVOS!!!
+    // CARGAR SÓLO PRODUCTOS ACTIVOS Y CON STOCK AL INICIAR
     useEffect(() => {
         const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
         const activos = storedProducts.filter(p => p.estado === true && p.stock > 0);
         setProducts(activos);
     }, []);
 
-    // VALIDACION INDIVIDUAL
+    // FUNCIÓN DE VALIDACIÓN PARA CAMPOS INDIVIDUALES
     const validateField = (name, value) => {
 
         let error = "";
@@ -124,7 +158,7 @@ export function useOrdersForm({ onSuccess }) {
         return error;
     };
 
-    // HANDLE CHANGE CON VALIDACIÓN EN TIEMPO REAL
+    // MANEJADOR DE CAMBIOS CON ACTUALIZACIÓN DE FECHAS Y VALIDACIÓN
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -150,6 +184,16 @@ export function useOrdersForm({ onSuccess }) {
         }));
     };
 
+    // FUNCIÓN PARA CALCULAR SUBTOTAL, IVA (19%) Y TOTAL DEL PEDIDO
+    const calculateTotals = (productos) => {
+
+        const subtotal = productos.reduce((acc, p) => acc + p.subtotal, 0);
+        const iva = subtotal * 0.19;
+        const total = subtotal + iva;
+
+        return { subtotal, iva, total };
+    };
+
     // FUNCION PARA AÑADIR PRODUCTOS
     const addProduct = (product, quantity) => {
 
@@ -157,12 +201,12 @@ export function useOrdersForm({ onSuccess }) {
             p => p.id === product.id
         );
 
-        // si el producto ya está en el pedido
+        // CASO 1: EL PRODUCTO YA ESTÁ EN EL CARRITO
         if (productoExistente) {
 
             const nuevaCantidad = productoExistente.cantidad + quantity;
 
-            // validar stock total
+            // VALIDAR QUE LA NUEVA CANTIDAD NO EXCEDA EL STOCK
             if (nuevaCantidad > product.stock) {
                 setErrors(prev => ({
                     ...prev,
@@ -180,8 +224,21 @@ export function useOrdersForm({ onSuccess }) {
                     }
                     : p
             );
-        } else {
 
+            const { subtotal, iva, total } = calculateTotals(productosActualizados);
+
+            setFormData(prev => ({
+                ...prev,
+                productos: productosActualizados,
+                subtotal,
+                iva,
+                total
+            }));
+
+            setErrors(prev => ({ ...prev, productos: "" }));
+
+        } else {
+            // CASO 2: PRODUCTO NUEVO EN EL PEDIDO
             if (quantity > product.stock) {
                 setErrors(prev => ({
                     ...prev,
@@ -200,9 +257,7 @@ export function useOrdersForm({ onSuccess }) {
 
             const nuevosProductos = [...formData.productos, newProduct];
 
-            const subtotal = nuevosProductos.reduce((acc, p) => acc + p.subtotal, 0);
-            const iva = subtotal * 0.19;
-            const total = subtotal + iva;
+            const { subtotal, iva, total } = calculateTotals(nuevosProductos);
 
             setFormData(prev => ({
                 ...prev,
@@ -214,7 +269,7 @@ export function useOrdersForm({ onSuccess }) {
 
             setErrors(prev => ({ ...prev, productos: "" }));
 
-            // Si la tabla estaba vacía o en otra página, volvemos a la 1 para ver el nuevo item
+            // NAVEGAR A LA PÁGINA 1 SI ES EL PRIMER PRODUCTO
             if (nuevosProductos.length > 0 && currentPage === 0) {
                 setCurrentPage(1);
             }
@@ -226,15 +281,18 @@ export function useOrdersForm({ onSuccess }) {
 
         let newErrors = {};
 
+        // RECORRER TODOS LOS CAMPOS Y EJECUTAR LA VALIDACIÓN INDIVIDUAL
         Object.keys(formData).forEach(field => {
             const error = validateField(field, formData[field]);
             if (error) newErrors[field] = error;
         });
 
+        // VALIDAR QUE HAYA AL MENOS UN PRODUCTO
         if (!formData.productos.length) {
             newErrors.productos = "Debe agregar al menos un producto";
         }
 
+        // VALIDAR SELECCIÓN DE PAGO
         if (!formData.formaPago) {
             newErrors.formaPago = "Debe seleccionar una forma de pago";
         }
@@ -244,13 +302,14 @@ export function useOrdersForm({ onSuccess }) {
         return Object.keys(newErrors).length === 0;
     };
 
-    // FUNCION PARA GUARDAR
+    // PROCESAMIENTO DEL ENVÍO DEL FORMULARIO
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        // DETENER LA EJECUCIÓN SI EL FORMULARIO NO ES VÁLIDO
         if (!validateForm()) return;
 
-        // OBTENER PRODUCTOS DEL INVENTARIO
+       // OBTENER ESTADO ACTUAL DE PRODUCTOS PARA ACTUALIZAR STOCK
         const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
 
         // ACTUALIZAR STOCK SEGÚN LOS PRODUCTOS DEL PEDIDO
@@ -279,6 +338,7 @@ export function useOrdersForm({ onSuccess }) {
         onSuccess(nuevoPedido);
     };
 
+    // RETORNO DE LAS PROPIEDADES Y FUNCIONES NECESARIAS PARA EL COMPONENTE
     return {
         formData,
         errors,
@@ -292,6 +352,7 @@ export function useOrdersForm({ onSuccess }) {
         totalPages,
         currentProducts,
         indexOfFirstItem,
-        itemsPerPage
+        itemsPerPage,
+        paymentOptions
     };
 }

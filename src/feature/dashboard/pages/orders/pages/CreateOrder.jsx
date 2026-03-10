@@ -11,13 +11,13 @@ export default function CreateOrder() {
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
 
-    // ESTADO PARA LA ALERTA DE ÉXITO O ERROR
+    // ESTADO PARA MOSTRAR LAS ALERTAS DE ÉXITO O ERROR
     const [alert, setAlert] = useState(null);
 
-    // ESTADO PARA LA MODAL DE CREAR CLIENTE
+    // ESTADO PARA CONTROLAR LA VISIBILIDAD DE LA MODAL DE NUEVO CLIENTE
     const [showClientModal, setShowClientModal] = useState(false);
 
-    // ESTADO PARA LA MODAL DE CANCELAR
+    // ESTADO PARA CONTROLAR LA VISIBILIDAD DE LA MODAL PARA CANCELAR UN PEDIDO
     const [showCancelModal, setShowCancelModal] = useState(false);
 
     // CONFIGURACIÓN DEL HOOK PERSONALIZADO PARA EL FORMULARIO
@@ -28,12 +28,13 @@ export default function CreateOrder() {
         handleSubmit,
         products,
         addProduct,
-        currentProducts = { currentProducts },
-        currentPage = { currentPage },
-        setCurrentPage = { setCurrentPage },
-        totalPages = { totalPages },
-        indexOfFirstItem = { indexOfFirstItem },
-        itemsPerPage = { itemsPerPage },
+        currentProducts,
+        currentPage,
+        setCurrentPage,
+        totalPages,
+        indexOfFirstItem,
+        itemsPerPage,
+        paymentOptions
     } = useOrdersForm({
         onSuccess: () => {
             setAlert({
@@ -46,9 +47,9 @@ export default function CreateOrder() {
         }
     });
 
-    // CUANDO SE GUARDA NUEVO CLIENTE
+    // FUNCIÓN PARA GUARDAR UN NUEVO CLIENTE DESDE LA MODAL
     const handleSaveClient = (nuevoCliente) => {
-
+        // OBTENER CLIENTES Y AGREGAR EL NUEVO CLIENTE
         const clientes = JSON.parse(localStorage.getItem("clients")) || [];
         const nuevosClientes = [...clientes, nuevoCliente];
 
@@ -68,7 +69,7 @@ export default function CreateOrder() {
                     </div>
                 </div>
 
-                {/* FORMULARIO */}
+                {/* FORMULARIO: SE LE PASAN TODAS LAS PROPS DEL HOOK */}
                 <OrdersForm
                     formData={formData}
                     errors={errors}
@@ -85,6 +86,7 @@ export default function CreateOrder() {
                     totalPages={totalPages}
                     indexOfFirstItem={indexOfFirstItem}
                     itemsPerPage={itemsPerPage}
+                    paymentOptions={paymentOptions}
                 />
             </div>
 

@@ -12,16 +12,16 @@ export default function OrderDetails() {
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
 
-    // ESTADO PARA LOCALIZAR
+    // HOOK PARA RECUPERAR DATOS ENVIADOS DESDE LA TABLA (STATE)
     const location = useLocation();
 
     // ESTADO PARA LA ALERTA
     const [alert, setAlert] = useState(null);
 
-    // ESTADO PARA LA MODAL DE IMPRIMIR
+    // ESTADO PARA CONTROLAR LA MODAL DE CONFIRMACIÓN DE IMPRESIÓN
     const [showPrintModal, setShowPrintModal] = useState(false);
 
-    // ESTADO PARA RECIBIR EL PEDIDO DE STATE
+    // RECUPERACIÓN DEL PEDIDO DESDE EL STATE DE LA NAVEGACIÓN
     const orderDetail = location.state?.order;
     const [order, setOrder] = useState(null);
 
@@ -29,9 +29,10 @@ export default function OrderDetails() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 4;
 
-    // FUNCION PARA OBTENER LOS CLIENTES PARA EL NOMBRE
+    // FUNCION PARA OBTENER LOS CLIENTES AL CARGAR
     useEffect(() => {
         if (orderDetail) {
+            // CRUCE DE DATOS: OBTENER NOMBRE DEL CLIENTE DESDE LOCALSTORAGE USANDO EL DOCUMENTO
             const storedCustomers = JSON.parse(localStorage.getItem("clients") || "[]");
             const customerInfo = storedCustomers.find(c => c.documento === orderDetail.documento);
 
@@ -49,7 +50,7 @@ export default function OrderDetails() {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentProducts = order?.productos?.slice(indexOfFirstItem, indexOfLastItem) || [];
 
-    // FORMATEADOR DE PLATA
+    // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA COLOMBIANA
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', {
             style: 'currency',
@@ -59,12 +60,20 @@ export default function OrderDetails() {
     };
 
     // SI NO LLEGA INFO EN EL STATE RETURNA MENSAJE
-    if (!order) return <div className="p-6 text-center text-gray-500">No hay información del pedido.</div>;
+    if (!order) {
+        return (
+            <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
+                <p className="text-gray-500 text-sm">
+                    No hay información para mostrar.
+                </p>
+            </div>
+        );
+    }
 
     // FUNCION PARA SALIR
     const handleBack = () => navigate("/dashboard/orders");
 
-    // FUNCION PARA IMPRIMIR PDF DE PEDIDO
+    // LÓGICA PARA GENERAR EL REPORTE PDF DEL PEDIDO
     const handleReport = () => {
 
         const columns = [
@@ -118,7 +127,11 @@ export default function OrderDetails() {
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner min-h-full">
                 <div className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden flex-1"
-                    style={{ backgroundImage: 'url("/background-shopping-details.png")', backgroundSize: "cover", backgroundPosition: "center" }}>
+                    style={{
+                        backgroundImage: "url(/background-details.jpg)",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center"
+                    }}>
                     <div className="absolute inset-0 bg-white/40 rounded-3xl"></div>
 
                     <div className="relative z-10 flex flex-col gap-6">
@@ -239,6 +252,7 @@ export default function OrderDetails() {
                 </div>
             </div>
 
+            {/* MODAL PARA CONFIRMAR LA IMPRESION DEL PEDIDO */}
             {showPrintModal && (
                 <ConfirmModal
                     type="info"

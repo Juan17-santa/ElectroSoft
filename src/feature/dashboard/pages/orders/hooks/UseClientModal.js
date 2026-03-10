@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Validations } from "../../../../../utils/validations";
 
-export const useClientModal = (onSave, onClose) => {
+// HOOK PERSONALIZADO PARA GESTIONAR LA LÓGICA DEL FORMULARIO DE CLIENTES
+export const useClientModal = (onSave) => {
 
+    // ESTADO INICIAL PARA LOS DATOS DEL FORMULARIO
     const [formData, setFormData] = useState({
         tipoDocumento: "",
         documento: "",
@@ -12,13 +14,15 @@ export const useClientModal = (onSave, onClose) => {
         telefono: "",
     });
 
+    // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
-    // ─── Validar campo individual ─────────────────────
+    // FUNCIÓN PARA VALIDAR UN CAMPO INDIVIDUAL
     const validateField = (name, value) => {
 
         let error = "";
 
+        // EVALUACIÓN DE REGLAS SEGÚN EL NOMBRE DEL CAMPO
         switch (name) {
 
             case "tipoDocumento":
@@ -77,45 +81,53 @@ export const useClientModal = (onSave, onClose) => {
         return error;
     };
 
-    // ─── Handle change ────────────────────────────────
+    // MANEJADOR DE CAMBIOS EN LOS INPUTS
     const handleChange = (e) => {
 
         const { name, value } = e.target;
 
+        // ACTUALIZAR EL VALOR DEL CAMPO EN EL ESTADO
         setFormData(prev => ({
             ...prev,
             [name]: value
         }));
 
+        // VALIDAR EL CAMPO EN TIEMPO REAL MIENTRAS EL USUARIO ESCRIBE
         const error = validateField(name, value);
 
+        // ACTUALIZAR EL ESTADO DE ERRORES PARA EL CAMPO ESPECÍFICO
         setErrors(prev => ({
             ...prev,
             [name]: error
         }));
     };
 
-    // ─── Validar todo ─────────────────────────────────
+    // FUNCIÓN PARA VALIDAR EL FORMULARIO COMPLETO
     const validateForm = () => {
 
         let newErrors = {};
 
+        // RECORRER TODOS LOS CAMPOS Y EJECUTAR LA VALIDACIÓN INDIVIDUAL
         Object.keys(formData).forEach(field => {
             const error = validateField(field, formData[field]);
             if (error) newErrors[field] = error;
         });
 
+        // REEMPLAZAR EL ESTADO DE ERRORES CON LOS NUEVOS ENCONTRADOS
         setErrors(newErrors);
 
+        // RETORNAR TRUE SI NO HAY NINGÚN ERROR
         return Object.keys(newErrors).length === 0;
     };
 
-    // ─── Submit ───────────────────────────────────────
+    // PROCESAMIENTO DEL ENVÍO DEL FORMULARIO
     const handleSubmit = (e) => {
         e.preventDefault();
 
+        // DETENER LA EJECUCIÓN SI EL FORMULARIO NO ES VÁLIDO
         if (!validateForm()) return;
 
+        // CONSTRUCCIÓN DEL OBJETO DE NUEVO CLIENTE CON DATOS ADICIONALES
         const nuevoCliente = {
             ...formData,
             id: Date.now(),
@@ -127,6 +139,7 @@ export const useClientModal = (onSave, onClose) => {
         onSave(nuevoCliente);
     };
 
+    // RETORNO DE LAS PROPIEDADES Y FUNCIONES NECESARIAS PARA EL COMPONENTE
     return {
         formData,
         errors,

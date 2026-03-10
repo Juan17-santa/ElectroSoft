@@ -1,12 +1,13 @@
-import { Boxes, CircleUser, FileText, Plus, X, Trash } from "lucide-react";
-import { CreditCard, ChevronDown } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Boxes, CircleUser, FileText, Plus, X, Trash, CreditCard } from "lucide-react";
+import { useState } from "react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Calendar from "../../../components/ui/Calendar";
 import AddProductModal from "../../../components/ui/AddProductModal";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import Pagination from "../../../components/ui/Pagination";
+import CustomSelect from "../../../components/ui/CustomSelect";
 
+// COMPONENTE PRINCIPAL DEL FORMULARIO DE PEDIDOS
 export default function OrdersForm({
     formData,
     errors,
@@ -22,39 +23,26 @@ export default function OrdersForm({
     setCurrentPage,
     totalPages,
     indexOfFirstItem,
-    itemsPerPage
+    itemsPerPage,
+    paymentOptions
 }) {
 
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
     const [openProductModal, setOpenProductModal] = useState(false);
 
-    const [showPago, setShowPago] = useState(false);
-    const pagoRef = useRef(null);
-
-    // FORMATEADOR DE MONEDA
+    // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA (PESOS COLOMBIANOS)
     const formatCurrency = (value) => {
-        return new Intl.NumberFormat('es-CO', { // 'es-CO' PARA FORMATO COLOMBIANO (PUNTOS EN MILES)
+        return new Intl.NumberFormat('es-CO', {
             style: 'decimal',
             minimumFractionDigits: 0,
         }).format(value);
     };
 
-    useEffect(() => {
-        const handler = (e) => {
-            if (pagoRef.current && !pagoRef.current.contains(e.target)) {
-                setShowPago(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, []);
-
-    // FUNCION PARA ELIMINAR UN PRODUCTO DE LA TABLA AL PEDIR
+    // FUNCION PARA ELIMINAR UN PRODUCTO SELECCIONADO DE LA LISTA
     const handleRemoveProduct = (index) => {
         const nuevosProductos = formData.productos.filter((_, i) => i !== index);
 
-        // Llamamos a tu handleChange pasándole el nuevo array
+        // ACTUALIZACIÓN DEL ESTADO GLOBAL MEDIANTE EL MANEJADOR DE CAMBIOS
         handleChange({
             target: {
                 name: "productos",
@@ -63,22 +51,21 @@ export default function OrdersForm({
         });
     };
 
-    // FUNCION QUE CALCULA EL STOCK DEL MODAL
+    // FUNCION QUE CALCULA EL STOCK DISPONIBLE DEL MODAL
     const getAvailableStock = (product) => {
 
-        // BUSCAR SI EL PRODUCTO YA ESTA EN LA ORDEN
+        // BUSCAR SI EL PRODUCTO YA ESTA EN EL PEDIDO
         const productInOrder = formData.productos?.find(p => p.id === product.id)
 
         // CANTIDAD YA USADA
         const usedStock = productInOrder ? productInOrder.cantidad : 0
 
-        // STOCK DISPONIBLE
+        // RETORNAR LA DIFERENCIA ENTRE EL STOCK TOTAL Y EL USADO
         return product.stock - usedStock
     }
 
     return (
         <>
-            {/* Formulario principal */}
             <form onSubmit={handleSubmit}>
                 <div className="flex flex-col items-center gap-12 mt-6">
 
@@ -108,7 +95,7 @@ export default function OrdersForm({
                             />
                         </div>
 
-                        {/* CLIENTE (AUTO) */}
+                        {/* CLIENTE (AUTOMATICO) */}
                         <div className="flex flex-col gap-3 w-80">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <CircleUser size={16} />
@@ -123,7 +110,7 @@ export default function OrdersForm({
                                     className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full"
                                 />
 
-                                {/* BOTON CREAR CLIENTE */}
+                                {/* BOTON + PARA CREAR CLIENTE */}
                                 <button
                                     type="button"
                                     onClick={onOpenClientModal}
@@ -140,7 +127,6 @@ export default function OrdersForm({
 
                         {/* FECHA PEDIDO */}
                         <div className="flex flex-col gap-3 w-52">
-                            {/* Aquí va tu Calendar */}
                             <Calendar
                                 fechaISO={formData.fechaPedido}
                                 onFechaChange={(fecha) =>
@@ -161,7 +147,7 @@ export default function OrdersForm({
                         <div className="flex flex-col gap-3 w-52">
                             <Calendar
                                 fechaISO={formData.fechaVencimiento}
-                                onFechaChange={() => { }}   // no hace nada
+                                onFechaChange={() => { }}
                                 label="Fecha vencimiento"
                                 className="
                                     w-full
@@ -175,69 +161,29 @@ export default function OrdersForm({
                         {/* TIPO DE PAGO */}
                         <div className="flex flex-col gap-2 w-52">
 
-                            {/* LABEL */}
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                                <CreditCard size={20} />
-                                <span>Tipo de pago *</span>
-                            </div>
+                            <CustomSelect
+                                label="Forma de pago *"
+                                icon={CreditCard}
+                                value={formData.formaPago}
+                                onChange={(value) =>
+                                    handleChange({
+                                        target: { name: "formaPago", value }
+                                    })
+                                }
+                                options={paymentOptions}
+                                placeholder="Seleccionar tipo"
+                            />
 
-                            {/* INPUT */}
-                            <div className="relative" ref={pagoRef}>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPago(v => !v)}
-                                    className={`bg-gray-200 mb-4 rounded-xl px-4 py-3 text-sm shadow-md w-full text-left transition-all duration-300 
-                                        focus:outline-none focus:ring-2 cursor-pointer flex items-center justify-between gap-2
-                                        ${errors.formaPago ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                                >
-                                    <span>
-                                        {formData.formaPago || "Seleccionar tipo"}
-                                    </span>
-
-                                    <ChevronDown
-                                        size={16}
-                                        className={`transition duration-300 ${showPago ? "rotate-180 text-yellow-500" : "text-gray-400"}`}
-                                    />
-                                </button>
-
-                                {/* DROPDOWN */}
-                                {showPago && (
-                                    <div
-                                        className="absolute z-50 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 p-2 w-full"
-                                    >
-
-                                        {["Credito", "Contado"].map(pago => (
-                                            <button
-                                                key={pago}
-                                                type="button"
-                                                onClick={() => {
-                                                    handleChange({
-                                                        target: {
-                                                            name: "formaPago",
-                                                            value: pago
-                                                        }
-                                                    });
-                                                    setShowPago(false);
-                                                }}
-                                                className="w-full text-left px-3 py-2 rounded-lg hover:bg-yellow-100 text-sm transition"
-                                            >
-                                                {pago}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                                <ValidationMessage
-                                    error={errors.formaPago}
-                                    success={formData.formaPago}
-                                    successMessage="Forma de pago válida"
-                                />
-                            </div>
+                            <ValidationMessage
+                                error={errors.formaPago}
+                                success={formData.formaPago}
+                                successMessage="Forma de pago válida"
+                            />
                         </div>
                     </div>
 
-                    {/* ================= PRODUCTOS ================= */}
-                    {/* SECCIÓN PRODUCTOS */}
+                    {/* ================= TERCERA FILA ================= */}
+                    {/* SECCIÓN DE PRODUCTOS */}
                     <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-3xl">
 
                         {/* ENCABEZADO */}
@@ -278,7 +224,6 @@ export default function OrdersForm({
                                         </tr>
                                     ) : (
                                         currentProducts.map((producto, index) => {
-                                            // Calculamos el índice real en el array original para eliminarlo correctamente
                                             const realIndex = indexOfFirstItem + index;
 
                                             return (
@@ -304,7 +249,7 @@ export default function OrdersForm({
                             </table>
                         </div>
 
-                        {/* VALIDACIO DE PRODUCTOS */}
+                        {/* VALIDACION DE PRODUCTOS */}
                         <ValidationMessage
                             error={errors.productos}
                         />
@@ -334,7 +279,6 @@ export default function OrdersForm({
 
                     {/* ================= BOTONES ================= */}
                     <div className="flex justify-end w-full gap-6">
-                        {/* Botón Cancelar */}
                         <button
                             type="button"
                             onClick={onCancel}
@@ -344,10 +288,9 @@ export default function OrdersForm({
                             Cancelar
                         </button>
 
-                        {/* Botón Principal (Crear) */}
                         <PrimaryButton
                             type="submit"
-                            disabled={Object.values(errors).some(error => error)} // Desactiva si hay errores
+                            disabled={Object.values(errors).some(error => error)}
                         >
                             {buttonText}
                         </PrimaryButton>
