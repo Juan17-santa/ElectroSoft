@@ -1,20 +1,20 @@
-import { useState, useRef } from 'react';
+import { useState, useRef } from "react";
 import { Eye, Ban, ShoppingCart } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
 import Searchbar from "../../components/ui/Searchbar";
-import Pagination from '../../components/ui/Pagination';
+import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from '../../components/ui/Alert';
-import { generateExcelReport } from '../../../../utils/ExcelReportGenerator';
+import Alert from "../../components/ui/Alert";
+import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import CancellationModal from "../../components/ui/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
 
 const ITEMS_PER_PAGE = 8;
 
-// ─── Botón anular con tooltip fixed (mismo patrón que CancellationInfoTooltip) ─
+// ─── Botón anular con tooltip informativo cuando no se puede anular ───────────
 function BanButton({ puedeAnularse, onClick }) {
-    const [showTooltip, setShowTooltip] = useState(false);
+    const [showTooltip,    setShowTooltip]    = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
     const buttonRef = useRef(null);
 
@@ -22,7 +22,7 @@ function BanButton({ puedeAnularse, onClick }) {
         if (!puedeAnularse && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
             setTooltipPosition({
-                top: rect.top - 20,
+                top:  rect.top  - 20,
                 left: rect.left - 270,
             });
             setShowTooltip(true);
@@ -51,7 +51,7 @@ function BanButton({ puedeAnularse, onClick }) {
                 <div
                     className="fixed z-50 bg-gray-50 text-gray-400 rounded-xl shadow-2xl p-4 w-64 border border-gray-400"
                     style={{
-                        top: `${tooltipPosition.top}px`,
+                        top:  `${tooltipPosition.top}px`,
                         left: `${tooltipPosition.left}px`,
                     }}
                 >
@@ -79,18 +79,18 @@ function BanButton({ puedeAnularse, onClick }) {
 export default function Shopping() {
     const navigate = useNavigate();
     const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion } = useShopping();
-    const [currentPage, setCurrentPage] = useState(1);
-    const [confirmData, setConfirmData] = useState(null);
-    const [cancelModalData, setCancelModalData] = useState(null);
-    const [alert, setAlert] = useState(null);
+    const [currentPage,     setCurrentPage]     = useState(1);
+    const [confirmData,     setConfirmData]      = useState(null);
+    const [cancelModalData, setCancelModalData]  = useState(null);
+    const [alert,           setAlert]            = useState(null);
 
     const showAlert = (type, message) => setAlert({ type, message });
 
     // Paginación
     const comprasOrdenadas = [...comprasFiltradas].reverse();
-    const totalPages = Math.max(1, Math.ceil(comprasOrdenadas.length / ITEMS_PER_PAGE));
-    const paginaActual = Math.min(currentPage, totalPages);
-    const comprasPagina = comprasOrdenadas.slice(
+    const totalPages       = Math.max(1, Math.ceil(comprasOrdenadas.length / ITEMS_PER_PAGE));
+    const paginaActual     = Math.min(currentPage, totalPages);
+    const comprasPagina    = comprasOrdenadas.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
         paginaActual * ITEMS_PER_PAGE
     );
@@ -113,11 +113,11 @@ export default function Shopping() {
             message: "¿Estás seguro de que deseas descargar el reporte de compras?",
             onConfirm: () => {
                 generateExcelReport({
-                    title: "Gestión de Compras - Reporte",
+                    title:    "Gestión de Compras - Reporte",
                     fileName: "reporte_compras.xlsx",
-                    columns: ["ID", "Número de Factura", "Fecha", "Proveedor", "Total", "Estado"],
-                    data: comprasFiltradas.map((compra, index) => [
-                        String(index + 1).padStart(2, '0'),
+                    columns:  ["ID", "Número de Factura", "Fecha", "Proveedor", "Total", "Estado"],
+                    data:     comprasFiltradas.map((compra, index) => [
+                        String(index + 1).padStart(2, "0"),
                         compra.numeroFactura,
                         compra.fechaCompra,
                         compra.proveedor,
@@ -134,6 +134,7 @@ export default function Shopping() {
     return (
         <>
             <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+
                 {/* TITULO */}
                 <p className="text-xl font-semibold flex items-center gap-2">
                     <ShoppingCart size={22} className="text-yellow-500" />
@@ -180,7 +181,7 @@ export default function Shopping() {
                                         return (
                                             <tr key={compra.id}>
                                                 <td className="px-4 py-1 border-b border-gray-300">
-                                                    {String((paginaActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, '0')}
+                                                    {String((paginaActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                                 </td>
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.numeroFactura}</td>
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.fechaCompra}</td>
@@ -197,7 +198,6 @@ export default function Shopping() {
                                                 </td>
                                                 <td className="px-4 py-1 border-b border-gray-300">
                                                     <div className="flex justify-center gap-4">
-                                                        {/* BOTON VER */}
                                                         <button
                                                             onClick={() => navigate(`/dashboard/shopping/details/${compra.id}`)}
                                                             className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
@@ -205,7 +205,6 @@ export default function Shopping() {
                                                             <Eye size={18} className="text-blue-600" />
                                                         </button>
 
-                                                        {/* BOTON ANULAR O TOOLTIP DE ANULADA */}
                                                         {compra.estado === "Anulada" ? (
                                                             <CancellationInfoTooltip cancelInfo={compra.infoAnulacion} />
                                                         ) : (
@@ -251,15 +250,24 @@ export default function Shopping() {
                 <CancellationModal
                     title="Anular Compra"
                     infoData={[
-                        { label: "Factura", value: cancelModalData?.numeroFactura ?? "" },
-                        { label: "Proveedor", value: cancelModalData?.proveedor ?? "" }
+                        { label: "Factura",   value: cancelModalData?.numeroFactura ?? "" },
+                        { label: "Proveedor", value: cancelModalData?.proveedor     ?? "" },
                     ]}
                     placeholder="Describe el motivo de la anulación..."
                     minLength={20}
                     onConfirm={(infoAnulacion) => {
-                        handleAnular(cancelModalData.id, infoAnulacion);
-                        showAlert("success", "La compra fue anulada correctamente.");
+                        // #14: handleAnular devuelve advertencias si el stock quedó truncado
+                        const { advertencias } = handleAnular(cancelModalData.id, infoAnulacion);
                         setCancelModalData(null);
+
+                        if (advertencias.length > 0) {
+                            showAlert(
+                                "warning",
+                                `Compra anulada. Advertencia de inventario: ${advertencias[0]}`
+                            );
+                        } else {
+                            showAlert("success", "La compra fue anulada correctamente.");
+                        }
                     }}
                     onCancel={() => setCancelModalData(null)}
                 />

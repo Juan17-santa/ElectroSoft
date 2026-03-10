@@ -1,10 +1,19 @@
 import { useState, useEffect } from "react";
 import { formatCOP } from "../helpers/shoppingHelpers";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
+import { ServicesShopping } from "../services/ServicesShopping";
 
 /**
  * Hook centralizado para el módulo de compras.
- * Maneja: carga desde localStorage, guardado, anulación, inventario y búsqueda.
+ * Maneja: carga, guardado, anulación, inventario y búsqueda.
+ *
+ * Reglas de negocio aplicadas:
+ *  - Al guardar una compra se incrementa el stock de cada producto
+ *    y se actualiza su precio de venta en el catálogo (precioVenta → precio).
+ *  - La anulación solo está disponible dentro de las 48 h posteriores
+ *    al registro de la compra (fechaCreacion), no a la fecha de factura.
+ *  - Al anular se revierte el inventario; si el stock actual es menor
+ *    al que se había ingresado, se trunca a 0 y se registra una advertencia.
  */
 export function useShopping() {
     const [compras, setCompras] = useState([]);
@@ -12,44 +21,18 @@ export function useShopping() {
 
     // ─── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
-        const stored = localStorage.getItem("compras");
-        if (stored) {
-            let comprasParseadas = JSON.parse(stored);
-            // Backward compatibility: agregar campos faltantes a compras antiguas
-            comprasParseadas = comprasParseadas.map((compra) => {
-                // Derivar la fecha real de la compra desde fechaCompra (formato DD/MM/YYYY)
-                // para detectar si fechaCreacion fue asignado incorrectamente.
-                let fechaCreacionCorregida = compra.fechaCreacion || new Date(0).toISOString();
-
-                if (compra.fechaCompra) {
-                    const partes = compra.fechaCompra.split("/"); // ["DD","MM","YYYY"]
-                    if (partes.length === 3) {
-                        const fechaRealCompra = new Date(
-                            Number(partes[2]),   // año
-                            Number(partes[1]) - 1, // mes (0-indexed)
-                            Number(partes[0])    // día
-                        );
-                        const ahora = new Date();
-                        const diffHorasFechaCompra = (ahora - fechaRealCompra) / (1000 * 60 * 60);
-
-                        // Si la fecha de la compra tiene más de 48h de antigüedad,
-                        // forzamos fechaCreacion a esa fecha para que no pueda anularse,
-                        // sin importar qué valor tenga fechaCreacion guardado.
-                        if (diffHorasFechaCompra >= 48) {
-                            fechaCreacionCorregida = fechaRealCompra.toISOString();
-                        }
-                    }
-                }
-
-                return {
-                    ...compra,
-                    fechaCreacion: fechaCreacionCorregida,
-                    movimientosInventario: compra.movimientosInventario || [],
-                    infoAnulacion: compra.infoAnulacion || null,
-                };
-            });
-            setCompras(comprasParseadas);
-        }
+        // #5 / #6: Se usa ServicesShopping en lugar de leer localStorage directo.
+        // #2: Se elimina el bloque de "backward compatibility" que sobreescribía
+        //     fechaCreacion con fechaCompra, confundiendo dos conceptos distintos:
+        //     la fecha de la factura del proveedor ≠ la fecha de registro en el sistema.
+        const comprasGuardadas = ServicesShopping.get().map((compra) => ({
+            ...compra,
+            // Garantizar que campos opcionales siempre existan
+            fechaCreacion: compra.fechaCreacion || new Date(0).toISOString(),
+            movimientosInventario: compra.movimientosInventario || [],
+            infoAnulacion: compra.infoAnulacion || null,
+        }));
+        setCompras(comprasGuardadas);
     }, []);
 
     // ─── Filtrado ──────────────────────────────────────────────────────────────
@@ -67,38 +50,46 @@ export function useShopping() {
     // ─── Acciones ──────────────────────────────────────────────────────────────
 
     /**
-     * Guarda una nueva compra en localStorage e incrementa el inventario
-     * @param {Object} params - { numeroFactura, fechaFactura, proveedor, total, productos }
+     * Guarda una nueva compra, actualiza el inventario y el catálogo de precios.
+     *
+     * @param {Object} params
+     * @param {string}   params.numeroFactura
+     * @param {string}   params.fechaFactura    - Fecha formateada (DD/MM/YYYY)
+     * @param {string}   params.proveedor       - Nombre del proveedor (display)
+     * @param {number}   params.proveedorId     - ID del proveedor (referencia)
+     * @param {number}   params.total           - Total de la compra (con IVA, base coste)
+     * @param {Array}    params.productos        - Lista de productos con { id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal }
      */
-    const guardarCompra = ({ numeroFactura, fechaFactura, proveedor, total, productos }) => {
+    const guardarCompra = ({ numeroFactura, fechaFactura, proveedor, proveedorId, total, productos }) => {
         const fechaCreacion = new Date().toISOString();
-        
-        // Registrar movimientos de inventario (entrada)
         const movimientos = [];
-        
+
         productos.forEach((producto) => {
-            // Obtener producto actual del sistema
             const productoActual = ServicesProducts.getById(producto.id);
-            
+
             if (productoActual) {
-                const cantidadOriginal = productoActual.stock;
-                const cantidadNueva = cantidadOriginal + producto.cantidad;
-                
-                // Actualizar stock en productos
+                const stockAnterior = productoActual.stock;
+                const stockNuevo = stockAnterior + producto.cantidad;
+
+                // #4 + punto 16: Al comprar se actualiza el stock Y el precio de venta
+                // del catálogo (precioVenta registrado en la compra → precio del producto).
+                // Esto mantiene el catálogo sincronizado con el último precio de compra.
                 ServicesProducts.update({
                     ...productoActual,
-                    stock: cantidadNueva
+                    stock: stockNuevo,
+                    precio: producto.precioVenta,
                 });
-                
-                // Registrar movimiento
+
                 movimientos.push({
-                    productoId: producto.id,
-                    productoNombre: producto.nombre,
-                    cantidad: producto.cantidad,
-                    cantidadAnterior: cantidadOriginal,
-                    cantidadNueva: cantidadNueva,
-                    tipo: "ENTRADA",
-                    fecha: fechaCreacion,
+                    productoId:       producto.id,
+                    productoNombre:   producto.nombre,
+                    cantidad:         producto.cantidad,
+                    cantidadAnterior: stockAnterior,
+                    cantidadNueva:    stockNuevo,
+                    precioAnterior:   productoActual.precio,
+                    precioNuevo:      producto.precioVenta,
+                    tipo:             "ENTRADA",
+                    fecha:            fechaCreacion,
                 });
             }
         });
@@ -106,100 +97,153 @@ export function useShopping() {
         const nuevaCompra = {
             id: Date.now(),
             numeroFactura,
-            fechaCompra: fechaFactura,
-            proveedor,
-            iva: formatCOP(Math.round(total * (0.19 / 1.19))),
-            total: formatCOP(Math.round(total)),
-            estado: "Activo",
+            fechaCompra:          fechaFactura,
+            proveedor,            // Nombre — para búsqueda y display
+            proveedorId,          // #7: ID del proveedor para trazabilidad
+            iva:                  formatCOP(Math.round(total * (0.19 / 1.19))),
+            total:                formatCOP(Math.round(total)),
+            estado:               "Activo",
             productos,
-            fechaCreacion,
+            fechaCreacion,        // Momento exacto del registro en el sistema
             movimientosInventario: movimientos,
-            infoAnulacion: null,
+            infoAnulacion:        null,
         };
-        
-        const updated = [...compras, nuevaCompra];
-        localStorage.setItem("compras", JSON.stringify(updated));
-        setCompras(updated);
+
+        // #5: Persistencia a través de la capa de servicio
+        ServicesShopping.create(nuevaCompra);
+        setCompras((prev) => [...prev, nuevaCompra]);
     };
 
     /**
-     * Valida si una compra puede anularse según reglas de negocio
-     * @param {Object} compra - La compra a validar
-     * @returns {Object} { puedeAnularse: boolean, razon: string, horasRestantes: number }
+     * Valida si una compra puede anularse según las reglas de negocio.
+     *
+     * Se aplican DOS controles independientes de 48 h:
+     *  1. Desde fechaCreacion  → cuándo se registró la compra en el sistema.
+     *  2. Desde fechaCompra    → la fecha de la factura del proveedor (DD/MM/YYYY).
+     *
+     * Si CUALQUIERA de las dos supera las 48 h, la compra no puede anularse.
+     * Esto garantiza que:
+     *  - Una compra registrada hoy con factura de hace 5 días → bloqueada (regla de fecha de factura).
+     *  - Una compra con factura de hoy registrada hace 3 días → bloqueada (regla de registro).
+     *
+     * @param {Object} compra
+     * @returns {{ puedeAnularse: boolean, razon: string, horasRestantes: number }}
      */
     const validarAnulacion = (compra) => {
-        // Validación 1: Estado debe ser "Activo"
         if (compra.estado !== "Activo") {
             return {
-                puedeAnularse: false,
-                razon: "Solo se pueden anular compras con estado 'Activo'.",
+                puedeAnularse:  false,
+                razon:          "Solo se pueden anular compras con estado 'Activo'.",
                 horasRestantes: 0,
             };
         }
 
-        // Validación 2: Debe haber sido creada hace menos de 48 horas
-        const fechaCreacion = new Date(compra.fechaCreacion);
         const ahora = new Date();
-        const diferenciasMs = ahora - fechaCreacion;
-        const diferenciasHoras = diferenciasMs / (1000 * 60 * 60);
-        const horasRestantes = Math.max(0, 48 - Math.floor(diferenciasHoras));
 
-        if (diferenciasHoras >= 48) {
+        // ── Control 1: fecha de registro en el sistema ────────────────────────
+        const fechaCreacion       = new Date(compra.fechaCreacion);
+        const horasDesdeCreacion  = (ahora - fechaCreacion) / (1000 * 60 * 60);
+
+        if (horasDesdeCreacion >= 48) {
             return {
-                puedeAnularse: false,
-                razon: "Ha pasado más de 48 horas desde la creación de esta compra. No se puede anular.",
+                puedeAnularse:  false,
+                razon:          "Han pasado más de 48 h desde el registro de la compra.",
                 horasRestantes: 0,
             };
         }
+
+        // ── Control 2: fecha de la factura del proveedor (DD/MM/YYYY) ─────────
+        if (compra.fechaCompra) {
+            const partes = compra.fechaCompra.split("/"); // ["DD","MM","YYYY"]
+            if (partes.length === 3) {
+                // Se toma el final del día de la factura para no penalizar
+                // compras realizadas el mismo día pero en horas tempranas.
+                const fechaFactura = new Date(
+                    Number(partes[2]),
+                    Number(partes[1]) - 1,
+                    Number(partes[0]),
+                    23, 59, 59, 999
+                );
+                const horasDesdeFactura = (ahora - fechaFactura) / (1000 * 60 * 60);
+
+                if (horasDesdeFactura >= 48) {
+                    return {
+                        puedeAnularse:  false,
+                        razon:          "La fecha de la factura supera el plazo de 48 horas permitido para anular.",
+                        horasRestantes: 0,
+                    };
+                }
+            }
+        }
+
+        // Horas restantes basadas en el control más restrictivo
+        const horasRestantes = Math.max(
+            0,
+            48 - Math.floor(horasDesdeCreacion)
+        );
 
         return { puedeAnularse: true, razon: "", horasRestantes };
     };
 
     /**
-     * Anula una compra y revierte los cambios en el inventario
-     * @param {number} id - ID de la compra
-     * @param {Object} infoAnulacion - Objeto con { motivo, fechaAnulacion, usuario }
+     * Anula una compra y revierte el inventario.
+     * #14: Si el stock actual es menor al que se ingresó en la compra (p. ej. ya se
+     * vendió parte del lote), el stock se trunca a 0 y se devuelve una advertencia
+     * en lugar de quedar en negativo silenciosamente.
+     *
+     * @param {number} id               - ID de la compra a anular
+     * @param {Object} infoAnulacion    - { motivo, fechaAnulacion, usuario }
+     * @returns {{ advertencias: string[] }} - Lista de advertencias de inventario
      */
     const handleAnular = (id, infoAnulacion) => {
         const compraAAnular = compras.find((c) => c.id === id);
-        
-        if (compraAAnular && compraAAnular.movimientosInventario) {
-            // Revertir movimientos de inventario
-            compraAAnular.movimientosInventario.forEach((movimiento) => {
-                const producto = ServicesProducts.getById(movimiento.productoId);
-                
-                if (producto) {
-                    // Restar la cantidad que se había sumado
-                    const nuevoStock = producto.stock - movimiento.cantidad;
-                    
-                    ServicesProducts.update({
-                        ...producto,
-                        stock: Math.max(0, nuevoStock), // Evitar stock negativo
-                    });
+        const advertencias = [];
+
+        if (compraAAnular?.movimientosInventario?.length) {
+            compraAAnular.movimientosInventario.forEach((mov) => {
+                const producto = ServicesProducts.getById(mov.productoId);
+                if (!producto) return;
+
+                const stockCalculado = producto.stock - mov.cantidad;
+
+                // #14: Detectar y advertir sobre stock que sería negativo
+                if (stockCalculado < 0) {
+                    advertencias.push(
+                        `"${mov.productoNombre}": el stock actual (${producto.stock}) es menor ` +
+                        `a las unidades ingresadas en la compra (${mov.cantidad}). ` +
+                        `Se ajustó a 0, pero puede haber inconsistencia en el inventario.`
+                    );
                 }
+
+                ServicesProducts.update({
+                    ...producto,
+                    stock: Math.max(0, stockCalculado),
+                });
             });
         }
 
-        // Actualizar estado de la compra
         const updated = compras.map((c) =>
             c.id === id
                 ? {
                     ...c,
                     estado: "Anulada",
                     infoAnulacion: {
-                        motivo: infoAnulacion.motivo,
+                        motivo:         infoAnulacion.motivo,
                         fechaAnulacion: infoAnulacion.fechaAnulacion,
-                        usuario: infoAnulacion.usuario,
+                        usuario:        infoAnulacion.usuario,
                     },
                 }
                 : c
         );
-        
+
+        // #5: Persistencia a través de la capa de servicio
+        ServicesShopping.saveAll(updated);
         setCompras(updated);
-        localStorage.setItem("compras", JSON.stringify(updated));
+
+        return { advertencias };
     };
 
-    /** Busca una compra por su id (útil para ShoppingDetails) */
+    /** Busca una compra por su id */
     const getCompraById = (id) =>
         compras.find((c) => String(c.id) === String(id)) || null;
 

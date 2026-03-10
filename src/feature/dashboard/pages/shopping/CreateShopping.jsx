@@ -5,15 +5,17 @@ import { useShopping } from "../shopping/hooks/useShopping";
 import { formatCOP, IVA_RATE, numeroFacturaYaExiste } from "../shopping/helpers/shoppingHelpers";
 import AddProductModal from "../shopping/components/AddProductModal";
 import CreateProductModal from "../shopping/components/CreateProductModal";
-import Pagination from '../../components/ui/Pagination';
+import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { ServicesProviders } from "../providers/services/ServicesProviders";
 import Alert from "../../components/ui/Alert";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
+
 const ITEMS_PER_PAGE = 4;
 
 // ─── Validaciones ─────────────────────────────────────────────────────────────
+
 function validarProveedor(valor) {
     if (!valor || valor === "") return { valido: false, mensaje: "Debes seleccionar un proveedor." };
     return { valido: true, mensaje: "" };
@@ -41,8 +43,9 @@ function FieldStatus({ estado }) {
     if (estado === null) return null;
     return (
         <div
-            className={`flex items-center gap-1 text-xs mt-1 transition-all duration-300 ${estado.valido ? "text-green-500 opacity-100" : "text-red-500 opacity-100"
-                }`}
+            className={`flex items-center gap-1 text-xs mt-1 transition-all duration-300 ${
+                estado.valido ? "text-green-500 opacity-100" : "text-red-500 opacity-100"
+            }`}
             style={{ minHeight: "16px" }}
         >
             {estado.valido
@@ -53,51 +56,64 @@ function FieldStatus({ estado }) {
     );
 }
 
-
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CreateShopping() {
     const navigate = useNavigate();
     const { guardarCompra } = useShopping();
 
-    const [showModal, setShowModal] = useState(false);
-    const [showCreateProductModal, setShowCreateProductModal] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [proveedoresList, setProveedoresList] = useState([]);
-    const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
+    const [showModal,               setShowModal]               = useState(false);
+    const [showCreateProductModal,  setShowCreateProductModal]  = useState(false);
+    const [currentPage,             setCurrentPage]             = useState(1);
+    const [proveedoresList,         setProveedoresList]         = useState([]);
+    const [confirmData,             setConfirmData]             = useState(null);
+    const [alert,                   setAlert]                   = useState(null);
 
     // Formulario superior
-    const [proveedor, setProveedor] = useState("");
-    const [fechaISO, setFechaISO] = useState("");          // YYYY-MM-DD (interno)
-    const [numeroFactura, setNumeroFactura] = useState("");
-    const [proveedorTocado, setProveedorTocado] = useState(false);
-    const [fechaTocada, setFechaTocada] = useState(false);
-    const [numeroFacturaTocado, setNumeroFacturaTocado] = useState(false);
+    // #7: Guardar el ID del proveedor además de su nombre para trazabilidad
+    const [proveedorId,             setProveedorId]             = useState("");
+    const [proveedor,               setProveedor]               = useState(""); // nombre display
+    const [fechaISO,                setFechaISO]                = useState("");
+    const [numeroFactura,           setNumeroFactura]           = useState("");
+    const [proveedorTocado,         setProveedorTocado]         = useState(false);
+    const [fechaTocada,             setFechaTocada]             = useState(false);
+    const [numeroFacturaTocado,     setNumeroFacturaTocado]     = useState(false);
 
     // Productos en tabla
     const [productos, setProductos] = useState([]);
 
     useEffect(() => {
-        const data = ServicesProviders.get();
+        const data = ServicesProviders.get().filter((p) => p.estado !== false);
         setProveedoresList(data);
     }, []);
 
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
-    const estadoProveedor = proveedorTocado ? validarProveedor(proveedor) : null;
-    const estadoFecha = fechaTocada ? validarFecha(fechaISO) : null;
+    const estadoProveedor     = proveedorTocado     ? validarProveedor(proveedorId)       : null;
+    const estadoFecha         = fechaTocada         ? validarFecha(fechaISO)              : null;
     const estadoNumeroFactura = numeroFacturaTocado ? validarNumeroFactura(numeroFactura) : null;
 
     // ─── Cálculos ─────────────────────────────────────────────────────────────
-    // Solo contar productos activos (no anulados) en los cálculos
     const productosActivos = productos.filter((p) => !p.anulado);
-    // Subtotal y IVA se calculan en base al precio (no coste)
-    const subtotalSinIVA = productosActivos.reduce((acc, p) => acc + (p.cantidad * p.precio), 0);
-    const iva = subtotalSinIVA * IVA_RATE;
+
+    /**
+     * #3: El total de la compra se calcula sobre costeProducto, que es lo que
+     * realmente se le paga al proveedor en esta transacción, no sobre el precio
+     * de catálogo (que es el precio de VENTA al cliente).
+     */
+    const subtotalSinIVA = productosActivos.reduce(
+        (acc, p) => acc + p.cantidad * p.costeProducto,
+        0
+    );
+    const iva   = subtotalSinIVA * IVA_RATE;
     const total = subtotalSinIVA + iva;
-    const totalVenta = productosActivos.reduce((acc, p) => acc + p.cantidad * p.precioVenta, 0);
+
+    // Total proyectado de ventas (para referencia de margen)
+    const totalVenta = productosActivos.reduce(
+        (acc, p) => acc + p.cantidad * p.precioVenta,
+        0
+    );
 
     // ─── Paginación ───────────────────────────────────────────────────────────
-    const totalPages = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
+    const totalPages   = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
     const productosPagina = productos.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
@@ -105,12 +121,17 @@ export default function CreateShopping() {
     );
 
     // ─── Handlers ─────────────────────────────────────────────────────────────
+
+    // #7: Al cambiar el select guardamos tanto el ID como el nombre del proveedor
+    const handleSelectProveedor = (id) => {
+        const found = proveedoresList.find((p) => String(p.id) === String(id));
+        setProveedorId(id);
+        setProveedor(found?.nombreProveedor || "");
+        setProveedorTocado(true);
+    };
+
     const handleAnadirProducto = (nuevoProducto) => {
-        // Agregar estado anulado como false al nuevo producto
-        const productoConEstado = {
-            ...nuevoProducto,
-            anulado: false
-        };
+        const productoConEstado = { ...nuevoProducto, anulado: false };
         const updated = [...productos, productoConEstado];
         setProductos(updated);
         setCurrentPage(Math.ceil(updated.length / ITEMS_PER_PAGE));
@@ -118,7 +139,6 @@ export default function CreateShopping() {
     };
 
     const handleAnularProducto = (id) => {
-        // Marcar producto como anulado en lugar de eliminarlo
         const updated = productos.map((p) =>
             p.id === id ? { ...p, anulado: true } : p
         );
@@ -129,13 +149,13 @@ export default function CreateShopping() {
         setProveedorTocado(true);
         setFechaTocada(true);
         setNumeroFacturaTocado(true);
-        setConfirmData(null); // cierra el modal de confirmación
+        setConfirmData(null);
 
-        const vProv = validarProveedor(proveedor);
-        const vFech = validarFecha(fechaISO);
+        const vProv    = validarProveedor(proveedorId);
+        const vFech    = validarFecha(fechaISO);
         const vNumFact = validarNumeroFactura(numeroFactura);
 
-        if (!vProv.valido || !fechaISO || !vFech.valido || !vNumFact.valido) return;
+        if (!vProv.valido || !vFech.valido || !vNumFact.valido) return;
 
         const productosActuales = productos.filter((p) => !p.anulado);
         if (productosActuales.length === 0) {
@@ -143,28 +163,28 @@ export default function CreateShopping() {
             return;
         }
 
-        // Guardar productos con todos sus campos incluído costeProducto y precioVenta
-        const productosParaGuardar = productosActuales.map(({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal }) => ({
-            id, 
-            nombre, 
-            cantidad, 
-            precio, 
-            costeProducto: costeProducto || precio,
-            precioVenta: precioVenta || precio,
-            subtotal,
-        }));
+        const productosParaGuardar = productosActuales.map(
+            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal }) => ({
+                id,
+                nombre,
+                cantidad,
+                precio,                            // Precio catálogo en el momento de la compra
+                costeProducto: costeProducto || precio,
+                precioVenta:   precioVenta   || precio,
+                subtotal,                          // cantidad × costeProducto
+            })
+        );
 
         guardarCompra({
             numeroFactura,
             fechaFactura: formatearFecha(fechaISO),
-            proveedor,
+            proveedor,     // Nombre (display)
+            proveedorId,   // #7: ID para trazabilidad
             total,
             productos: productosParaGuardar,
         });
 
-        // Desactivar validación del campo para evitar mostrar error después de guardar
         setNumeroFacturaTocado(false);
-
         setAlert({ type: "success", message: "La compra fue registrada correctamente." });
         setTimeout(() => navigate("/dashboard/shopping"), 1500);
     };
@@ -185,7 +205,7 @@ export default function CreateShopping() {
                 {/* CAMPOS SUPERIORES */}
                 <div className="flex flex-wrap gap-6 items-start">
 
-                    {/* PROVEEDOR */}
+                    {/* PROVEEDOR — #7: el value del select es el ID del proveedor */}
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <Truck size={20} />
@@ -194,11 +214,8 @@ export default function CreateShopping() {
                         <div className="flex items-center gap-2">
                             <div className="flex flex-col">
                                 <select
-                                    value={proveedor}
-                                    onChange={(e) => {
-                                        setProveedor(e.target.value);
-                                        setProveedorTocado(true);
-                                    }}
+                                    value={proveedorId}
+                                    onChange={(e) => handleSelectProveedor(e.target.value)}
                                     onBlur={() => setProveedorTocado(true)}
                                     className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-52 cursor-pointer transition-all duration-300
                                         ${estadoProveedor === null
@@ -210,7 +227,9 @@ export default function CreateShopping() {
                                 >
                                     <option value="">— No seleccionado —</option>
                                     {proveedoresList.map((p) => (
-                                        <option key={p.id} value={p.nombreProveedor}>{p.nombreProveedor}</option>
+                                        <option key={p.id} value={p.id}>
+                                            {p.nombreProveedor}
+                                        </option>
                                     ))}
                                 </select>
                                 <FieldStatus estado={estadoProveedor} />
@@ -238,7 +257,7 @@ export default function CreateShopping() {
                         <FieldStatus estado={estadoFecha} />
                     </div>
 
-                    {/* NÚMERO FACTURA — manual */}
+                    {/* NÚMERO FACTURA */}
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <ScanBarcode size={20} />
@@ -303,9 +322,9 @@ export default function CreateShopping() {
                                 <tr className="text-left border-b border-gray-200">
                                     <th className="px-4 py-2 font-semibold">Producto</th>
                                     <th className="px-4 py-2 font-semibold text-center">Cantidad</th>
-                                    <th className="px-4 py-2 font-semibold text-center">Precio unitario</th>
-                                    <th className="px-4 py-2 font-semibold text-center">Coste</th>
-                                    <th className="px-4 py-2 font-semibold text-center">Precio Venta</th>
+                                    <th className="px-4 py-2 font-semibold text-center">Catálogo</th>
+                                    <th className="px-4 py-2 font-semibold text-center">Coste compra</th>
+                                    <th className="px-4 py-2 font-semibold text-center">Precio venta</th>
                                     <th className="px-4 py-2 font-semibold text-center">Subtotal</th>
                                     <th className="px-4 py-2 font-semibold text-center">Acciones</th>
                                 </tr>
@@ -323,35 +342,42 @@ export default function CreateShopping() {
                                             <td className="px-4 py-2 border-b border-gray-200">
                                                 <span className="flex items-center gap-2">
                                                     {producto.nombre}
-                                                    {producto.anulado && <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">Anulado</span>}
+                                                    {producto.anulado && (
+                                                        <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
+                                                            Anulado
+                                                        </span>
+                                                    )}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">{producto.cantidad}</td>
-                                            <td className="px-4 py-2 border-b border-gray-200 text-center">{formatCOP(producto.precio)}</td>
-                                            <td className="px-4 py-2 border-b border-gray-200 text-center text-gray-600">
-                                                {formatCOP(producto.costeProducto || producto.precio)}
+                                            <td className="px-4 py-2 border-b border-gray-200 text-center text-gray-400">
+                                                {formatCOP(producto.precio)}
+                                            </td>
+                                            <td className="px-4 py-2 border-b border-gray-200 text-center text-gray-600 font-medium">
+                                                {formatCOP(producto.costeProducto)}
                                             </td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center text-blue-500 font-medium">
-                                                {formatCOP(producto.precioVenta || producto.precio)}
+                                                {formatCOP(producto.precioVenta)}
                                             </td>
-                                            <td className="px-4 py-2 border-b border-gray-200 text-center">{formatCOP(producto.subtotal)}</td>
+                                            {/* Subtotal = cantidad × costeProducto (#3) */}
+                                            <td className="px-4 py-2 border-b border-gray-200 text-center">
+                                                {formatCOP(producto.subtotal)}
+                                            </td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">
                                                 {producto.anulado ? (
                                                     <button
-                                                        onClick={() => {
-                                                            setConfirmData({
-                                                                type: "info",
-                                                                title: "Reactivar producto",
-                                                                message: `¿Deseas reactivar "${producto.nombre}" en la compra?`,
-                                                                onConfirm: () => {
-                                                                    const updated = productos.map((p) =>
-                                                                        p.id === producto.id ? { ...p, anulado: false } : p
-                                                                    );
-                                                                    setProductos(updated);
-                                                                    setConfirmData(null);
-                                                                }
-                                                            });
-                                                        }}
+                                                        onClick={() => setConfirmData({
+                                                            type: "info",
+                                                            title: "Reactivar producto",
+                                                            message: `¿Deseas reactivar "${producto.nombre}" en la compra?`,
+                                                            onConfirm: () => {
+                                                                const updated = productos.map((p) =>
+                                                                    p.id === producto.id ? { ...p, anulado: false } : p
+                                                                );
+                                                                setProductos(updated);
+                                                                setConfirmData(null);
+                                                            }
+                                                        })}
                                                         className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
                                                         title="Reactivar producto"
                                                     >
@@ -382,21 +408,31 @@ export default function CreateShopping() {
                         </table>
                     </div>
 
-                    {/* PAGINADOR E IVA/TOTAL */}
+                    {/* PAGINADOR Y TOTALES */}
                     <div className="flex items-center justify-between mt-2">
-
                         <Pagination
                             currentPage={paginaActual}
                             totalPages={totalPages}
                             onPageChange={setCurrentPage}
                         />
-
                         <div className="flex items-center gap-6 text-sm font-medium text-gray-700">
-                            <span>Total venta: <span className="font-semibold text-blue-500">{formatCOP(Math.round(totalVenta))}</span></span>
-                            <span>IVA (19%): <span className="font-semibold">{formatCOP(Math.round(iva))}</span></span>
-                            <span>Total: <span className="font-bold text-base">{formatCOP(Math.round(total))}</span></span>
+                            {/* Total venta = proyección de ingresos al vender el lote */}
+                            <span>
+                                Total venta:
+                                <span className="font-semibold text-blue-500 ml-1">
+                                    {formatCOP(Math.round(totalVenta))}
+                                </span>
+                            </span>
+                            <span>
+                                IVA (19%):
+                                <span className="font-semibold ml-1">{formatCOP(Math.round(iva))}</span>
+                            </span>
+                            {/* Total = lo que se paga al proveedor (base costeProducto + IVA) */}
+                            <span>
+                                Total:
+                                <span className="font-bold text-base ml-1">{formatCOP(Math.round(total))}</span>
+                            </span>
                         </div>
-
                     </div>
                 </div>
 
@@ -414,15 +450,19 @@ export default function CreateShopping() {
                         <span>✕</span>
                         Cancelar
                     </button>
-                    <PrimaryButton icon={Plus} onClick={() => setConfirmData({
-                        type: "info",
-                        title: "Confirmar compra",
-                        message: `¿Deseas registrar la compra con ${productosActivos.length} producto(s)?`,
-                        onConfirm: handleCrearCompra
-                    })}>
+                    <PrimaryButton
+                        icon={Plus}
+                        onClick={() => setConfirmData({
+                            type: "info",
+                            title: "Confirmar compra",
+                            message: `¿Deseas registrar la compra con ${productosActivos.length} producto(s)?`,
+                            onConfirm: handleCrearCompra
+                        })}
+                    >
                         Crear Compra
                     </PrimaryButton>
                 </div>
+
                 {/* MODAL AÑADIR PRODUCTO */}
                 {showModal && (
                     <AddProductModal
@@ -436,10 +476,7 @@ export default function CreateShopping() {
                 {showCreateProductModal && (
                     <CreateProductModal
                         onClose={() => setShowCreateProductModal(false)}
-                        onSuccess={() => {
-                            // El componente AddProductModal se encargará de recargar la lista
-                            // Esta modal solo notifica el cierre
-                        }}
+                        onSuccess={() => {}}
                     />
                 )}
 
@@ -455,6 +492,7 @@ export default function CreateShopping() {
                 )}
 
             </div>
+
             {alert && (
                 <Alert
                     type={alert.type}
