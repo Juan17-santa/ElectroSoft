@@ -20,11 +20,13 @@ No maneja estado.
 */
 
 import { Ban, CircleCheck, Eye } from "lucide-react";
+import CancellationInfoTooltip from "../../../components/ui/CancellationInfoTooltip";
 
 export default function OrdersTable({
     data,
     onDetails,
-    onCancel
+    onCancel,
+    onProcess
 }) {
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white ">
@@ -118,16 +120,28 @@ export default function OrdersTable({
                                     <td className="px-4 py-2">
                                         <div className="flex justify-center gap-2">
 
-                                            {/* PROCESAR VENTA SOLO SI NO ESTA ANULADO */}
-                                            {order.estado !== "Anulado" && (
-                                                <button
-                                                    // onClick={() => onProcess(order)}
-                                                    className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition cursor-pointer"
-                                                    title="Procesar venta"
-                                                >
-                                                    <CircleCheck size={18} className="text-green-600" />
-                                                </button>
-                                            )}
+                                            {/* PROCESAR VENTA SI EL PEDIDO NO ESTA ANULADO */}
+                                            <button
+                                                onClick={() => onProcess(order)}
+                                                disabled={order.estado === "Anulado"}
+                                                className={`p-2 rounded-lg transition
+                                                    ${order.estado === "Anulado"
+                                                        ? "bg-gray-100 cursor-not-allowed"
+                                                        : "bg-green-100 hover:bg-green-200 cursor-pointer"
+                                                    }`}
+                                                title={
+                                                    order.estado === "Anulado"
+                                                        ? "No disponible (pedido anulado)"
+                                                        : "Procesar venta"
+                                                }
+                                            >
+                                                <CircleCheck
+                                                    size={18}
+                                                    className={order.estado === "Anulado"
+                                                        ? "text-gray-400"
+                                                        : "text-green-600"}
+                                                />
+                                            </button>
 
                                             {/* VER DETALLE */}
                                             <button
@@ -138,8 +152,8 @@ export default function OrdersTable({
                                                 <Eye size={18} className="text-blue-600" />
                                             </button>
 
-                                            {/* ANULAR SOLO SI NO ESTA ANULADO */}
-                                            {order.estado !== "Anulado" && (
+                                            {/* ANULAR O INFO */}
+                                            {order.estado !== "Anulado" ? (
                                                 <button
                                                     onClick={() => onCancel(order)}
                                                     className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
@@ -147,7 +161,12 @@ export default function OrdersTable({
                                                 >
                                                     <Ban size={18} className="text-red-600" />
                                                 </button>
+                                            ) : (
+                                                <CancellationInfoTooltip
+                                                    cancelInfo={order.cancelInfo}
+                                                />
                                             )}
+
                                         </div>
                                     </td>
                                 </tr>

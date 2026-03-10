@@ -6,9 +6,9 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from '../../components/ui/Pagination';
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from '../../components/ui/Alert';
-import CancellationModal from "../../components/CancellationModal";
-import CancellationInfoTooltip from "../shopping/components/CancellationInfoTooltip";
 import { generateExcelReport } from '../../../../utils/ExcelReportGenerator';
+import CancellationModal from "../../components/ui/CancellationModal";
+import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
 
 const ITEMS_PER_PAGE = 8;
 
