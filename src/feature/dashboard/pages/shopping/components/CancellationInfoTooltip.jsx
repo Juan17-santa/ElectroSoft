@@ -15,7 +15,7 @@ export default function CancellationInfoTooltip({ cancelInfo }) {
             const rect = buttonRef.current.getBoundingClientRect();
             setTooltipPosition({
                 top: rect.top - 20, // Un poco arriba del botón
-                left: rect.left - 280, // A la izquierda con espacio
+                left: rect.left - 270, // A la izquierda con espacio
             });
         }
         setShowTooltip(true);
@@ -59,7 +59,7 @@ export default function CancellationInfoTooltip({ cancelInfo }) {
                             <p className="text-xs tracking-wide text-gray-500 font-semibold">
                                 Fecha y Hora
                             </p>
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className="text-xs text-gray-400 mt-1 break-words">
                                 {formatDateTime(cancelInfo.fechaAnulacion)}
                             </p>
                         </div>
@@ -68,7 +68,7 @@ export default function CancellationInfoTooltip({ cancelInfo }) {
                             <p className="text-xs tracking-wide text-gray-500 font-semibold">
                                 Motivo
                             </p>
-                            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+                            <p className="text-xs text-gray-400 mt-1 leading-relaxed break-words max-h-32">
                                 {cancelInfo.motivo}
                             </p>
                         </div>

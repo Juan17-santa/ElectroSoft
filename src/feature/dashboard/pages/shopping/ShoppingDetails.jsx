@@ -125,13 +125,15 @@ export default function ShoppingDetails() {
                                                     <th className="px-4 py-2 font-semibold">Nombre</th>
                                                     <th className="px-4 py-2 font-semibold">Cantidad</th>
                                                     <th className="px-4 py-2 font-semibold text-center">Precio unitario</th>
+                                                    <th className="px-4 py-2 font-semibold text-center">Coste</th>
+                                                    <th className="px-4 py-2 font-semibold text-center">Precio Venta</th>
                                                     <th className="px-4 py-2 font-semibold text-center">Subtotal</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white text-gray-700">
                                                 {productosPagina.length === 0 ? (
                                                     <tr>
-                                                        <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                                                        <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
                                                             Sin productos registrados.
                                                         </td>
                                                     </tr>
@@ -145,6 +147,12 @@ export default function ShoppingDetails() {
                                                             <td className="px-4 py-1 border-b border-gray-300">{producto.cantidad}</td>
                                                             <td className="px-4 py-1 border-b border-gray-300 text-center">
                                                                 {formatCOP(producto.precio)}
+                                                            </td>
+                                                            <td className="px-4 py-1 border-b border-gray-300 text-center text-gray-600">
+                                                                {formatCOP(producto.costeProducto || producto.precio)}
+                                                            </td>
+                                                            <td className="px-4 py-1 border-b border-gray-300 text-center text-blue-500 font-medium">
+                                                                {formatCOP(producto.precioVenta || producto.precio)}
                                                             </td>
                                                             <td className="px-4 py-1 border-b border-gray-300 text-center">
                                                                 {formatCOP(producto.subtotal)}

@@ -16,12 +16,38 @@ export function useShopping() {
         if (stored) {
             let comprasParseadas = JSON.parse(stored);
             // Backward compatibility: agregar campos faltantes a compras antiguas
-            comprasParseadas = comprasParseadas.map((compra) => ({
-                ...compra,
-                fechaCreacion: compra.fechaCreacion || new Date().toISOString(),
-                movimientosInventario: compra.movimientosInventario || [],
-                infoAnulacion: compra.infoAnulacion || null,
-            }));
+            comprasParseadas = comprasParseadas.map((compra) => {
+                // Derivar la fecha real de la compra desde fechaCompra (formato DD/MM/YYYY)
+                // para detectar si fechaCreacion fue asignado incorrectamente.
+                let fechaCreacionCorregida = compra.fechaCreacion || new Date(0).toISOString();
+
+                if (compra.fechaCompra) {
+                    const partes = compra.fechaCompra.split("/"); // ["DD","MM","YYYY"]
+                    if (partes.length === 3) {
+                        const fechaRealCompra = new Date(
+                            Number(partes[2]),   // año
+                            Number(partes[1]) - 1, // mes (0-indexed)
+                            Number(partes[0])    // día
+                        );
+                        const ahora = new Date();
+                        const diffHorasFechaCompra = (ahora - fechaRealCompra) / (1000 * 60 * 60);
+
+                        // Si la fecha de la compra tiene más de 48h de antigüedad,
+                        // forzamos fechaCreacion a esa fecha para que no pueda anularse,
+                        // sin importar qué valor tenga fechaCreacion guardado.
+                        if (diffHorasFechaCompra >= 48) {
+                            fechaCreacionCorregida = fechaRealCompra.toISOString();
+                        }
+                    }
+                }
+
+                return {
+                    ...compra,
+                    fechaCreacion: fechaCreacionCorregida,
+                    movimientosInventario: compra.movimientosInventario || [],
+                    infoAnulacion: compra.infoAnulacion || null,
+                };
+            });
             setCompras(comprasParseadas);
         }
     }, []);
@@ -99,7 +125,7 @@ export function useShopping() {
     /**
      * Valida si una compra puede anularse según reglas de negocio
      * @param {Object} compra - La compra a validar
-     * @returns {Object} { puedeAnularse: boolean, razon: string }
+     * @returns {Object} { puedeAnularse: boolean, razon: string, horasRestantes: number }
      */
     const validarAnulacion = (compra) => {
         // Validación 1: Estado debe ser "Activo"
@@ -107,22 +133,26 @@ export function useShopping() {
             return {
                 puedeAnularse: false,
                 razon: "Solo se pueden anular compras con estado 'Activo'.",
+                horasRestantes: 0,
             };
         }
 
-        // Validación 2: Debe haber sido creada hace menos de 7 días
+        // Validación 2: Debe haber sido creada hace menos de 48 horas
         const fechaCreacion = new Date(compra.fechaCreacion);
         const ahora = new Date();
-        const diferenciaDias = Math.floor((ahora - fechaCreacion) / (1000 * 60 * 60 * 24));
+        const diferenciasMs = ahora - fechaCreacion;
+        const diferenciasHoras = diferenciasMs / (1000 * 60 * 60);
+        const horasRestantes = Math.max(0, 48 - Math.floor(diferenciasHoras));
 
-        if (diferenciaDias >= 7) {
+        if (diferenciasHoras >= 48) {
             return {
                 puedeAnularse: false,
-                razon: `Esta compra fue creada hace ${diferenciaDias} días. Solo se pueden anular compras menores a 7 días.`,
+                razon: "Ha pasado más de 48 horas desde la creación de esta compra. No se puede anular.",
+                horasRestantes: 0,
             };
         }
 
-        return { puedeAnularse: true, razon: "" };
+        return { puedeAnularse: true, razon: "", horasRestantes };
     };
 
     /**
