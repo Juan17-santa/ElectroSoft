@@ -4,6 +4,7 @@ import { useClientModal } from "../hooks/UseClientModal";
 import { useState } from "react";
 import Alert from "../../../components/ui/Alert";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
+import CustomSelect from "../../../components/ui/CustomSelect";
 
 export default function ClientModal({ onClose, onSave }) {
 
@@ -70,23 +71,23 @@ export default function ClientModal({ onClose, onSave }) {
 
                             {/* TIPO DOCUMENTO */}
                             <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
-                                    <IdCard size={16} />
-                                    <span>Tipo de documento *</span>
-                                </div>
-
-                                <select
-                                    name="tipoDocumento"
+                                <CustomSelect
+                                    label="Tipo de documento *"
+                                    icon={IdCard}
                                     value={formData.tipoDocumento}
-                                    onChange={handleChange}
-                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 
-                                    ${errors.tipoDocumento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                                >
-                                    <option value="" hidden>Seleccione un tipo</option>
-                                    <option value="NIT">NIT</option>
-                                    <option value="CC">C.C</option>
-                                    <option value="CE">C.E</option>
-                                </select>
+                                    onChange={(value) =>
+                                        handleChange({
+                                            target: { name: "tipoDocumento", value }
+                                        })
+                                    }
+                                    options={[
+                                        { value: "CC", label: "C.C" },
+                                        { value: "CE", label: "C.E" },
+                                        { value: "NIT", label: "NIT" },
+                                        { value: "Pasaporte", label: "Pasaporte" },
+                                    ]}
+                                    placeholder="Seleccione un tipo"
+                                />
 
                                 <ValidationMessage
                                     error={errors.tipoDocumento}

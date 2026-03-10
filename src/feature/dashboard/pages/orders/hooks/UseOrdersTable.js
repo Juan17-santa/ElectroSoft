@@ -41,17 +41,31 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
 
     // FILTRADO
     const filteredOrders = orders.filter(order => {
-
         const query = searchTerm?.toLowerCase() || "";
+
+        // Convertimos el total a string para poder buscar (ej: "50000")
+        const totalStr = order.total?.toString() || "";
+
+        // Formateamos Fecha de Creación (ej: "10/03/2026")
+        const fechaCreacionStr = order.fechaCreacion
+            ? new Date(order.fechaCreacion).toLocaleDateString('es-CO')
+            : "";
+
+        // Formateamos Fecha de Vencimiento (ej: "20/03/2026")
+        const fechaVencimientoStr = order.fechaVencimiento
+            ? new Date(order.fechaVencimiento).toLocaleDateString('es-CO')
+            : "";
 
         return (
             order.nombreCliente?.toLowerCase().includes(query) ||
             order.tipoDocumento?.toLowerCase().includes(query) ||
             order.documento?.toLowerCase().includes(query) ||
             order.formaPago?.toLowerCase().includes(query) ||
-            order.estado?.toLowerCase().includes(query)
+            order.estado?.toLowerCase().includes(query) ||
+            totalStr.includes(query) ||
+            fechaCreacionStr.includes(query) ||
+            fechaVencimientoStr.includes(query)
         );
-
     });
 
     // PAGINACIÓN
@@ -131,7 +145,7 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
         const storedOrders = JSON.parse(localStorage.getItem("orders")) || [];
 
         // Definir estado según la forma de pago
-        const nuevoEstado = order.formaPago === "Contado" ? "Finalizada" : "Vigente";
+        const nuevoEstado = order.formaPago === "Contado" ? "Finalizado" : "Vigente";
 
         const newSale = {
             id: Date.now(),

@@ -4,7 +4,7 @@ import PrimaryButton from "../../../components/ui/PrimaryButton";
 export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) {
     if (!isOpen || !order) return null;
 
-    const estadoFinal = order.formaPago === "Contado" ? "Finalizada" : "Vigente";
+    const estadoFinal = order.formaPago === "Contado" ? "Finalizado" : "Vigente";
 
     return (
         <>
@@ -90,7 +90,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                                     <BadgeCheck size={16} />
                                     <span>Estado final</span>
                                 </div>
-                                <div className={`rounded-xl px-4 py-3 text-sm font-bold shadow-inner border border-gray-200 ${estadoFinal === 'Finalizada' ? 'bg-green-50 text-green-600' : 'bg-orange-50 text-orange-600'}`}>
+                                <div className={`rounded-xl px-4 py-3 text-sm font-bold shadow-inner border border-gray-200 ${estadoFinal === 'Finalizado' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-500'}`}>
                                     {estadoFinal}
                                 </div>
                             </div>

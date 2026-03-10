@@ -1,11 +1,11 @@
-import { Boxes, CircleUser, FileText, Plus, X, Trash } from "lucide-react";
-import { CreditCard, ChevronDown } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Boxes, CircleUser, FileText, Plus, X, Trash, CreditCard } from "lucide-react";
+import { useState } from "react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Calendar from "../../../components/ui/Calendar";
 import AddProductModal from "../../../components/ui/AddProductModal";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import Pagination from "../../../components/ui/Pagination";
+import CustomSelect from "../../../components/ui/CustomSelect";
 
 export default function OrdersForm({
     formData,
@@ -28,9 +28,6 @@ export default function OrdersForm({
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
     const [openProductModal, setOpenProductModal] = useState(false);
 
-    const [showPago, setShowPago] = useState(false);
-    const pagoRef = useRef(null);
-
     // FORMATEADOR DE MONEDA
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', { // 'es-CO' PARA FORMATO COLOMBIANO (PUNTOS EN MILES)
@@ -38,17 +35,6 @@ export default function OrdersForm({
             minimumFractionDigits: 0,
         }).format(value);
     };
-
-    useEffect(() => {
-        const handler = (e) => {
-            if (pagoRef.current && !pagoRef.current.contains(e.target)) {
-                setShowPago(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, []);
 
     // FUNCION PARA ELIMINAR UN PRODUCTO DE LA TABLA AL PEDIR
     const handleRemoveProduct = (index) => {
@@ -175,64 +161,27 @@ export default function OrdersForm({
                         {/* TIPO DE PAGO */}
                         <div className="flex flex-col gap-2 w-52">
 
-                            {/* LABEL */}
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                                <CreditCard size={20} />
-                                <span>Tipo de pago *</span>
-                            </div>
+                            <CustomSelect
+                                label="Tipo de pago *"
+                                icon={CreditCard}
+                                value={formData.formaPago}
+                                onChange={(value) =>
+                                    handleChange({
+                                        target: { name: "formaPago", value }
+                                    })
+                                }
+                                options={[
+                                    { value: "Contado", label: "Contado" },
+                                    { value: "Credito", label: "Credito" }
+                                ]}
+                                placeholder="Seleccionar tipo"
+                            />
 
-                            {/* INPUT */}
-                            <div className="relative" ref={pagoRef}>
-
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPago(v => !v)}
-                                    className={`bg-gray-200 mb-4 rounded-xl px-4 py-3 text-sm shadow-md w-full text-left transition-all duration-300 
-                                        focus:outline-none focus:ring-2 cursor-pointer flex items-center justify-between gap-2
-                                        ${errors.formaPago ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                                >
-                                    <span>
-                                        {formData.formaPago || "Seleccionar tipo"}
-                                    </span>
-
-                                    <ChevronDown
-                                        size={16}
-                                        className={`transition duration-300 ${showPago ? "rotate-180 text-yellow-500" : "text-gray-400"}`}
-                                    />
-                                </button>
-
-                                {/* DROPDOWN */}
-                                {showPago && (
-                                    <div
-                                        className="absolute z-50 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-200 p-2 w-full"
-                                    >
-
-                                        {["Credito", "Contado"].map(pago => (
-                                            <button
-                                                key={pago}
-                                                type="button"
-                                                onClick={() => {
-                                                    handleChange({
-                                                        target: {
-                                                            name: "formaPago",
-                                                            value: pago
-                                                        }
-                                                    });
-                                                    setShowPago(false);
-                                                }}
-                                                className="w-full text-left px-3 py-2 rounded-lg hover:bg-yellow-100 text-sm transition"
-                                            >
-                                                {pago}
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                                <ValidationMessage
-                                    error={errors.formaPago}
-                                    success={formData.formaPago}
-                                    successMessage="Forma de pago válida"
-                                />
-                            </div>
+                            <ValidationMessage
+                                error={errors.formaPago}
+                                success={formData.formaPago}
+                                successMessage="Forma de pago válida"
+                            />
                         </div>
                     </div>
 
