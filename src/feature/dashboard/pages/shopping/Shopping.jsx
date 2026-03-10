@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Eye, Ban, ShoppingCart } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { useShopping } from "../shopping/hooks/useShopping";
@@ -6,28 +6,85 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from '../../components/ui/Pagination';
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from '../../components/ui/Alert';
+import { generateExcelReport } from '../../../../utils/ExcelReportGenerator';
 import CancellationModal from "../../components/ui/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
-import { generatePDFReport } from '../../../../utils/PDFReportGenerator';
-
 
 const ITEMS_PER_PAGE = 8;
+
+// ─── Botón anular con tooltip fixed (mismo patrón que CancellationInfoTooltip) ─
+function BanButton({ puedeAnularse, onClick }) {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef(null);
+
+    const handleMouseEnter = () => {
+        if (!puedeAnularse && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setTooltipPosition({
+                top: rect.top - 20,
+                left: rect.left - 270,
+            });
+            setShowTooltip(true);
+        }
+    };
+
+    return (
+        <div
+            className="relative inline-block"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={() => setShowTooltip(false)}
+        >
+            <button
+                ref={buttonRef}
+                onClick={puedeAnularse ? onClick : undefined}
+                className={`p-2 rounded-lg transition duration-300 ${
+                    puedeAnularse
+                        ? "bg-red-100 hover:bg-red-200 cursor-pointer"
+                        : "bg-red-100 opacity-40 cursor-not-allowed"
+                }`}
+            >
+                <Ban size={18} className="text-red-600" />
+            </button>
+
+            {showTooltip && (
+                <div
+                    className="fixed z-50 bg-gray-50 text-gray-400 rounded-xl shadow-2xl p-4 w-64 border border-gray-400"
+                    style={{
+                        top: `${tooltipPosition.top}px`,
+                        left: `${tooltipPosition.left}px`,
+                    }}
+                >
+                    <div className="space-y-3">
+                        <div>
+                            <p className="text-xs tracking-wide text-gray-500 font-semibold">
+                                Anulación no disponible
+                            </p>
+                        </div>
+                        <div className="border-t-2 border-yellow-300 pt-3">
+                            <p className="text-xs tracking-wide text-gray-500 font-semibold">
+                                Motivo
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1 leading-relaxed break-words">
+                                La compra ha superado el plazo de 48 horas y no se puede anular.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function Shopping() {
     const navigate = useNavigate();
     const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion } = useShopping();
     const [currentPage, setCurrentPage] = useState(1);
-    // MODAL DE CONFIRMACION
     const [confirmData, setConfirmData] = useState(null);
-    // MODAL DE ANULACION
     const [cancelModalData, setCancelModalData] = useState(null);
-
-    // ALERTAS
     const [alert, setAlert] = useState(null);
 
-    const showAlert = (type, message) => {
-        setAlert({ type, message });
-    };
+    const showAlert = (type, message) => setAlert({ type, message });
 
     // Paginación
     const comprasOrdenadas = [...comprasFiltradas].reverse();
@@ -45,50 +102,30 @@ export default function Shopping() {
 
     const parseMoney = (value) => {
         if (!value) return 0;
-
         if (typeof value === "number") return value;
-
-        return Number(
-            String(value)
-                .replace(/\$/g, "")
-                .replace(/\./g, "")
-                .replace(/,/g, "")
-                .trim()
-        ) || 0;
+        return Number(String(value).replace(/\$/g, "").replace(/\./g, "").replace(/,/g, "").trim()) || 0;
     };
+
     const handleGenerarReporte = () => {
         setConfirmData({
             type: "info",
             title: "Generar reporte",
             message: "¿Estás seguro de que deseas descargar el reporte de compras?",
             onConfirm: () => {
-
-                generatePDFReport({
+                generateExcelReport({
                     title: "Gestión de Compras - Reporte",
-                    fileName: "reporte_compras.pdf",
-                    columns: [
-                        "ID",
-                        "Número de Factura",
-                        "Fecha",
-                        "Proveedor",
-                        "Total",
-                        "Estado"
-                    ],
-                    data: comprasFiltradas.map((compra, index) => {
-                        const totalNumerico = parseMoney(compra.total);
-
-                        return [
-                            String(index + 1).padStart(2, '0'),
-                            compra.numeroFactura,
-                            compra.fechaCompra,
-                            compra.proveedor,
-                            `$${totalNumerico.toLocaleString()}`,
-                            compra.estado
-                        ];
-                    })
+                    fileName: "reporte_compras.xlsx",
+                    columns: ["ID", "Número de Factura", "Fecha", "Proveedor", "Total", "Estado"],
+                    data: comprasFiltradas.map((compra, index) => [
+                        String(index + 1).padStart(2, '0'),
+                        compra.numeroFactura,
+                        compra.fechaCompra,
+                        compra.proveedor,
+                        `$${parseMoney(compra.total).toLocaleString("es-CO")}`,
+                        compra.estado,
+                    ]),
                 });
-
-                showAlert("success", "Reporte generado correctamente.");
+                showAlert("success", "Reporte Excel generado correctamente.");
                 setConfirmData(null);
             }
         });
@@ -138,57 +175,50 @@ export default function Shopping() {
                                         </td>
                                     </tr>
                                 ) : (
-                                    comprasPagina.map((compra, index) => (
-                                        <tr key={compra.id}>
-                                            <td className="px-4 py-1 border-b border-gray-300">
-                                                {String((paginaActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, '0')}
-                                            </td>
-                                            <td className="px-4 py-1 border-b border-gray-300">{compra.numeroFactura}</td>
-                                            <td className="px-4 py-1 border-b border-gray-300">{compra.fechaCompra}</td>
-                                            <td className="px-4 py-1 border-b border-gray-300">{compra.proveedor}</td>
-                                            <td className="px-4 py-1 border-b border-gray-300">{compra.total}</td>
-                                            <td className="px-4 py-1 border-b border-gray-300">
-                                                <span
-                                                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${compra.estado === "Activo"
-                                                        ? "bg-green-100 text-green-700"
-                                                        : "bg-red-100 text-red-600"
-                                                        }`}
-                                                >
-                                                    {compra.estado}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-1 border-b border-gray-300">
-                                                <div className="flex justify-center gap-4">
-                                                    {/* BOTON VER */}
-                                                    <button
-                                                        onClick={() => navigate(`/dashboard/shopping/details/${compra.id}`)}
-                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
-                                                    >
-                                                        <Eye size={18} className="text-blue-600" />
-                                                    </button>
-
-                                                    {/* BOTON ANULAR O TOOLTIP */}
-                                                    {compra.estado === "Anulada" ? (
-                                                        <CancellationInfoTooltip cancelInfo={compra.infoAnulacion} />
-                                                    ) : (
+                                    comprasPagina.map((compra, index) => {
+                                        const validacion = validarAnulacion(compra);
+                                        return (
+                                            <tr key={compra.id}>
+                                                <td className="px-4 py-1 border-b border-gray-300">
+                                                    {String((paginaActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, '0')}
+                                                </td>
+                                                <td className="px-4 py-1 border-b border-gray-300">{compra.numeroFactura}</td>
+                                                <td className="px-4 py-1 border-b border-gray-300">{compra.fechaCompra}</td>
+                                                <td className="px-4 py-1 border-b border-gray-300">{compra.proveedor}</td>
+                                                <td className="px-4 py-1 border-b border-gray-300">{compra.total}</td>
+                                                <td className="px-4 py-1 border-b border-gray-300">
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                        compra.estado === "Activo"
+                                                            ? "bg-green-100 text-green-700"
+                                                            : "bg-red-100 text-red-600"
+                                                    }`}>
+                                                        {compra.estado}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-1 border-b border-gray-300">
+                                                    <div className="flex justify-center gap-4">
+                                                        {/* BOTON VER */}
                                                         <button
-                                                            onClick={() => {
-                                                                const validacion = validarAnulacion(compra);
-                                                                if (validacion.puedeAnularse) {
-                                                                    setCancelModalData(compra);
-                                                                } else {
-                                                                    showAlert("error", validacion.razon);
-                                                                }
-                                                            }}
-                                                            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition duration-300 cursor-pointer"
+                                                            onClick={() => navigate(`/dashboard/shopping/details/${compra.id}`)}
+                                                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
                                                         >
-                                                            <Ban size={18} className="text-red-600" />
+                                                            <Eye size={18} className="text-blue-600" />
                                                         </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+
+                                                        {/* BOTON ANULAR O TOOLTIP DE ANULADA */}
+                                                        {compra.estado === "Anulada" ? (
+                                                            <CancellationInfoTooltip cancelInfo={compra.infoAnulacion} />
+                                                        ) : (
+                                                            <BanButton
+                                                                puedeAnularse={validacion.puedeAnularse}
+                                                                onClick={() => setCancelModalData(compra)}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -204,6 +234,7 @@ export default function Shopping() {
                     />
                 </div>
             </div>
+
             {/* MODAL DE CONFIRMACION */}
             {confirmData && (
                 <ConfirmModal
@@ -220,8 +251,8 @@ export default function Shopping() {
                 <CancellationModal
                     title="Anular Compra"
                     infoData={[
-                        { label: "Factura", value: cancelModalData?.numeroFactura ?? "F-00123" },
-                        { label: "Proveedor", value: cancelModalData?.proveedor ?? "Proveedor Ejemplo" }
+                        { label: "Factura", value: cancelModalData?.numeroFactura ?? "" },
+                        { label: "Proveedor", value: cancelModalData?.proveedor ?? "" }
                     ]}
                     placeholder="Describe el motivo de la anulación..."
                     minLength={20}
@@ -242,7 +273,6 @@ export default function Shopping() {
                     onClose={() => setAlert(null)}
                 />
             )}
-
         </>
     );
 }

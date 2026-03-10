@@ -603,7 +603,7 @@ export default function Dashboard() {
                 {/* KPIs con imagen de fondo */}
                 <div className="relative rounded-3xl overflow-hidden flex-shrink-0 shadow-md"
                     style={{
-                        backgroundImage:    'url("/background-shopping-details.png")',
+                        backgroundImage:    'url("/background-shopping-details.jpg")',
                         backgroundSize:     "cover",
                         backgroundPosition: "center",
                         backgroundRepeat:   "no-repeat",
