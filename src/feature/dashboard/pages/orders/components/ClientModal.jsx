@@ -1,4 +1,4 @@
-import { X, User, Mail, Phone, FileText, IdCard, CheckCircle2, Import } from "lucide-react";
+import { X, User, Mail, Phone, FileText, IdCard } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { useClientModal } from "../hooks/UseClientModal";
 import { useState } from "react";
@@ -6,11 +6,13 @@ import Alert from "../../../components/ui/Alert";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
 
+// COMPONENTE PRINCIPAL DE LA MODAL DE CREAR CLIENTE
 export default function ClientModal({ onClose, onSave }) {
 
     // ESTADO PARA LA ALERTA
     const [alert, setAlert] = useState(null);
 
+    // CONFIGURACIÓN DEL HOOK PERSONALIZADO PARA EL FORMULARIO
     const {
         formData,
         errors,
@@ -25,6 +27,7 @@ export default function ClientModal({ onClose, onSave }) {
         // ENVIAMOS LOS DATOS REALES AL PADRE
         if (onSave) onSave(clienteRecibido);
 
+        // QUE TARDE 4 SEGUNDOS EN CERRAR LA ALERTA
         setTimeout(() => {
             onClose();
         }, 4000);

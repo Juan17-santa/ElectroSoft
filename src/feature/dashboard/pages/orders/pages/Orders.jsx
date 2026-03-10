@@ -18,21 +18,21 @@ export default function Orders() {
     // ESTADO DEL BUSCADOR
     const [search, setSearch] = useState("");
 
-    // ESTADO PARA PROCESAR VENTA (MODAL Y SELECCION)
+    // ESTADO PARA PROCESAR VENTA
     const [isSaleModalOpen, setIsSaleModalOpen] = useState(false);
     const [orderToProcess, setOrderToProcess] = useState(null);
 
-    // FUNCION PAGINADOR, PAGINA ACTUAL DEL PAGINADOR
+    // FUNCION PAGINADOR
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
     // ESTADO ALERTA
     const [alert, setAlert] = useState(null);
 
-    // ESTADO PARA MODAL DE EXPORTACIÓN
+    // ESTADO PARA CONTROLAR LA MODAL DE CONFIRMACIÓN DE EXPORTACIÓN
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-    // FORMATEADOR DE PLATA
+    // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA COLOMBIANA
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', {
             style: 'currency',
@@ -57,7 +57,7 @@ export default function Orders() {
     // FUNCION PARA CONFIRMAR LA VENTA Y REDIRIGIR
     const handleConfirmSale = (order) => {
         try {
-            // EJECUTAR LOGICA DE GUARDADO Y ELIMINACION
+            // EJECUTA LA LÓGICA DEL HOOK (GUARDAR EN VENTAS Y ELIMINAR DE PEDIDOS)
             processOrderToSale(order);
             setIsSaleModalOpen(false);
 
@@ -82,21 +82,33 @@ export default function Orders() {
 
     // ESTADO PARA CANCELAR UN PEDIDO
     const [orderToCancel, setOrderToCancel] = useState(null);
+
+    // FUNCION PARA ANULAR UN PEDIDO Y DEVOLVER STOCK
     const handleCancelOrder = ({ motivo, fechaAnulacion }) => {
         if (!orderToCancel) return;
 
-        cancelOrder(orderToCancel, motivo, fechaAnulacion);
+        try {
+            // LLAMADO A LA FUNCIÓN DEL HOOK PARA ACTUALIZAR STOCK Y ESTADO
+            cancelOrder(orderToCancel, motivo, fechaAnulacion);
 
-        setOrderToCancel(null);
+            setOrderToCancel(null);
 
-        setAlert({
-            type: "success",
-            message: "El pedido fue anulado y los productos regresaron al stock."
-        });
+            // MOSTRAR ALERTA DE EXITO
+            setAlert({
+                type: "success",
+                message: "El pedido fue anulado y los productos regresaron al stock."
+            });
 
-        setTimeout(() => {
-            setAlert(null);
-        }, 2000);
+            // REDIRIGIR TRAS 2 SEGUNDOS PARA VER LA ALERTA
+            setTimeout(() => {
+                setAlert(null);
+            }, 2000);
+        } catch (error) {
+            setAlert({
+                type: "error",
+                message: "No se pudo anular el pedido correctamente.."
+            });
+        }
     };
 
     // ABRIR LA MODAL DE CONFIRMAR EL GENERAR REPORTE
@@ -163,7 +175,7 @@ export default function Orders() {
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Control de pedidos</p>
 
-                {/* BUSCADOR Y BOTON CREAR */}
+                {/* BARRA DE BÚSQUEDA Y ACCIONES PRINCIPALES */}
                 <SearchBar
                     searchTerm={search}
                     onSearchChange={(e) => setSearch(e.target.value)}
@@ -192,7 +204,7 @@ export default function Orders() {
                 </div>
             </div>
 
-            {/* MODAL PARA LA EXPORTACION DE PEDIDOS */}
+            {/* MODAL DE CONFIRMACION PARA LA EXPORTACION DE DATOS */}
             {isExportModalOpen && (
                 <ConfirmModal
                     type="info"
@@ -203,7 +215,7 @@ export default function Orders() {
                 />
             )}
 
-            {/* MODAL DE CONFIRMACION PARA PROCESAR VENTA (NUEVA) */}
+            {/* MODAL PARA PROCESAR EL PEDIDO COMO UNA VENTA FINAL */}
             <ConfirmSaleModal
                 isOpen={isSaleModalOpen}
                 onClose={() => setIsSaleModalOpen(false)}

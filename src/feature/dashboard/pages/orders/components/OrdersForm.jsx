@@ -7,6 +7,7 @@ import ValidationMessage from "../../../components/ui/ValidationMessage";
 import Pagination from "../../../components/ui/Pagination";
 import CustomSelect from "../../../components/ui/CustomSelect";
 
+// COMPONENTE PRINCIPAL DEL FORMULARIO DE PEDIDOS
 export default function OrdersForm({
     formData,
     errors,
@@ -22,25 +23,26 @@ export default function OrdersForm({
     setCurrentPage,
     totalPages,
     indexOfFirstItem,
-    itemsPerPage
+    itemsPerPage,
+    paymentOptions
 }) {
 
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
     const [openProductModal, setOpenProductModal] = useState(false);
 
-    // FORMATEADOR DE MONEDA
+    // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA (PESOS COLOMBIANOS)
     const formatCurrency = (value) => {
-        return new Intl.NumberFormat('es-CO', { // 'es-CO' PARA FORMATO COLOMBIANO (PUNTOS EN MILES)
+        return new Intl.NumberFormat('es-CO', {
             style: 'decimal',
             minimumFractionDigits: 0,
         }).format(value);
     };
 
-    // FUNCION PARA ELIMINAR UN PRODUCTO DE LA TABLA AL PEDIR
+    // FUNCION PARA ELIMINAR UN PRODUCTO SELECCIONADO DE LA LISTA
     const handleRemoveProduct = (index) => {
         const nuevosProductos = formData.productos.filter((_, i) => i !== index);
 
-        // Llamamos a tu handleChange pasándole el nuevo array
+        // ACTUALIZACIÓN DEL ESTADO GLOBAL MEDIANTE EL MANEJADOR DE CAMBIOS
         handleChange({
             target: {
                 name: "productos",
@@ -49,22 +51,21 @@ export default function OrdersForm({
         });
     };
 
-    // FUNCION QUE CALCULA EL STOCK DEL MODAL
+    // FUNCION QUE CALCULA EL STOCK DISPONIBLE DEL MODAL
     const getAvailableStock = (product) => {
 
-        // BUSCAR SI EL PRODUCTO YA ESTA EN LA ORDEN
+        // BUSCAR SI EL PRODUCTO YA ESTA EN EL PEDIDO
         const productInOrder = formData.productos?.find(p => p.id === product.id)
 
         // CANTIDAD YA USADA
         const usedStock = productInOrder ? productInOrder.cantidad : 0
 
-        // STOCK DISPONIBLE
+        // RETORNAR LA DIFERENCIA ENTRE EL STOCK TOTAL Y EL USADO
         return product.stock - usedStock
     }
 
     return (
         <>
-            {/* Formulario principal */}
             <form onSubmit={handleSubmit}>
                 <div className="flex flex-col items-center gap-12 mt-6">
 
@@ -94,7 +95,7 @@ export default function OrdersForm({
                             />
                         </div>
 
-                        {/* CLIENTE (AUTO) */}
+                        {/* CLIENTE (AUTOMATICO) */}
                         <div className="flex flex-col gap-3 w-80">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <CircleUser size={16} />
@@ -109,7 +110,7 @@ export default function OrdersForm({
                                     className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full"
                                 />
 
-                                {/* BOTON CREAR CLIENTE */}
+                                {/* BOTON + PARA CREAR CLIENTE */}
                                 <button
                                     type="button"
                                     onClick={onOpenClientModal}
@@ -126,7 +127,6 @@ export default function OrdersForm({
 
                         {/* FECHA PEDIDO */}
                         <div className="flex flex-col gap-3 w-52">
-                            {/* Aquí va tu Calendar */}
                             <Calendar
                                 fechaISO={formData.fechaPedido}
                                 onFechaChange={(fecha) =>
@@ -147,7 +147,7 @@ export default function OrdersForm({
                         <div className="flex flex-col gap-3 w-52">
                             <Calendar
                                 fechaISO={formData.fechaVencimiento}
-                                onFechaChange={() => { }}   // no hace nada
+                                onFechaChange={() => { }}
                                 label="Fecha vencimiento"
                                 className="
                                     w-full
@@ -162,7 +162,7 @@ export default function OrdersForm({
                         <div className="flex flex-col gap-2 w-52">
 
                             <CustomSelect
-                                label="Tipo de pago *"
+                                label="Forma de pago *"
                                 icon={CreditCard}
                                 value={formData.formaPago}
                                 onChange={(value) =>
@@ -170,10 +170,7 @@ export default function OrdersForm({
                                         target: { name: "formaPago", value }
                                     })
                                 }
-                                options={[
-                                    { value: "Contado", label: "Contado" },
-                                    { value: "Credito", label: "Credito" }
-                                ]}
+                                options={paymentOptions}
                                 placeholder="Seleccionar tipo"
                             />
 
@@ -185,8 +182,8 @@ export default function OrdersForm({
                         </div>
                     </div>
 
-                    {/* ================= PRODUCTOS ================= */}
-                    {/* SECCIÓN PRODUCTOS */}
+                    {/* ================= TERCERA FILA ================= */}
+                    {/* SECCIÓN DE PRODUCTOS */}
                     <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-3xl">
 
                         {/* ENCABEZADO */}
@@ -227,7 +224,6 @@ export default function OrdersForm({
                                         </tr>
                                     ) : (
                                         currentProducts.map((producto, index) => {
-                                            // Calculamos el índice real en el array original para eliminarlo correctamente
                                             const realIndex = indexOfFirstItem + index;
 
                                             return (
@@ -253,7 +249,7 @@ export default function OrdersForm({
                             </table>
                         </div>
 
-                        {/* VALIDACIO DE PRODUCTOS */}
+                        {/* VALIDACION DE PRODUCTOS */}
                         <ValidationMessage
                             error={errors.productos}
                         />
@@ -283,7 +279,6 @@ export default function OrdersForm({
 
                     {/* ================= BOTONES ================= */}
                     <div className="flex justify-end w-full gap-6">
-                        {/* Botón Cancelar */}
                         <button
                             type="button"
                             onClick={onCancel}
@@ -293,10 +288,9 @@ export default function OrdersForm({
                             Cancelar
                         </button>
 
-                        {/* Botón Principal (Crear) */}
                         <PrimaryButton
                             type="submit"
-                            disabled={Object.values(errors).some(error => error)} // Desactiva si hay errores
+                            disabled={Object.values(errors).some(error => error)}
                         >
                             {buttonText}
                         </PrimaryButton>

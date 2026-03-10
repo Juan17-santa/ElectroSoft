@@ -1,9 +1,13 @@
 import { X, CheckCircle2, Info, User, FileText, CreditCard, BadgeCheck } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 
+// COMPONENTE PRINCIPAL DE LA MODAL DE CONFIRMACIÓN
 export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) {
+
+    // VALIDACIÓN DE APERTURA Y EXISTENCIA DE DATOS
     if (!isOpen || !order) return null;
 
+    // DETERMINACIÓN DEL ESTADO SEGÚN LA FORMA DE PAGO
     const estadoFinal = order.formaPago === "Contado" ? "Finalizado" : "Vigente";
 
     return (
@@ -90,7 +94,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                                     <BadgeCheck size={16} />
                                     <span>Estado final</span>
                                 </div>
-                                <div className={`rounded-xl px-4 py-3 text-sm font-bold shadow-inner border border-gray-200 ${estadoFinal === 'Finalizado' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-500'}`}>
+                                <div className={`rounded-xl px-4 py-3 text-sm font-semibold shadow-inner border border-gray-200 ${estadoFinal === 'Finalizado' ? 'bg-green-50 text-green-600' : 'bg-yellow-50 text-yellow-500'}`}>
                                     {estadoFinal}
                                 </div>
                             </div>
@@ -100,7 +104,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                         {/* TOTAL */}
                         <div className="bg-gray-50 p-5 rounded-2xl border-2 border-dashed border-gray-200 flex justify-between items-center">
                             <span className="text-gray-500 font-semibold uppercase text-xs tracking-wider">Total a facturar:</span>
-                            <span className="text-3xl font-black text-gray-800">
+                            <span className="text-2xl font-bold">
                                 ${order.total?.toLocaleString()}
                             </span>
                         </div>

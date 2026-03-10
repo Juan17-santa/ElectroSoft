@@ -1,27 +1,7 @@
-/*
-OrdersTable
-
-Componente reutilizable que renderiza la tabla
-de pedidos dentro del dashboard.
-
-Este componente SOLO maneja la parte visual (UI).
-La lógica (obtención de datos, búsqueda, navegación,
-etc.) se recibe desde el componente padre mediante props.
-
-Responsabilidades:
-✔ Renderizar encabezados
-✔ Mostrar listado de pedidos
-✔ Mostrar mensaje cuando no existen registros
-✔ Ejecutar acción de ver detalle
-
-No contiene lógica de negocio.
-No realiza llamadas a servicios.
-No maneja estado.
-*/
-
 import { Ban, CircleCheck, Eye } from "lucide-react";
 import CancellationInfoTooltip from "../../../components/ui/CancellationInfoTooltip";
 
+// COMPONENTE PARA RENDERIZAR LA TABLA DE PEDIDOS
 export default function OrdersTable({
     data,
     onDetails,
@@ -34,7 +14,7 @@ export default function OrdersTable({
 
                 <table className="w-full text-sm table-fixed">
 
-                    {/* ================= HEADER ================= */}
+                    {/* ============ ENCABEZADO DE LA TABLA ============ */}
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
                             <th className="px-4 py-2 w-16 font-semibold">ID</th>
@@ -48,9 +28,10 @@ export default function OrdersTable({
                         </tr>
                     </thead>
 
-                    {/* ================= BODY ================= */}
+                    {/* ============ CUERPO DE LA TABLA ============ */}
                     <tbody className="bg-white text-gray-700">
 
+                        {/* RENDERIZADO CONDICIONAL: SI NO HAY PEDIDOS EN LA DATA */}
                         {data.length === 0 ? (
                             <tr>
                                 <td colSpan="8" className="text-center py-4 text-gray-500">
@@ -58,6 +39,7 @@ export default function OrdersTable({
                                 </td>
                             </tr>
                         ) : (
+                            // MAPEADO DE LOS PEDIDOS EXISTENTES
                             data.map((order, index) => (
                                 <tr key={order.id} className="border-b border-gray-200">
 
@@ -66,7 +48,7 @@ export default function OrdersTable({
                                         {index + 1}
                                     </td>
 
-                                    {/* CLIENTE */}
+                                    {/* CLIENTE (NOMBRE Y DOCUMENTO) */}
                                     <td className="px-4 py-2">
                                         <div className="flex flex-col">
                                             <span className="font-medium">
@@ -97,7 +79,7 @@ export default function OrdersTable({
                                             : "-"}
                                     </td>
 
-                                    {/* TIPO PAGO */}
+                                    {/* FORMA PAGO */}
                                     <td className="px-4 py-2">
                                         {order.formaPago || "-"}
                                     </td>
@@ -120,7 +102,7 @@ export default function OrdersTable({
                                     <td className="px-4 py-2">
                                         <div className="flex justify-center gap-2">
 
-                                            {/* PROCESAR VENTA SI EL PEDIDO NO ESTA ANULADO */}
+                                            {/* PROCESAR VENTA (DESHABILITADO SI EL PEDIDO ESTÁ ANULADO) */}
                                             <button
                                                 onClick={() => onProcess(order)}
                                                 disabled={order.estado === "Anulado"}
@@ -152,7 +134,7 @@ export default function OrdersTable({
                                                 <Eye size={18} className="text-blue-600" />
                                             </button>
 
-                                            {/* ANULAR O INFO */}
+                                            {/* BOTÓN DE ANULAR O TOOLTIP DE INFO SI YA ESTÁ ANULADO */}
                                             {order.estado !== "Anulado" ? (
                                                 <button
                                                     onClick={() => onCancel(order)}
