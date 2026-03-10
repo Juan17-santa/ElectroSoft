@@ -49,7 +49,7 @@ export default function ShoppingDetails() {
                 <div
                     className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-[584px]"
                     style={{
-                        backgroundImage: 'url("/background-shopping-details.png")',
+                        backgroundImage: 'url("/background-shopping-details.jpg")',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat'
