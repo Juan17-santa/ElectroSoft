@@ -1,22 +1,20 @@
-import { Info } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { formatCOP} from "../shopping/helpers/shoppingHelpers";
-import Pagination from '../../components/ui/Pagination';
+import { Info } from "lucide-react";
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { formatCOP } from "../shopping/helpers/shoppingHelpers";
+import { ServicesShopping } from "../shopping/services/ServicesShopping";
+import Pagination from "../../components/ui/Pagination";
 
 const ITEMS_PER_PAGE = 8;
 
 export default function ShoppingDetails() {
-    const navigate = useNavigate();
-    const { id } = useParams();
+    const navigate     = useNavigate();
+    const { id }       = useParams();
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Buscar la compra en localStorage por id
-    const stored = localStorage.getItem("compras");
-    const compras = stored ? JSON.parse(stored) : [];
-    const compra = compras.find((c) => String(c.id) === String(id));
+    // #6: Lectura a través de la capa de servicio, no directo a localStorage
+    const compra = ServicesShopping.getById(id);
 
-    // Si no se encuentra la compra
     if (!compra) {
         return (
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner items-center justify-center">
@@ -31,10 +29,8 @@ export default function ShoppingDetails() {
         );
     }
 
-    const productos = compra.productos || [];
-
-    // Paginación
-    const totalPages = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
+    const productos   = compra.productos || [];
+    const totalPages  = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
     const productosPagina = productos.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
@@ -50,12 +46,11 @@ export default function ShoppingDetails() {
                     className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-[584px]"
                     style={{
                         backgroundImage: 'url("/background-shopping-details.jpg")',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'no-repeat'
+                        backgroundSize:     "cover",
+                        backgroundPosition: "center",
+                        backgroundRepeat:   "no-repeat",
                     }}
                 >
-                    {/* Capa de transparencia para la img */}
                     <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
 
                     <div className="relative z-10 flex flex-col gap-6">
@@ -71,7 +66,7 @@ export default function ShoppingDetails() {
                         {/* CONTENEDOR BLANCO */}
                         <div className="bg-gray-50 rounded-2xl p-6 shadow-md">
 
-                            {/* INFORMACIÓN DE LA COMPRA — 6 datos en una fila */}
+                            {/* ENCABEZADO DE LA COMPRA */}
                             <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
 
                                 <div>
@@ -86,15 +81,17 @@ export default function ShoppingDetails() {
 
                                 <div>
                                     <p className="text-sm text-yellow-400 mb-1">Proveedor</p>
+                                    {/* #7: Mostrar nombre; el ID queda en compra.proveedorId para trazabilidad */}
                                     <p className="text-sm font-semibold text-gray-800">{compra.proveedor}</p>
                                 </div>
 
                                 <div>
                                     <p className="text-sm text-yellow-400 mb-1">Estado</p>
-                                    <span className={`inline-block px-2 py-0.5 rounded-full text-sm font-medium ${compra.estado === "Activo"
+                                    <span className={`inline-block px-2 py-0.5 rounded-full text-sm font-medium ${
+                                        compra.estado === "Activo"
                                             ? "bg-green-100 text-green-700"
                                             : "bg-red-100 text-red-600"
-                                        }`}>
+                                    }`}>
                                         {compra.estado}
                                     </span>
                                 </div>
@@ -110,10 +107,11 @@ export default function ShoppingDetails() {
                                 </div>
 
                             </div>
-                            {/* TABLA */}
+
+                            {/* TABLA DE PRODUCTOS */}
                             <div>
                                 <h3 className="text-base font-semibold mb-4 text-gray-800">
-                                    Tabla de productos de la Compra
+                                    Productos de la Compra
                                 </h3>
 
                                 <div className="p-0.5 rounded-2xl bg-gradient-to-r from-yellow-400 to-white">
@@ -124,9 +122,9 @@ export default function ShoppingDetails() {
                                                     <th className="px-4 py-2 font-semibold">#</th>
                                                     <th className="px-4 py-2 font-semibold">Nombre</th>
                                                     <th className="px-4 py-2 font-semibold">Cantidad</th>
-                                                    <th className="px-4 py-2 font-semibold text-center">Precio unitario</th>
-                                                    <th className="px-4 py-2 font-semibold text-center">Coste</th>
-                                                    <th className="px-4 py-2 font-semibold text-center">Precio Venta</th>
+                                                    <th className="px-4 py-2 font-semibold text-center">Catálogo</th>
+                                                    <th className="px-4 py-2 font-semibold text-center">Coste compra</th>
+                                                    <th className="px-4 py-2 font-semibold text-center">Precio venta</th>
                                                     <th className="px-4 py-2 font-semibold text-center">Subtotal</th>
                                                 </tr>
                                             </thead>
@@ -145,7 +143,7 @@ export default function ShoppingDetails() {
                                                             </td>
                                                             <td className="px-4 py-1 border-b border-gray-300">{producto.nombre}</td>
                                                             <td className="px-4 py-1 border-b border-gray-300">{producto.cantidad}</td>
-                                                            <td className="px-4 py-1 border-b border-gray-300 text-center">
+                                                            <td className="px-4 py-1 border-b border-gray-300 text-center text-gray-400">
                                                                 {formatCOP(producto.precio)}
                                                             </td>
                                                             <td className="px-4 py-1 border-b border-gray-300 text-center text-gray-600">
@@ -165,7 +163,6 @@ export default function ShoppingDetails() {
                                     </div>
                                 </div>
 
-                                {/* PAGINADOR — solo si hay más de 3 productos */}
                                 {totalPages > 1 && (
                                     <div className="flex justify-end mt-3">
                                         <Pagination
@@ -178,11 +175,10 @@ export default function ShoppingDetails() {
                             </div>
 
                         </div>
-
                     </div>
                 </div>
 
-                {/* BOTÓN */}
+                {/* BOTÓN VOLVER */}
                 <div className="flex justify-end">
                     <button
                         onClick={() => navigate("/dashboard/shopping")}

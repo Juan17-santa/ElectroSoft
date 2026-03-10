@@ -29,31 +29,33 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
     const [showCreateProductModal, setShowCreateProductModal] = useState(false);
     const [alert, setAlert] = useState(null);
 
-    const [modalProducto, setModalProducto] = useState("");
-    const [modalCantidad, setModalCantidad] = useState("");
-    const [modalPrecio, setModalPrecio] = useState("");
+    const [modalProducto,      setModalProducto]      = useState("");
+    const [modalCantidad,      setModalCantidad]      = useState("");
+    const [modalPrecio,        setModalPrecio]        = useState("");
     const [modalCosteProducto, setModalCosteProducto] = useState("");
-    const [modalPrecioVenta, setModalPrecioVenta] = useState("");
+    const [modalPrecioVenta,   setModalPrecioVenta]   = useState("");
 
     // Tocados — para no mostrar error antes de interactuar
     const [tocados, setTocados] = useState({
-        producto: false,
-        cantidad: false,
-        precio: false,
+        producto:      false,
+        cantidad:      false,
+        precio:        false,
         costeProducto: false,
-        precioVenta: false,
+        precioVenta:   false,
     });
 
-    // ─── Cargar productos desde localStorage ─────────────────────────────────
+    // ─── Cargar productos ─────────────────────────────────────────────────────
     useEffect(() => {
         const data = ServicesProducts.get().filter((p) => p.estado !== false);
         setProductosList(data);
     }, [showCreateProductModal]);
 
     // ─── Producto seleccionado (derivado) ─────────────────────────────────────
-    const productoSeleccionado = productosList.find((p) => String(p.id) === String(modalProducto));
+    const productoSeleccionado = productosList.find(
+        (p) => String(p.id) === String(modalProducto)
+    );
 
-    // ─── Al seleccionar producto → autocargar precio y re-validar cantidad ────
+    // ─── Al seleccionar producto → autocargar precio ──────────────────────────
     const handleSelectProducto = (id) => {
         setModalProducto(id);
         setTocados((t) => ({ ...t, producto: true }));
@@ -67,29 +69,28 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
             setModalCosteProducto("");
         }
 
-        // Si ya había una cantidad escrita, forzar re-validación al cambiar producto
         if (modalCantidad) {
             setTocados((t) => ({ ...t, cantidad: true }));
         }
     };
 
     // ─── Validaciones ─────────────────────────────────────────────────────────
+
     const validarProducto = (val) => {
         if (!val) return { valido: false, mensaje: "Selecciona un producto." };
         return { valido: true, mensaje: "" };
     };
 
+    /**
+     * #1: En una COMPRA no se bloquea el envío por superar el stock actual —
+     * el objetivo de la compra es precisamente AUMENTAR el inventario.
+     * El indicador de stock abajo sigue visible como contexto informativo.
+     */
     const validarCantidad = (val) => {
         if (!val) return { valido: false, mensaje: "Ingresa la cantidad." };
         const cantidad = parseInt(val);
-        if (isNaN(cantidad) || cantidad <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." };
-        // Validación de stock en tiempo real
-        if (productoSeleccionado && cantidad > productoSeleccionado.stock) {
-            return {
-                valido: false,
-                mensaje: `Supera el stock disponible (${productoSeleccionado.stock} unid.).`,
-            };
-        }
+        if (isNaN(cantidad) || cantidad <= 0)
+            return { valido: false, mensaje: "Debe ser mayor a 0." };
         return { valido: true, mensaje: "" };
     };
 
@@ -120,30 +121,26 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
     const estadoCosteProducto = tocados.costeProducto ? validarCosteProducto(modalCosteProducto) : null;
     const estadoPrecioVenta   = tocados.precioVenta   ? validarPrecioVenta(modalPrecioVenta)      : null;
 
-    // ─── Indicador visual de stock ────────────────────────────────────────────
+    // ─── Indicador de stock (solo informativo, no bloquea) ────────────────────
     const renderStockIndicator = () => {
         if (!productoSeleccionado) return null;
-        const stock = productoSeleccionado.stock;
+        const stock    = productoSeleccionado.stock;
         const cantidad = parseInt(modalCantidad) || 0;
-        const excede = cantidad > stock;
 
         return (
-            <div className={`flex items-center justify-between rounded-lg px-3 py-1.5 text-xs mt-1 ${
-                excede ? "bg-red-50 border border-red-200" : "bg-gray-50 border border-gray-200"
-            }`}>
-                <span className={excede ? "text-red-500 font-medium" : "text-gray-500"}>
-                    Stock disponible:
-                </span>
-                <span className={`font-bold ${excede ? "text-red-600" : "text-gray-700"}`}>
-                    {stock} unidades
-                </span>
+            <div className="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs mt-1 bg-gray-50 border border-gray-200">
+                <span className="text-gray-500">Stock actual en sistema:</span>
+                <span className="font-bold text-gray-700">{stock} unidades</span>
             </div>
         );
     };
 
     // ─── Submit ───────────────────────────────────────────────────────────────
     const handleSubmit = () => {
-        setTocados({ producto: true, cantidad: true, precio: true, costeProducto: true, precioVenta: true });
+        setTocados({
+            producto: true, cantidad: true, precio: true,
+            costeProducto: true, precioVenta: true,
+        });
 
         const vProd  = validarProducto(modalProducto);
         const vCant  = validarCantidad(modalCantidad);
@@ -161,20 +158,21 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
             return;
         }
 
-        const found       = productosList.find((p) => String(p.id) === String(modalProducto));
-        const cantidad    = parseInt(modalCantidad);
-        const precio      = parseCOP(modalPrecio);
+        const found         = productosList.find((p) => String(p.id) === String(modalProducto));
+        const cantidad      = parseInt(modalCantidad);
+        const precio        = parseCOP(modalPrecio);
         const costeProducto = parseCOP(modalCosteProducto);
-        const precioVenta = parseCOP(modalPrecioVenta);
+        const precioVenta   = parseCOP(modalPrecioVenta);
 
         onAnadir({
             id:             found?.id ?? Date.now(),
             nombre:         found?.nombre ?? modalProducto,
             cantidad,
-            precio,
-            costeProducto,
-            precioVenta,
-            subtotal:       cantidad * precio,
+            precio,         // Precio vigente en catálogo (solo referencia/display)
+            costeProducto,  // Lo que se paga al proveedor en esta compra
+            precioVenta,    // Nuevo precio de venta que se actualizará en catálogo
+            // #3: El subtotal del producto = cantidad × costeProducto
+            subtotal:       cantidad * costeProducto,
         });
     };
 
@@ -196,7 +194,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                     <div className="flex items-start justify-between mb-1">
                         <div>
                             <p className="text-base font-semibold">
-                                Crear nuevo <span className="text-yellow-400">pedido</span>
+                                Añadir <span className="text-yellow-400">producto</span> a la compra
                             </p>
                             <p className="text-xs text-gray-500 mt-0.5">
                                 Complete todos los campos del formulario
@@ -217,7 +215,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                                 <Box size={20} />
-                                <span>Productos *</span>
+                                <span>Producto *</span>
                             </div>
                             <div className="flex items-center gap-2 w-full">
                                 <select
@@ -257,7 +255,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                             <input
                                 type="number"
                                 min="1"
-                                placeholder="Digite la cantidad"
+                                placeholder="Unidades a comprar"
                                 value={modalCantidad}
                                 onChange={(e) => {
                                     setModalCantidad(e.target.value);
@@ -272,38 +270,37 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                                             : "ring-1 ring-red-300"
                                     }`}
                             />
-                            {/* INDICADOR DE STOCK — siempre visible al elegir producto */}
+                            {/* Indicador informativo de stock — no bloquea la compra */}
                             {renderStockIndicator()}
                             <FieldStatus estado={estadoCantidad} />
                         </div>
 
-                        {/* PRECIO PRODUCTO — autocargado, no editable */}
+                        {/* PRECIO PRODUCTO — autocargado, solo lectura */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                                 <DollarSign size={16} />
-                                <span>Precio Producto *</span>
+                                <span>Precio en catálogo</span>
                             </div>
                             <input
                                 type="number"
-                                min="1"
-                                placeholder="ej. 100000"
                                 readOnly
                                 value={modalPrecio}
+                                placeholder="Se carga al seleccionar"
                                 className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm cursor-not-allowed opacity-75"
                             />
-                            <FieldStatus estado={estadoPrecio} />
+                            <p className="text-xs text-gray-400 -mt-1">Precio actual del producto (referencia)</p>
                         </div>
 
                         {/* COSTE PRODUCTO */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                                 <DollarSign size={16} />
-                                <span>Coste Producto *</span>
+                                <span>Coste de compra *</span>
                             </div>
                             <input
                                 type="number"
                                 min="1"
-                                placeholder="Coste actual de compra"
+                                placeholder="Lo que pagas al proveedor"
                                 value={modalCosteProducto}
                                 onChange={(e) => {
                                     setModalCosteProducto(e.target.value);
@@ -325,12 +322,12 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         <div className="col-span-2 flex flex-col gap-2">
                             <div className="flex items-center gap-2 text-sm font-medium">
                                 <DollarSign size={16} className="text-blue-400" />
-                                <span className="text-blue-400">Precio Venta *</span>
+                                <span className="text-blue-400">Precio de venta *</span>
                             </div>
                             <input
                                 type="number"
                                 min="0"
-                                placeholder="Debe ser mayor al coste del producto"
+                                placeholder="Debe ser mayor al coste de compra"
                                 value={modalPrecioVenta}
                                 onChange={(e) => {
                                     setModalPrecioVenta(e.target.value);
@@ -345,22 +342,26 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                                             : "ring-1 ring-red-300"
                                     }`}
                             />
+                            <p className="text-xs text-blue-400 -mt-1">
+                                Al guardar la compra, este valor actualizará el precio del producto en el catálogo.
+                            </p>
                             <FieldStatus estado={estadoPrecioVenta} />
                         </div>
 
                     </div>
 
                     {/* PREVISUALIZACIÓN */}
-                    {modalCantidad && modalPrecio && modalCosteProducto && modalPrecioVenta && (
+                    {modalCantidad && modalCosteProducto && modalPrecioVenta && (
                         <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-sm text-gray-700 flex items-center justify-between">
                             <span>
-                                <span className="font-medium">Subtotal: </span>
+                                <span className="font-medium">Subtotal compra: </span>
+                                {/* #3: El subtotal de compra = cantidad × costeProducto */}
                                 <span className="font-bold text-blue-600">
-                                    {formatCOP((parseInt(modalCantidad) || 0) * parseCOP(modalPrecio))}
+                                    {formatCOP((parseInt(modalCantidad) || 0) * parseCOP(modalCosteProducto))}
                                 </span>
                             </span>
                             <span>
-                                <span className="font-medium">Margen de ganancia: </span>
+                                <span className="font-medium">Margen unitario: </span>
                                 <span className="font-bold text-green-600">
                                     {formatCOP(parseCOP(modalPrecioVenta) - parseCOP(modalCosteProducto))}
                                 </span>

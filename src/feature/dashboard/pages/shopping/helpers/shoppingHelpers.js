@@ -14,27 +14,16 @@ export const parseCOP = (str) =>
 // ─── Factura ───────────────────────────────────────────────────────────────────
 
 /**
- * Genera el siguiente número de factura incremental con padding de 3 dígitos.
- * Ej: si existen facturas 001 y 002, retorna "003".
- */
-export const getNextNumeroFactura = () => {
-    const compras = JSON.parse(localStorage.getItem("compras") || "[]");
-    if (!compras.length) return "001";
-
-    const numeros = compras
-        .map((c) => parseInt(c.numeroFactura, 10))
-        .filter((n) => !isNaN(n));
-
-    const siguiente = numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
-    return String(siguiente).padStart(3, "0");
-};
-
-/**
- * Verifica si un número de factura ya existe en las compras registradas.
+ * Verifica si un número de factura ya existe en las compras ACTIVAS.
+ * Las compras anuladas no bloquean la reutilización del número,
+ * ya que la restricción de unicidad aplica solo sobre registros vigentes.
+ *
  * @param {string} numeroFactura - El número de factura a validar
- * @returns {boolean} - true si existe, false si no existe
+ * @returns {boolean} - true si ya existe en una compra activa, false si está libre
  */
 export const numeroFacturaYaExiste = (numeroFactura) => {
     const compras = JSON.parse(localStorage.getItem("compras") || "[]");
-    return compras.some((c) => String(c.numeroFactura) === String(numeroFactura));
+    return compras
+        .filter((c) => c.estado !== "Anulada")
+        .some((c) => String(c.numeroFactura) === String(numeroFactura));
 };
