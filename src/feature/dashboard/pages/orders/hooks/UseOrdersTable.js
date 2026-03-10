@@ -63,7 +63,7 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
     const currentRecords = filteredOrders.slice(firstIndex, lastIndex);
 
     // FUNCION PARA DEVOLVER UN PEDIDO
-    const cancelOrder = (orderToCancel) => {
+    const cancelOrder = (orderToCancel, motivo, fechaAnulacion) => {
 
         // SI YA ESTA ANULADO NO HACER NADA
         if (orderToCancel.estado === "Anulado") {
@@ -95,7 +95,14 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
         // CAMBIAR ESTADO DEL PEDIDO
         const updatedOrders = storedOrders.map(order =>
             order.id === orderToCancel.id
-                ? { ...order, estado: "Anulado" }
+                ? {
+                    ...order,
+                    estado: "Anulado",
+                    cancelInfo: {
+                        motivo,
+                        fechaAnulacion
+                    }
+                }
                 : order
         );
 
@@ -105,15 +112,58 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
         setOrders(prev =>
             prev.map(order =>
                 order.id === orderToCancel.id
-                    ? { ...order, estado: "Anulado" }
+                    ? {
+                        ...order,
+                        estado: "Anulado",
+                        cancelInfo: {
+                            motivo,
+                            fechaAnulacion
+                        }
+                    }
                     : order
             )
         );
     };
 
+    // FUNCION PARA PROCESAR UNA VENTA
+    const processOrderToSale = (order) => {
+        const storedSales = JSON.parse(localStorage.getItem("sales")) || [];
+        const storedOrders = JSON.parse(localStorage.getItem("orders")) || [];
+
+        // Definir estado según la forma de pago
+        const nuevoEstado = order.formaPago === "Contado" ? "Finalizada" : "Vigente";
+
+        const newSale = {
+            id: Date.now(),
+            numeroDocumento: order.documento,
+            cliente: order.nombreCliente,
+            fecha: new Date().toISOString().split('T')[0],
+            tipoVenta: order.formaPago,
+            total: order.total,
+            montoPagado: order.formaPago === "Contado" ? order.total : 0,
+            montoPorPagar: order.formaPago === "Contado" ? 0 : order.total,
+            estado: nuevoEstado,
+            productos: order.productos,
+            iva: order.iva,
+            subtotal: order.subtotal,
+            abonos: []
+        };
+
+        // 1. Guardar en ventas
+        localStorage.setItem("sales", JSON.stringify([...storedSales, newSale]));
+
+        // 2. Eliminar de pedidos (para que desaparezca de la tabla)
+        const updatedOrders = storedOrders.filter(o => o.id !== order.id);
+        localStorage.setItem("orders", JSON.stringify(updatedOrders));
+
+        // 3. Actualizar el estado local en el Hook
+        setOrders(prev => prev.filter(o => o.id !== order.id));
+    };
+
     return {
         data: currentRecords,
         totalPages,
-        cancelOrder
+        cancelOrder,
+        processOrderToSale
     };
 }

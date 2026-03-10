@@ -51,7 +51,7 @@ export default function CancellationModal({
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-[450px] shadow-2xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-112.5 shadow-2xl overflow-hidden">
         <div className="p-6">
 
           {/* TÍTULO */}
@@ -75,7 +75,7 @@ export default function CancellationModal({
           {/* INFO DATOS */}
           {infoData.length > 0 && (
             <div className="bg-stone-50 border border-stone-200 rounded-2xl px-4 py-3 mb-5 flex items-center gap-3">
-              <div className="bg-amber-400 rounded-xl p-2 flex items-center justify-center flex-shrink-0 shadow-[0_2px_6px_rgba(251,191,36,0.3)]">
+              <div className="bg-amber-400 rounded-xl p-2 flex items-center justify-center shrink-0 shadow-[0_2px_6px_rgba(251,191,36,0.3)]">
                 <FileText size={15} className="text-white" />
               </div>
               <div className="flex gap-5 flex-1">
@@ -150,7 +150,7 @@ export default function CancellationModal({
               disabled={!isFormValid}
               className={`flex-1 py-3 rounded-xl border-none text-[13px] font-bold transition-all ${
                 isFormValid
-                  ? "bg-gradient-to-br from-red-500 to-red-600 text-white cursor-pointer shadow-[0_4px_14px_rgba(239,68,68,0.3)] hover:shadow-[0_6px_18px_rgba(239,68,68,0.42)]"
+                  ? "bg-linear-to-br from-red-500 to-red-600 text-white cursor-pointer shadow-[0_4px_14px_rgba(239,68,68,0.3)] hover:shadow-[0_6px_18px_rgba(239,68,68,0.42)]"
                   : "bg-zinc-100 text-zinc-400 cursor-not-allowed"
               }`}
             >
