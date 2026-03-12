@@ -30,7 +30,7 @@ export default function RoleDetailsPage() {
                 <div
                     className="relative bg-white rounded-3xl p-5 shadow-lg overflow-hidden flex-1 flex flex-col"
                     style={{
-                        backgroundImage: 'url("/background-shopping-details.png")',
+                        backgroundImage: 'url("/background-details.jpg")',
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundRepeat: 'no-repeat'

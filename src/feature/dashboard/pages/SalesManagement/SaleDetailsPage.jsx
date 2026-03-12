@@ -110,7 +110,7 @@ export default function SaleDetailsPage() {
         <div
             className="h-full rounded-2xl shadow-lg relative overflow-hidden"
             style={{
-                backgroundImage: 'url("/background-shopping-details.png")',
+                backgroundImage: 'url("/background-details.jpg")',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'

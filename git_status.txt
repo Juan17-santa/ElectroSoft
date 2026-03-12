@@ -1,0 +1,21 @@
+On branch develop
+Your branch is up to date with 'origin/develop'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   package-lock.json
+	modified:   src/feature/dashboard/pages/Clients/CreateClients.jsx
+	modified:   src/feature/dashboard/pages/Clients/UpdateClients.jsx
+	modified:   src/feature/dashboard/pages/Clients/services/ClientsService.js
+	modified:   src/feature/dashboard/pages/Roles/CreateRoles.jsx
+	modified:   src/feature/dashboard/pages/Roles/UpdateRoles.jsx
+	modified:   src/feature/dashboard/pages/SalesManagement/CreateSales.jsx
+	modified:   src/feature/dashboard/pages/SalesManagement/services/ProductService.js
+	modified:   src/utils/validations.js
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	git_status.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

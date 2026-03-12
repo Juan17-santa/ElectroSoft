@@ -52,6 +52,11 @@ export const SalesService = {
         const iva = subtotal * 0.19;
         const total = subtotal + iva;
 
+        // Número de venta auto-incremental
+        const numeroVenta = sales.length > 0
+            ? Math.max(...sales.map(s => s.numeroVenta || 0)) + 1
+            : 1;
+
         // Buscar nombre del cliente por documento en la lista de clientes
         let cliente = '';
         try {
@@ -69,6 +74,7 @@ export const SalesService = {
 
         const nuevaVenta = {
             id: Date.now(),
+            numeroVenta,
             numeroDocumento,
             cliente,
             tipoVenta,

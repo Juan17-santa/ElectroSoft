@@ -183,7 +183,7 @@ export default function SalesManagement() {
                                 ) : (
                                     paginatedSales.map((sale) => (
                                         <tr key={sale.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                            <td className="px-3 py-3 font-medium">{sale.numeroDocumento}</td>
+                                            <td className="px-3 py-3 font-medium">#{sale.numeroVenta || '-'}</td>
                                             <td className="px-3 py-3">{sale.cliente || "-"}</td>
                                             <td className="px-3 py-3">{sale.fecha}</td>
                                             <td className="px-3 py-3">{sale.tipoVenta}</td>
@@ -228,7 +228,7 @@ export default function SalesManagement() {
                                                     </button>
 
                                                     {/* CREDITO */}
-                                                    {sale.tipoVenta === "Crédito" && sale.estado === "Vigente" && (
+                                                    {sale.tipoVenta === "Credito" && sale.estado === "Vigente" && (
                                                         <button
                                                             className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
                                                             onClick={() => handleViewCredit(sale)}
