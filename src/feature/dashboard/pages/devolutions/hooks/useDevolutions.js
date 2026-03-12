@@ -31,8 +31,13 @@ export function useDevolutions() {
 
     const editarDevolucion = (data) => {
         ServicesDevolutions.update(data);
+        const hoy = new Date().toISOString().split("T")[0];
         setDevolutions((prev) =>
-            prev.map((d) => String(d.id) === String(data.id) ? { ...d, ...data } : d)
+            prev.map((d) =>
+                String(d.id) === String(data.id)
+                    ? { ...d, ...data, fechaEstado: hoy }
+                    : d
+            )
         );
     };
 
@@ -52,6 +57,18 @@ export function useDevolutions() {
         );
     };
 
+    /** Anula todas las devoluciones de una venta */
+    const anularPorVenta = (idVenta) => {
+        ServicesDevolutions.anularByIdVenta(idVenta);
+        setDevolutions((prev) =>
+            prev.map((d) =>
+                String(d.idVenta) === String(idVenta)
+                    ? { ...d, estadoResolucion: "Anulada" }
+                    : d
+            )
+        );
+    };
+
     const getDevolucionById = (id) =>
         devolutions.find((d) => String(d.id) === String(id)) || null;
 
@@ -64,6 +81,7 @@ export function useDevolutions() {
         editarDevolucion,
         eliminarDevolucion,
         anularDevolucion,
+        anularPorVenta,
         getDevolucionById,
     };
 }

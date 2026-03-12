@@ -97,7 +97,7 @@ export default function CreateShopping() {
     /**
      * #3: El total de la compra se calcula sobre costeProducto, que es lo que
      * realmente se le paga al proveedor en esta transacción, no sobre el precio
-     * de catálogo (que es el precio de VENTA al cliente).
+     * de Inventario (que es el precio de VENTA al cliente).
      */
     const subtotalSinIVA = productosActivos.reduce(
         (acc, p) => acc + p.cantidad * p.costeProducto,
@@ -168,7 +168,7 @@ export default function CreateShopping() {
                 id,
                 nombre,
                 cantidad,
-                precio,                            // Precio catálogo en el momento de la compra
+                precio,                            // Precio Inventario en el momento de la compra
                 costeProducto: costeProducto || precio,
                 precioVenta:   precioVenta   || precio,
                 subtotal,                          // cantidad × costeProducto
@@ -322,7 +322,7 @@ export default function CreateShopping() {
                                 <tr className="text-left border-b border-gray-200">
                                     <th className="px-4 py-2 font-semibold">Producto</th>
                                     <th className="px-4 py-2 font-semibold text-center">Cantidad</th>
-                                    <th className="px-4 py-2 font-semibold text-center">Catálogo</th>
+                                    <th className="px-4 py-2 font-semibold text-center">Precio inventario</th>
                                     <th className="px-4 py-2 font-semibold text-center">Coste compra</th>
                                     <th className="px-4 py-2 font-semibold text-center">Precio venta</th>
                                     <th className="px-4 py-2 font-semibold text-center">Subtotal</th>

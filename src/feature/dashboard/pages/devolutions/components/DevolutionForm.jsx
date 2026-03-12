@@ -1,13 +1,12 @@
 import {
     AlertTriangle, Box, Boxes, Wrench, User,
     ShieldCheck, FileText, CalendarDays, ClipboardList, Tag,
-    Receipt, GitBranch, AlertCircle, CheckCircle2,
+    GitBranch, AlertCircle, CheckCircle2,
     Plus
 } from "lucide-react";
 import Calendar, { formatearFecha } from "../../../components/ui/Calendar";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import GarantiaCheckbox from "./GarantiaCheckbox";
-import VentaSearchSelect from "./VentaSearchSelect";
 import {
     MOTIVOS, SUBMOTIVOS, CONDICIONES_PRODUCTO, GESTIONES,
     RESPONSABLES, ESTADOS_RESOLUCION,
@@ -125,24 +124,8 @@ export default function DevolutionForm({
                 <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-transparent mt-3" />
             </div>
 
-            {/* ── FILA 1: ID Venta · Motivo · Submotivo · Producto ───────────── */}
-            <div className="grid grid-cols-4 gap-x-8 px-10">
-
-                {/* ID VENTA */}
-                <Field icon={Receipt} label="ID Venta *">
-                    {esReadOnly("idVenta") ? (
-                        <input type="text" value={form.idVenta} readOnly className={fieldBase("idVenta")} />
-                    ) : (
-                        <VentaSearchSelect
-                            value={form.idVenta}
-                            onChange={(id) => onChange("idVenta", id)}
-                            onBlur={() => onFieldBlur("idVenta")}
-                            ventasList={ventasList}
-                            estado={estadoCampo("idVenta")}
-                        />
-                    )}
-                    <FieldStatus estado={estadoCampo("idVenta")} />
-                </Field>
+            {/* ── FILA 1: Motivo · Submotivo · Producto ────────────────────────── */}
+            <div className="grid grid-cols-3 gap-x-8 px-10">
 
                 {/* MOTIVO */}
                 <Field icon={AlertTriangle} label="Motivo *">

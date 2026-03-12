@@ -61,7 +61,6 @@ import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDet
 import Devolutions from "../feature/dashboard/pages/devolutions/pages/Devolutions";
 import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/CreateDevolution";
 import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
-import DevolutionDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionDetails";
 import DevolutionProductDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionProductDetails";
 
 //USUARIOS
@@ -139,7 +138,6 @@ export default function RoutersApp() {
                 <Route path="devolutions" element={<Devolutions />} />
                 <Route path="devolutions/create" element={<CreateDevolution />} />
                 <Route path="devolutions/edit/:id" element={<EditDevolution />} />
-                <Route path="devolutions/details/:id" element={<DevolutionDetails />} />
                 <Route path="devolutions/product-details/:id" element={<DevolutionProductDetails />} />
 
                 {/* Usuarios */}

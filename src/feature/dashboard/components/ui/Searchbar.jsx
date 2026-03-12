@@ -18,7 +18,8 @@ export default function SearchBar({
     onCreateClick,
     createButtonText = "Crear",
     onReportClick,
-    showReportButton = false
+    showReportButton = false,
+    showCreateButton = true,
 }) {
     return (
         <div className="flex justify-between gap-3">
@@ -45,16 +46,18 @@ export default function SearchBar({
                 </button>
             )}
 
-            {/* BOTON CREAR */}
-            <div
-                className="flex items-center bg-linear-to-r from-white to-yellow-300 px-4 py-2 rounded-lg font-medium cursor-pointer gap-2 hover:shadow-lg transition duration-500"
-                onClick={onCreateClick}
-            >
-                <Plus />
-                <button type="button" className="cursor-pointer whitespace-nowrap">
-                    {createButtonText}
-                </button>
-            </div>
+            {/* BOTON CREAR (Opcional) */}
+            {showCreateButton && (
+                <div
+                    className="flex items-center bg-linear-to-r from-white to-yellow-300 px-4 py-2 rounded-lg font-medium cursor-pointer gap-2 hover:shadow-lg transition duration-500"
+                    onClick={onCreateClick}
+                >
+                    <Plus />
+                    <button type="button" className="cursor-pointer whitespace-nowrap">
+                        {createButtonText}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
