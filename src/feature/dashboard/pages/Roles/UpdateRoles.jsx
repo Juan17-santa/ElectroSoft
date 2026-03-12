@@ -1,7 +1,18 @@
-import { User, FileText, X, Check } from "lucide-react";
+import { User, FileText, X, Check, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RolesService, PERMISSION_SCOPES } from "./services/RolesService";
+import { Validations } from "../../../../utils/validations";
+
+function FieldStatus({ estado }) {
+    if (estado === null || estado === undefined) return null;
+    return (
+        <div className={`flex items-center gap-1 text-xs mt-1 ${estado.valido ? "text-green-500" : "text-red-500"}`}>
+            {estado.valido ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+            <span>{estado.valido ? "Listo" : estado.mensaje}</span>
+        </div>
+    );
+}
 
 export default function UpdateRoles() {
     const navigate = useNavigate();
@@ -14,6 +25,18 @@ export default function UpdateRoles() {
         fecha: "",
         permisos: {}
     });
+
+    const [tocado, setTocado] = useState({ nombre: false });
+    const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
+
+    const estadoNombre = tocado.nombre ? Validations.validarNombreRol(formData.nombre) : null;
+
+    const ringClass = (estado) => {
+        if (!estado) return "border border-gray-200 focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-transparent";
+        return estado.valido
+            ? "border-green-300 ring-2 ring-green-300 bg-green-50"
+            : "border-red-300 ring-2 ring-red-300 bg-red-50";
+    };
 
     useEffect(() => {
         const data = localStorage.getItem("roleToEdit");
@@ -70,9 +93,16 @@ export default function UpdateRoles() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setTocado({ nombre: true });
+
         try {
-            if (!formData.nombre) {
-                alert("El nombre es requerido");
+            const vNombre = Validations.validarNombreRol(formData.nombre);
+            if (!vNombre.valido) {
+                return;
+            }
+
+            if (formData.descripcion && formData.descripcion.length > 200) {
+                alert("La descripción no debe exceder los 200 caracteres.");
                 return;
             }
 
@@ -114,16 +144,20 @@ export default function UpdateRoles() {
                             <User size={18} />
                             <span>Nombre del rol</span>
                         </div>
-                        <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center justify-between shadow-sm border border-gray-200">
-                            <input
-                                type="text"
-                                name="nombre"
-                                value={formData.nombre}
-                                onChange={handleChange}
-                                placeholder="Nombre del rol"
-                                className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none"
-                            />
-                            <span className="text-gray-400 text-xs">▼</span>
+                        <div className="flex flex-col">
+                            <div className={`rounded-xl px-4 py-3 flex items-center justify-between shadow-sm transition-all duration-300 ${ringClass(estadoNombre)} ${!estadoNombre || estadoNombre.valido ? 'bg-gray-200/50' : ''}`}>
+                                <input
+                                    type="text"
+                                    name="nombre"
+                                    value={formData.nombre}
+                                    onChange={handleChange}
+                                    onBlur={() => tocar("nombre")}
+                                    placeholder="Nombre del rol"
+                                    className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none"
+                                />
+                                <span className="text-gray-400 text-xs">▼</span>
+                            </div>
+                            <FieldStatus estado={estadoNombre} />
                         </div>
                     </div>
 

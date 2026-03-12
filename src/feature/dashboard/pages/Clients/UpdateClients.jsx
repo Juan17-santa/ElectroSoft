@@ -5,47 +5,14 @@ import { ClientsService } from "./services/ClientsService";
 import Alert from "../../components/ui/Alert";
 
 // ─── Validaciones ─────────────────────────────────────────────────────────────
-function validarTipoDocumento(v) {
-    if (!v) return { valido: false, mensaje: "Seleccione un tipo de documento." };
-    return { valido: true, mensaje: "" };
-}
-function validarDocumento(v, formData) {
-    if (!v) return { valido: false, mensaje: "El documento es requerido." };
-    if (!/^\d+$/.test(v)) return { valido: false, mensaje: "Solo se permiten números." };
-    if (formData?.tipoDocumento === "CC" && v.length !== 10) {
-        return { valido: false, mensaje: "La cédula debe tener exactamente 10 dígitos." };
-    }
-    return { valido: true, mensaje: "" };
-}
-function validarNombres(v) {
-    if (!v) return { valido: false, mensaje: "El nombre es requerido." };
-    if (v.length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
-    if (/\d/.test(v)) return { valido: false, mensaje: "No debe contener números." };
-    return { valido: true, mensaje: "" };
-}
-function validarApellidos(v) {
-    if (!v) return { valido: false, mensaje: "El apellido es requerido." };
-    if (v.length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
-    if (/\d/.test(v)) return { valido: false, mensaje: "No debe contener números." };
-    return { valido: true, mensaje: "" };
-}
-function validarEmail(v) {
-    if (!v) return { valido: false, mensaje: "El email es requerido." };
-    if (!v.includes("@")) return { valido: false, mensaje: "Ingrese un email válido." };
-    return { valido: true, mensaje: "" };
-}
-function validarTelefono(v) {
-    if (!v) return { valido: false, mensaje: "El teléfono es requerido." };
-    if (v.length < 7) return { valido: false, mensaje: "Mínimo 7 dígitos." };
-    if (!/^\d+$/.test(v)) return { valido: false, mensaje: "Solo se permiten números." };
-    return { valido: true, mensaje: "" };
-}
+import { Validations } from "../../../../utils/validations";
 
 function FieldStatus({ estado }) {
-    if (estado === null || estado.valido) return null;
+    if (estado === null || estado === undefined) return null;
     return (
-        <div className="flex items-center gap-1 text-xs mt-1 text-red-500">
-            <AlertCircle size={12} /><span>{estado.mensaje}</span>
+        <div className={`flex items-center gap-1 text-xs mt-1 ${estado.valido ? "text-green-500" : "text-red-500"}`}>
+            {estado.valido ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+            <span>{estado.valido ? "Listo" : estado.mensaje}</span>
         </div>
     );
 }
@@ -72,16 +39,16 @@ export default function UpdateClients() {
         if (data) setFormData(JSON.parse(data));
     }, []);
 
-    const estadoTipoDoc = tocado.tipoDocumento ? validarTipoDocumento(formData.tipoDocumento) : null;
-    const estadoDocumento = tocado.documento ? validarDocumento(formData.documento, formData) : null;
-    const estadoNombres = tocado.nombres ? validarNombres(formData.nombres) : null;
-    const estadoApellidos = tocado.apellidos ? validarApellidos(formData.apellidos) : null;
-    const estadoEmail = tocado.email ? validarEmail(formData.email) : null;
-    const estadoTelefono = tocado.telefono ? validarTelefono(formData.telefono) : null;
+    const estadoTipoDoc = tocado.tipoDocumento ? (Validations.campoRequerido(formData.tipoDocumento) ? { valido: true } : { valido: false, mensaje: "Seleccione un tipo de documento." }) : null;
+    const estadoDocumento = tocado.documento ? Validations.validarDocumentoCliente(formData.tipoDocumento, formData.documento) : null;
+    const estadoNombres = tocado.nombres ? Validations.validarNombreApellido(formData.nombres) : null;
+    const estadoApellidos = tocado.apellidos ? Validations.validarNombreApellido(formData.apellidos) : null;
+    const estadoEmail = tocado.email ? (Validations.formatoEmail(formData.email) ? { valido: true } : { valido: false, mensaje: "Ingrese un email válido." }) : null;
+    const estadoTelefono = tocado.telefono ? Validations.validarTelefono(formData.telefono) : null;
 
     const ringClass = (estado) => {
-        if (estado === null || estado.valido) return "focus:ring-yellow-400";
-        return "ring-1 ring-red-300 focus:ring-red-400";
+        if (!estado) return "focus:ring-yellow-400";
+        return estado.valido ? "ring-1 ring-green-400 focus:ring-green-500" : "ring-1 ring-red-300 focus:ring-red-400";
     };
 
     const handleChange = (e) => {
@@ -100,12 +67,12 @@ export default function UpdateClients() {
         setTocado({ tipoDocumento: true, documento: true, nombres: true, apellidos: true, email: true, telefono: true });
 
         const v = [
-            validarTipoDocumento(formData.tipoDocumento),
-            validarDocumento(formData.documento, formData),
-            validarNombres(formData.nombres),
-            validarApellidos(formData.apellidos),
-            validarEmail(formData.email),
-            validarTelefono(formData.telefono),
+            Validations.campoRequerido(formData.tipoDocumento) ? { valido: true } : { valido: false, mensaje: "Requerido" },
+            Validations.validarDocumentoCliente(formData.tipoDocumento, formData.documento),
+            Validations.validarNombreApellido(formData.nombres),
+            Validations.validarNombreApellido(formData.apellidos),
+            Validations.formatoEmail(formData.email) ? { valido: true } : { valido: false, mensaje: "Email inválido" },
+            Validations.validarTelefono(formData.telefono),
         ];
         if (v.some(x => !x.valido)) return;
 

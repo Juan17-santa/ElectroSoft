@@ -1,4 +1,4 @@
-const KEY = "productCategory";
+const KEY = "products";
 
 export const ProductService = {
     getAll() {
