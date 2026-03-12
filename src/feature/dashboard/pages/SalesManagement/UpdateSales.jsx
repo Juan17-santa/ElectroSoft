@@ -137,7 +137,7 @@ export default function UpdateSales() {
 
                 {/* FORMULARIO */}
                 <form onSubmit={handleForm} className="flex flex-col gap-6">
-                    
+
                     {/* FILA 1: NUMERO DOCUMENTO Y TIPO VENTA */}
                     <div className="grid grid-cols-2 gap-6">
                         {/* NUMERO DOCUMENTO */}
@@ -169,7 +169,7 @@ export default function UpdateSales() {
                                 className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
                             >
                                 <option value="Contado">Contado</option>
-                                <option value="Crédito">Crédito</option>
+                                <option value="Credito">Crédito</option>
                             </select>
                         </div>
                     </div>

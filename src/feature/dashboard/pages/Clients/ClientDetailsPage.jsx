@@ -23,7 +23,7 @@ export default function ClientDetailsPage() {
             <div
                 className="p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner relative overflow-hidden"
                 style={{
-                    backgroundImage: 'url("/background-shopping-details.png")',
+                    backgroundImage: 'url("/background-details.jpg")',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat'

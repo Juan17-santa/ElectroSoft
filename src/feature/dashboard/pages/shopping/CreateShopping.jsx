@@ -5,6 +5,7 @@ import { useShopping } from "../shopping/hooks/useShopping";
 import { formatCOP, IVA_RATE, numeroFacturaYaExiste } from "../shopping/helpers/shoppingHelpers";
 import AddProductModal from "../shopping/components/AddProductModal";
 import CreateProductModal from "../shopping/components/CreateProductModal";
+import CreateProviderModal from "../shopping/components/CreateProviderModal";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { ServicesProviders } from "../providers/services/ServicesProviders";
@@ -63,6 +64,7 @@ export default function CreateShopping() {
 
     const [showModal,               setShowModal]               = useState(false);
     const [showCreateProductModal,  setShowCreateProductModal]  = useState(false);
+    const [showCreateProviderModal, setShowCreateProviderModal] = useState(false);
     const [currentPage,             setCurrentPage]             = useState(1);
     const [proveedoresList,         setProveedoresList]         = useState([]);
     const [confirmData,             setConfirmData]             = useState(null);
@@ -127,6 +129,14 @@ export default function CreateShopping() {
         const found = proveedoresList.find((p) => String(p.id) === String(id));
         setProveedorId(id);
         setProveedor(found?.nombreProveedor || "");
+        setProveedorTocado(true);
+    };
+
+    // Al crear un proveedor desde la modal: añadirlo al select y auto-seleccionarlo
+    const handleProveedorCreado = (nuevoProveedor) => {
+        setProveedoresList((prev) => [...prev, nuevoProveedor]);
+        setProveedorId(String(nuevoProveedor.id));
+        setProveedor(nuevoProveedor.nombreProveedor);
         setProveedorTocado(true);
     };
 
@@ -235,8 +245,10 @@ export default function CreateShopping() {
                                 <FieldStatus estado={estadoProveedor} />
                             </div>
                             <button
-                                onClick={() => navigate("/dashboard/provider/create")}
+                                type="button"
+                                onClick={() => setShowCreateProviderModal(true)}
                                 className="bg-yellow-400 hover:bg-yellow-500 transition duration-300 p-3 rounded-xl shadow-md cursor-pointer self-start"
+                                title="Crear nuevo proveedor"
                             >
                                 <Plus size={18} className="text-white" />
                             </button>
@@ -477,6 +489,14 @@ export default function CreateShopping() {
                     <CreateProductModal
                         onClose={() => setShowCreateProductModal(false)}
                         onSuccess={() => {}}
+                    />
+                )}
+
+                {/* MODAL CREAR PROVEEDOR */}
+                {showCreateProviderModal && (
+                    <CreateProviderModal
+                        onClose={() => setShowCreateProviderModal(false)}
+                        onSuccess={handleProveedorCreado}
                     />
                 )}
 
