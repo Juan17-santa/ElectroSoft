@@ -21,7 +21,9 @@ export default function Roles() {
     const showAlert = (type, message) => setAlert({ type, message });
 
     const filteredRoles = roles.filter(role =>
-        role.nombre.toLowerCase().includes(search.toLowerCase())
+        role.nombre.toLowerCase().includes(search.toLowerCase()) ||
+        role.descripcion?.toLowerCase().includes(search.toLowerCase()) ||
+        (role.estado ? "activo" : "inactivo").includes(search.toLowerCase())
     );
 
     const totalPages = Math.max(1, Math.ceil(filteredRoles.length / ITEMS_PER_PAGE));

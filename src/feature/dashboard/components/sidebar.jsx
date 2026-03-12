@@ -1,15 +1,41 @@
-import { useState, } from "react";
-import { useLocation, NavLink } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import { ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck, LogOut, ChevronDown } from 'lucide-react';
+import { getAuthUser, logout } from "../../auth/services/authService";
 
 export const Sidebar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const [userRole, setUserRole] = useState("Empleado");
+
+    useEffect(() => {
+        const authUser = getAuthUser();
+        if (authUser) setUserRole(authUser.role || authUser.rol || "Empleado");
+
+        const handler = () => {
+            const auth = getAuthUser();
+            if (auth) setUserRole(auth.role || auth.rol || "Empleado");
+        };
+        window.addEventListener("profile-updated", handler);
+        return () => window.removeEventListener("profile-updated", handler);
+    }, []);
+
+    const isAdmin = userRole.toLowerCase() === "administrador" || userRole.toLowerCase() === "admin";
 
     // Submenu para compras
     const [openCompras, setOpenCompras] = useState(false);
 
     // Submenu para ventas
     const [openVentas, setOpenVentas] = useState(false);
+
+    const isPathInCompras = (path) => ["/dashboard/productCategory", "/dashboard/products", "/dashboard/providers", "/dashboard/shopping"].some(p => path.startsWith(p));
+    const isPathInVentas = (path) => ["/dashboard/clients", "/dashboard/orders", "/dashboard/sales-management", "/dashboard/payments", "/dashboard/Devolutions"].some(p => path.startsWith(p));
+
+    useEffect(() => {
+        if (!isPathInCompras(location.pathname)) setOpenCompras(false);
+        if (!isPathInVentas(location.pathname)) setOpenVentas(false);
+    }, [location.pathname]);
 
     // Función para determinar si una ruta está activa
     const activeLink = (path, exact = false) => {
@@ -63,7 +89,10 @@ export const Sidebar = () => {
 
                         {/* COMPRAS */}
                         <button
-                            onClick={() => setOpenCompras(!openCompras)}
+                            onClick={() => {
+                                setOpenCompras(!openCompras);
+                                if (!openCompras) setOpenVentas(false);
+                            }}
                             className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
                         >
                             <div className="flex items-center gap-3">
@@ -111,7 +140,10 @@ export const Sidebar = () => {
 
                         {/* VENTAS */}
                         <button
-                            onClick={() => setOpenVentas(!openVentas)}
+                            onClick={() => {
+                                setOpenVentas(!openVentas);
+                                if (!openVentas) setOpenCompras(false);
+                            }}
                             className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
                         >
                             <div className="flex items-center gap-3">
@@ -171,35 +203,39 @@ export const Sidebar = () => {
                     <div className="h-0.5 bg-yellow-400 mx-4"></div>
 
                     {/* ADMINISTRACION */}
-                    <div className='flex flex-col gap-1 px-3'>
-                        <NavLink
-                            to="/dashboard/users"
-                            className={activeLink("/dashboard/users")}
-                        >
-                            <div className="flex items-center gap-3">
-                                <UsersRound size={18} />
-                                <span>Usuarios</span>
-                            </div>
-                        </NavLink>
+                    {isAdmin && (
+                        <div className='flex flex-col gap-1 px-3'>
+                            <NavLink
+                                to="/dashboard/users"
+                                className={activeLink("/dashboard/users")}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <UsersRound size={18} />
+                                    <span>Usuarios</span>
+                                </div>
+                            </NavLink>
 
-                        <NavLink
-                            to="/dashboard/roles"
-                            className={activeLink("/dashboard/roles")}
-                        >
-                            <div className="flex items-center gap-3">
-                                <ShieldCheck size={18} />
-                                <span>Roles</span>
-                            </div>
-                        </NavLink>
-                    </div>
+                            <NavLink
+                                to="/dashboard/roles"
+                                className={activeLink("/dashboard/roles")}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <ShieldCheck size={18} />
+                                    <span>Roles</span>
+                                </div>
+                            </NavLink>
+                        </div>
+                    )}
 
-                    <div className="h-0.5 bg-yellow-400 mx-4"></div>
+                    {isAdmin && <div className="h-0.5 bg-yellow-400 mx-4"></div>}
 
                 </div>
 
                 {/* CERRAR SESION */}
                 <div className='p-4'>
-                    <button className='w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-2 rounded-xl shadow cursor-pointer'>
+                    <button 
+                        onClick={() => { logout(); navigate("/"); }}
+                        className='w-full flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-500 text-black font-medium py-2 rounded-xl shadow cursor-pointer'>
                         <LogOut size={18} />
                         Cerrar sesión
                     </button>

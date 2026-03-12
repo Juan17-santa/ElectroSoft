@@ -47,7 +47,9 @@ export default function CreditDetailsPage() {
     const getPaymentRows = () => {
         let saldoPendiente = sale.total;
         return abonos.map((abono, index) => {
-            saldoPendiente = saldoPendiente - abono.monto;
+            if (!abono.anulado) {
+                saldoPendiente = saldoPendiente - abono.monto;
+            }
             return {
                 ...abono,
                 index,
@@ -86,12 +88,26 @@ export default function CreditDetailsPage() {
         setShowPaymentModal(false);
     };
 
-    /** Elimina un abono específico (con confirmación) y recarga la venta */
     const handleRemovePayment = (paymentIndex) => {
-        const confirmDelete = window.confirm("¿Está seguro de eliminar este abono?");
-        if (!confirmDelete) return;
-        SalesService.removePayment(sale.id, paymentIndex);
-        refreshSale();
+        setConfirmData({
+            type: "warning",
+            title: "Anular abono",
+            message: "¿Está seguro de anular este abono?",
+            onConfirm: () => {
+                const allSales = SalesService.get();
+                const saleIndex = allSales.findIndex(s => s.id === sale.id);
+                if (saleIndex !== -1) {
+                    allSales[saleIndex].abonos[paymentIndex].anulado = true;
+                    const abonoAmount = allSales[saleIndex].abonos[paymentIndex].monto;
+                    allSales[saleIndex].montoPagado -= abonoAmount;
+                    allSales[saleIndex].montoPorPagar += abonoAmount;
+                    localStorage.setItem("sales", JSON.stringify(allSales));
+                }
+                refreshSale();
+                setConfirmData(null);
+            },
+            onCancel: () => setConfirmData(null)
+        });
     };
 
     /** Regresa a la lista de ventas y limpia localStorage */
@@ -310,21 +326,24 @@ export default function CreditDetailsPage() {
                                         {paymentRows.map((row, index) => {
                                             const isPositive = row.monto > 0;
                                             return (
-                                                <tr key={index} className="border-b border-gray-100 last:border-b-0">
-                                                    <td className={`px-4 py-2.5 ${isPositive && index > 0 ? 'text-yellow-600' : 'text-gray-700'}`}>{row.fecha}</td>
-                                                    <td className={`px-4 py-2.5 font-medium ${isPositive && index > 0 ? 'text-green-600' : 'text-gray-700'}`}>
-                                                        {isPositive ? '+' : ''}{row.monto.toLocaleString()}
-                                                    </td>
-                                                    <td className={`px-4 py-2.5 ${isPositive && index > 0 ? 'text-yellow-600 font-medium' : 'text-gray-700'}`}>{row.saldoPendiente.toLocaleString()}</td>
-                                                    <td className="px-4 py-2.5 text-center">
+                                            <tr key={index} className={`border-b border-gray-100 last:border-b-0 ${row.anulado ? 'opacity-60 bg-red-50' : ''}`}>
+                                                <td className={`px-4 py-2.5 ${row.anulado ? 'text-red-500' : (isPositive && index > 0 ? 'text-yellow-600' : 'text-gray-700')}`}>{row.fecha}</td>
+                                                <td className={`px-4 py-2.5 font-medium ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-green-600' : 'text-gray-700')}`}>
+                                                    {isPositive ? '+' : ''}${row.monto.toLocaleString("es-CO")}
+                                                </td>
+                                                <td className={`px-4 py-2.5 ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-yellow-600 font-medium' : 'text-gray-700')}`}>${row.saldoPendiente.toLocaleString("es-CO")}</td>
+                                                <td className="px-4 py-2.5 text-center">
+                                                    {!row.anulado && (
                                                         <button
                                                             onClick={() => handleRemovePayment(row.index)}
                                                             className="text-red-400 hover:text-red-600 transition cursor-pointer"
+                                                            title="Anular abono"
                                                         >
                                                             <Ban size={16} />
                                                         </button>
-                                                    </td>
-                                                </tr>
+                                                    )}
+                                                </td>
+                                            </tr>
                                             );
                                         })}
                                     </tbody>

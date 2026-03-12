@@ -24,6 +24,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import CustomSelect from "../../components/ui/CustomSelect";
 
 export default function ReturnSalesPage() {
     const [alertMsg, setAlertMsg] = useState(null);
@@ -318,13 +319,6 @@ export default function ReturnSalesPage() {
                     <h2 className="text-xl font-bold text-gray-800">Devolución de venta</h2>
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={handleGenerateReport}
-                            className="flex items-center gap-2 text-sm text-gray-600 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition cursor-pointer"
-                        >
-                            <FileText size={16} />
-                            Generar reporte
-                        </button>
-                        <button
                             onClick={handleClose}
                             className="p-2 hover:bg-gray-200 rounded-lg transition cursor-pointer"
                         >
@@ -504,17 +498,17 @@ export default function ReturnSalesPage() {
                         <div className="flex flex-col gap-4">
                             {/* Motivo */}
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-yellow-500">Motivo *</label>
-                                <select
+                                <CustomSelect
+                                    label="Motivo *"
+                                    options={[
+                                        { label: "Producto defectuoso", value: "Producto defectuoso" },
+                                        { label: "No satisfecho", value: "No satisfecho" },
+                                        { label: "Producto equivocado", value: "Producto equivocado" },
+                                        { label: "Otro", value: "Otro" }
+                                    ]}
                                     value={modalData.motivo}
-                                    onChange={(e) => setModalData({ ...modalData, motivo: e.target.value, motivoOtro: e.target.value !== "Otro" ? "" : modalData.motivoOtro })}
-                                    className="bg-gray-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer"
-                                >
-                                    <option>Producto defectuoso</option>
-                                    <option>No satisfecho</option>
-                                    <option>Producto equivocado</option>
-                                    <option>Otro</option>
-                                </select>
+                                    onChange={(v) => setModalData({ ...modalData, motivo: v, motivoOtro: v !== "Otro" ? "" : modalData.motivoOtro })}
+                                />
                                 {modalData.motivo === "Otro" && (
                                     <input
                                         type="text"
@@ -527,57 +521,57 @@ export default function ReturnSalesPage() {
                             </div>
 
                             {/* Condición del producto */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-yellow-500">Condición del producto *</label>
-                                <select
+                            <div className="flex flex-col gap-1.5 z-40">
+                                <CustomSelect
+                                    label="Condición del producto *"
+                                    options={[
+                                        { label: "Buen estado", value: "Buen estado" },
+                                        { label: "Dañado", value: "Dañado" },
+                                        { label: "Incompleto", value: "Incompleto" }
+                                    ]}
                                     value={modalData.condicion}
-                                    onChange={(e) => setModalData({ ...modalData, condicion: e.target.value })}
-                                    className="bg-gray-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer"
-                                >
-                                    <option>Buen estado</option>
-                                    <option>Dañado</option>
-                                    <option>Incompleto</option>
-                                </select>
+                                    onChange={(v) => setModalData({ ...modalData, condicion: v })}
+                                />
                             </div>
 
                             {/* Gestión */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-yellow-500">Gestión *</label>
-                                <select
+                            <div className="flex flex-col gap-1.5 z-30">
+                                <CustomSelect
+                                    label="Gestión *"
+                                    options={[
+                                        { label: "Devolución dinero", value: "Devolución dinero" },
+                                        { label: "Otro/s producto/s", value: "Otro/s producto/s" },
+                                        { label: "Nota crédito", value: "Nota crédito" }
+                                    ]}
                                     value={modalData.gestion}
-                                    onChange={(e) => setModalData({ ...modalData, gestion: e.target.value })}
-                                    className="bg-gray-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer"
-                                >
-                                    <option>Devolución dinero</option>
-                                    <option>Otro/s producto/s</option>
-                                    <option>Nota crédito</option>
-                                </select>
+                                    onChange={(v) => setModalData({ ...modalData, gestion: v })}
+                                />
                             </div>
 
                             {/* Estado resolución */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-yellow-500">Estado resolución *</label>
-                                <select
+                            <div className="flex flex-col gap-1.5 z-20">
+                                <CustomSelect
+                                    label="Estado resolución *"
+                                    options={[
+                                        { label: "Pendiente", value: "Pendiente" },
+                                        { label: "Resuelto", value: "Resuelto" }
+                                    ]}
                                     value={modalData.estadoResolucion}
-                                    onChange={(e) => setModalData({ ...modalData, estadoResolucion: e.target.value })}
-                                    className="bg-gray-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer"
-                                >
-                                    <option>Pendiente</option>
-                                    <option>Resuelto</option>
-                                </select>
+                                    onChange={(v) => setModalData({ ...modalData, estadoResolucion: v })}
+                                />
                             </div>
 
                             {/* Responsable */}
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-medium text-yellow-500">Responsable *</label>
-                                <select
+                            <div className="flex flex-col gap-1.5 z-10">
+                                <CustomSelect
+                                    label="Responsable *"
+                                    options={[
+                                        { label: "Empresa", value: "Empresa" },
+                                        { label: "Cliente", value: "Cliente" }
+                                    ]}
                                     value={modalData.responsable}
-                                    onChange={(e) => setModalData({ ...modalData, responsable: e.target.value })}
-                                    className="bg-gray-100 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 cursor-pointer"
-                                >
-                                    <option>Empresa</option>
-                                    <option>Cliente</option>
-                                </select>
+                                    onChange={(v) => setModalData({ ...modalData, responsable: v })}
+                                />
                             </div>
                         </div>
 

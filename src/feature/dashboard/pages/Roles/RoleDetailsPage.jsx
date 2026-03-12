@@ -1,4 +1,4 @@
-import { User, Check, Info } from "lucide-react";
+import { User, Check, Info, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PERMISSION_SCOPES } from "./services/RolesService";
@@ -123,8 +123,9 @@ export default function RoleDetailsPage() {
                     <button
                         type="button"
                         onClick={() => navigate("/dashboard/roles")}
-                        className="bg-gray-800 text-white hover:bg-gray-900 transition duration-300 px-8 py-2.5 rounded-xl text-sm font-medium shadow-md cursor-pointer"
+                        className="px-5 py-2.5 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer hover:shadow-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
                     >
+                        <X size={16} />
                         Volver a la lista
                     </button>
                 </div>

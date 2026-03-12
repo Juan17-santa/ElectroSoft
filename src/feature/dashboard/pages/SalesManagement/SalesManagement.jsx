@@ -19,6 +19,8 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
+import CancellationModal from "./components/CancellationModal";
+import { ServicesProducts } from "../products/services/ServicesProducts";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -29,12 +31,19 @@ export default function SalesManagement() {
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert] = useState(null);
+    const [cancelModalSale, setCancelModalSale] = useState(null);
 
     const showAlert = (type, message) => setAlert({ type, message });
 
     const filteredSales = sales.filter(sale =>
         (sale.numeroDocumento?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase())
+        (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase()) ||
+        (sale.fecha?.includes(search)) ||
+        (sale.tipoVenta?.toLowerCase().includes(search.toLowerCase())) ||
+        (sale.total?.toString().includes(search)) ||
+        (sale.montoPagado?.toString().includes(search)) ||
+        (sale.montoPorPagar?.toString().includes(search)) ||
+        (sale.estado?.toLowerCase().includes(search.toLowerCase()))
     );
 
     const totalPages = Math.max(1, Math.ceil(filteredSales.length / ITEMS_PER_PAGE));
@@ -84,17 +93,37 @@ export default function SalesManagement() {
     };
 
     const handleAnull = (sale) => {
-        setConfirmData({
-            type: "warning",
-            title: "Anular venta",
-            message: `¿Estás seguro de que deseas anular la venta ${sale.numeroDocumento}?`,
-            onConfirm: () => {
-                const updatedSales = SalesService.anullSale(sale.id);
-                setSales(updatedSales);
-                showAlert("success", "Venta anulada correctamente.");
-                setConfirmData(null);
-            }
+        setCancelModalSale(sale);
+    };
+
+    const confirmAnull = (motivo) => {
+        const availableProducts = ServicesProducts.get();
+        cancelModalSale.productos?.forEach(p => {
+             const currentProd = availableProducts.find(ap => ap.nombre === p.nombre);
+             if (currentProd) {
+                  ServicesProducts.update({ ...currentProd, stock: (currentProd.stock || 0) + p.cantidad });
+             }
         });
+
+        const allSales = SalesService.get();
+        const saleIndex = allSales.findIndex(s => s.id === cancelModalSale.id);
+        if (saleIndex !== -1) {
+             allSales[saleIndex].estado = "Anulado";
+             allSales[saleIndex].motivoAnulacion = motivo;
+             allSales[saleIndex].fechaAnulacion = new Date().toISOString().split("T")[0];
+             localStorage.setItem("sales", JSON.stringify(allSales));
+             setSales(allSales.map(sale => {
+                 if (!sale.cliente) {
+                     const clients = JSON.parse(localStorage.getItem("clients") || "[]");
+                     const found = clients.find(c => c.documento === sale.numeroDocumento);
+                     if (found) return { ...sale, cliente: `${found.nombres} ${found.apellidos}` };
+                 }
+                 return sale;
+             }));
+        }
+        
+        showAlert("success", "Venta anulada y productos devueltos al stock correctamente.");
+        setCancelModalSale(null);
     };
 
     const handleGenerarReporte = () => {
@@ -248,7 +277,7 @@ export default function SalesManagement() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-2">
+                <div className="flex justify-end mt-auto pt-4">
                     <Pagination
                         currentPage={pageActual}
                         totalPages={totalPages}
@@ -265,6 +294,15 @@ export default function SalesManagement() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
+                />
+            )}
+
+            {/* MODAL DE CONFIRMACION ANULACION */}
+            {cancelModalSale && (
+                <CancellationModal 
+                    saleId={cancelModalSale.numeroDocumento} 
+                    onConfirm={confirmAnull} 
+                    onCancel={() => setCancelModalSale(null)} 
                 />
             )}
 

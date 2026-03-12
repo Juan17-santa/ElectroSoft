@@ -47,11 +47,15 @@ export default function CustomSelect({
     const getLabel = () => {
 
         if (multiple) {
-            return value.length > 0
+            return value?.length > 0
                 ? `${value.length} seleccionada(s)`
                 : placeholder;
         }
 
+        const selectedOption = options.find(opt => opt.value === value);
+        if (selectedOption !== undefined) {
+             return selectedOption.label;
+        }
         return value || placeholder;
     };
 

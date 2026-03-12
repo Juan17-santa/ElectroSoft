@@ -236,6 +236,18 @@ export default function SaleDetailsPage() {
                                     <p className="font-bold text-[15px]">{sale.estado}</p>
                                 </div>
                             </div>
+                            {sale.estado === "Anulado" && (
+                                <>
+                                    <div className="mt-2">
+                                        <p className="text-xs text-red-500 leading-none mb-1">Motivo Anulación</p>
+                                        <p className="font-bold text-red-600 text-[14px]">{sale.motivoAnulacion || "N/A"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-red-500 leading-none mb-1">Fecha Anulación</p>
+                                        <p className="font-bold text-red-600 text-[14px]">{sale.fechaAnulacion || "N/A"}</p>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* Columna derecha */}
