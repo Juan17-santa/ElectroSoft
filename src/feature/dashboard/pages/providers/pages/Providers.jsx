@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ServicesProviders } from "../services/ServicesProviders";
 import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert from "../../../components/ui/alert";

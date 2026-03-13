@@ -1,5 +1,5 @@
 import PrimaryButton from "../../../components/ui/PrimaryButton";
-import { IdCard, FileText, User, ChevronDown, X, Target } from "lucide-react";
+import { IdCard, FileText, User, X } from "lucide-react";
 import ValidationMessage from "../../../components/ui/ValidationMessage"
 import CustomSelect from "../../../components/ui/CustomSelect"
 import { useState } from "react";
