@@ -10,7 +10,7 @@ import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { ServicesProviders } from "../providers/services/ServicesProviders";
 import { ServicesProducts } from "../products/services/ServicesProducts";
-import Alert from "../../components/ui/Alert";
+import PriceReviewModal from "../shopping/components/PriceReviewModal";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 
@@ -69,7 +69,6 @@ export default function CreateShopping() {
     const [currentPage,             setCurrentPage]             = useState(1);
     const [proveedoresList,         setProveedoresList]         = useState([]);
     const [confirmData,             setConfirmData]             = useState(null);
-    const [alert,                   setAlert]                   = useState(null);
 
     // Formulario superior
     // #7: Guardar el ID del proveedor además de su nombre para trazabilidad
@@ -81,11 +80,10 @@ export default function CreateShopping() {
     const [fechaTocada,             setFechaTocada]             = useState(false);
     const [numeroFacturaTocado,     setNumeroFacturaTocado]     = useState(false);
 
-    // Modal de confirmación de precio de venta
-    const [mostrarConfirmacionPrecio, setMostrarConfirmacionPrecio] = useState(false);
-    const [navegarACompras,           setNavegarACompras]           = useState(false);
-    const [productosPrecioDiferente,  setProductosPrecioDiferente]  = useState([]);
-    const [productosPendientes,       setProductosPendientes]       = useState([]);
+    // revisionPrecios: null = modal cerrado
+    //   { productos: [...con WAC], pendientes: [...para guardar] } = modal abierto
+    const [revisionPrecios,  setRevisionPrecios]  = useState(null);
+    const [navegarACompras,  setNavegarACompras]  = useState(false);
 
     // Productos en tabla
     const [productos, setProductos] = useState([]);
@@ -194,7 +192,6 @@ export default function CreateShopping() {
         });
 
         setNumeroFacturaTocado(false);
-        setAlert({ type: "success", message: "La compra fue registrada correctamente." });
         setNavegarACompras(true); // dispara el useEffect de navegación
     };
 
@@ -212,7 +209,12 @@ export default function CreateShopping() {
 
         const productosActuales = productos.filter((p) => !p.anulado);
         if (productosActuales.length === 0) {
-            setAlert({ type: "error", message: "Debes añadir al menos un producto activo a la compra." });
+            setConfirmData({
+                type: "warning",
+                title: "Sin productos",
+                message: "Debes añadir al menos un producto activo a la compra.",
+                onConfirm: () => setConfirmData(null),
+            });
             return;
         }
 
@@ -248,9 +250,7 @@ export default function CreateShopping() {
         );
 
         if (conPrecioDiferente.length > 0) {
-            setProductosPrecioDiferente(conPrecioDiferente);
-            setProductosPendientes(productosParaGuardar);
-            setMostrarConfirmacionPrecio(true);
+            setRevisionPrecios({ productos: conPrecioDiferente, pendientes: productosParaGuardar });
             return;
         }
 
@@ -587,58 +587,23 @@ export default function CreateShopping() {
                     />
                 )}
 
-                {/* MODAL CONFIRMACIÓN DE PRECIO — solo se monta cuando hay diferencias */}
-                {mostrarConfirmacionPrecio && (() => {
-                    const ref  = productosPrecioDiferente[0];
-                    // wacCalculado fue precalculado en handleCrearCompra con los precios
-                    // originales del catálogo, antes de que guardarCompra los modifique.
-                    const wac  = ref?.wacCalculado ?? null;
-                    const esMult = productosPrecioDiferente.length > 1;
-                    const fmt  = (n) => `$${Number(n).toLocaleString("es-CO")}`;
-
-                    return (
-                        <ConfirmModal
-                            type="info"
-                            title={esMult
-                                ? `¿Qué precio usar para ${productosPrecioDiferente.length} productos?`
-                                : `¿Qué precio usar para '${ref?.nombre}'?`
-                            }
-                            message={esMult
-                                ? `Algunos productos tienen precios sugeridos distintos al promedio calculado. ¿Con cuál precio quieres venderlos?`
-                                : `¿Quieres vender '${ref?.nombre}' a ${fmt(ref?.precioVenta)} (tu precio sugerido) o a ${fmt(wac)} (precio promedio del inventario)?`
-                            }
-                            labelConfirmar={esMult
-                                ? "Usar precios sugeridos"
-                                : `Usar ${fmt(ref?.precioVenta)}`
-                            }
-                            labelCancelar={esMult
-                                ? "Mantener precios promedio"
-                                : `Mantener ${fmt(wac)}`
-                            }
-                            onConfirm={() => {
-                                setMostrarConfirmacionPrecio(false);
-                                // Pasa los overrides: guardarCompra aplica WAC primero,
-                                // luego se sobreescribe con precioVenta dentro de finalizarCompra.
-                                finalizarCompra(productosPendientes, productosPrecioDiferente);
-                            }}
-                            onCancel={() => {
-                                setMostrarConfirmacionPrecio(false);
-                                // Sin overrides: el precio queda en WAC.
-                                finalizarCompra(productosPendientes);
-                            }}
-                        />
-                    );
-                })()}
+                {/* MODAL REVISIÓN DE PRECIOS — exclusivo del módulo de compras */}
+                {revisionPrecios && (
+                    <PriceReviewModal
+                        productos={revisionPrecios.productos}
+                        onConfirmar={(selecciones) => {
+                            // Productos donde el usuario eligió el precio sugerido
+                            const overrides = revisionPrecios.productos.filter(
+                                (p) => selecciones[p.id] === "sugerido"
+                            );
+                            setRevisionPrecios(null);
+                            finalizarCompra(revisionPrecios.pendientes, overrides);
+                        }}
+                    />
+                )}
 
             </div>
 
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
         </>
     );
 }

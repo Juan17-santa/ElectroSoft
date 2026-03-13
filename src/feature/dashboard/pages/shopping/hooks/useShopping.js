@@ -9,7 +9,7 @@ import { ServicesShopping } from "../services/ServicesShopping";
  *
  * Reglas de negocio aplicadas:
  *  - Al guardar una compra se incrementa el stock de cada producto
- *    y se actualiza su precio de venta en el catálogo (precioVenta → precio).
+ *    y se actualiza su precio de venta en el inventario (precioVenta → precio).
  *  - La anulación solo está disponible dentro de las 48 h posteriores
  *    al registro de la compra (fechaCreacion), no a la fecha de factura.
  *  - Al anular se revierte el inventario; si el stock actual es menor
@@ -51,7 +51,7 @@ export function useShopping() {
     // ─── Acciones ──────────────────────────────────────────────────────────────
 
     /**
-     * Guarda una nueva compra, actualiza el inventario y el catálogo de precios.
+     * Guarda una nueva compra, actualiza el inventario y los precios.
      *
      * @param {Object} params
      * @param {string}   params.numeroFactura
