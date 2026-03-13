@@ -11,8 +11,9 @@ import { TrendingUp, Tag, ArrowRight, CheckCircle2, Info } from "lucide-react";
  * Props:
  *   - productos : [{ id, nombre, wacCalculado, precioVenta }]
  *   - onConfirmar: (selecciones: { [id]: "wac" | "sugerido" }) => void
+ *   - onCancelar: () => void
  */
-export default function PriceReviewModal({ productos, onConfirmar }) {
+export default function PriceReviewModal({ productos, onConfirmar, onCancelar }) {
     // Estado inicial: todos en "wac" (precio promedio ponderado)
     const [selecciones, setSelecciones] = useState(
         Object.fromEntries(productos.map((p) => [p.id, "wac"]))
@@ -163,13 +164,21 @@ export default function PriceReviewModal({ productos, onConfirmar }) {
                             </>
                         )}
                     </p>
-                    <button
-                        onClick={() => onConfirmar(selecciones)}
-                        className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 transition-all duration-200 text-white font-semibold px-5 py-2.5 rounded-xl shadow-sm cursor-pointer text-sm whitespace-nowrap"
-                    >
-                        Confirmar
-                        <ArrowRight size={15} />
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={onCancelar}
+                            className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition-all duration-200 text-gray-700 font-semibold px-5 py-2.5 rounded-xl shadow-sm cursor-pointer text-sm whitespace-nowrap"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={() => onConfirmar(selecciones)}
+                            className="flex items-center gap-2 bg-yellow-400 hover:bg-yellow-500 transition-all duration-200 text-white font-semibold px-5 py-2.5 rounded-xl shadow-sm cursor-pointer text-sm whitespace-nowrap"
+                        >
+                            Confirmar
+                            <ArrowRight size={15} />
+                        </button>
+                    </div>
                 </div>
 
             </div>

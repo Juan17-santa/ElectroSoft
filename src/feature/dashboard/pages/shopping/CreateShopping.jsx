@@ -8,6 +8,7 @@ import CreateProductModal from "../shopping/components/CreateProductModal";
 import CreateProviderModal from "../shopping/components/CreateProviderModal";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import Alert from "../../components/ui/Alert";
 import { ServicesProviders } from "../providers/services/ServicesProviders";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import PriceReviewModal from "../shopping/components/PriceReviewModal";
@@ -69,6 +70,7 @@ export default function CreateShopping() {
     const [currentPage,             setCurrentPage]             = useState(1);
     const [proveedoresList,         setProveedoresList]         = useState([]);
     const [confirmData,             setConfirmData]             = useState(null);
+    const [alertData,               setAlertData]               = useState(null);
 
     // Formulario superior
     // #7: Guardar el ID del proveedor además de su nombre para trazabilidad
@@ -190,7 +192,13 @@ export default function CreateShopping() {
             const actual = ServicesProducts.getById(p.id);
             if (actual) ServicesProducts.update({ ...actual, precio: p.precioVenta });
         });
+// Mostrar alerta de éxito
+        setAlertData({
+            type: "success",
+            message: `Compra registrada exitosamente. Número de factura: ${numeroFactura}`,
+        });
 
+        
         setNumeroFacturaTocado(false);
         setNavegarACompras(true); // dispara el useEffect de navegación
     };
@@ -540,12 +548,7 @@ export default function CreateShopping() {
                     </button>
                     <PrimaryButton
                         icon={Plus}
-                        onClick={() => setConfirmData({
-                            type: "info",
-                            title: "Confirmar compra",
-                            message: `¿Deseas registrar la compra con ${productosActivos.length} producto(s)?`,
-                            onConfirm: handleCrearCompra
-                        })}
+                        onClick={handleCrearCompra}
                     >
                         Crear Compra
                     </PrimaryButton>
@@ -599,6 +602,18 @@ export default function CreateShopping() {
                             setRevisionPrecios(null);
                             finalizarCompra(revisionPrecios.pendientes, overrides);
                         }}
+                        onCancelar={() => {
+                            setRevisionPrecios(null);
+                        }}
+                    />
+                )}
+
+                {/* ALERTA DE ÉXITO */}
+                {alertData && (
+                    <Alert
+                        type={alertData.type}
+                        message={alertData.message}
+                        onClose={() => setAlertData(null)}
                     />
                 )}
 
