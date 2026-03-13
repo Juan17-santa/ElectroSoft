@@ -5,7 +5,9 @@ export default function ConfirmModal({
     title,
     message,
     onConfirm,
-    onCancel
+    onCancel,
+    labelConfirmar = "Confirmar",
+    labelCancelar  = "Cancelar",
 }) {
 
     const variants = {
@@ -64,7 +66,7 @@ export default function ConfirmModal({
                         onClick={onCancel}
                         className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition cursor-pointer font-medium"
                     >
-                        Cancelar
+                        {labelCancelar}
                     </button>
 
                     <button
@@ -72,7 +74,7 @@ export default function ConfirmModal({
                         onClick={onConfirm}
                         className={`px-4 py-2 rounded-lg text-white font-medium shadow-sm transition cursor-pointer ${current.button}`}
                     >
-                        Confirmar
+                        {labelConfirmar}
                     </button>
                 </div>
 

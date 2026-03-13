@@ -9,6 +9,7 @@ import CreateProviderModal from "../shopping/components/CreateProviderModal";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import { ServicesProviders } from "../providers/services/ServicesProviders";
+import { ServicesProducts } from "../products/services/ServicesProducts";
 import Alert from "../../components/ui/Alert";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
@@ -80,6 +81,12 @@ export default function CreateShopping() {
     const [fechaTocada,             setFechaTocada]             = useState(false);
     const [numeroFacturaTocado,     setNumeroFacturaTocado]     = useState(false);
 
+    // Modal de confirmación de precio de venta
+    const [mostrarConfirmacionPrecio, setMostrarConfirmacionPrecio] = useState(false);
+    const [navegarACompras,           setNavegarACompras]           = useState(false);
+    const [productosPrecioDiferente,  setProductosPrecioDiferente]  = useState([]);
+    const [productosPendientes,       setProductosPendientes]       = useState([]);
+
     // Productos en tabla
     const [productos, setProductos] = useState([]);
 
@@ -87,6 +94,15 @@ export default function CreateShopping() {
         const data = ServicesProviders.get().filter((p) => p.estado !== false);
         setProveedoresList(data);
     }, []);
+
+    // Navegación reactiva: se dispara cuando finalizarCompra marca navegarACompras=true.
+    // Usar useEffect en lugar de setTimeout dentro de un closure evita problemas
+    // con batching de React 18 y closures stale.
+    useEffect(() => {
+        if (!navegarACompras) return;
+        const timer = setTimeout(() => navigate("/dashboard/shopping"), 1500);
+        return () => clearTimeout(timer);
+    }, [navegarACompras, navigate]);
 
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
     const estadoProveedor     = proveedorTocado     ? validarProveedor(proveedorId)       : null;
@@ -155,6 +171,33 @@ export default function CreateShopping() {
         setProductos(updated);
     };
 
+    /**
+     * Paso final: persiste la compra y navega. Se llama tanto desde el flujo
+     * directo (sin diferencia de precios) como desde los callbacks del modal.
+     */
+    const finalizarCompra = (productosParaGuardar, overridesPrecio = []) => {
+        guardarCompra({
+            numeroFactura,
+            fechaFactura: formatearFecha(fechaISO),
+            proveedor,
+            proveedorId,
+            total,
+            productos: productosParaGuardar,
+        });
+
+        // Si el usuario eligió usar su precioVenta en lugar del WAC, aplicarlo ahora.
+        // guardarCompra (síncrono) ya corrió, así que los precios originales fueron
+        // usados para calcular el WAC correctamente antes de este override.
+        overridesPrecio.forEach((p) => {
+            const actual = ServicesProducts.getById(p.id);
+            if (actual) ServicesProducts.update({ ...actual, precio: p.precioVenta });
+        });
+
+        setNumeroFacturaTocado(false);
+        setAlert({ type: "success", message: "La compra fue registrada correctamente." });
+        setNavegarACompras(true); // dispara el useEffect de navegación
+    };
+
     const handleCrearCompra = () => {
         setProveedorTocado(true);
         setFechaTocada(true);
@@ -178,25 +221,40 @@ export default function CreateShopping() {
                 id,
                 nombre,
                 cantidad,
-                precio,                            // Precio Inventario en el momento de la compra
+                precio,
                 costeProducto: costeProducto || precio,
                 precioVenta:   precioVenta   || precio,
-                subtotal,                          // cantidad × costeProducto
+                subtotal,
             })
         );
 
-        guardarCompra({
-            numeroFactura,
-            fechaFactura: formatearFecha(fechaISO),
-            proveedor,     // Nombre (display)
-            proveedorId,   // #7: ID para trazabilidad
-            total,
-            productos: productosParaGuardar,
+        // Pre-calcular WAC antes de guardarCompra para mostrar el valor correcto en el modal.
+        // Fórmula: WAC = (stockAnterior × precioActual + cantidadNueva × precioVenta) / stockNuevo
+        const productosConWac = productosParaGuardar.map((p) => {
+            const actual       = ServicesProducts.getById(p.id);
+            const stockAnt     = actual?.stock ?? 0;
+            const precioActual = actual?.precio ?? 0;
+            const precioVenta  = Number(p.precioVenta);
+            const stockNuevo   = stockAnt + p.cantidad;
+            const wacExacto    = stockAnt > 0
+                ? (stockAnt * precioActual + p.cantidad * precioVenta) / stockNuevo
+                : precioVenta;
+            return { ...p, wacCalculado: Math.ceil(wacExacto / 100) * 100 };
         });
 
-        setNumeroFacturaTocado(false);
-        setAlert({ type: "success", message: "La compra fue registrada correctamente." });
-        setTimeout(() => navigate("/dashboard/shopping"), 1500);
+        // Solo preguntar si precioVenta difiere del WAC que se va a aplicar
+        const conPrecioDiferente = productosConWac.filter(
+            (p) => p.wacCalculado !== p.precioVenta
+        );
+
+        if (conPrecioDiferente.length > 0) {
+            setProductosPrecioDiferente(conPrecioDiferente);
+            setProductosPendientes(productosParaGuardar);
+            setMostrarConfirmacionPrecio(true);
+            return;
+        }
+
+        finalizarCompra(productosParaGuardar);
     };
 
     return (
@@ -377,24 +435,42 @@ export default function CreateShopping() {
                                             </td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">
                                                 {producto.anulado ? (
-                                                    <button
-                                                        onClick={() => setConfirmData({
-                                                            type: "info",
-                                                            title: "Reactivar producto",
-                                                            message: `¿Deseas reactivar "${producto.nombre}" en la compra?`,
-                                                            onConfirm: () => {
-                                                                const updated = productos.map((p) =>
-                                                                    p.id === producto.id ? { ...p, anulado: false } : p
-                                                                );
-                                                                setProductos(updated);
-                                                                setConfirmData(null);
-                                                            }
-                                                        })}
-                                                        className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
-                                                        title="Reactivar producto"
-                                                    >
-                                                        <Eye size={16} className="text-blue-600" />
-                                                    </button>
+                                                    (() => {
+                                                        // Bloquear reactivación si ya existe otra línea
+                                                        // activa con el mismo producto en la compra.
+                                                        const tieneActivoDuplicado = productos.some(
+                                                            (p) => String(p.id) === String(producto.id) && !p.anulado
+                                                        );
+                                                        return (
+                                                            <button
+                                                                disabled={tieneActivoDuplicado}
+                                                                onClick={() => !tieneActivoDuplicado && setConfirmData({
+                                                                    type: "info",
+                                                                    title: "Reactivar producto",
+                                                                    message: `¿Deseas reactivar "${producto.nombre}" en la compra?`,
+                                                                    onConfirm: () => {
+                                                                        const updated = productos.map((p) =>
+                                                                            p.id === producto.id ? { ...p, anulado: false } : p
+                                                                        );
+                                                                        setProductos(updated);
+                                                                        setConfirmData(null);
+                                                                    }
+                                                                })}
+                                                                title={
+                                                                    tieneActivoDuplicado
+                                                                        ? "Ya existe una línea activa de este producto"
+                                                                        : "Reactivar producto"
+                                                                }
+                                                                className={`p-1.5 rounded-lg transition duration-300 ${
+                                                                    tieneActivoDuplicado
+                                                                        ? "bg-gray-100 cursor-not-allowed opacity-40"
+                                                                        : "bg-blue-100 hover:bg-blue-200 cursor-pointer"
+                                                                }`}
+                                                            >
+                                                                <Eye size={16} className={tieneActivoDuplicado ? "text-gray-400" : "text-blue-600"} />
+                                                            </button>
+                                                        );
+                                                    })()
                                                 ) : (
                                                     <button
                                                         onClick={() => setConfirmData({
@@ -510,6 +586,49 @@ export default function CreateShopping() {
                         onCancel={() => setConfirmData(null)}
                     />
                 )}
+
+                {/* MODAL CONFIRMACIÓN DE PRECIO — solo se monta cuando hay diferencias */}
+                {mostrarConfirmacionPrecio && (() => {
+                    const ref  = productosPrecioDiferente[0];
+                    // wacCalculado fue precalculado en handleCrearCompra con los precios
+                    // originales del catálogo, antes de que guardarCompra los modifique.
+                    const wac  = ref?.wacCalculado ?? null;
+                    const esMult = productosPrecioDiferente.length > 1;
+                    const fmt  = (n) => `$${Number(n).toLocaleString("es-CO")}`;
+
+                    return (
+                        <ConfirmModal
+                            type="info"
+                            title={esMult
+                                ? `¿Qué precio usar para ${productosPrecioDiferente.length} productos?`
+                                : `¿Qué precio usar para '${ref?.nombre}'?`
+                            }
+                            message={esMult
+                                ? `Algunos productos tienen precios sugeridos distintos al promedio calculado. ¿Con cuál precio quieres venderlos?`
+                                : `¿Quieres vender '${ref?.nombre}' a ${fmt(ref?.precioVenta)} (tu precio sugerido) o a ${fmt(wac)} (precio promedio del inventario)?`
+                            }
+                            labelConfirmar={esMult
+                                ? "Usar precios sugeridos"
+                                : `Usar ${fmt(ref?.precioVenta)}`
+                            }
+                            labelCancelar={esMult
+                                ? "Mantener precios promedio"
+                                : `Mantener ${fmt(wac)}`
+                            }
+                            onConfirm={() => {
+                                setMostrarConfirmacionPrecio(false);
+                                // Pasa los overrides: guardarCompra aplica WAC primero,
+                                // luego se sobreescribe con precioVenta dentro de finalizarCompra.
+                                finalizarCompra(productosPendientes, productosPrecioDiferente);
+                            }}
+                            onCancel={() => {
+                                setMostrarConfirmacionPrecio(false);
+                                // Sin overrides: el precio queda en WAC.
+                                finalizarCompra(productosPendientes);
+                            }}
+                        />
+                    );
+                })()}
 
             </div>
 

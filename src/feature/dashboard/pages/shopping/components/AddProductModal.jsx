@@ -150,10 +150,13 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
         if (!vProd.valido || !vCant.valido || !vPre.valido || !vCoste.valido || !vVenta.valido) return;
 
-        const yaAgregado = productosYaAgregados.some(
-            (p) => String(p.id) === String(modalProducto)
+        // Solo se bloquea si el producto ya existe en la compra Y está activo.
+        // Un producto anulado no cuenta como "ya agregado" — el usuario puede
+        // volver a añadirlo con datos corregidos.
+        const yaAgregadoActivo = productosYaAgregados.some(
+            (p) => String(p.id) === String(modalProducto) && !p.anulado
         );
-        if (yaAgregado) {
+        if (yaAgregadoActivo) {
             setAlert({ type: "error", message: "Este producto ya fue agregado a la compra." });
             return;
         }
@@ -342,9 +345,6 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                                             : "ring-1 ring-red-300"
                                     }`}
                             />
-                            <p className="text-xs text-blue-400 -mt-1">
-                                Al guardar la compra, este valor actualizará el precio del producto en el inventario.
-                            </p>
                             <FieldStatus estado={estadoPrecioVenta} />
                         </div>
 
