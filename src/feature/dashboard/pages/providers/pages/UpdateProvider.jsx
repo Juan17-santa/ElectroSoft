@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { X } from "lucide-react";
+// import { X } from "lucide-react";
 import Alert from "../../../components/ui/alert";
 import ProviderForm from "../components/ProvidersForm";
 import { useProviderForm } from "../hooks/useProviderForm";
@@ -22,7 +22,7 @@ export default function UpdateProvider() {
     // CONTROL DE APERTURA DEL DROPDOWN DE CATEGORÍAS
     const [open, setOpen] = useState(false);
 
-    // SINO LLEGA EL PROVEEDOR, REDIRIGIR A LA LISTA
+    // SI NO LLEGA EL PROVEEDOR, REDIRIGIR A LA LISTA
     useEffect(() => {
         if (!providerToEdit) {
             navigate("/dashboard/providers");
@@ -70,13 +70,12 @@ export default function UpdateProvider() {
                             Complete todos los campos del formulario
                         </p>
                     </div>
-
-                    <button
+                    {/* <button
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
                         onClick={() => navigate("/dashboard/providers")}
                     >
                         <X size={20} />
-                    </button>
+                    </button> */}
                 </div>
 
                 {/* FORMULARIO */}
