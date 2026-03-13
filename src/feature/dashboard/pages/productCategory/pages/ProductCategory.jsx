@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ServiceProductCategory } from "../services/ServicesProductCategory";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert from "../../../components/ui/alert";
 import Pagination from "../../../components/ui/Pagination";
@@ -9,15 +8,14 @@ import ProductCategoryTable from "../components/ProductCategoryTable";
 import useProductCategoryTable from "../hooks/UseProductCategoryTable";
 import ProductCategoryModal from "../components/ProductCategoryModal";
 
+// COMPONENTE PRINCIPAL PARA LA GESTION DE CATEGORIAS DE PRODUCTOS
 export default function ProductCategory() {
+
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
 
-    // OBTENER LAS CATEGORIAS DE PRODUCTOS
-    const [categories, setCategories] = useState([]);
-
-    // ESTADO PARA EL BUSCADOR
-    const [search, setSearch] = useState("");
+    // ESTADO PARA EL TEXTO DEL BUSCADOR
+    const [searchTerm, setSearchTerm] = useState("");
 
     // ESTADO PARA EL MODAL DE CONFIRMACION
     const [confirmData, setConfirmData] = useState(null);
@@ -30,39 +28,13 @@ export default function ProductCategory() {
         setAlert({ type, message });
     };
 
-    // NUEVOS ESTADOS PARA LA MODAL ÚNICA
+    // ESTADOS PARA CONTROLAR LA MODAL DE CREAR / EDITAR
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
 
     // PAGINACIÓN 
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
-
-    // FILTRAR LAS CATEGORIAS
-    const filteredCategories = categories.filter(cat =>
-        cat.nombre.toLowerCase().includes(search.toLowerCase()) ||
-        (cat.estado ? "activo" : "inactivo").includes(search.toLowerCase())
-    );
-
-    const totalPages = Math.ceil(filteredCategories.length / recordsPerPage);
-    const lastIndex = presentPage * recordsPerPage;
-    const firstIndex = lastIndex - recordsPerPage;
-    const presentRecords = filteredCategories.slice(firstIndex, lastIndex);
-
-    // OBETENER LAS CATEGORIAS AL CARGAR EL COMPONENTE
-    useEffect(() => {
-        getProductCategories();
-    }, [])
-
-    // FUNCION PARA OBTENER LAS CATEGORIAS
-    const getProductCategories = async () => {
-        try {
-            const response = ServiceProductCategory.get();
-            setCategories(response)
-        } catch (error) {
-            console.error(error)
-        }
-    }
 
     // FUNCION PARA PREPARAR LA VISTA DE DETALLES
     const handleDetailsNavigation = (category) => {
@@ -71,24 +43,31 @@ export default function ProductCategory() {
         })
     };
 
-    // FUNCIONES PARA ABRIR MODAL (CREAR / EDITAR) 
+    // FUNCION PARA ABRIR EL MODAL EN MODO CREAR
     const handleOpenCreate = () => {
-        setSelectedCategory(null); // Limpiamos selección para que sea "Crear"
-        setIsModalOpen(true);
+        setSelectedCategory(null); // LIMPIAMOS
+        setIsModalOpen(true);      // ABRIMOS LA MODAL
     };
 
     const handleOpenEdit = (category) => {
-        setSelectedCategory(category); // Cargamos la categoría para que sea "Editar"
-        setIsModalOpen(true);
+        setSelectedCategory(category); // CARGAMOS LA CATEGORIA SELECCIONADA
+        setIsModalOpen(true);          // ABIRMOS LA MODAL
     };
 
-    // USAMOS EL HOOK PARA OBTENER LAS FUNCIONES DE ELIMINAR Y CAMBIAR ESTADO
-    const { deleteCategory, toggleEstado } =
-        useProductCategoryTable({
-            setCategories,
-            setConfirmData,
-            showAlert,
-        })
+    // USAMOS EL HOOK QUE CONTIENE LA LOGICA DE LA TABLA
+    const {
+        data,
+        totalPages,
+        deleteCategory,
+        toggleEstado,
+        loadCategories
+    } = useProductCategoryTable({
+        setConfirmData,
+        showAlert,
+        searchTerm,
+        currentPage: presentPage,
+        recordsPerPage
+    })
 
     return (
         <>
@@ -98,16 +77,16 @@ export default function ProductCategory() {
 
                 {/* BUSCADOR Y BOTON CREAR */}
                 <SearchBar
-                    searchTerm={search}
-                    onSearchChange={(e) => setSearch(e.target.value)}
+                    searchTerm={searchTerm}
+                    onSearchChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Buscar categorias de productos..."
-                    onCreateClick={() => handleOpenCreate(true)}
+                    onCreateClick={handleOpenCreate}
                     createButtonText="Crear categoria"
                 />
 
                 {/* TABLA */}
                 <ProductCategoryTable
-                    data={presentRecords}
+                    data={data}
                     onDetails={handleDetailsNavigation}
                     onEdit={handleOpenEdit}
                     onDelete={deleteCategory}
@@ -124,14 +103,17 @@ export default function ProductCategory() {
                 </div>
             </div>
 
-            {/* LA MODAL ÚNICA */}
+            {/* MODAL PARA CREAR O EDITAR UNA CATEGORIA */}
             {isModalOpen && (
                 <ProductCategoryModal
-                    categoryData={selectedCategory} // Si es null crea, si tiene datos edita
+                    categoryData={selectedCategory}
                     onClose={() => setIsModalOpen(false)}
                     onSave={() => {
-                        getProductCategories(); // Refresca la tabla tras guardar/editar
-                        showAlert("success", `Categoría ${selectedCategory ? 'actualizada' : 'creada'} con éxito`);
+                        loadCategories();
+                        showAlert(
+                            "success",
+                            `Categoría ${selectedCategory ? "actualizada" : "creada"} con éxito`
+                        );
                     }}
                 />
             )}
