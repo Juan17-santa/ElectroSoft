@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useProviderForm } from "../hooks/useProviderForm";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+// import { X } from "lucide-react";
 import Alert from "../../../components/ui/alert";
 import ProviderForm from "../components/ProvidersForm";
 
@@ -29,8 +29,8 @@ export default function CreateProvider() {
         formData,
         errors,
         handleChange,
-        handleToggleCategoria,
-        handleSubmit
+        handleSubmit,
+        setCategoriasAsociadas,
     } = useProviderForm({
         mode: "create",
         onSuccess: () => {
@@ -58,13 +58,12 @@ export default function CreateProvider() {
                             Complete todos los campos del formulario
                         </p>
                     </div>
-
-                    <button
+                    {/* <button
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
                         onClick={() => navigate("/dashboard/providers")}
                     >
                         <X size={20} />
-                    </button>
+                    </button> */}
                 </div>
 
                 {/* FORMULARIO */}
@@ -75,7 +74,7 @@ export default function CreateProvider() {
                     open={open}
                     setOpen={setOpen}
                     handleChange={handleChange}
-                    handleToggleCategoria={handleToggleCategoria}
+                    setCategoriasAsociadas={setCategoriasAsociadas}
                     handleSubmit={handleSubmit}
                     onCancel={() => navigate("/dashboard/providers")}
                     buttonText="Crear proveedor"
