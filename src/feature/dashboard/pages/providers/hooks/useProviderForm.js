@@ -1,31 +1,8 @@
-/*
-useProviderForm
-
-Hook personalizado encargado de gestionar la lógica del formulario de creación y 
-edición de proveedores.
-
-Este hook centraliza el estado, validaciones y envío del formulario, permitiendo que el 
-componente visual (ProviderForm) se mantenga libre de lógica de negocio.
-
-Responsabilidades:
-✔ Gestionar el estado del formulario (formData)
-✔ Gestionar el estado de errores de validación (errors)
-✔ Validar campos individualmente
-✔ Ejecutar validación en tiempo real (handleChange)
-✔ Validar el formulario completo antes del envío
-✔ Ejecutar la acción correspondiente según el modo (create / update)
-✔ Invocar la función onSuccess después de una operación exitosa
-
-Dependencias:
-- ServicesProviders → Para operaciones de creación y actualización
-- Validations → Para reglas de validación reutilizables
-*/
-
 import { useState } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ServicesProviders } from "../services/ServicesProviders";
 
-// HOOK PERSONALIZADO PARA MANEJAR EL FORMULARIO DE CREACION Y EDICION DE PROVEEDORES
+// HOOK PERSONALIZADO PARA MANEJAR EL FORMULARIO DE CREACIÓN Y EDICIÓN DE PROVEEDORES
 export function useProviderForm({
     initialData = {},
     onSuccess,
@@ -46,7 +23,7 @@ export function useProviderForm({
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
-    // VALIDACIÓN INDIVIDUAL
+    // FUNCIÓN PARA VALIDAR UN CAMPO INDIVIDUAL
     const validateField = (name, value) => {
 
         let error = "";
@@ -100,7 +77,7 @@ export function useProviderForm({
         return error;
     };
 
-    // HANDLE CHANGE CON VALIDACIÓN EN TIEMPO REAL
+    // FUNCIÓN PARA MANEJAR CAMBIOS EN LOS INPUTS Y VALIDAR EN TIEMPO REAL
     const handleChange = (e) => {
 
         const { name, value } = e.target;
@@ -118,18 +95,7 @@ export function useProviderForm({
         }));
     };
 
-    // SELECCIONAR/Deseleccionar categorías
-    const handleToggleCategoria = (id) => {
-
-        setFormData(prev => ({
-            ...prev,
-            categoriasAsociadas: prev.categoriasAsociadas.includes(id)
-                ? prev.categoriasAsociadas.filter(c => c !== id)
-                : [...prev.categoriasAsociadas, id]
-        }));
-    };
-
-    // VALIDAR TODO EL FORMULARIO
+    // FUNCIÓN PARA VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
 
         let newErrors = {};
@@ -144,6 +110,7 @@ export function useProviderForm({
         return Object.keys(newErrors).length === 0;
     };
 
+    // FUNCIÓN QUE MANEJA EL ENVÍO DEL FORMULARIO
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -160,11 +127,20 @@ export function useProviderForm({
         onSuccess();
     };
 
+    // FUNCIÓN PARA ACTUALIZAR LAS CATEGORÍAS ASOCIADAS DEL PROVEEDOR
+    const setCategoriasAsociadas = (values) => {
+        setFormData(prev => ({
+            ...prev,
+            categoriasAsociadas: values
+        }));
+    };
+
+    // VALORES Y FUNCIONES QUE RETORNA EL HOOK
     return {
         formData,
         errors,
         handleChange,
         handleSubmit,
-        handleToggleCategoria
+        setCategoriasAsociadas
     };
 }

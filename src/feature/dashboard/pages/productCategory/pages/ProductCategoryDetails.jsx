@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Info, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
+// COMPONENTE PARA MOSTRAR EL DETALLE DE UNA CATEGORIA
 export default function ProductCategoryDetails() {
+
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
 
@@ -20,6 +22,7 @@ export default function ProductCategoryDetails() {
         }
     }, [categoryDetail]);
 
+    // SI NO HAY CATEGORIA SE MUESTRA UN MENSAJE
     if (!categoria) {
         return (
             <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
@@ -30,6 +33,7 @@ export default function ProductCategoryDetails() {
         );
     }
 
+    // FUNCION PARA VOLVER A LA LISTA DE CATEGORIAS
     const handleBack = () => {
         navigate("/dashboard/productCategory");
     };
@@ -40,16 +44,13 @@ export default function ProductCategoryDetails() {
             <div
                 className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
                 style={{
-                    backgroundImage: 'url("/background-shopping-details.png")',
+                    backgroundImage: 'url("/background-details.jpg")',
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat"
                 }}
             >
-                <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
-
                 <div className="relative z-10 flex flex-col gap-6">
-
                     <div className="flex items-center gap-2">
                         <Info size={22} />
                         <h2 className="text-xl font-semibold">
@@ -58,9 +59,7 @@ export default function ProductCategoryDetails() {
                     </div>
 
                     <div className="bg-gray-50 rounded-2xl p-6 shadow-md max-w-2xl w-full mx-auto">
-
                         <div className="flex flex-col gap-6">
-
                             <div className="flex justify-between">
                                 <h3 className="text-sm font-bold uppercase text-gray-500 py-2">
                                     Información General
@@ -88,11 +87,8 @@ export default function ProductCategoryDetails() {
                                     {categoria.descripcion || "Sin descripción"}
                                 </p>
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
             </div>
             <div className="flex justify-end">
@@ -104,8 +100,6 @@ export default function ProductCategoryDetails() {
                     Volver
                 </button>
             </div>
-
-
         </div>
     );
 }

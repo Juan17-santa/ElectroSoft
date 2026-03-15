@@ -4,7 +4,9 @@ import { Info, X } from "lucide-react";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 import { useLocation } from "react-router-dom";
 
+// COMPONENTE QUE MUESTRA LOS DETALLES DE UN PROVEEDOR
 export default function ProviderDetails() {
+
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
 
@@ -27,6 +29,7 @@ export default function ProviderDetails() {
         setCategories(allCategories);
     }, [providerDetail]);
 
+    // SI NO HAY PROVEEDOR SE MUESTRA UN MENSAJE
     if (!provider) {
         return (
             <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
@@ -37,6 +40,7 @@ export default function ProviderDetails() {
         );
     }
 
+    // FUNCIÓN PARA VOLVER A LA LISTA DE PROVEEDORES
     const handleBack = () => {
         navigate("/dashboard/providers");
     };
@@ -47,7 +51,7 @@ export default function ProviderDetails() {
             <div
                 className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
                 style={{
-                    backgroundImage: 'url("/background-shopping-details.png")',
+                    backgroundImage: 'url("/background-details.jpg")',
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat"

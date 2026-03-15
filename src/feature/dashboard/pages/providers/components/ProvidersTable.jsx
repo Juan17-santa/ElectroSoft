@@ -1,32 +1,8 @@
-/*
-ProviderTable
-
-Componente reutilizable que renderiza la tabla
-de proveedores dentro del dashboard.
-
-Este componente SOLO maneja la parte visual (UI).
-La lógica (obtención de datos, paginación, filtros,
-eliminación, navegación, etc.) se recibe desde
-el componente padre mediante props.
-
-Responsabilidades:
-✔ Renderizar encabezados de la tabla
-✔ Mostrar listado de proveedores
-✔ Renderizar mensaje cuando no existen registros en data
-✔ Ejecutar acciones enviadas por props (editar, eliminar)
-✔ Renderizar botones de acción
-
-No contiene lógica de negocio.
-No realiza llamadas a servicios.
-No maneja estado global.
-*/
-
 import { Trash, Pencil, Eye } from "lucide-react";
 
-// Componente para mostrar la tabla de proveedores
+// COMPONENTE QUE MUESTRA LA TABLA DE PROVEEDORES
 export default function ProvidersTable({
     data,
-    categorias,
     onDetails,
     onEdit,
     onToggleEstado,
@@ -43,19 +19,19 @@ export default function ProvidersTable({
                         <tr className="text-left border-b border-gray-300">
                             <th className="px-3 py-2 font-semibold w-12">ID</th>
                             <th className="px-3 py-2 font-semibold w-28">Documento</th>
-                            <th className="px-3 py-2 font-semibold w-36">Nombre proveedor</th>
-                            <th className="px-3 py-2 font-semibold w-36">Nombre contacto</th>
-                            <th className="px-3 py-2 font-semibold w-28">Telefono contacto</th>
-                            <th className="px-3 py-2 font-semibold w-44">Categorias asociadas</th>
+                            <th className="px-3 py-2 font-semibold w-56">Nombre proveedor</th>
+                            <th className="px-3 py-2 font-semibold">Nombre contacto</th>
+                            <th className="px-3 py-2 font-semibold w-32">Telefono contacto</th>
                             <th className="px-3 py-2 font-semibold w-28">Estado</th>
                             <th className="px-3 py-2 font-semibold w-48 text-center">Acciones</th>
                         </tr>
                     </thead>
 
+                    {/* SI NO HAY PROVEEDORES SE MUESTRA UN MENSAJE */}
                     <tbody className="bg-white text-gray-700">
                         {data.length === 0 ? (
                             <tr>
-                                <td colSpan="8" className="text-center py-4 text-gray-500">
+                                <td colSpan="7" className="text-center py-4 text-gray-500">
                                     No se encontraron proveedores.
                                 </td>
                             </tr>
@@ -73,20 +49,6 @@ export default function ProvidersTable({
                                     <td className="px-3 py-2">{provider.nombreContacto}</td>
                                     <td className="px-3 py-2">{provider.telefonoContacto}</td>
                                     <td className="px-3 py-2">
-                                        {provider.categoriasAsociadas?.length > 0 ? (
-                                            provider.categoriasAsociadas
-                                                .map(id => {
-                                                    const cat = categorias.find(c => c.id === id);
-                                                    return cat?.nombre;
-                                                })
-                                                .join(", ")
-                                        ) : (
-                                            <span className="text-gray-400 italic">
-                                                Sin categorías asociadas
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-3 py-2">
                                         <div className="flex items-center gap-2">
                                             <span
                                                 className={`w-2.5 h-2.5 rounded-full 
@@ -97,6 +59,8 @@ export default function ProvidersTable({
                                             </span>
                                         </div>
                                     </td>
+
+                                    {/* ACCIONES */}
                                     <td className="px-1 py-1">
                                         <div className="flex justify-center gap-2">
 

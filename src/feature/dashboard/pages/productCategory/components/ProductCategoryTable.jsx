@@ -1,29 +1,6 @@
-/*
-ProductCategoryTable
-
-Componente reutilizable que renderiza la tabla
-de categorias de productos dentro del dashboard.
-
-Este componente SOLO maneja la parte visual (UI).
-La logica (obtención de datos, paginación, filtros,
-eliminación, navegación, etc.) se recibe desde
-el componente padre mediante props.
-
-Responsabilidades:
-✔ Renderizar encabezados de la tabla
-✔ Mostrar listado de categorias
-✔ Renderizar mensaje cuando no existen registros en data
-✔ Ejecutar acciones enviadas por props (editar, eliminar)
-✔ Renderizar botones de acción por fila
-
-No contiene lógica de negocio.
-No realiza llamadas a servicios.
-No maneja estado global.
-*/
-
 import { Trash, Pencil, Eye } from "lucide-react";
 
-// Componente para mostrar la tabla de categorias de productos
+// COMPONENTE QUE MUESTRA LA TABLA DE CATGEORIAS DE PRODUCTOS
 export default function ProductCategoryTable({
     data,
     onDetails,
@@ -47,6 +24,7 @@ export default function ProductCategoryTable({
                         </tr>
                     </thead>
 
+                    {/* SI NO HAY CATEGORIAS SE MJUESTRA UN MENSAJE */}
                     <tbody className="bg-white text-gray-700">
                         {data.length === 0 ? (
                             <tr>
@@ -76,6 +54,8 @@ export default function ProductCategoryTable({
                                             </span>
                                         </div>
                                     </td>
+
+                                    {/* ACCIONES */}
                                     <td className="px-4 py-1">
                                         <div className="flex justify-center gap-3">
 

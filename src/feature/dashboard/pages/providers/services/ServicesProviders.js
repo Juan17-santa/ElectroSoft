@@ -2,11 +2,13 @@ const KEY = "providers";
 
 export const ServicesProviders = {
 
+    // OBTENER PROVEEDORES
     get() {
         const data = localStorage.getItem(KEY);
         return data ? JSON.parse(data) : [];
     },
 
+    // CREAR UN PROVEEDOR
     create({ tipoDoc, documento, nombreProveedor, nombreContacto, telefonoContacto, categoriasAsociadas }) {
 
         const proveedores = this.get();
@@ -29,6 +31,7 @@ export const ServicesProviders = {
         return nuevoProveedor;
     },
 
+    // MODIFICAR UN PROVEEDOR
     update(proveedorActualizado) {
 
         const proveedores = this.get();
@@ -40,6 +43,7 @@ export const ServicesProviders = {
         return nuevosProveedores;
     },
 
+    // ELIMINAR UN PROVEEDOR
     delete(id) {
 
         const data = JSON.parse(localStorage.getItem(KEY)) || [];
@@ -51,6 +55,7 @@ export const ServicesProviders = {
         return newData;
     },
 
+    // CAMBIAR EL ESTADO DE UN PROVEEDOR
     toggleEstado(id) {
 
         const proveedores = this.get();

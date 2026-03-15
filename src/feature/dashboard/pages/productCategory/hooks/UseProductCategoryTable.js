@@ -1,34 +1,28 @@
-/*
-useProductCategoryTable
-
-Hook personalizado encargado de gestionar las acciones interactivas asociadas a la tabla 
-de categorías de productos.
-
-Este hook centraliza la lógica relacionada con operaciones como eliminación y cambio de estado,
-manteniendo el componente de la tabla completamente libre de lógica de negocio.
-
-Responsabilidades:
-✔ Gestionar la lógica de eliminación de categorías
-✔ Gestionar la lógica de cambio de estado (activo / inactivo)
-✔ Configurar y activar cuadros de confirmación
-✔ Actualizar el estado global o local de categorías
-✔ Disparar alertas de éxito tras operaciones completadas
-
-Dependencias:
-- ServiceProductCategory → Para ejecutar operaciones de eliminación y actualización
-- setCategories → Para actualizar la lista renderizada en la tabla
-- setConfirmData → Para controlar el modal de confirmación
-- showAlert → Para mostrar notificaciones visuales
-*/
-
+import { useEffect, useState } from "react";
 import { ServiceProductCategory } from "../services/ServicesProductCategory";
 
-// HOOK PERSONALIZADO PARA MANEJAR LAS ACCIONES DE LA TABLA DE CATEGORIAS DE PRODUCTOS
+// HOOK PERSONALIZADO PARA GESTIONAR LA LOGICA DE LA TABLA DE CATEGORIAS 
 export default function useProductCategoryTable({
-    setCategories,
     setConfirmData,
     showAlert,
+    searchTerm,
+    currentPage,
+    recordsPerPage
 }) {
+
+    // ESTADO PARA OBTENER LAS CATEGORIAS DE PRODUCTOS
+    const [categories, setCategories] = useState([]);
+
+    // FUNCION PARA CARGAR LAS CATEGORIAS 
+    const loadCategories = () => {
+        const storedCategories = ServiceProductCategory.get();
+        setCategories(storedCategories);
+    };
+
+    // AL CARGAR EL COMPONENTE CARGAR LAS CATEGORIAS
+    useEffect(() => {
+        loadCategories();
+    }, []);
 
     // FUNCION PARA ELIMINAR UNA CATEGORIA DE PRODUCTO
     const deleteCategory = (id) => {
@@ -44,7 +38,7 @@ export default function useProductCategoryTable({
 
                 showAlert("success", "Categoría de producto eliminada con éxito");
             },
-            oncancel: () => setConfirmData(null),
+            onCancel: () => setConfirmData(null),
         });
     };
 
@@ -65,13 +59,33 @@ export default function useProductCategoryTable({
                     "Estado de la categoria actualizada con exito"
                 );
             },
-            oncancel: () => setConfirmData(null),
+            onCancel: () => setConfirmData(null),
         });
     };
 
+    // FILTRAR LAS CATEGORIAS
+    const filteredCategories = categories.filter(cat => {
+        const query = searchTerm.toLowerCase();
+
+        return (
+            cat.nombre?.toLowerCase().includes(query) ||
+            cat.descripcion?.toLowerCase().includes(query) ||
+            (cat.estado ? "activo" : "inactivo").includes(query)
+        );
+    });
+
+    // LOGICA DE PAGINACION
+    const totalPages = Math.ceil(filteredCategories.length / recordsPerPage);
+    const lastIndex = currentPage * recordsPerPage;
+    const firstIndex = lastIndex - recordsPerPage;
+    const currentRecords = filteredCategories.slice(firstIndex, lastIndex);
+
     // RETORNAMOS LAS FUNCIONES PARA USAR EN LA TABLA
     return {
+        data: currentRecords,
+        totalPages,
         deleteCategory,
         toggleEstado,
+        loadCategories
     };
 }

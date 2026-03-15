@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ServicesProviders } from "../services/ServicesProviders";
 import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert from "../../../components/ui/alert";
@@ -8,15 +7,14 @@ import ProvidersTable from "../components/ProvidersTable";
 import useProvidersTable from "../hooks/useProvidersTable";
 import SearchBar from "../../../components/ui/Searchbar";
 
+// COMPONENTE PRINCIPAL PARA LA GESTIÓN DE PROVEEDORES
 export default function Providers() {
+
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
 
-    // OBTENER LOS PROVEEDORES
-    const [providers, setProviders] = useState([]);
-
-    // ESTADO PARA EL BUSCADOR
-    const [search, setSearch] = useState("");
+    // ESTADO PARA EL TEXTO DEL BUSCADOR
+    const [searchTerm, setSearchTerm] = useState("");
 
     // ESTADO PARA EL MODAL DE CONFIRMACION
     const [confirmData, setConfirmData] = useState(null);
@@ -29,45 +27,9 @@ export default function Providers() {
         setAlert({ type, message });
     };
 
-    // FUNCION PAGINADOR, PAGINA ACTUAL DEL PAGINADOR
+    // FUNCION PAGINADOR
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
-
-    // FILTRAR LOS PROVEEDORES
-    const filteredProviders = providers.filter(pro => {
-        const query = search.toLowerCase();
-        const telefono = pro.telefonoContacto ? String(pro.telefonoContacto) : "";
-
-        return (
-            pro.nombreProveedor?.toLowerCase().includes(query) ||
-            pro.tipoDoc?.toLowerCase().includes(query) ||
-            pro.documento?.toLowerCase().includes(query) ||
-            pro.nombreContacto?.toLowerCase().includes(query) ||
-            telefono.includes(query) || // Ahora es un string garantizado            
-            (pro.estado ? "activo" : "inactivo").includes(query)
-        );
-    });
-
-    // CÁLCULO DE PAGINACIÓN
-    const totalPages = Math.ceil(filteredProviders.length / recordsPerPage);
-    const lastIndex = presentPage * recordsPerPage;
-    const firstIndex = lastIndex - recordsPerPage;
-    const PresentRecords = filteredProviders.slice(firstIndex, lastIndex);
-
-    // OBTENER PROVEEDORES AL CARGAR EL COMPONENTE
-    useEffect(() => {
-        getproviders();
-    }, [])
-
-    // FUNCION PARA OBTENER PROVEEDORES
-    const getproviders = async () => {
-        try {
-            const response = ServicesProviders.get();
-            setProviders(response)
-        } catch (error) {
-            console.error(error)
-        }
-    }
 
     // FUNCION PARA OBTENER CATEGORIAS PARA LA TABLA
     const categorias = JSON.parse(localStorage.getItem("productCategory")) || [];
@@ -86,13 +48,19 @@ export default function Providers() {
         });
     };
 
-    // USAMOS EL HOOK PARA OBTENER LAS FUNCIONES DE ELIMINAR Y TOGGLE ESTADO
-    const { deleteProvider, toggleEstado } =
-        useProvidersTable({
-            setProviders,
-            setConfirmData,
-            showAlert,
-        });
+    // USO DEL HOOK PERSONALIZADO QUE MANEJA LA LÓGICA DE LA TABLA
+    const {
+        data,
+        totalPages,
+        deleteProvider,
+        toggleEstado
+    } = useProvidersTable({
+        setConfirmData,
+        showAlert,
+        searchTerm,
+        currentPage: presentPage,
+        recordsPerPage
+    });
 
     return (
         <>
@@ -102,8 +70,8 @@ export default function Providers() {
 
                 {/* BUSCADOR Y BOTON CREAR */}
                 <SearchBar
-                    searchTerm={search}
-                    onSearchChange={(e) => setSearch(e.target.value)}
+                    searchTerm={searchTerm}
+                    onSearchChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Buscar proveedores..."
                     onCreateClick={() => navigate("/dashboard/providers/create")}
                     createButtonText="Crear proveedor"
@@ -111,7 +79,7 @@ export default function Providers() {
 
                 {/* TABLA */}
                 <ProvidersTable
-                    data={PresentRecords}
+                    data={data}
                     categorias={categorias}
                     onDetails={handleDetailsNavigation}
                     onEdit={handleEditNavigation}
