@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     X, IdCard, FileText, User, Phone,
-    AlertCircle, CheckCircle2, Truck, Tag,
+    AlertCircle, CheckCircle2, Truck, Tag, ChevronDown,
 } from "lucide-react";
 import { ServicesProviders } from "../../providers/services/ServicesProviders";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
@@ -39,12 +39,16 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
     const [nombreProveedor,    setNombreProveedor]    = useState("");
     const [nombreContacto,     setNombreContacto]     = useState("");
     const [telefonoContacto,   setTelefonoContacto]   = useState("");
-    const [categoriaId,        setCategoriaId]        = useState("");
+    const [categoriasAsociadas, setCategoriasAsociadas] = useState([]);
+    const [open,               setOpen]               = useState(false);
 
     // ─── Datos auxiliares ──────────────────────────────────────────────────────
     const [categoriasList,       setCategoriasList]       = useState([]);
     const [documentosExistentes, setDocumentosExistentes] = useState([]);
     const [nombresExistentes,    setNombresExistentes]    = useState([]);
+
+    // ─── Ref para dropdown ─────────────────────────────────────────────────────
+    const dropdownRef = useRef(null);
 
     // ─── Tocados ───────────────────────────────────────────────────────────────
     const [tocados, setTocados] = useState({
@@ -61,7 +65,28 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
         setNombresExistentes(proveedores.map((p) => p.nombreProveedor.trim().toLowerCase()));
     }, []);
 
+    // ─── Cerrar dropdown al clickear afuera ────────────────────────────────────
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
     const tocar = (campo) => setTocados((t) => ({ ...t, [campo]: true }));
+
+    const handleToggleCategoria = (categoriaId) => {
+        setCategoriasAsociadas((prev) =>
+            prev.includes(categoriaId)
+                ? prev.filter((id) => id !== categoriaId)
+                : [...prev, categoriaId]
+        );
+    };
 
     // ─── Validaciones ─────────────────────────────────────────────────────────
     const validarTipoDoc = (val) => {
@@ -134,10 +159,6 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
             validarTelefono(telefonoContacto).valido;
 
         if (!ok) return;
-
-        // categoriasAsociadas espera un array; guardamos la categoría seleccionada
-        // dentro de un array para mantener compatibilidad con el modelo de datos
-        const categoriasAsociadas = categoriaId ? [Number(categoriaId)] : [];
 
         const nuevoProveedor = ServicesProviders.create({
             tipoDoc,
@@ -243,25 +264,47 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                     </div>
 
                     {/* CATEGORÍA ASOCIADA */}
-                    <div className="flex flex-col gap-2">
+                    <div ref={dropdownRef} className="flex flex-col gap-2 relative">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <Tag size={18} />
-                            <span>Categoría asociada</span>
+                            <span>Categorías asociadas</span>
                             <span className="text-gray-400 font-normal text-xs">(opcional)</span>
                         </div>
-                        <select
-                            value={categoriaId}
-                            onChange={(e) => setCategoriaId(e.target.value)}
-                            className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all duration-300 cursor-pointer"
+                        <button
+                            type="button"
+                            onClick={() => setOpen(!open)}
+                            className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all duration-300 cursor-pointer"
                         >
-                            <option value="">— Sin categoría —</option>
-                            {categoriasList.map((cat) => (
-                                <option key={cat.id} value={cat.id}>
-                                    {cat.nombre}
-                                </option>
-                            ))}
-                        </select>
-                        {/* Espacio reservado para alinear con los otros campos que tienen FieldStatus */}
+                            <span className="text-gray-500">
+                                {categoriasAsociadas.length > 0
+                                    ? `${categoriasAsociadas.length} seleccionada(s)`
+                                    : "Seleccionar categorías"}
+                            </span>
+                            <ChevronDown
+                                size={18}
+                                className={`transition-transform text-gray-500 ${open ? "rotate-180" : ""}`}
+                            />
+                        </button>
+
+                        {/* Dropdown de categorías */}
+                        {open && (
+                            <div className="absolute top-full -mt-5 w-full bg-white shadow-lg rounded-xl p-3 max-h-48 overflow-y-auto z-20">
+                                {categoriasList.map(cat => (
+                                    <label
+                                        key={cat.id}
+                                        className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-100 px-2 rounded"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={categoriasAsociadas.includes(cat.id)}
+                                            onChange={() => handleToggleCategoria(cat.id)}
+                                            className="accent-yellow-400"
+                                        />
+                                        {cat.nombre}
+                                    </label>
+                                ))}
+                            </div>
+                        )}
                         <div style={{ minHeight: "16px" }} />
                     </div>
 

@@ -1,4 +1,4 @@
-import { Plus, Ban, Eye, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Ban, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
@@ -442,44 +442,7 @@ export default function CreateShopping() {
                                                 {formatCOP(producto.subtotal)}
                                             </td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">
-                                                {producto.anulado ? (
-                                                    (() => {
-                                                        // Bloquear reactivación si ya existe otra línea
-                                                        // activa con el mismo producto en la compra.
-                                                        const tieneActivoDuplicado = productos.some(
-                                                            (p) => String(p.id) === String(producto.id) && !p.anulado
-                                                        );
-                                                        return (
-                                                            <button
-                                                                disabled={tieneActivoDuplicado}
-                                                                onClick={() => !tieneActivoDuplicado && setConfirmData({
-                                                                    type: "info",
-                                                                    title: "Reactivar producto",
-                                                                    message: `¿Deseas reactivar "${producto.nombre}" en la compra?`,
-                                                                    onConfirm: () => {
-                                                                        const updated = productos.map((p) =>
-                                                                            p.id === producto.id ? { ...p, anulado: false } : p
-                                                                        );
-                                                                        setProductos(updated);
-                                                                        setConfirmData(null);
-                                                                    }
-                                                                })}
-                                                                title={
-                                                                    tieneActivoDuplicado
-                                                                        ? "Ya existe una línea activa de este producto"
-                                                                        : "Reactivar producto"
-                                                                }
-                                                                className={`p-1.5 rounded-lg transition duration-300 ${
-                                                                    tieneActivoDuplicado
-                                                                        ? "bg-gray-100 cursor-not-allowed opacity-40"
-                                                                        : "bg-blue-100 hover:bg-blue-200 cursor-pointer"
-                                                                }`}
-                                                            >
-                                                                <Eye size={16} className={tieneActivoDuplicado ? "text-gray-400" : "text-blue-600"} />
-                                                            </button>
-                                                        );
-                                                    })()
-                                                ) : (
+                                                {!producto.anulado && (
                                                     <button
                                                         onClick={() => setConfirmData({
                                                             type: "delete",
