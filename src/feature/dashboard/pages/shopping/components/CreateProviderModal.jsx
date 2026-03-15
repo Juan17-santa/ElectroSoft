@@ -176,7 +176,7 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
             style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
             onClick={onClose}
         >

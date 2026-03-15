@@ -129,7 +129,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
         return (
             <div className="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs mt-1 bg-gray-50 border border-gray-200">
-                <span className="text-gray-500">Stock actual en sistema:</span>
+                <span className="text-gray-500">Stock en inventario:</span>
                 <span className="font-bold text-gray-700">{stock} unidades</span>
             </div>
         );
@@ -356,13 +356,13 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                             <span>
                                 <span className="font-medium">Subtotal compra: </span>
                                 {/* #3: El subtotal de compra = cantidad × costeProducto */}
-                                <span className="font-bold text-blue-600">
+                                <span className="font-semibold text-gray-900">
                                     {formatCOP((parseInt(modalCantidad) || 0) * parseCOP(modalCosteProducto))}
                                 </span>
                             </span>
                             <span>
                                 <span className="font-medium">Margen unitario: </span>
-                                <span className="font-bold text-green-600">
+                                <span className="font-semibold text-green-600">
                                     {formatCOP(parseCOP(modalPrecioVenta) - parseCOP(modalCosteProducto))}
                                 </span>
                             </span>
