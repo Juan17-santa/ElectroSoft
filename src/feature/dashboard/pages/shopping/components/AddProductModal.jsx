@@ -150,10 +150,13 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
         if (!vProd.valido || !vCant.valido || !vPre.valido || !vCoste.valido || !vVenta.valido) return;
 
-        const yaAgregado = productosYaAgregados.some(
-            (p) => String(p.id) === String(modalProducto)
+        // Solo se bloquea si el producto ya existe en la compra Y está activo.
+        // Un producto anulado no cuenta como "ya agregado" — el usuario puede
+        // volver a añadirlo con datos corregidos.
+        const yaAgregadoActivo = productosYaAgregados.some(
+            (p) => String(p.id) === String(modalProducto) && !p.anulado
         );
-        if (yaAgregado) {
+        if (yaAgregadoActivo) {
             setAlert({ type: "error", message: "Este producto ya fue agregado a la compra." });
             return;
         }
@@ -168,9 +171,9 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
             id:             found?.id ?? Date.now(),
             nombre:         found?.nombre ?? modalProducto,
             cantidad,
-            precio,         // Precio vigente en catálogo (solo referencia/display)
+            precio,         // Precio vigente en Precio Inventario (solo referencia/display)
             costeProducto,  // Lo que se paga al proveedor en esta compra
-            precioVenta,    // Nuevo precio de venta que se actualizará en catálogo
+            precioVenta,    // Nuevo precio de venta que se actualizará en Precio Inventario
             // #3: El subtotal del producto = cantidad × costeProducto
             subtotal:       cantidad * costeProducto,
         });
@@ -279,7 +282,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                                 <DollarSign size={16} />
-                                <span>Precio en catálogo</span>
+                                <span>Precio en inventario</span>
                             </div>
                             <input
                                 type="number"
@@ -342,9 +345,6 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                                             : "ring-1 ring-red-300"
                                     }`}
                             />
-                            <p className="text-xs text-blue-400 -mt-1">
-                                Al guardar la compra, este valor actualizará el precio del producto en el catálogo.
-                            </p>
                             <FieldStatus estado={estadoPrecioVenta} />
                         </div>
 

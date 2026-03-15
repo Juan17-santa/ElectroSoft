@@ -39,13 +39,13 @@ export default function ShoppingDetails() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
 
                 {/* CONTENEDOR PRINCIPAL */}
                 <div
                     className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-[584px]"
                     style={{
-                        backgroundImage: 'url("/background-shopping-details.jpg")',
+                        backgroundImage: 'url("/background-details.jpg")',
                         backgroundSize:     "cover",
                         backgroundPosition: "center",
                         backgroundRepeat:   "no-repeat",
@@ -122,7 +122,7 @@ export default function ShoppingDetails() {
                                                     <th className="px-4 py-2 font-semibold">#</th>
                                                     <th className="px-4 py-2 font-semibold">Nombre</th>
                                                     <th className="px-4 py-2 font-semibold">Cantidad</th>
-                                                    <th className="px-4 py-2 font-semibold text-center">Catálogo</th>
+                                                    <th className="px-4 py-2 font-semibold text-center">Precio inventario</th>
                                                     <th className="px-4 py-2 font-semibold text-center">Coste compra</th>
                                                     <th className="px-4 py-2 font-semibold text-center">Precio venta</th>
                                                     <th className="px-4 py-2 font-semibold text-center">Subtotal</th>

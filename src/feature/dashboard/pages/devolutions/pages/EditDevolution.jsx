@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import DevolutionForm from "../components/DevolutionForm";
@@ -134,6 +134,7 @@ function validarFecha(fechaISO, idVenta, ventasList) {
 
 export default function EditDevolution() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { id } = useParams();
     const { editarDevolucion } = useDevolutions();
 
@@ -153,7 +154,8 @@ export default function EditDevolution() {
         // ⚠️ Lee directamente de ServicesDevolutions para no depender del estado
         // del hook (que puede aún no haberse cargado al montar la página).
         const found = ServicesDevolutions.getById(id);
-        if (found) setForm({ ...found, fechaISO: "" });
+        // fechaISO ya está persistido en el registro; si por algún motivo falta, se usa la fecha guardada
+        if (found) setForm({ ...found, fechaISO: found.fechaISO ?? "" });
     }, [id]);
 
     const handleChange = (field, value) => {
@@ -256,17 +258,31 @@ export default function EditDevolution() {
                 editarDevolucion(form);
                 setConfirmData(null);
                 setAlert({ type: "success", message: "Devolución actualizada correctamente." });
-                setTimeout(() => navigate("/dashboard/devolutions"), 1500);
+                const idVenta = location.state?.idVenta ?? form.idVenta;
+                setTimeout(() => {
+                    if (idVenta) {
+                        navigate("/dashboard/sales-management/return", { state: { idVenta } });
+                    } else {
+                        navigate("/dashboard/devolutions");
+                    }
+                }, 1500);
             },
         });
     };
 
     const handleCancel = () => {
+        const idVenta = location.state?.idVenta ?? form?.idVenta;
         setConfirmData({
             type: "warning",
             title: "¿Cancelar edición?",
             message: "Los cambios no guardados se perderán. ¿Estás seguro?",
-            onConfirm: () => navigate("/dashboard/devolutions"),
+            onConfirm: () => {
+                if (idVenta) {
+                    navigate("/dashboard/sales-management/return", { state: { idVenta } });
+                } else {
+                    navigate("/dashboard/devolutions");
+                }
+            },
         });
     };
 

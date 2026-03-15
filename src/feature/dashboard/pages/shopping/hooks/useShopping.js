@@ -9,7 +9,7 @@ import { ServicesShopping } from "../services/ServicesShopping";
  *
  * Reglas de negocio aplicadas:
  *  - Al guardar una compra se incrementa el stock de cada producto
- *    y se actualiza su precio de venta en el catálogo (precioVenta → precio).
+ *    y se actualiza su precio de venta en el inventario (precioVenta → precio).
  *  - La anulación solo está disponible dentro de las 48 h posteriores
  *    al registro de la compra (fechaCreacion), no a la fecha de factura.
  *  - Al anular se revierte el inventario; si el stock actual es menor
@@ -18,6 +18,7 @@ import { ServicesShopping } from "../services/ServicesShopping";
 export function useShopping() {
     const [compras, setCompras] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
+    
 
     // ─── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -50,7 +51,7 @@ export function useShopping() {
     // ─── Acciones ──────────────────────────────────────────────────────────────
 
     /**
-     * Guarda una nueva compra, actualiza el inventario y el catálogo de precios.
+     * Guarda una nueva compra, actualiza el inventario y los precios.
      *
      * @param {Object} params
      * @param {string}   params.numeroFactura
@@ -71,25 +72,41 @@ export function useShopping() {
                 const stockAnterior = productoActual.stock;
                 const stockNuevo = stockAnterior + producto.cantidad;
 
-                // #4 + punto 16: Al comprar se actualiza el stock Y el precio de venta
-                // del catálogo (precioVenta registrado en la compra → precio del producto).
-                // Esto mantiene el catálogo sincronizado con el último precio de compra.
+                // WAC = (stockAnterior × precioActual + cantidadNueva × precioVenta) / stockNuevo
+                // Redondeado hacia arriba a la centena: 1922 → 2000 | 1270 → 1300 | 2050 → 2100
+                const precioActual = productoActual.precio ?? 0;
+                const precioVenta  = Number(producto.precioVenta);
+
+                const wacExacto = stockAnterior > 0
+                    ? (stockAnterior * precioActual + producto.cantidad * precioVenta) / stockNuevo
+                    : precioVenta;
+                const costoPromedioNuevo = Math.ceil(wacExacto / 100) * 100;
+
+                // precio se actualiza con el WAC redondeado → cambio visible en Products
+                // y en todo el sistema. costoPromedio guarda el mismo valor para auditoría.
+                // Si el usuario confirma el modal de precio de venta en CreateShopping,
+                // ese paso sobreescribirá precio con precioVenta después de este llamado.
                 ServicesProducts.update({
                     ...productoActual,
-                    stock: stockNuevo,
-                    precio: producto.precioVenta,
+                    stock:         stockNuevo,
+                    precio:        costoPromedioNuevo, // WAC → visible en Products y todo el sistema
+                    costoPromedio: costoPromedioNuevo, // ídem, guardado para auditoría
                 });
 
                 movimientos.push({
-                    productoId:       producto.id,
-                    productoNombre:   producto.nombre,
-                    cantidad:         producto.cantidad,
+                    productoId: producto.id,
+                    productoNombre: producto.nombre,
+
+                    cantidad: producto.cantidad,
                     cantidadAnterior: stockAnterior,
-                    cantidadNueva:    stockNuevo,
-                    precioAnterior:   productoActual.precio,
-                    precioNuevo:      producto.precioVenta,
-                    tipo:             "ENTRADA",
-                    fecha:            fechaCreacion,
+                    cantidadNueva: stockNuevo,
+
+                    precioVentaUnitario:   precioVenta,
+                    precioAnterior:        precioActual,
+                    costoPromedioNuevo:    costoPromedioNuevo,
+
+                    tipo: "ENTRADA",
+                    fecha: fechaCreacion,
                 });
             }
         });
