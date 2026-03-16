@@ -27,7 +27,7 @@ export const RolesService = {
      * @param {object} param0 - { nombre, descripcion, permisos }
      * permisos es un objeto: { "Ventas": ["Crear", "Editar"], ... }
      */
-    create({ nombre, descripcion, permisos = {} }) {
+    create({ nombre, descripcion, estado = true, permisos = {} }) {
 
         const roles = this.get();
 
@@ -37,7 +37,7 @@ export const RolesService = {
             descripcion,
             permisos,
             fechaCreacion: new Date().toLocaleDateString('es-CO'),
-            estado: true
+            estado
         };
 
         const nuevosRoles = [...roles, nuevoRole];

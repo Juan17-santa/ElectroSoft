@@ -28,11 +28,18 @@ export const Validations = {
 
         switch (tipo) {
             case "CC":
-                if (documento.length !== 10) return { valido: false, mensaje: "La cédula debe tener 10 dígitos." };
+                if (documento.length < 8 || documento.length > 12) {
+                    return { valido: false, mensaje: "La cédula debe tener entre 8 y 12 dígitos." };
+                }
+                break;
+            case "CE":
+                if (documento.length < 6 || documento.length > 12) {
+                    return { valido: false, mensaje: "La cédula de extranjería debe tener entre 6 y 12 dígitos." };
+                }
                 break;
             case "NIT":
-                if (documento.length < 9 || documento.length > 10) {
-                    return { valido: false, mensaje: "El NIT debe tener entre 9 y 10 dígitos." };
+                if (documento.length < 8 || documento.length > 12) {
+                    return { valido: false, mensaje: "El NIT debe tener entre 8 y 12 dígitos." };
                 }
                 break;
             case "Pasaporte":

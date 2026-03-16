@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { X, FileText } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 
@@ -28,9 +29,40 @@ export default function SaleDetailsPage() {
     useEffect(() => {
         const data = localStorage.getItem("saleToView");
         if (data) {
-            setSale(JSON.parse(data));
+            const parsedSale = JSON.parse(data);
+            setSale(parsedSale);
         }
     }, []);
+
+    const [productosNetos, setProductosNetos] = useState([]);
+    const [totalesNetos, setTotalesNetos] = useState({ subtotal: 0, iva: 0, total: 0 });
+
+    useEffect(() => {
+        if (sale) {
+            const devoluciones = ServicesDevolutions.getByIdVenta(sale.id);
+            const cantDevueltasMap = devoluciones.reduce((acc, d) => {
+                acc[d.producto] = (acc[d.producto] || 0) + Number(d.cantidad || 0);
+                return acc;
+            }, {});
+
+            const netos = (sale.productos || []).map(p => {
+                const devuelto = cantDevueltasMap[p.nombre] || 0;
+                return {
+                    ...p,
+                    cantOriginal: p.cantidad,
+                    cantDevuelta: devuelto,
+                    cantNeta: Math.max(0, p.cantidad - devuelto)
+                };
+            });
+
+            const newSubtotal = netos.reduce((sum, p) => sum + (p.precio * p.cantNeta), 0);
+            const newIva = newSubtotal * 0.19;
+            const newTotal = newSubtotal + newIva;
+
+            setProductosNetos(netos);
+            setTotalesNetos({ subtotal: newSubtotal, iva: newIva, total: newTotal });
+        }
+    }, [sale]);
 
     if (!sale) return null;
 
@@ -65,26 +97,28 @@ export default function SaleDetailsPage() {
                 doc.text(`Cliente: ${sale.cliente || '-'}`, 14, 36);
                 doc.text(`Fecha creación: ${sale.fecha}`, 14, 44);
                 doc.text(`Estado: ${sale.estado}`, 14, 52);
-                doc.text(`Subtotal: $${sale.subtotal?.toLocaleString()}`, 120, 36);
-                doc.text(`IVA: $${sale.iva?.toLocaleString()}`, 120, 44);
-                doc.text(`Total: $${sale.total?.toLocaleString()}`, 120, 52);
+                doc.text(`Subtotal: $${totalesNetos.subtotal?.toLocaleString()}`, 120, 36);
+                doc.text(`IVA: $${totalesNetos.iva?.toLocaleString()}`, 120, 44);
+                doc.text(`Total: $${totalesNetos.total?.toLocaleString()}`, 120, 52);
 
-                if (productos.length > 0) {
+                if (productosNetos.length > 0) {
                     autoTable(doc, {
                         startY: 64,
-                        head: [["Producto", "Precio", "Cantidad", "Subtotal"]],
-                        body: productos.map(p => [
+                        head: [["Producto", "Precio", "Cant.", "Dev.", "Neto", "Subtotal"]],
+                        body: productosNetos.map(p => [
                             p.nombre,
                             `$${p.precio?.toLocaleString()}`,
-                            p.cantidad,
-                            `$${(p.precio * p.cantidad).toLocaleString()}`
+                            p.cantOriginal,
+                            p.cantDevuelta,
+                            p.cantNeta,
+                            `$${(p.precio * p.cantNeta).toLocaleString()}`
                         ]),
                         styles: { fontSize: 10 },
                         headStyles: { fillColor: [234, 179, 8] }
                     });
                 }
 
-                doc.save(`venta_${sale.numeroDocumento}.pdf`);
+                doc.save(`venta_${String(sale.numeroVenta || "").padStart(2, '0')}.pdf`);
                 setAlert({ type: "success", message: "Reporte generado correctamente." });
                 setConfirmData(null);
             },
@@ -102,6 +136,7 @@ export default function SaleDetailsPage() {
             case "Vigente": return "bg-yellow-500";
             case "Anulado": return "bg-red-500";
             case "Devuelto": return "bg-gray-500";
+            case "Devolución Parcial": return "bg-amber-500";
             default: return "bg-gray-500";
         }
     };
@@ -195,7 +230,7 @@ export default function SaleDetailsPage() {
                 {/* Header */}
                 <div className="flex justify-between items-center mb-10">
                     <h2 className="text-[22px] font-bold italic text-gray-800">
-                        Detalles de Ventas
+                        Detalles de Ventas #{String(sale.numeroVenta || "").padStart(2, '0')}
                     </h2>
                     <div className="flex items-center gap-4">
                         <button
@@ -215,8 +250,8 @@ export default function SaleDetailsPage() {
                 </div>
 
                 {/* Tarjeta info */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 pl-6 pr-8 py-6 ml-8 mr-8 mb-6"
-                    style={{ borderLeft: '3px solid #e5e7eb' }}
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 px-8 py-6 mb-8"
+                    style={{ borderLeft: '4px solid #fbbf24' }}
                 >
                     {/* Nombre cliente */}
                     <p className="text-[17px] font-bold text-gray-800 mb-5">{sale.cliente || 'Sin cliente'}</p>
@@ -236,52 +271,75 @@ export default function SaleDetailsPage() {
                                     <p className="font-bold text-[15px]">{sale.estado}</p>
                                 </div>
                             </div>
+                            {sale.estado === "Anulado" && (
+                                <>
+                                    <div className="mt-2">
+                                        <p className="text-xs text-red-500 leading-none mb-1">Motivo Anulación</p>
+                                        <p className="font-bold text-red-600 text-[14px]">{sale.motivoAnulacion || "N/A"}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-red-500 leading-none mb-1">Fecha Anulación</p>
+                                        <p className="font-bold text-red-600 text-[14px]">{sale.fechaAnulacion || "N/A"}</p>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* Columna derecha */}
                         <div className="flex flex-col gap-2">
                             <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">Subtotal</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${sale.subtotal?.toLocaleString()}</p>
+                                <p className="text-xs text-gray-400 leading-none mb-1">Subtotal {totalesNetos.subtotal !== sale.subtotal && "(Neto)"}</p>
+                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.subtotal?.toLocaleString()}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">IVA</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${sale.iva?.toLocaleString()}</p>
+                                <p className="text-xs text-gray-400 leading-none mb-1">IVA {totalesNetos.iva !== sale.iva && "(Neto)"}</p>
+                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.iva?.toLocaleString()}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">Total</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${sale.total?.toLocaleString()}</p>
+                                <p className="text-xs text-gray-400 leading-none mb-1">Total {totalesNetos.total !== sale.total && "(Neto)"}</p>
+                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.total?.toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Separador dorado */}
-                <div className="ml-8 mr-8 mb-5">
+                <div className="mb-8">
                     <div className="h-[1.5px]" style={{ background: 'linear-gradient(90deg, #d4a843, #e8c34a, #d4a843)' }}></div>
                 </div>
 
                 {/* Productos */}
-                <div className="ml-8 mr-8">
-                    <p className="text-[16px] font-bold text-gray-800 mb-3">Productos</p>
+                <div className="flex-1">
+                    <p className="text-[18px] font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-yellow-400 rounded-full"></span>
+                        Productos en esta venta
+                    </p>
                     {productos.length > 0 ? (
                         <div className="border border-gray-200 rounded-sm overflow-hidden">
                             <table className="w-full text-sm">
                                 <thead>
-                                    <tr className="border-b border-gray-200">
-                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Producto</th>
-                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Precio</th>
-                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Cantidad</th>
-                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Subtotal</th>
+                                    <tr className="bg-gray-50/50 border-b border-gray-200">
+                                        <th className="px-5 py-3 text-left font-bold text-gray-700 uppercase text-[11px] tracking-wider">Producto</th>
+                                        <th className="px-5 py-3 text-left font-bold text-gray-700 uppercase text-[11px] tracking-wider">Precio Unit.</th>
+                                        <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-[11px] tracking-wider">Cant. Original</th>
+                                        <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-[11px] tracking-wider">Devuelto</th>
+                                        <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-[11px] tracking-wider">Cant. Neta</th>
+                                        <th className="px-5 py-3 text-right font-bold text-gray-700 uppercase text-[11px] tracking-wider">Subtotal Neto</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {productos.map((prod, index) => (
-                                        <tr key={index} className="border-b border-gray-100 last:border-b-0">
-                                            <td className="px-4 py-2.5 text-gray-700">{prod.nombre}</td>
-                                            <td className="px-4 py-2.5 text-gray-700">{prod.precio?.toLocaleString()}</td>
-                                            <td className="px-4 py-2.5 text-gray-700">{prod.cantidad}</td>
-                                            <td className="px-4 py-2.5 text-gray-700">{(prod.precio * prod.cantidad).toLocaleString()}</td>
+                                    {productosNetos.map((prod, index) => (
+                                        <tr key={index} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition">
+                                            <td className="px-5 py-4 text-gray-800 font-medium">{prod.nombre}</td>
+                                            <td className="px-5 py-4 text-gray-600">${prod.precio?.toLocaleString()}</td>
+                                            <td className="px-5 py-4 text-center text-gray-600 bg-gray-50/30">{prod.cantOriginal}</td>
+                                            <td className={`px-5 py-4 text-center font-bold ${prod.cantDevuelta > 0 ? 'text-red-500 bg-red-50/30' : 'text-gray-300'}`}>
+                                                {prod.cantDevuelta > 0 ? `-${prod.cantDevuelta}` : '0'}
+                                            </td>
+                                            <td className="px-5 py-4 text-center text-gray-800 font-bold bg-yellow-50/30">{prod.cantNeta}</td>
+                                            <td className="px-5 py-4 text-right text-gray-800 font-bold">
+                                                ${(prod.precio * prod.cantNeta).toLocaleString()}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

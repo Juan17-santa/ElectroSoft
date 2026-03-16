@@ -90,8 +90,23 @@ export const SalesService = {
         };
 
         const nuevasVentas = [...sales, nuevaVenta];
-
         localStorage.setItem(KEY, JSON.stringify(nuevasVentas));
+
+        // Restar stock de los productos vendidos
+        try {
+            const productsKey = "products";
+            const allProducts = JSON.parse(localStorage.getItem(productsKey) || "[]");
+            const updatedProducts = allProducts.map(p => {
+                const soldProduct = productos.find(sp => sp.nombre === p.nombre);
+                if (soldProduct) {
+                    return { ...p, stock: (p.stock || 0) - soldProduct.cantidad };
+                }
+                return p;
+            });
+            localStorage.setItem(productsKey, JSON.stringify(updatedProducts));
+        } catch (e) {
+            console.error('Error actualizando stock:', e);
+        }
 
         return nuevaVenta;
     },
@@ -134,12 +149,17 @@ export const SalesService = {
 
         const nuevasVentas = sales.map(sale => {
             if (sale.id === id) {
+                const now = new Date();
+                const fechaConHora = `${now.toISOString().split('T')[0]} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                
                 const nuevoAbono = {
-                    fecha: new Date().toISOString().split('T')[0],
-                    monto: parseFloat(monto)
+                    id: Date.now(),
+                    fecha: fechaConHora,
+                    monto: parseFloat(monto),
+                    anulado: false
                 };
                 const abonos = [...(sale.abonos || []), nuevoAbono];
-                const totalAbonado = abonos.reduce((sum, a) => sum + a.monto, 0);
+                const totalAbonado = abonos.filter(a => !a.anulado).reduce((sum, a) => sum + a.monto, 0);
                 const montoPorPagar = sale.total - totalAbonado;
                 return {
                     ...sale,
@@ -158,22 +178,27 @@ export const SalesService = {
     },
 
     /**
-     * Elimina un abono específico de una venta por índice.
+     * Anula un abono específico de una venta.
      * Recalcula montoPagado y montoPorPagar.
-     * Si aún queda saldo pendiente, el estado vuelve a "Vigente".
      * 
      * @param {number} saleId - ID de la venta
-     * @param {number} paymentIndex - Índice del abono a eliminar
+     * @param {number} paymentId - ID o índice del abono a anular
      */
-    removePayment(saleId, paymentIndex) {
-
+    voidPayment(saleId, paymentId) {
         const sales = this.get();
-
         const nuevasVentas = sales.map(sale => {
             if (sale.id === saleId) {
-                const abonos = (sale.abonos || []).filter((_, i) => i !== paymentIndex);
-                const totalAbonado = abonos.reduce((sum, a) => sum + a.monto, 0);
+                const abonos = (sale.abonos || []).map((a, idx) => {
+                    // Soporta anulación por ID o por índice (para compatibilidad)
+                    if (a.id === paymentId || idx === paymentId) {
+                        return { ...a, anulado: true };
+                    }
+                    return a;
+                });
+
+                const totalAbonado = abonos.filter(a => !a.anulado).reduce((sum, a) => sum + a.monto, 0);
                 const montoPorPagar = sale.total - totalAbonado;
+
                 return {
                     ...sale,
                     abonos,
@@ -186,7 +211,6 @@ export const SalesService = {
         });
 
         localStorage.setItem(KEY, JSON.stringify(nuevasVentas));
-
         return nuevasVentas;
     },
 
@@ -206,28 +230,49 @@ export const SalesService = {
         return nuevasVentas;
     },
 
-    /** Anula una venta — cambia el estado a "Anulado" */
+    /** Anula una venta — cambia el estado a "Anulado" y devuelve stock */
     anullSale(id) {
         const sales = this.get();
+        let saleToAnull = null;
 
-        const nuevasVentas = sales.map(sale =>
-            sale.id === id
-                ? { ...sale, estado: "Anulado" }
-                : sale
-        );
+        const nuevasVentas = sales.map(sale => {
+            if (sale.id === id) {
+                saleToAnull = sale;
+                return { ...sale, estado: "Anulado" };
+            }
+            return sale;
+        });
 
         localStorage.setItem(KEY, JSON.stringify(nuevasVentas));
+
+        // Devolver stock si la venta existía y no estaba ya anulada
+        if (saleToAnull && saleToAnull.estado !== "Anulado") {
+            try {
+                const productsKey = "products";
+                const allProducts = JSON.parse(localStorage.getItem(productsKey) || "[]");
+                const updatedProducts = allProducts.map(p => {
+                    const soldProduct = saleToAnull.productos.find(sp => sp.nombre === p.nombre);
+                    if (soldProduct) {
+                        return { ...p, stock: (p.stock || 0) + soldProduct.cantidad };
+                    }
+                    return p;
+                });
+                localStorage.setItem(productsKey, JSON.stringify(updatedProducts));
+            } catch (e) {
+                console.error('Error devolviendo stock al anular:', e);
+            }
+        }
 
         return nuevasVentas;
     },
 
-    /** Devuelve una venta — cambia el estado a "Devuelto" */
-    returnSale(id) {
+    /** Devuelve una venta — cambia el estado a "Devuelto" o "Devolución Parcial" */
+    returnSale(id, esParcial = false) {
         const sales = this.get();
 
         const nuevasVentas = sales.map(sale =>
             sale.id === id
-                ? { ...sale, estado: "Devuelto" }
+                ? { ...sale, estado: esParcial ? "Devolución Parcial" : "Devuelto" }
                 : sale
         );
 

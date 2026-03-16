@@ -30,7 +30,7 @@ export default function ClientDetailsPage() {
                 }}
             >
                 {/* Capa de transparencia */}
-                <div className="absolute inset-0 bg-white/55 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
 
                 <div className="relative z-10 flex flex-col gap-6 h-full">
 

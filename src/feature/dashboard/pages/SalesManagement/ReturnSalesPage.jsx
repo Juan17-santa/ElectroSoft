@@ -24,6 +24,11 @@ import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
 import Pagination  from "../../components/ui/Pagination";
 import Alert       from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import CustomSelect from "../../components/ui/CustomSelect";
+
+const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
+const PROD_PER_PAGE = 5;
+const DEV_PER_PAGE = 5;
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
@@ -128,7 +133,7 @@ export default function ReturnSalesPage() {
             title: "Registrar devolución",
             message: "¿Estás seguro de registrar esta devolución? El estado de la venta cambiará a 'Devuelto'.",
             onConfirm: () => {
-                SalesService.returnSale(sale.id);
+                SalesService.returnSale(sale.id, esParcial);
                 localStorage.removeItem("saleToReturn");
                 setAlertMsg({ type: "success", message: "Devolución registrada correctamente." });
                 setConfirmData(null);

@@ -19,6 +19,16 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
+import CancellationModal from "./components/CancellationModal";
+import { ServicesProducts } from "../products/services/ServicesProducts";
+
+const formatCOP = (val) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    }).format(val || 0);
+};
 
 const ITEMS_PER_PAGE = 8;
 
@@ -29,12 +39,19 @@ export default function SalesManagement() {
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert] = useState(null);
+    const [cancelModalSale, setCancelModalSale] = useState(null);
 
     const showAlert = (type, message) => setAlert({ type, message });
 
     const filteredSales = sales.filter(sale =>
         (sale.numeroDocumento?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase())
+        (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase()) ||
+        (sale.fecha?.includes(search)) ||
+        (sale.tipoVenta?.toLowerCase().includes(search.toLowerCase())) ||
+        (sale.total?.toString().includes(search)) ||
+        (sale.montoPagado?.toString().includes(search)) ||
+        (sale.montoPorPagar?.toString().includes(search)) ||
+        (sale.estado?.toLowerCase().includes(search.toLowerCase()))
     );
 
     const totalPages = Math.max(1, Math.ceil(filteredSales.length / ITEMS_PER_PAGE));
@@ -84,17 +101,37 @@ export default function SalesManagement() {
     };
 
     const handleAnull = (sale) => {
-        setConfirmData({
-            type: "warning",
-            title: "Anular venta",
-            message: `¿Estás seguro de que deseas anular la venta ${sale.numeroDocumento}?`,
-            onConfirm: () => {
-                const updatedSales = SalesService.anullSale(sale.id);
-                setSales(updatedSales);
-                showAlert("success", "Venta anulada correctamente.");
-                setConfirmData(null);
-            }
+        setCancelModalSale(sale);
+    };
+
+    const confirmAnull = (motivo) => {
+        const availableProducts = ServicesProducts.get();
+        cancelModalSale.productos?.forEach(p => {
+             const currentProd = availableProducts.find(ap => ap.nombre === p.nombre);
+             if (currentProd) {
+                  ServicesProducts.update({ ...currentProd, stock: (currentProd.stock || 0) + p.cantidad });
+             }
         });
+
+        const allSales = SalesService.get();
+        const saleIndex = allSales.findIndex(s => s.id === cancelModalSale.id);
+        if (saleIndex !== -1) {
+             allSales[saleIndex].estado = "Anulado";
+             allSales[saleIndex].motivoAnulacion = motivo;
+             allSales[saleIndex].fechaAnulacion = new Date().toISOString().split("T")[0];
+             localStorage.setItem("sales", JSON.stringify(allSales));
+             setSales(allSales.map(sale => {
+                 if (!sale.cliente) {
+                     const clients = JSON.parse(localStorage.getItem("clients") || "[]");
+                     const found = clients.find(c => c.documento === sale.numeroDocumento);
+                     if (found) return { ...sale, cliente: `${found.nombres} ${found.apellidos}` };
+                 }
+                 return sale;
+             }));
+        }
+        
+        showAlert("success", "Venta anulada y productos devueltos al stock correctamente.");
+        setCancelModalSale(null);
     };
 
     const handleGenerarReporte = () => {
@@ -106,13 +143,13 @@ export default function SalesManagement() {
                 const reportTitle = "Gestión de Ventas - Reporte";
                 const columns = ["# Venta", "Cliente", "Fecha", "Tipo", "Total", "Pagado", "Por Pagar", "Estado"];
                 const data = filteredSales.map(sale => [
-                    sale.numeroDocumento,
+                    String(sale.numeroVenta || "").padStart(2, '0'),
                     sale.cliente || "-",
                     sale.fecha,
                     sale.tipoVenta,
-                    `$${sale.total?.toLocaleString() || "0"}`,
-                    `$${sale.montoPagado?.toLocaleString() || "0"}`,
-                    `$${sale.montoPorPagar?.toLocaleString() || "0"}`,
+                    formatCOP(sale.total),
+                    formatCOP(sale.montoPagado),
+                    formatCOP(sale.montoPorPagar),
                     sale.estado
                 ]);
 
@@ -134,8 +171,9 @@ export default function SalesManagement() {
             case "Finalizado": case "Finalizadas": return "bg-green-500";
             case "Vigente": return "bg-yellow-500";
             case "Anulado": return "bg-red-500";
-            case "Devuelto": return "bg-gray-500";
-            default: return "bg-gray-500";
+            case "Devuelto": return "bg-gray-100 text-gray-600";
+            case "Devolución Parcial": return "bg-amber-100 text-amber-600";
+            default: return "bg-gray-100 text-gray-600";
         }
     };
 
@@ -183,13 +221,13 @@ export default function SalesManagement() {
                                 ) : (
                                     paginatedSales.map((sale) => (
                                         <tr key={sale.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                            <td className="px-3 py-3 font-medium">#{sale.numeroVenta || '-'}</td>
+                                            <td className="px-3 py-3 font-medium">#{String(sale.numeroVenta || "").padStart(2, '0') || '-'}</td>
                                             <td className="px-3 py-3">{sale.cliente || "-"}</td>
                                             <td className="px-3 py-3">{sale.fecha}</td>
                                             <td className="px-3 py-3">{sale.tipoVenta}</td>
-                                            <td className="px-3 py-3">{sale.total?.toLocaleString() || "0"}</td>
-                                            <td className="px-3 py-3">{sale.montoPagado?.toLocaleString() || "0"}</td>
-                                            <td className="px-3 py-3">{sale.montoPorPagar?.toLocaleString() || "0"}</td>
+                                            <td className="px-3 py-3">{formatCOP(sale.total)}</td>
+                                            <td className="px-3 py-3">{formatCOP(sale.montoPagado)}</td>
+                                            <td className="px-3 py-3">{formatCOP(sale.montoPorPagar)}</td>
                                             <td className="px-3 py-3">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`w-2 h-2 rounded-full ${getEstadoDot(sale.estado)}`}></span>
@@ -248,7 +286,7 @@ export default function SalesManagement() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-2">
+                <div className="flex justify-end mt-auto pt-4">
                     <Pagination
                         currentPage={pageActual}
                         totalPages={totalPages}
@@ -265,6 +303,15 @@ export default function SalesManagement() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
+                />
+            )}
+
+            {/* MODAL DE CONFIRMACION ANULACION */}
+            {cancelModalSale && (
+                <CancellationModal 
+                    saleId={cancelModalSale.numeroVenta || cancelModalSale.id} 
+                    onConfirm={confirmAnull} 
+                    onCancel={() => setCancelModalSale(null)} 
                 />
             )}
 

@@ -3,6 +3,7 @@ import { Box, Hash, ChevronDown, XCircle } from "lucide-react";
 import ValidationMessage from "./ValidationMessage";
 import { Validations } from "../../../../utils/validations";
 import PrimaryButton from "./PrimaryButton";
+import Pagination from "./Pagination";
 
 export default function AddProductModal({
     isOpen,
@@ -29,13 +30,22 @@ export default function AddProductModal({
     // CONTROL PARA ABRIR O CERRAR EL DROPDOWN DEL COMBO
     const [isOpenCombo, setIsOpenCombo] = useState(false);
 
+    // PAGINACION
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 5;
+
     // REFERENCIA DEL CONTENEDOR PARA DETECTAR CLICKS FUERA DEL COMPONENTE
     const comboRef = useRef(null);
 
     // FILTRA LOS PRODUCTOS SEGÚN EL TEXTO ESCRITO EN EL BUSCADOR
-    // ESTO PERMITE QUE EL USUARIO ENCUENTRE PRODUCTOS MÁS RÁPIDO
     const filteredProducts = products.filter(p =>
         p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+    const paginatedProducts = filteredProducts.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
     );
 
     // HELPERS PARA CALCULAR STOCK
@@ -79,6 +89,7 @@ export default function AddProductModal({
         const value = e.target.value;
         setSearchTerm(value);
         setIsOpenCombo(true);
+        setCurrentPage(1); // Reset to first page on search
 
         // SI EL USUARIO MODIFICA EL TEXTO
         // INVALIDAMOS EL PRODUCTO SELECCIONADO
@@ -169,6 +180,7 @@ export default function AddProductModal({
         // LIMPIAMOS ESTADOS PARA PRÓXIMA APERTURA
         setSearchTerm("");
         setQuantity(1);
+        setCurrentPage(1);
 
         // CERRAMOS EL MODAL
         onClose();
@@ -222,22 +234,34 @@ export default function AddProductModal({
 
                                 {/* DROPDOWN DE RESULTADOS */}
                                 {isOpenCombo && (
-                                    <div className="absolute top-full mt-2 w-full bg-white shadow-xl rounded-xl border border-gray-100 max-h-60 overflow-y-auto z-50 p-2">
-                                        {filteredProducts.length > 0 ? (
-                                            filteredProducts.map((p) => (
-                                                <button
-                                                    key={p.id}
-                                                    type="button"
-                                                    onClick={() => handleSelectProduct(p)}
-                                                    className="w-full text-left px-4 py-3 rounded-lg hover:bg-yellow-50 text-sm transition flex justify-between items-center"
-                                                >
-                                                    <span className="font-medium text-gray-700">{p.nombre}</span>
-                                                    <span className="text-gray-400 text-xs">${parseFloat(p.precio || 0).toLocaleString()}</span>
-                                                </button>
-                                            ))
-                                        ) : (
-                                            <div className="p-4 text-center text-gray-400 text-sm italic">
-                                                No se encontraron productos
+                                    <div className="absolute top-full mt-2 w-full bg-white shadow-xl rounded-xl border border-gray-100 z-50 p-2 flex flex-col gap-2">
+                                        <div className="max-h-60 overflow-y-auto">
+                                            {paginatedProducts.length > 0 ? (
+                                                paginatedProducts.map((p) => (
+                                                    <button
+                                                        key={p.id}
+                                                        type="button"
+                                                        onClick={() => handleSelectProduct(p)}
+                                                        className="w-full text-left px-4 py-3 rounded-lg hover:bg-yellow-50 text-sm transition flex justify-between items-center"
+                                                    >
+                                                        <span className="font-medium text-gray-700">{p.nombre}</span>
+                                                        <span className="text-gray-400 text-xs">${parseFloat(p.precio || 0).toLocaleString()}</span>
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="p-4 text-center text-gray-400 text-sm italic">
+                                                    No se encontraron productos
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        {totalPages > 1 && (
+                                            <div className="border-t border-gray-100 pt-2 flex justify-center">
+                                                <Pagination 
+                                                    currentPage={currentPage}
+                                                    totalPages={totalPages}
+                                                    onPageChange={setCurrentPage}
+                                                />
                                             </div>
                                         )}
                                     </div>
