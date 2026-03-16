@@ -21,18 +21,12 @@ import { Eye, Pencil, Trash2, Undo2, X} from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
-import Pagination  from "../../components/ui/Pagination";
 import Alert       from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import CustomSelect from "../../components/ui/CustomSelect";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
 const DEV_PER_PAGE = 5;
-
-const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
-const PROD_PER_PAGE = 5;
-const DEV_PER_PAGE  = 5;
 
 export default function ReturnSalesPage() {
     const navigate  = useNavigate();
