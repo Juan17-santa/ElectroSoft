@@ -174,7 +174,7 @@ export default function ReturnSalesPage() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-5 w-full h-full shadow-inner overflow-y-auto">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-5 w-full h-full shadow-inner overflow-y-auto">
 
                 {/* Header */}
                 <div className="flex justify-between items-center">

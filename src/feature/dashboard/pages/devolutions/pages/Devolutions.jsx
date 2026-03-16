@@ -148,7 +148,7 @@ export default function Devolutions() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
 
                 <p className="text-xl font-semibold flex items-center gap-2">
                     <RotateCcw size={22} className="text-yellow-500" />

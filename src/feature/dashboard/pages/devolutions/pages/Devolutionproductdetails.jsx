@@ -28,7 +28,7 @@ export default function DevolutionProductDetails() {
 
     if (form === null) {
         return (
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-4 items-center justify-center shadow-inner min-h-40">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-4 items-center justify-center shadow-inner min-h-40">
                 <p className="text-gray-500 text-sm">No se encontró la devolución solicitada.</p>
                 <button
                     onClick={() => navigate("/dashboard/devolutions")}
