@@ -116,13 +116,16 @@ export default function CreateDevolution() {
     const location    = useLocation();
     const { guardarDevolucion } = useDevolutions();
 
-    // Si venimos desde ReturnSalesPage, tenemos idVenta pre-cargado
-    const idVentaPreCargado = location.state?.idVenta ?? null;
-    const fromReturn        = !!idVentaPreCargado;
+    // Si venimos desde ReturnSalesPage, tenemos idVenta y producto pre-cargados
+    const idVentaPreCargado  = location.state?.idVenta        ?? null;
+    const productoPreCargado = location.state?.productoNombre ?? null;
+    const modeOrigen         = location.state?.mode           ?? "from-sales";
+    const fromReturn         = !!idVentaPreCargado;
 
     const [form, setForm]                   = useState({
         ...EMPTY_FORM,
-        idVenta: idVentaPreCargado ?? "",
+        idVenta: idVentaPreCargado  ?? "",
+        producto: productoPreCargado ?? "",
     });
     const [tocados, setTocados]             = useState(EMPTY_TOCADOS);
     const [ventasList, setVentasList]       = useState([]);
@@ -227,11 +230,10 @@ export default function CreateDevolution() {
                 guardarDevolucion(form);
                 setConfirmData(null);
                 setAlert({ type: "success", message: "Devolución creada correctamente." });
-                setTimeout(() => {
+                    setTimeout(() => {
                     if (fromReturn) {
-                        // Regresa a Devolución de venta con el idVenta para que recargue
                         navigate("/dashboard/sales-management/return", {
-                            state: { idVenta: form.idVenta },
+                            state: { idVenta: form.idVenta, mode: modeOrigen },
                         });
                     } else {
                         navigate("/dashboard/devolutions");
@@ -249,7 +251,7 @@ export default function CreateDevolution() {
             onConfirm: () => {
                 if (fromReturn) {
                     navigate("/dashboard/sales-management/return", {
-                        state: { idVenta: form.idVenta },
+                        state: { idVenta: form.idVenta, mode: modeOrigen },
                     });
                 } else {
                     navigate("/dashboard/devolutions");
@@ -258,8 +260,11 @@ export default function CreateDevolution() {
         });
     };
 
-    // Campos que son read-only cuando venimos con idVenta pre-cargado
-    const readOnlyFields = fromReturn ? ["idVenta"] : [];
+    // Campos read-only cuando venimos con datos pre-cargados
+    const readOnlyFields = [
+        ...(fromReturn         ? ["idVenta"]  : []),
+        ...(productoPreCargado ? ["producto"] : []),
+    ];
 
     return (
         <>

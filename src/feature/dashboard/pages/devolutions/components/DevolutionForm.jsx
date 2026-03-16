@@ -113,7 +113,7 @@ export default function DevolutionForm({
     `;
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner">
+        <div className="bg-gray-50 p-6 rounded-2xl flex flex-col h-full gap-6 shadow-inner">
 
             {/* TÍTULO */}
             <div>
@@ -371,7 +371,7 @@ export default function DevolutionForm({
             </div>
 
             {/* BOTONES */}
-            <div className="flex justify-end gap-3 mt-2">
+            <div className="flex justify-end gap-3 mt-auto">
                 <button
                     onClick={onCancel}
                     className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"

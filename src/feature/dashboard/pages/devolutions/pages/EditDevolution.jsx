@@ -259,9 +259,10 @@ export default function EditDevolution() {
                 setConfirmData(null);
                 setAlert({ type: "success", message: "Devolución actualizada correctamente." });
                 const idVenta = location.state?.idVenta ?? form.idVenta;
+                const mode    = location.state?.mode    ?? "from-sales";
                 setTimeout(() => {
                     if (idVenta) {
-                        navigate("/dashboard/sales-management/return", { state: { idVenta } });
+                        navigate("/dashboard/sales-management/return", { state: { idVenta, mode } });
                     } else {
                         navigate("/dashboard/devolutions");
                     }
@@ -272,13 +273,14 @@ export default function EditDevolution() {
 
     const handleCancel = () => {
         const idVenta = location.state?.idVenta ?? form?.idVenta;
+        const mode    = location.state?.mode    ?? "from-sales";
         setConfirmData({
             type: "warning",
             title: "¿Cancelar edición?",
             message: "Los cambios no guardados se perderán. ¿Estás seguro?",
             onConfirm: () => {
                 if (idVenta) {
-                    navigate("/dashboard/sales-management/return", { state: { idVenta } });
+                    navigate("/dashboard/sales-management/return", { state: { idVenta, mode } });
                 } else {
                     navigate("/dashboard/devolutions");
                 }

@@ -253,7 +253,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
             />
 
             {/* TARJETA — scrollable */}
-            <div className="absolute inset-0 flex items-start justify-center z-20 pointer-events-none overflow-y-auto py-6">
+            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none overflow-y-auto py-6">
                 <div
                     className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl pointer-events-auto border border-gray-300"
                     onClick={(e) => e.stopPropagation()}

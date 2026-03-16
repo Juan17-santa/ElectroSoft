@@ -10,7 +10,7 @@ import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import CancellationModal from "../../components/ui/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 11;
 
 // ─── Botón anular con tooltip informativo cuando no se puede anular ───────────
 function BanButton({ puedeAnularse, onClick }) {
@@ -225,7 +225,7 @@ export default function Shopping() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-4">
+                <div className="flex justify-end mt-auto">
                     <Pagination
                         currentPage={paginaActual}
                         totalPages={totalPages}

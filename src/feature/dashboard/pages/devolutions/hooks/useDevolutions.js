@@ -5,8 +5,12 @@ export function useDevolutions() {
     const [devolutions, setDevolutions] = useState([]);
     const [searchTerm, setSearchTerm]   = useState("");
 
-    useEffect(() => {
+    const recargar = () => {
         setDevolutions(ServicesDevolutions.get());
+    };
+
+    useEffect(() => {
+        recargar();
     }, []);
 
     const devolucionesFiltradas = devolutions.filter((d) => {
@@ -31,11 +35,12 @@ export function useDevolutions() {
 
     const editarDevolucion = (data) => {
         ServicesDevolutions.update(data);
-        const hoy = new Date().toISOString().split("T")[0];
+        const hoy   = new Date().toISOString().split("T")[0];
+        const ahora = new Date().toISOString();
         setDevolutions((prev) =>
             prev.map((d) =>
                 String(d.id) === String(data.id)
-                    ? { ...d, ...data, fechaEstado: hoy }
+                    ? { ...d, ...data, fechaEstado: hoy, actualizadoEn: ahora }
                     : d
             )
         );
@@ -83,5 +88,6 @@ export function useDevolutions() {
         anularDevolucion,
         anularPorVenta,
         getDevolucionById,
+        recargar,
     };
 }
