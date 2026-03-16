@@ -7,23 +7,34 @@ export const ClientsService = {
         const clients = data ? JSON.parse(data) : [];
 
         try {
-            const salesData = localStorage.getItem("sales");
-            const sales = salesData ? JSON.parse(salesData) : [];
+            const devolutionsData = localStorage.getItem("devolutions");
+            const devolutions = devolutionsData ? JSON.parse(devolutionsData) : [];
 
             return clients.map(client => {
-                // Filtrar ventas de este cliente que no estén Anuladas ni Devueltas
+                // Filtrar ventas de este cliente que no estén Anuladas
                 const clientSales = sales.filter(s =>
                     s.numeroDocumento === client.documento &&
-                    s.estado !== "Anulado" &&
-                    s.estado !== "Devuelto"
+                    s.estado !== "Anulado"
                 );
 
-                // Sumar los totales
-                const totalCalculado = clientSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
+                // Calcular el total vendido (sin descontar devoluciones aún)
+                const totalVendido = clientSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
+
+                // Calcular el total devuelto para este cliente (basado en devoluciones de sus ventas no anuladas)
+                const totalDevuelto = devolutions.reduce((sum, dev) => {
+                    const saleOfDev = clientSales.find(s => String(s.id) === String(dev.idVenta));
+                    if (saleOfDev) {
+                        // Buscar el precio del producto en la venta original para descontarlo correctamente
+                        const prodInSale = saleOfDev.productos.find(p => p.nombre === dev.producto);
+                        const precio = prodInSale ? prodInSale.precio : 0;
+                        return sum + (precio * (dev.cantidad || 0));
+                    }
+                    return sum;
+                }, 0);
 
                 return {
                     ...client,
-                    totalCompras: totalCalculado
+                    totalCompras: Math.max(0, totalVendido - totalDevuelto)
                 };
             });
         } catch (error) {

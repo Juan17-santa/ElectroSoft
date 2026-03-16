@@ -27,13 +27,14 @@ import { Eye, Pencil, Trash2, Undo2, X } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
-import Alert        from "../../components/ui/Alert";
+import Alert       from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
 const DEV_PER_PAGE  = 5;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
+
 
 export default function ReturnSalesPage() {
     const navigate = useNavigate();
@@ -134,7 +135,7 @@ export default function ReturnSalesPage() {
             title: "Registrar devolución",
             message: "¿Estás seguro? El estado de la venta cambiará a 'Devuelto'.",
             onConfirm: () => {
-                SalesService.returnSale(sale.id);
+                SalesService.returnSale(sale.id, esParcial);
                 localStorage.removeItem("saleToReturn");
                 setAlertMsg({ type: "success", message: "Devolución registrada correctamente." });
                 setConfirmData(null);

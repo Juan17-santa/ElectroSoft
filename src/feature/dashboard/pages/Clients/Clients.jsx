@@ -23,7 +23,11 @@ export default function Clients() {
 
     const filteredClients = clients.filter(client =>
         `${client.nombres} ${client.apellidos}`.toLowerCase().includes(search.toLowerCase()) ||
-        client.documento.toLowerCase().includes(search.toLowerCase())
+        client.documento.toLowerCase().includes(search.toLowerCase()) ||
+        client.tipoDocumento.toLowerCase().includes(search.toLowerCase()) ||
+        client.email.toLowerCase().includes(search.toLowerCase()) ||
+        client.telefono.toLowerCase().includes(search.toLowerCase()) ||
+        (client.totalCompras && client.totalCompras.toString().includes(search))
     );
 
     const totalPages = Math.max(1, Math.ceil(filteredClients.length / ITEMS_PER_PAGE));
@@ -105,7 +109,7 @@ export default function Clients() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full min-h-142 shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Gestión de clientes</p>
 
@@ -189,7 +193,7 @@ export default function Clients() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-2">
+                <div className="flex justify-end mt-auto">
                     <Pagination
                         currentPage={pageActual}
                         totalPages={totalPages}
