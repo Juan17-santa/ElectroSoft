@@ -17,12 +17,12 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, Pencil, Trash2, Undo2, X } from "lucide-react";
+import { Eye, Pencil, Trash2, Undo2, X} from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
-import Pagination from "../../components/ui/Pagination";
-import Alert from "../../components/ui/Alert";
+import Pagination  from "../../components/ui/Pagination";
+import Alert       from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import CustomSelect from "../../components/ui/CustomSelect";
 
@@ -30,16 +30,20 @@ const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
 const DEV_PER_PAGE = 5;
 
-export default function ReturnSalesPage() {
-    const navigate = useNavigate();
-    const location = useLocation();
+const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
+const PROD_PER_PAGE = 5;
+const DEV_PER_PAGE  = 5;
 
-    const [sale, setSale] = useState(null);
+export default function ReturnSalesPage() {
+    const navigate  = useNavigate();
+    const location  = useLocation();
+
+    const [sale, setSale]                           = useState(null);
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
-    const [alertMsg, setAlertMsg] = useState(null);
-    const [confirmData, setConfirmData] = useState(null);
-    const [prodPage, setProdPage] = useState(1);
-    const [devPage, setDevPage] = useState(1);
+    const [alertMsg, setAlertMsg]                   = useState(null);
+    const [confirmData, setConfirmData]             = useState(null);
+    const [prodPage, setProdPage]                   = useState(1);
+    const [devPage, setDevPage]                     = useState(1);
 
     // Detectar modo: si venimos desde Devolutions o venta ya registrada
     const fromDevolutions = !!location.state?.fromDevolutions;
@@ -51,14 +55,14 @@ export default function ReturnSalesPage() {
         if (idVentaState) {
             // Llegamos desde Devolutions, CreateDevolution, o EditDevolution
             const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
-            const found = ventas.find((v) => String(v.id) === String(idVentaState));
+            const found  = ventas.find((v) => String(v.id) === String(idVentaState));
             setSale(found ?? null);
         } else {
             // Llegamos desde SalesManagement → localStorage
             const data = localStorage.getItem("saleToReturn");
             if (data) setSale(JSON.parse(data));
         }
-        // location.key garantiza recarga en cada navegación a esta página
+    // location.key garantiza recarga en cada navegación a esta página
     }, [location.key]);
 
     // ─── Recargar devoluciones de la venta ────────────────────────────────────
@@ -70,26 +74,20 @@ export default function ReturnSalesPage() {
 
     if (!sale) return null;
 
-    const productos = sale.productos || [];
-    
-    // Mapear cantidades devueltas por nombre de producto
-    const cantDevueltasMap = devolucionesVenta.reduce((acc, d) => {
-        acc[d.producto] = (acc[d.producto] || 0) + Number(d.cantidad || 0);
-        return acc;
-    }, {});
-
-    const isYaDevuelto = sale.estado === "Devuelto";
-    const modoVista = fromDevolutions || isYaDevuelto;
+    const productos      = sale.productos || [];
+    const yaDevueltos    = devolucionesVenta.map((d) => d.producto);
+    const isYaDevuelto   = sale.estado === "Devuelto";
+    const modoVista      = fromDevolutions || isYaDevuelto;
 
     // ─── Paginación productos de la venta ────────────────────────────────────
     const totalProdPages = Math.max(1, Math.ceil(productos.length / PROD_PER_PAGE));
-    const prodActual = Math.min(prodPage, totalProdPages);
+    const prodActual     = Math.min(prodPage, totalProdPages);
     const paginatedProds = productos.slice((prodActual - 1) * PROD_PER_PAGE, prodActual * PROD_PER_PAGE);
 
     // ─── Paginación devoluciones registradas ─────────────────────────────────
-    const totalDevPages = Math.max(1, Math.ceil(devolucionesVenta.length / DEV_PER_PAGE));
-    const devActual = Math.min(devPage, totalDevPages);
-    const paginatedDevs = devolucionesVenta.slice((devActual - 1) * DEV_PER_PAGE, devActual * DEV_PER_PAGE);
+    const totalDevPages  = Math.max(1, Math.ceil(devolucionesVenta.length / DEV_PER_PAGE));
+    const devActual      = Math.min(devPage, totalDevPages);
+    const paginatedDevs  = devolucionesVenta.slice((devActual - 1) * DEV_PER_PAGE, devActual * DEV_PER_PAGE);
 
     const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 
@@ -130,21 +128,10 @@ export default function ReturnSalesPage() {
             setAlertMsg({ type: "error", message: "Debes devolver al menos un producto antes de registrar." });
             return;
         }
-
-        // Determinar si la devolución es parcial o total comparando cantidades totales
-        const totalVendido = productos.reduce((sum, p) => sum + (p.cantidad || 0), 0);
-        const totalDevuelto = devolucionesVenta.reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
-        
-        const esParcial = totalDevuelto < totalVendido;
-
-        const mensaje = esParcial 
-            ? `¿Estás seguro de registrar esta devolución? Se ha devuelto el ${((totalDevuelto/totalVendido)*100).toFixed(0)}% de la venta. El estado cambiará a 'Devolución Parcial'.`
-            : "¿Estás seguro de registrar esta devolución? Se ha devuelto la totalidad de la venta. El estado cambiará a 'Devuelto'.";
-
         setConfirmData({
             type: "warning",
             title: "Registrar devolución",
-            message: mensaje,
+            message: "¿Estás seguro de registrar esta devolución? El estado de la venta cambiará a 'Devuelto'.",
             onConfirm: () => {
                 SalesService.returnSale(sale.id, esParcial);
                 localStorage.removeItem("saleToReturn");
@@ -189,15 +176,17 @@ export default function ReturnSalesPage() {
 
                 {/* Header */}
                 <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-gray-800">Devolución de venta</h2>
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={handleCerrar}
-                            className="p-2 hover:bg-gray-200 rounded-lg transition cursor-pointer"
-                        >
-                            <X size={20} />
-                        </button>
-                    </div>
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        Devolución de venta
+                        {isYaDevuelto && (
+                            <span className="text-xs font-normal bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full ml-1">
+                                Devuelta
+                            </span>
+                        )}
+                    </h2>
+                    <button onClick={handleCerrar} className="p-2 hover:bg-gray-200 rounded-lg transition cursor-pointer" title="Cerrar">
+                        <X size={20} />
+                    </button>
                 </div>
 
                 {/* Información venta */}
@@ -206,7 +195,7 @@ export default function ReturnSalesPage() {
                     <div className="bg-white rounded-xl border-l-4 border-yellow-400 px-5 py-4 flex flex-wrap items-center gap-8 shadow-sm">
                         <div>
                             <p className="text-xs text-gray-400">ID venta</p>
-                                <p className="font-bold text-gray-800">#{String(sale.numeroVenta || "").padStart(2, '0') || sale.id}</p>
+                            <p className="font-bold text-gray-800">{sale.numeroDocumento ?? sale.id}</p>
                         </div>
                         <div>
                             <p className="text-xs text-gray-400">Fecha creación</p>
@@ -248,10 +237,7 @@ export default function ReturnSalesPage() {
                             </thead>
                             <tbody>
                                 {paginatedProds.map((prod, i) => {
-                                    const cantDevuelta = cantDevueltasMap[prod.nombre] || 0;
-                                    const todoDevuelto = cantDevuelta >= prod.cantidad;
-                                    const algoDevuelto = cantDevuelta > 0;
-
+                                    const devuelto = yaDevueltos.includes(prod.nombre);
                                     return (
                                         <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                                             <td className="px-4 py-2.5">{prod.nombre}</td>
@@ -259,13 +245,9 @@ export default function ReturnSalesPage() {
                                             <td className="px-4 py-2.5">{prod.cantidad}</td>
                                             <td className="px-4 py-2.5">{formatCOP(prod.precio * prod.cantidad)}</td>
                                             <td className="px-4 py-2.5 text-center">
-                                                {todoDevuelto ? (
-                                                    <span className="text-xs bg-gray-100 text-gray-600 font-medium px-2 py-0.5 rounded-full">
-                                                        Devuelto
-                                                    </span>
-                                                ) : algoDevuelto ? (
+                                                {devuelto ? (
                                                     <span className="text-xs bg-orange-100 text-orange-600 font-medium px-2 py-0.5 rounded-full">
-                                                        Parcial ({cantDevuelta}/{prod.cantidad})
+                                                        Devuelto
                                                     </span>
                                                 ) : (
                                                     <span className="text-xs bg-green-100 text-green-600 font-medium px-2 py-0.5 rounded-full">
@@ -275,7 +257,7 @@ export default function ReturnSalesPage() {
                                             </td>
                                             {!modoVista && (
                                                 <td className="px-4 py-2.5 text-center">
-                                                    {!todoDevuelto ? (
+                                                    {!devuelto ? (
                                                         <button
                                                             onClick={() => handleDevolver(prod)}
                                                             title="Devolver este producto"
@@ -357,10 +339,11 @@ export default function ReturnSalesPage() {
                                                                 title={bloqueado ? "No se puede editar" : "Editar"}
                                                                 onClick={() => !bloqueado && handleEditar(dev)}
                                                                 disabled={bloqueado}
-                                                                className={`p-1.5 rounded-lg transition ${bloqueado
-                                                                    ? "bg-gray-100 opacity-40 cursor-not-allowed"
-                                                                    : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
-                                                                    }`}
+                                                                className={`p-1.5 rounded-lg transition ${
+                                                                    bloqueado
+                                                                        ? "bg-gray-100 opacity-40 cursor-not-allowed"
+                                                                        : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
+                                                                }`}
                                                             >
                                                                 <Pencil size={14} className="text-yellow-600" />
                                                             </button>
@@ -398,16 +381,14 @@ export default function ReturnSalesPage() {
                     </button>
 
                     {/* Botón Registrar — solo visible si NO es modo vista y la venta no está ya devuelta */}
-                    {
-                        !modoVista && (
-                            <button
-                                onClick={handleRegistrarDevolucion}
-                                className="px-6 py-2.5 bg-linear-to-r from-white to-yellow-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
-                            >
-                                Registrar devolución
-                            </button>
-                        )
-                    }
+                    {!modoVista && (
+                        <button
+                            onClick={handleRegistrarDevolucion}
+                            className="px-6 py-2.5 bg-linear-to-r from-white to-yellow-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
+                        >
+                            Registrar devolución
+                        </button>
+                    )}
                 </div>
 
             </div>
