@@ -144,7 +144,13 @@ export default function Roles() {
                                                 {String((pageActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                             </td>
                                             <td className="px-3 py-3 font-medium text-gray-800">{role.nombre}</td>
-                                            <td className="px-3 py-3 text-gray-500">{role.descripcion}</td>
+                                            <td className="px-3 py-3 max-w-md">
+                                                {!role.descripcion || role.descripcion.length === 0 ? (
+                                                    <span className="text-gray-400 italic">Sin descripción</span>
+                                                ) : (
+                                                    <span className="text-gray-500">{role.descripcion}</span>
+                                                )}
+                                            </td>
                                             <td className="px-3 py-3">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`w-2 h-2 rounded-full ${role.estado ? "bg-green-500" : "bg-red-500"}`}></span>

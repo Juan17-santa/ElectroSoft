@@ -38,8 +38,8 @@ export const Validations = {
                 }
                 break;
             case "NIT":
-                if (documento.length < 9 || documento.length > 12) {
-                    return { valido: false, mensaje: "El NIT debe tener entre 9 y 12 dígitos." };
+                if (documento.length < 8 || documento.length > 12) {
+                    return { valido: false, mensaje: "El NIT debe tener entre 8 y 12 dígitos." };
                 }
                 break;
             case "Pasaporte":

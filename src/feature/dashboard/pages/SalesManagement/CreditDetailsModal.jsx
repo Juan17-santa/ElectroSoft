@@ -492,8 +492,8 @@ export default function CreditDetailsPage() {
                         </div>
 
                         <div className={`relative flex items-center justify-center py-4 px-6 bg-gray-50/50 rounded-xl border-2 transition-all duration-300 ${paymentError
-                                ? 'border-red-100 bg-red-50/20'
-                                : 'border-dashed border-gray-200 focus-within:border-yellow-300 focus-within:bg-white'
+                            ? 'border-red-100 bg-red-50/20'
+                            : 'border-dashed border-gray-200 focus-within:border-yellow-300 focus-within:bg-white'
                             }`}>
                             <div className="flex flex-col items-center w-full">
                                 <input
@@ -502,7 +502,7 @@ export default function CreditDetailsPage() {
                                     onChange={(e) => {
                                         const raw = e.target.value.replace(/\D/g, "");
                                         setPaymentAmount(raw);
-                                        
+
                                         const monto = parseFloat(raw);
                                         const saldoRestante = netTotal - sale.montoPagado;
 

@@ -1,6 +1,7 @@
-import { User, FileText, X, Plus, Trash, AlertCircle, CheckCircle2 } from "lucide-react";
+import { User, FileText, X, Plus, Trash, AlertCircle, CheckCircle2, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import CustomSelect from "../../components/ui/CustomSelect";
 import { SalesService } from "./services/SalesService";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { ClientsService } from "../Clients/services/ClientsService";
@@ -135,23 +136,45 @@ export default function CreateSales() {
         return (product.stock || 0) - usedStock;
     };
 
-    const handleSaveProduct = (selectedProduct, quantity) => {
-        const existingIndex = productos.findIndex(p => p.nombre === selectedProduct.nombre);
+    const handleSaveProduct = (productosNuevos, quantity) => {
+        // Normalizar entrada: siempre trabajamos con un array
+        const itemsToProcess = Array.isArray(productosNuevos)
+            ? productosNuevos
+            : [{ ...productosNuevos, cantidad: quantity }];
 
-        if (existingIndex !== -1) {
-            const newProductos = [...productos];
-            newProductos[existingIndex].cantidad += quantity;
-            setProductos(newProductos);
-        } else {
-            setProductos(prev => [...prev, {
-                id: Date.now(),
-                nombre: selectedProduct.nombre,
-                cantidad: quantity,
-                precio: selectedProduct.precio
-            }]);
-        }
+        setProductos(prev => {
+            let updated = [...prev];
+
+            itemsToProcess.forEach(item => {
+                if (!item || !item.nombre) return;
+
+                const nombre = item.nombre;
+                const cant = parseFloat(item.cantidad) || 0;
+                const precio = parseFloat(item.precio) || 0;
+
+                if (cant <= 0) return;
+
+                const existingIndex = updated.findIndex(p => p.nombre === nombre);
+
+                if (existingIndex !== -1) {
+                    updated[existingIndex] = {
+                        ...updated[existingIndex],
+                        cantidad: updated[existingIndex].cantidad + cant
+                    };
+                } else {
+                    updated.push({
+                        id: Date.now() + Math.random(), // ID más único
+                        nombre,
+                        cantidad: cant,
+                        precio
+                    });
+                }
+            });
+
+            return updated;
+        });
+
         setProductosError("");
-        setIsModalOpen(false);
     };
 
     const handleRemoveProduct = (productId) => {
@@ -277,20 +300,18 @@ export default function CreateSales() {
                             )}
                         </div>
 
-                        {/* Tipo Venta */}
+                        {/* Tipo Venta (Standard CustomSelect) */}
                         <div className="flex flex-col gap-0">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium mb-2"><FileText size={14} /><span>Tipo Venta *</span></div>
-                            <select
-                                name="tipoVenta"
+                            <CustomSelect
+                                label="Tipo Venta *"
+                                icon={FileText}
+                                options={opcionesTipoVenta}
                                 value={formData.tipoVenta}
-                                onChange={handleChange}
-                                onBlur={() => tocar("tipoVenta")}
-                                className={`bg-gray-200 rounded-xl px-3 py-2.5 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 ${ringClass(estadoTipoVenta)}`}
-                            >
-                                {opcionesTipoVenta.map(opt => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </select>
+                                onChange={(val) => {
+                                    setFormData(prev => ({ ...prev, tipoVenta: val }));
+                                    tocar("tipoVenta");
+                                }}
+                            />
                             {estadoTipoVenta && (
                                 <ValidationMessage
                                     error={!estadoTipoVenta.valido ? estadoTipoVenta.mensaje : null}
