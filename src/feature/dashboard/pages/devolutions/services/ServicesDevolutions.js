@@ -23,7 +23,8 @@ export const ServicesDevolutions = {
 
     create(devolution) {
         const all = this.get();
-        const hoy = new Date().toISOString().split("T")[0];
+        const hoy  = new Date().toISOString().split("T")[0];
+        const ahora = new Date().toISOString();
         const nueva = {
             id:                 Date.now(),
             idVenta:            devolution.idVenta            ?? "",
@@ -41,17 +42,19 @@ export const ServicesDevolutions = {
             fechaISO:           devolution.fechaISO           ?? hoy,
             fechaEstado:        hoy,
             estadoResolucion:   devolution.estadoResolucion   ?? "",
-            creadoEn:           new Date().toISOString(),
+            creadoEn:           ahora,
+            actualizadoEn:      ahora,   // timestamp completo para ordenar por edición
         };
         localStorage.setItem(KEY, JSON.stringify([...all, nueva]));
         return nueva;
     },
 
     update(devolucionActualizada) {
-        const hoy = new Date().toISOString().split("T")[0];
+        const hoy   = new Date().toISOString().split("T")[0];
+        const ahora = new Date().toISOString();
         const updated = this.get().map((d) =>
             String(d.id) === String(devolucionActualizada.id)
-                ? { ...d, ...devolucionActualizada, fechaEstado: hoy }
+                ? { ...d, ...devolucionActualizada, fechaEstado: hoy, actualizadoEn: ahora }
                 : d
         );
         localStorage.setItem(KEY, JSON.stringify(updated));

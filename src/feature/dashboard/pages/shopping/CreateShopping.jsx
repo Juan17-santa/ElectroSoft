@@ -496,7 +496,7 @@ export default function CreateShopping() {
                 </div>
 
                 {/* BOTONES CANCELAR Y CREAR */}
-                <div className="flex justify-end gap-3 mt-2">
+                <div className="flex justify-end gap-3 mt-auto">
                     <button
                         onClick={() => setConfirmData({
                             type: "warning",

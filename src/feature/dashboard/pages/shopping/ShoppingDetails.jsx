@@ -179,7 +179,7 @@ export default function ShoppingDetails() {
                 </div>
 
                 {/* BOTÓN VOLVER */}
-                <div className="flex justify-end">
+                <div className="flex justify-end mt-auto">
                     <button
                         onClick={() => navigate("/dashboard/shopping")}
                         className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"

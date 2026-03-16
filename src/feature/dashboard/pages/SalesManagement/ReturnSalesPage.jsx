@@ -1,37 +1,43 @@
 /**
  * ReturnSalesPage.jsx — "Devolución de venta"
  *
- * Esta página es el centro del flujo de devoluciones. Se accede desde dos lugares:
- *   1. SalesManagement → "devolver venta" → guarda la venta en localStorage + navega aquí
- *   2. Devolutions → "ver detalles" → navega con state: { idVenta, fromDevolutions: true }
- *   3. CreateDevolution (después de guardar) → navega con state: { idVenta }
+ * Recibe `mode` en location.state para determinar qué acciones mostrar:
  *
- * Flujo principal (desde ventas):
- *   - Muestra info de la venta
- *   - Tabla de productos: "Devolver" (→ CreateDevolution) y "Ver detalle" (→ DevolutionProductDetails)
- *   - Tabla "Productos devueltos": listado de devoluciones ya registradas para esta venta
- *   - "Registrar devolución": finaliza el proceso → cambia estado de la venta a Devuelto
+ *   "from-sales"  → viene de SalesManagement "devolver venta"
+ *                   Productos: botón ↩ por producto no devuelto
+ *                   Devueltos: Eye + Pencil + Trash
+ *                   Footer: "Cancelar" + "Registrar devolución"
  *
- * Modo vista (desde Devoluciones o venta ya devuelta):
- *   - Solo muestra información, sin acciones de registro
+ *   "view-only"   → viene de Devolutions "Ver detalle"
+ *                   Productos: sin acciones
+ *                   Devueltos: solo Eye
+ *                   Footer: "Volver a devoluciones"
+ *
+ *   "editable"    → viene de Devolutions "Editar"
+ *                   Productos: sin acciones
+ *                   Devueltos: Eye + Pencil (si no bloqueado)
+ *                   Footer: "Volver a devoluciones"
+ *
+ * El `mode` se propaga en CADA navigate hacia sub-páginas para que al
+ * volver el contexto (botón del footer) se mantenga intacto.
  */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, Pencil, Trash2, Undo2, X} from "lucide-react";
+import { Eye, Pencil, Trash2, Undo2, X } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
-import Pagination  from "../../components/ui/Pagination";
-import Alert       from "../../components/ui/Alert";
+import Alert        from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
 const DEV_PER_PAGE  = 5;
+const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 
 export default function ReturnSalesPage() {
-    const navigate  = useNavigate();
-    const location  = useLocation();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const [sale, setSale]                           = useState(null);
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
@@ -40,27 +46,26 @@ export default function ReturnSalesPage() {
     const [prodPage, setProdPage]                   = useState(1);
     const [devPage, setDevPage]                     = useState(1);
 
-    // Detectar modo: si venimos desde Devolutions o venta ya registrada
-    const fromDevolutions = !!location.state?.fromDevolutions;
+    // ─── Modo ─────────────────────────────────────────────────────────────────
+    const mode       = location.state?.mode ?? "from-sales";
+    const isFromSales = mode === "from-sales";
+    const isViewOnly  = mode === "view-only";
+    const isEditable  = mode === "editable";
 
-    // ─── Cargar venta ──────────────────────────────────────────────────────────
+    // ─── Cargar venta ─────────────────────────────────────────────────────────
     useEffect(() => {
         const idVentaState = location.state?.idVenta;
-
         if (idVentaState) {
-            // Llegamos desde Devolutions, CreateDevolution, o EditDevolution
             const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
             const found  = ventas.find((v) => String(v.id) === String(idVentaState));
             setSale(found ?? null);
         } else {
-            // Llegamos desde SalesManagement → localStorage
             const data = localStorage.getItem("saleToReturn");
             if (data) setSale(JSON.parse(data));
         }
-    // location.key garantiza recarga en cada navegación a esta página
     }, [location.key]);
 
-    // ─── Recargar devoluciones de la venta ────────────────────────────────────
+    // ─── Cargar devoluciones ──────────────────────────────────────────────────
     const recargarDevoluciones = useCallback(() => {
         if (sale?.id) setDevolucionesVenta(ServicesDevolutions.getByIdVenta(sale.id));
     }, [sale?.id]);
@@ -69,42 +74,43 @@ export default function ReturnSalesPage() {
 
     if (!sale) return null;
 
-    const productos      = sale.productos || [];
-    const yaDevueltos    = devolucionesVenta.map((d) => d.producto);
-    const isYaDevuelto   = sale.estado === "Devuelto";
-    const modoVista      = fromDevolutions || isYaDevuelto;
+    const productos    = sale.productos || [];
+    const yaDevueltos  = devolucionesVenta.map((d) => d.producto);
+    const isYaDevuelto = sale.estado === "Devuelto";
 
-    // ─── Paginación productos de la venta ────────────────────────────────────
+    // ─── Paginación ───────────────────────────────────────────────────────────
     const totalProdPages = Math.max(1, Math.ceil(productos.length / PROD_PER_PAGE));
     const prodActual     = Math.min(prodPage, totalProdPages);
     const paginatedProds = productos.slice((prodActual - 1) * PROD_PER_PAGE, prodActual * PROD_PER_PAGE);
 
-    // ─── Paginación devoluciones registradas ─────────────────────────────────
-    const totalDevPages  = Math.max(1, Math.ceil(devolucionesVenta.length / DEV_PER_PAGE));
-    const devActual      = Math.min(devPage, totalDevPages);
-    const paginatedDevs  = devolucionesVenta.slice((devActual - 1) * DEV_PER_PAGE, devActual * DEV_PER_PAGE);
-
-    const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
+    const totalDevPages = Math.max(1, Math.ceil(devolucionesVenta.length / DEV_PER_PAGE));
+    const devActual     = Math.min(devPage, totalDevPages);
+    const paginatedDevs = devolucionesVenta.slice((devActual - 1) * DEV_PER_PAGE, devActual * DEV_PER_PAGE);
 
     // ─── Handlers ────────────────────────────────────────────────────────────
 
+    // Pasa productoNombre para que CreateDevolution lo pre-cargue como read-only
     const handleDevolver = (producto) => {
         navigate("/dashboard/devolutions/create", {
-            state: { idVenta: sale.id, fromReturn: true },
+            state: { idVenta: sale.id, productoNombre: producto.nombre, mode },
         });
     };
 
+    // Propaga mode para que DevolutionProductDetails sepa a dónde volver
     const handleVerDetalle = (devolucion) => {
-        navigate(`/dashboard/devolutions/product-details/${devolucion.id}`);
+        navigate(`/dashboard/devolutions/product-details/${devolucion.id}`, {
+            state: { mode, idVenta: sale.id },
+        });
     };
 
+    // Propaga mode para que EditDevolution sepa a dónde volver
     const handleEditar = (devolucion) => {
         navigate(`/dashboard/devolutions/edit/${devolucion.id}`, {
-            state: { idVenta: sale.id },
+            state: { idVenta: sale.id, mode },
         });
     };
 
-    const handleEliminarDevolucion = (devolucion) => {
+    const handleEliminar = (devolucion) => {
         setConfirmData({
             type: "delete",
             title: "Eliminar devolución",
@@ -118,7 +124,7 @@ export default function ReturnSalesPage() {
         });
     };
 
-    const handleRegistrarDevolucion = () => {
+    const handleRegistrar = () => {
         if (devolucionesVenta.length === 0) {
             setAlertMsg({ type: "error", message: "Debes devolver al menos un producto antes de registrar." });
             return;
@@ -126,7 +132,7 @@ export default function ReturnSalesPage() {
         setConfirmData({
             type: "warning",
             title: "Registrar devolución",
-            message: "¿Estás seguro de registrar esta devolución? El estado de la venta cambiará a 'Devuelto'.",
+            message: "¿Estás seguro? El estado de la venta cambiará a 'Devuelto'.",
             onConfirm: () => {
                 SalesService.returnSale(sale.id);
                 localStorage.removeItem("saleToReturn");
@@ -137,16 +143,16 @@ export default function ReturnSalesPage() {
         });
     };
 
-    const handleCerrar = () => {
-        if (fromDevolutions) {
-            navigate("/dashboard/devolutions");
-        } else {
+    const handleVolver = () => {
+        if (isFromSales) {
             localStorage.removeItem("saleToReturn");
             navigate("/dashboard/sales-management");
+        } else {
+            navigate("/dashboard/devolutions");
         }
     };
 
-    // Paginador reutilizable
+    // ─── Paginador ────────────────────────────────────────────────────────────
     const Paginator = ({ currentPage, totalPages: tp, onPageChange }) => {
         if (tp <= 1) return null;
         return (
@@ -179,7 +185,7 @@ export default function ReturnSalesPage() {
                             </span>
                         )}
                     </h2>
-                    <button onClick={handleCerrar} className="p-2 hover:bg-gray-200 rounded-lg transition cursor-pointer" title="Cerrar">
+                    <button onClick={handleVolver} className="p-2 hover:bg-gray-200 rounded-lg transition cursor-pointer" title="Cerrar">
                         <X size={20} />
                     </button>
                 </div>
@@ -188,30 +194,11 @@ export default function ReturnSalesPage() {
                 <div>
                     <p className="font-semibold text-gray-800 mb-2">Información venta</p>
                     <div className="bg-white rounded-xl border-l-4 border-yellow-400 px-5 py-4 flex flex-wrap items-center gap-8 shadow-sm">
-                        <div>
-                            <p className="text-xs text-gray-400">ID venta</p>
-                            <p className="font-bold text-gray-800">{sale.numeroDocumento ?? sale.id}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">Fecha creación</p>
-                            <p className="font-semibold text-gray-800">{sale.fecha ?? "—"}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">Subtotal</p>
-                            <p className="font-bold text-gray-800">{formatCOP(sale.subtotal)}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">IVA</p>
-                            <p className="font-bold text-gray-800">{formatCOP(sale.iva)}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">Total</p>
-                            <p className="font-bold text-gray-800 text-base">{formatCOP(sale.total)}</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-400">Estado</p>
-                            <p className="font-semibold text-gray-700">{sale.estado ?? "—"}</p>
-                        </div>
+                        <div><p className="text-xs text-gray-400">ID venta</p><p className="font-semibold text-gray-800">{sale.numeroDocumento ?? sale.id}</p></div>
+                        <div><p className="text-xs text-gray-400">Fecha creación</p><p className="font-semibold text-gray-800">{sale.fecha ?? "—"}</p></div>
+                        <div><p className="text-xs text-gray-400">IVA</p><p className="font-bold text-gray-800">{formatCOP(sale.iva)}</p></div>
+                        <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 text-base">{formatCOP(sale.total)}</p></div>
+                        <div><p className="text-xs text-gray-400">Estado</p><p className="font-semibold text-gray-700">{sale.estado ?? "—"}</p></div>
                     </div>
                 </div>
 
@@ -227,7 +214,7 @@ export default function ReturnSalesPage() {
                                     <th className="px-4 py-2.5 font-semibold">Cantidad</th>
                                     <th className="px-4 py-2.5 font-semibold">Subtotal</th>
                                     <th className="px-4 py-2.5 font-semibold text-center">Estado</th>
-                                    {!modoVista && <th className="px-4 py-2.5 w-10"></th>}
+                                    {isFromSales && <th className="px-4 py-2.5 w-10"></th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -240,31 +227,17 @@ export default function ReturnSalesPage() {
                                             <td className="px-4 py-2.5">{prod.cantidad}</td>
                                             <td className="px-4 py-2.5">{formatCOP(prod.precio * prod.cantidad)}</td>
                                             <td className="px-4 py-2.5 text-center">
-                                                {devuelto ? (
-                                                    <span className="text-xs bg-orange-100 text-orange-600 font-medium px-2 py-0.5 rounded-full">
-                                                        Devuelto
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-xs bg-green-100 text-green-600 font-medium px-2 py-0.5 rounded-full">
-                                                        Disponible
-                                                    </span>
-                                                )}
+                                                {devuelto
+                                                    ? <span className="text-xs bg-orange-100 text-orange-600 font-medium px-2 py-0.5 rounded-full">Devuelto</span>
+                                                    : <span className="text-xs bg-green-100 text-green-600 font-medium px-2 py-0.5 rounded-full">Disponible</span>
+                                                }
                                             </td>
-                                            {!modoVista && (
+                                            {isFromSales && (
                                                 <td className="px-4 py-2.5 text-center">
-                                                    {!devuelto ? (
-                                                        <button
-                                                            onClick={() => handleDevolver(prod)}
-                                                            title="Devolver este producto"
-                                                            className="text-yellow-600 hover:text-yellow-800 transition cursor-pointer"
-                                                        >
-                                                            <Undo2 size={16} />
-                                                        </button>
-                                                    ) : (
-                                                        <span className="text-gray-300 cursor-not-allowed">
-                                                            <Undo2 size={16} />
-                                                        </span>
-                                                    )}
+                                                    {!devuelto
+                                                        ? <button onClick={() => handleDevolver(prod)} title="Devolver este producto" className="text-yellow-600 hover:text-yellow-800 transition cursor-pointer"><Undo2 size={16} /></button>
+                                                        : <span className="text-gray-300 cursor-not-allowed"><Undo2 size={16} /></span>
+                                                    }
                                                 </td>
                                             )}
                                         </tr>
@@ -298,9 +271,9 @@ export default function ReturnSalesPage() {
                                 {paginatedDevs.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="py-6 text-center text-gray-400 text-sm">
-                                            {modoVista
-                                                ? "No hay productos devueltos para esta venta."
-                                                : "Usa el botón ↩ para agregar productos a devolver."}
+                                            {isFromSales
+                                                ? "Usa el botón ↩ para agregar productos a devolver."
+                                                : "No hay productos devueltos para esta venta."}
                                         </td>
                                     </tr>
                                 ) : (
@@ -319,38 +292,24 @@ export default function ReturnSalesPage() {
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center">
                                                     <div className="flex justify-center gap-1.5">
-                                                        {/* Ver detalle */}
-                                                        <button
-                                                            title="Ver detalle"
-                                                            onClick={() => handleVerDetalle(dev)}
-                                                            className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                        >
+                                                        {/* Eye — siempre */}
+                                                        <button title="Ver detalle" onClick={() => handleVerDetalle(dev)} className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer">
                                                             <Eye size={14} className="text-blue-600" />
                                                         </button>
-
-                                                        {/* Editar — desactivado si bloqueado */}
-                                                        {!modoVista && (
+                                                        {/* Pencil — from-sales y editable */}
+                                                        {(isFromSales || isEditable) && (
                                                             <button
                                                                 title={bloqueado ? "No se puede editar" : "Editar"}
                                                                 onClick={() => !bloqueado && handleEditar(dev)}
                                                                 disabled={bloqueado}
-                                                                className={`p-1.5 rounded-lg transition ${
-                                                                    bloqueado
-                                                                        ? "bg-gray-100 opacity-40 cursor-not-allowed"
-                                                                        : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
-                                                                }`}
+                                                                className={`p-1.5 rounded-lg transition ${bloqueado ? "bg-gray-100 opacity-40 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
                                                             >
                                                                 <Pencil size={14} className="text-yellow-600" />
                                                             </button>
                                                         )}
-
-                                                        {/* Eliminar — solo en modo edición */}
-                                                        {!modoVista && (
-                                                            <button
-                                                                title="Eliminar devolución"
-                                                                onClick={() => handleEliminarDevolucion(dev)}
-                                                                className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                            >
+                                                        {/* Trash — solo from-sales */}
+                                                        {isFromSales && (
+                                                            <button title="Eliminar devolución" onClick={() => handleEliminar(dev)} className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer">
                                                                 <Trash2 size={14} className="text-red-600" />
                                                             </button>
                                                         )}
@@ -369,16 +328,15 @@ export default function ReturnSalesPage() {
                 {/* Footer */}
                 <div className="flex justify-between items-center pt-4 border-t border-gray-200 mt-auto">
                     <button
-                        onClick={handleCerrar}
+                        onClick={handleVolver}
                         className="px-5 py-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-xl text-sm font-medium shadow cursor-pointer transition"
                     >
-                        {fromDevolutions ? "Volver a devoluciones" : "Cancelar"}
+                        {isFromSales ? "Cancelar" : "Volver a devoluciones"}
                     </button>
 
-                    {/* Botón Registrar — solo visible si NO es modo vista y la venta no está ya devuelta */}
-                    {!modoVista && (
+                    {isFromSales && !isYaDevuelto && (
                         <button
-                            onClick={handleRegistrarDevolucion}
+                            onClick={handleRegistrar}
                             className="px-6 py-2.5 bg-linear-to-r from-white to-yellow-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
                         >
                             Registrar devolución
@@ -388,9 +346,7 @@ export default function ReturnSalesPage() {
 
             </div>
 
-            {alertMsg && (
-                <Alert type={alertMsg.type} message={alertMsg.message} onClose={() => setAlertMsg(null)} />
-            )}
+            {alertMsg && <Alert type={alertMsg.type} message={alertMsg.message} onClose={() => setAlertMsg(null)} />}
             {confirmData && (
                 <ConfirmModal
                     type={confirmData.type}

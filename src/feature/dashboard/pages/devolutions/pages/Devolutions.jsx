@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Eye, Pencil, Ban, RotateCcw } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Eye, Pencil, Ban, RotateCcw, Check } from "lucide-react";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { getEstadoColor } from "../helpers/devolutionsHelpers";
 import SearchBar    from "../../../components/ui/Searchbar";
@@ -12,18 +12,41 @@ import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 
+const agruparMotivos = (grupo) => {
+    const contador = {};
+
+    grupo.forEach((d) => {
+        if (!d.motivo) return;
+        const m = d.motivo.trim();
+        contador[m] = (contador[m] || 0) + 1;
+    });
+
+    return Object.entries(contador)
+        .sort((a, b) => b[1] - a[1]) // mayor cantidad primero
+        .map(([motivo, cantidad]) => `${motivo}(${cantidad})`)
+        .join(" / ") || "—";
+};
+
 export default function Devolutions() {
     const navigate = useNavigate();
+    const location = useLocation();
     const {
         devolucionesFiltradas,
         searchTerm,
         setSearchTerm,
         anularPorVenta,
+        recargar,
     } = useDevolutions();
 
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert]             = useState(null);
+
+    // Recargar desde localStorage cada vez que se navega a esta página.
+    // location.key cambia en cada navegación, incluso si la URL es la misma.
+    useEffect(() => {
+        recargar();
+    }, [location.key]);
 
     // Agrupar por idVenta — una fila por venta
     const gruposPorVenta = useMemo(() => {
@@ -45,7 +68,8 @@ export default function Devolutions() {
         paginaActual * ITEMS_PER_PAGE
     );
 
-    // Helpers de grupo
+    // ─── Helpers de grupo ────────────────────────────────────────────────────
+
     const getFechaInicio = (g) =>
         g.reduce((min, d) => {
             const f = d.fechaISO ?? d.fecha ?? "";
@@ -58,20 +82,24 @@ export default function Devolutions() {
             return (!max || f > max) ? f : max;
         }, null) ?? "—";
 
-    const getEstadoGrupo = (g) => {
-        const sorted = [...g].sort((a, b) =>
-            (b.creadoEn ?? "").localeCompare(a.creadoEn ?? "")
-        );
-        return sorted[0]?.estadoResolucion ?? "—";
-    };
+    /**
+     * Devuelve la devolución más recientemente EDITADA del grupo.
+     * Usa actualizadoEn (ISO timestamp completo) para precisión exacta al segundo,
+     * evitando el empate que ocurre cuando varias devoluciones comparten la misma
+     * fechaEstado (solo fecha, sin hora). Fallback a creadoEn si falta actualizadoEn.
+     */
+    const getMasReciente = (g) =>
+        [...g].sort((a, b) => {
+            const ta = a.actualizadoEn ?? a.creadoEn ?? "";
+            const tb = b.actualizadoEn ?? b.creadoEn ?? "";
+            return tb.localeCompare(ta);
+        })[0];
 
     const editBloqueado = (g) =>
         g.every((d) => ESTADOS_BLOQUEADOS.includes(d.estadoResolucion));
 
-    const getPrimeraEditable = (g) =>
-        g.find((d) => !ESTADOS_BLOQUEADOS.includes(d.estadoResolucion));
+    // ─── Handlers ────────────────────────────────────────────────────────────
 
-    // Handlers
     const handleSearch = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
 
     const handleAnularGrupo = (grupo) => {
@@ -97,16 +125,20 @@ export default function Devolutions() {
                 generateExcelReport({
                     title: "Gestión de Devoluciones — Reporte",
                     fileName: "reporte_devoluciones.xlsx",
-                    columns: ["#", "ID Venta", "Productos devueltos", "Motivos", "Fecha inicio", "Fecha estado", "Estado"],
-                    data: gruposPorVenta.map((g, i) => [
-                        String(i + 1).padStart(2, "0"),
-                        g[0].idVenta ?? "—",
-                        String(g.length),
-                        g.map((d) => d.motivo).filter(Boolean).join(" / ") || "—",
-                        getFechaInicio(g),
-                        getFechaEstado(g),
-                        getEstadoGrupo(g),
-                    ]),
+                    columns: ["#", "ID Venta", "Productos devueltos", "Motivos", "Fecha inicio", "Última actualización", "Estado", "Último producto"],
+                    data: gruposPorVenta.map((g, i) => {
+                        const reciente = getMasReciente(g);
+                        return [
+                            String(i + 1).padStart(2, "0"),
+                            g[0].idVenta ?? "—",
+                            String(g.length),
+                            agruparMotivos(g), 
+                            getFechaInicio(g),
+                            getFechaEstado(g),
+                            reciente?.estadoResolucion ?? "—",
+                            reciente?.producto ?? "—",
+                        ];
+                    }),
                 });
                 setAlert({ type: "success", message: "Reporte Excel generado correctamente." });
                 setConfirmData(null);
@@ -123,7 +155,6 @@ export default function Devolutions() {
                     Gestión De Devoluciones
                 </p>
 
-                {/* Sin botón Crear — corrección 1 */}
                 <SearchBar
                     searchTerm={searchTerm}
                     onSearchChange={handleSearch}
@@ -141,7 +172,7 @@ export default function Devolutions() {
                                     <th className="px-3 py-2 font-semibold">#</th>
                                     <th className="px-3 py-2 font-semibold">ID Venta</th>
                                     <th className="px-3 py-2 font-semibold">Productos devueltos</th>
-                                    <th className="px-3 py-2 font-semibold">Fecha inicio / Fecha estado</th>
+                                    <th className="px-3 py-2 font-semibold">Fecha inicio / última actualización</th>
                                     <th className="px-3 py-2 font-semibold">Estado resolución</th>
                                     <th className="px-3 py-2 font-semibold text-center">Acciones</th>
                                 </tr>
@@ -155,16 +186,16 @@ export default function Devolutions() {
                                     </tr>
                                 ) : (
                                     itemsPagina.map((grupo, index) => {
-                                        const idVenta     = grupo[0].idVenta;
-                                        const estadoGrupo = getEstadoGrupo(grupo);
-                                        const colorEstado = getEstadoColor(estadoGrupo);
+                                        const idVenta    = grupo[0].idVenta;
+                                        const reciente   = getMasReciente(grupo);
+                                        const estado     = reciente?.estadoResolucion ?? "—";
+                                        const producto   = reciente?.producto         ?? "—";
+                                        const colorEstado = getEstadoColor(estado);
+                                        const textColor   = colorEstado.split(" ").find((c) => c.startsWith("text-")) ?? "text-gray-500";
                                         const fechaInicio = getFechaInicio(grupo);
                                         const fechaEstado = getFechaEstado(grupo);
                                         const bloqueado   = editBloqueado(grupo);
-                                        const editable    = getPrimeraEditable(grupo);
                                         const anulado     = grupo.every((d) => d.estadoResolucion === "Anulada");
-                                        // Color de texto del estado para la fechaEstado
-                                        const textColor   = colorEstado.split(" ").find((c) => c.startsWith("text-")) ?? "text-gray-500";
 
                                         return (
                                             <tr key={idVenta} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
@@ -178,50 +209,72 @@ export default function Devolutions() {
                                                     </span>
                                                 </td>
 
-                                                {/* Fecha inicio arriba, Fecha estado abajo con color del estado — corrección 3 */}
-                                                <td className="px-4 py-2 leading-relaxed">
-                                                    <p className="text-xs text-gray-500">{fechaInicio}</p>
-                                                    <p className={`text-xs font-semibold ${textColor}`}>{fechaEstado}</p>
+                                                {/* Fecha inicio / última actualización en la misma línea */}
+                                                <td className="px-4 py-2">
+                                                    <div className="flex items-center gap-1.5 text-xs">
+                                                        <span className="text-gray-500">{fechaInicio}</span>
+                                                        <span className="text-gray-300">/</span>
+                                                        <span className={`font-semibold ${textColor}`}>{fechaEstado}</span>
+                                                    </div>
                                                 </td>
 
+                                                {/* Estado + nombre del producto más recientemente actualizado */}
                                                 <td className="px-4 py-2">
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorEstado}`}>
-                                                        {estadoGrupo}
+                                                        {estado}
                                                     </span>
+                                                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[140px]" title={producto}>
+                                                        {producto}
+                                                    </p>
                                                 </td>
 
                                                 <td className="px-4 py-2">
                                                     <div className="flex justify-center gap-2">
 
-                                                        {/* VER → Devolución de venta */}
+                                                        {/* VER */}
                                                         <button
                                                             title="Ver detalle"
                                                             onClick={() => navigate("/dashboard/sales-management/return", {
-                                                                state: { idVenta, fromDevolutions: true },
+                                                                state: { idVenta, mode: "view-only" },
                                                             })}
                                                             className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
                                                         >
                                                             <Eye size={18} className="text-blue-600" />
                                                         </button>
 
-                                                        {/* EDITAR — desactivado si RESUELTO o RECHAZADA — corrección 4 */}
-                                                        <button
-                                                            title={bloqueado ? "No se puede editar (resuelta o rechazada)" : "Editar"}
-                                                            onClick={() =>
-                                                                !bloqueado && editable &&
-                                                                navigate(`/dashboard/devolutions/edit/${editable.id}`, {
-                                                                    state: { idVenta },
-                                                                })
-                                                            }
-                                                            disabled={bloqueado}
-                                                            className={`p-2 rounded-lg transition ${
-                                                                bloqueado
-                                                                    ? "bg-gray-100 opacity-40 cursor-not-allowed"
-                                                                    : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
-                                                            }`}
-                                                        >
-                                                            <Pencil size={18} className="text-yellow-600" />
-                                                        </button>
+                                                        {/* EDITAR */}
+                                                        <div className="relative group flex items-center">
+
+                                                            <button
+                                                                onClick={() =>
+                                                                    !bloqueado &&
+                                                                    navigate("/dashboard/sales-management/return", {
+                                                                        state: { idVenta, mode: "editable" },
+                                                                    })
+                                                                }
+                                                                disabled={bloqueado}
+                                                                className={`p-2 rounded-lg transition ${bloqueado
+                                                                        ? "bg-green-100 cursor-default"
+                                                                        : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
+                                                                    }`}
+                                                            >
+                                                                {bloqueado ? (
+                                                                    <Check size={18} className="text-green-600" />
+                                                                ) : (
+                                                                    <Pencil size={18} className="text-yellow-600" />
+                                                                )}
+                                                            </button>
+
+                                                            {bloqueado && (
+                                                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
+                                                                        opacity-0 group-hover:opacity-100 pointer-events-none
+                                                                        transition-all duration-200 transform group-hover:-translate-y-1
+                                                                        bg-gray-100 text-yellow-500 text-xs px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap">
+                                                                    ✔ Devolución completada
+                                                                </div>
+                                                            )}
+
+                                                        </div>
 
                                                         {/* ANULAR */}
                                                         <button
@@ -248,7 +301,7 @@ export default function Devolutions() {
                     </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end mt-auto">
                     <Pagination
                         currentPage={paginaActual}
                         totalPages={totalPages}
