@@ -1,14 +1,17 @@
-import { Plus, Ban, Eye, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Ban, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
 import { formatCOP, IVA_RATE, numeroFacturaYaExiste } from "../shopping/helpers/shoppingHelpers";
 import AddProductModal from "../shopping/components/AddProductModal";
 import CreateProductModal from "../shopping/components/CreateProductModal";
+import CreateProviderModal from "../shopping/components/CreateProviderModal";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import { ServicesProviders } from "../providers/services/ServicesProviders";
 import Alert from "../../components/ui/Alert";
+import { ServicesProviders } from "../providers/services/ServicesProviders";
+import { ServicesProducts } from "../products/services/ServicesProducts";
+import PriceReviewModal from "../shopping/components/PriceReviewModal";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 
@@ -63,10 +66,11 @@ export default function CreateShopping() {
 
     const [showModal,               setShowModal]               = useState(false);
     const [showCreateProductModal,  setShowCreateProductModal]  = useState(false);
+    const [showCreateProviderModal, setShowCreateProviderModal] = useState(false);
     const [currentPage,             setCurrentPage]             = useState(1);
     const [proveedoresList,         setProveedoresList]         = useState([]);
     const [confirmData,             setConfirmData]             = useState(null);
-    const [alert,                   setAlert]                   = useState(null);
+    const [alertData,               setAlertData]               = useState(null);
 
     // Formulario superior
     // #7: Guardar el ID del proveedor además de su nombre para trazabilidad
@@ -78,6 +82,11 @@ export default function CreateShopping() {
     const [fechaTocada,             setFechaTocada]             = useState(false);
     const [numeroFacturaTocado,     setNumeroFacturaTocado]     = useState(false);
 
+    // revisionPrecios: null = modal cerrado
+    //   { productos: [...con WAC], pendientes: [...para guardar] } = modal abierto
+    const [revisionPrecios,  setRevisionPrecios]  = useState(null);
+    const [navegarACompras,  setNavegarACompras]  = useState(false);
+
     // Productos en tabla
     const [productos, setProductos] = useState([]);
 
@@ -85,6 +94,15 @@ export default function CreateShopping() {
         const data = ServicesProviders.get().filter((p) => p.estado !== false);
         setProveedoresList(data);
     }, []);
+
+    // Navegación reactiva: se dispara cuando finalizarCompra marca navegarACompras=true.
+    // Usar useEffect en lugar de setTimeout dentro de un closure evita problemas
+    // con batching de React 18 y closures stale.
+    useEffect(() => {
+        if (!navegarACompras) return;
+        const timer = setTimeout(() => navigate("/dashboard/shopping"), 1500);
+        return () => clearTimeout(timer);
+    }, [navegarACompras, navigate]);
 
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
     const estadoProveedor     = proveedorTocado     ? validarProveedor(proveedorId)       : null;
@@ -97,7 +115,7 @@ export default function CreateShopping() {
     /**
      * #3: El total de la compra se calcula sobre costeProducto, que es lo que
      * realmente se le paga al proveedor en esta transacción, no sobre el precio
-     * de catálogo (que es el precio de VENTA al cliente).
+     * de Inventario (que es el precio de VENTA al cliente).
      */
     const subtotalSinIVA = productosActivos.reduce(
         (acc, p) => acc + p.cantidad * p.costeProducto,
@@ -130,6 +148,14 @@ export default function CreateShopping() {
         setProveedorTocado(true);
     };
 
+    // Al crear un proveedor desde la modal: añadirlo al select y auto-seleccionarlo
+    const handleProveedorCreado = (nuevoProveedor) => {
+        setProveedoresList((prev) => [...prev, nuevoProveedor]);
+        setProveedorId(String(nuevoProveedor.id));
+        setProveedor(nuevoProveedor.nombreProveedor);
+        setProveedorTocado(true);
+    };
+
     const handleAnadirProducto = (nuevoProducto) => {
         const productoConEstado = { ...nuevoProducto, anulado: false };
         const updated = [...productos, productoConEstado];
@@ -143,6 +169,38 @@ export default function CreateShopping() {
             p.id === id ? { ...p, anulado: true } : p
         );
         setProductos(updated);
+    };
+
+    /**
+     * Paso final: persiste la compra y navega. Se llama tanto desde el flujo
+     * directo (sin diferencia de precios) como desde los callbacks del modal.
+     */
+    const finalizarCompra = (productosParaGuardar, overridesPrecio = []) => {
+        guardarCompra({
+            numeroFactura,
+            fechaFactura: formatearFecha(fechaISO),
+            proveedor,
+            proveedorId,
+            total,
+            productos: productosParaGuardar,
+        });
+
+        // Si el usuario eligió usar su precioVenta en lugar del WAC, aplicarlo ahora.
+        // guardarCompra (síncrono) ya corrió, así que los precios originales fueron
+        // usados para calcular el WAC correctamente antes de este override.
+        overridesPrecio.forEach((p) => {
+            const actual = ServicesProducts.getById(p.id);
+            if (actual) ServicesProducts.update({ ...actual, precio: p.precioVenta });
+        });
+// Mostrar alerta de éxito
+        setAlertData({
+            type: "success",
+            message: `Compra registrada exitosamente. Número de factura: ${numeroFactura}`,
+        });
+
+        
+        setNumeroFacturaTocado(false);
+        setNavegarACompras(true); // dispara el useEffect de navegación
     };
 
     const handleCrearCompra = () => {
@@ -159,7 +217,12 @@ export default function CreateShopping() {
 
         const productosActuales = productos.filter((p) => !p.anulado);
         if (productosActuales.length === 0) {
-            setAlert({ type: "error", message: "Debes añadir al menos un producto activo a la compra." });
+            setConfirmData({
+                type: "warning",
+                title: "Sin productos",
+                message: "Debes añadir al menos un producto activo a la compra.",
+                onConfirm: () => setConfirmData(null),
+            });
             return;
         }
 
@@ -168,25 +231,38 @@ export default function CreateShopping() {
                 id,
                 nombre,
                 cantidad,
-                precio,                            // Precio catálogo en el momento de la compra
+                precio,
                 costeProducto: costeProducto || precio,
                 precioVenta:   precioVenta   || precio,
-                subtotal,                          // cantidad × costeProducto
+                subtotal,
             })
         );
 
-        guardarCompra({
-            numeroFactura,
-            fechaFactura: formatearFecha(fechaISO),
-            proveedor,     // Nombre (display)
-            proveedorId,   // #7: ID para trazabilidad
-            total,
-            productos: productosParaGuardar,
+        // Pre-calcular WAC antes de guardarCompra para mostrar el valor correcto en el modal.
+        // Fórmula: WAC = (stockAnterior × precioActual + cantidadNueva × precioVenta) / stockNuevo
+        const productosConWac = productosParaGuardar.map((p) => {
+            const actual       = ServicesProducts.getById(p.id);
+            const stockAnt     = actual?.stock ?? 0;
+            const precioActual = actual?.precio ?? 0;
+            const precioVenta  = Number(p.precioVenta);
+            const stockNuevo   = stockAnt + p.cantidad;
+            const wacExacto    = stockAnt > 0
+                ? (stockAnt * precioActual + p.cantidad * precioVenta) / stockNuevo
+                : precioVenta;
+            return { ...p, wacCalculado: Math.ceil(wacExacto / 100) * 100 };
         });
 
-        setNumeroFacturaTocado(false);
-        setAlert({ type: "success", message: "La compra fue registrada correctamente." });
-        setTimeout(() => navigate("/dashboard/shopping"), 1500);
+        // Solo preguntar si precioVenta difiere del WAC que se va a aplicar
+        const conPrecioDiferente = productosConWac.filter(
+            (p) => p.wacCalculado !== p.precioVenta
+        );
+
+        if (conPrecioDiferente.length > 0) {
+            setRevisionPrecios({ productos: conPrecioDiferente, pendientes: productosParaGuardar });
+            return;
+        }
+
+        finalizarCompra(productosParaGuardar);
     };
 
     return (
@@ -235,8 +311,10 @@ export default function CreateShopping() {
                                 <FieldStatus estado={estadoProveedor} />
                             </div>
                             <button
-                                onClick={() => navigate("/dashboard/provider/create")}
+                                type="button"
+                                onClick={() => setShowCreateProviderModal(true)}
                                 className="bg-yellow-400 hover:bg-yellow-500 transition duration-300 p-3 rounded-xl shadow-md cursor-pointer self-start"
+                                title="Crear nuevo proveedor"
                             >
                                 <Plus size={18} className="text-white" />
                             </button>
@@ -322,7 +400,7 @@ export default function CreateShopping() {
                                 <tr className="text-left border-b border-gray-200">
                                     <th className="px-4 py-2 font-semibold">Producto</th>
                                     <th className="px-4 py-2 font-semibold text-center">Cantidad</th>
-                                    <th className="px-4 py-2 font-semibold text-center">Catálogo</th>
+                                    <th className="px-4 py-2 font-semibold text-center">Precio inventario</th>
                                     <th className="px-4 py-2 font-semibold text-center">Coste compra</th>
                                     <th className="px-4 py-2 font-semibold text-center">Precio venta</th>
                                     <th className="px-4 py-2 font-semibold text-center">Subtotal</th>
@@ -364,26 +442,7 @@ export default function CreateShopping() {
                                                 {formatCOP(producto.subtotal)}
                                             </td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">
-                                                {producto.anulado ? (
-                                                    <button
-                                                        onClick={() => setConfirmData({
-                                                            type: "info",
-                                                            title: "Reactivar producto",
-                                                            message: `¿Deseas reactivar "${producto.nombre}" en la compra?`,
-                                                            onConfirm: () => {
-                                                                const updated = productos.map((p) =>
-                                                                    p.id === producto.id ? { ...p, anulado: false } : p
-                                                                );
-                                                                setProductos(updated);
-                                                                setConfirmData(null);
-                                                            }
-                                                        })}
-                                                        className="p-1.5 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
-                                                        title="Reactivar producto"
-                                                    >
-                                                        <Eye size={16} className="text-blue-600" />
-                                                    </button>
-                                                ) : (
+                                                {!producto.anulado && (
                                                     <button
                                                         onClick={() => setConfirmData({
                                                             type: "delete",
@@ -452,12 +511,7 @@ export default function CreateShopping() {
                     </button>
                     <PrimaryButton
                         icon={Plus}
-                        onClick={() => setConfirmData({
-                            type: "info",
-                            title: "Confirmar compra",
-                            message: `¿Deseas registrar la compra con ${productosActivos.length} producto(s)?`,
-                            onConfirm: handleCrearCompra
-                        })}
+                        onClick={handleCrearCompra}
                     >
                         Crear Compra
                     </PrimaryButton>
@@ -480,6 +534,14 @@ export default function CreateShopping() {
                     />
                 )}
 
+                {/* MODAL CREAR PROVEEDOR */}
+                {showCreateProviderModal && (
+                    <CreateProviderModal
+                        onClose={() => setShowCreateProviderModal(false)}
+                        onSuccess={handleProveedorCreado}
+                    />
+                )}
+
                 {/* MODAL CONFIRMACION */}
                 {confirmData && (
                     <ConfirmModal
@@ -491,15 +553,35 @@ export default function CreateShopping() {
                     />
                 )}
 
+                {/* MODAL REVISIÓN DE PRECIOS — exclusivo del módulo de compras */}
+                {revisionPrecios && (
+                    <PriceReviewModal
+                        productos={revisionPrecios.productos}
+                        onConfirmar={(selecciones) => {
+                            // Productos donde el usuario eligió el precio sugerido
+                            const overrides = revisionPrecios.productos.filter(
+                                (p) => selecciones[p.id] === "sugerido"
+                            );
+                            setRevisionPrecios(null);
+                            finalizarCompra(revisionPrecios.pendientes, overrides);
+                        }}
+                        onCancelar={() => {
+                            setRevisionPrecios(null);
+                        }}
+                    />
+                )}
+
+                {/* ALERTA DE ÉXITO */}
+                {alertData && (
+                    <Alert
+                        type={alertData.type}
+                        message={alertData.message}
+                        onClose={() => setAlertData(null)}
+                    />
+                )}
+
             </div>
 
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
         </>
     );
 }

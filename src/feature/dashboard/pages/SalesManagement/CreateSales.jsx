@@ -4,10 +4,20 @@ import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { ClientsService } from "../Clients/services/ClientsService";
-import AddProductModal from "../../components/ui/AddProductModal";
+import AddProductModal from "./AddProductModal";
 import Alert from "../../components/ui/Alert";
 import ValidationMessage from "../../components/ui/ValidationMessage";
+import Calendar from "../../components/ui/Calendar";
+import Pagination from "../../components/ui/Pagination";
 import { Validations } from "../../../../utils/validations";
+
+const formatCOP = (val) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    }).format(val);
+};
 
 export default function CreateSales() {
     const navigate = useNavigate();
@@ -24,6 +34,8 @@ export default function CreateSales() {
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
 
     const [productos, setProductos] = useState([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 5;
     const [availableProducts, setAvailableProducts] = useState([]);
     const [clients, setClients] = useState([]);
     const [clienteNombre, setClienteNombre] = useState("");
@@ -81,6 +93,14 @@ export default function CreateSales() {
         }
     }, [totalComprasCliente]);
 
+    // Automatizar Estado del Pedido
+    useEffect(() => {
+        setFormData(prev => ({
+            ...prev,
+            estado: formData.tipoVenta === "Contado" ? "Finalizado" : "Vigente"
+        }));
+    }, [formData.tipoVenta]);
+
     // Auto-llenar nombre del cliente cuando cambia el número de documento
     useEffect(() => {
         if (!formData.numeroDocumento) {
@@ -100,10 +120,13 @@ export default function CreateSales() {
         tocar(name);
     };
 
-    const handleProductChange = (index, field, value) => {
+    const handleProductChange = (productId, field, value) => {
         const newProductos = [...productos];
-        newProductos[index][field] = field === "cantidad" ? parseFloat(value) || 0 : value;
-        setProductos(newProductos);
+        const index = newProductos.findIndex(p => p.id === productId);
+        if (index !== -1) {
+            newProductos[index][field] = field === "cantidad" ? parseFloat(value) || 0 : value;
+            setProductos(newProductos);
+        }
     };
 
     const getAvailableStock = (product) => {
@@ -113,18 +136,32 @@ export default function CreateSales() {
     };
 
     const handleSaveProduct = (selectedProduct, quantity) => {
-        setProductos(prev => [...prev, {
-            id: Date.now(),
-            nombre: selectedProduct.nombre,
-            cantidad: quantity,
-            precio: selectedProduct.precio
-        }]);
+        const existingIndex = productos.findIndex(p => p.nombre === selectedProduct.nombre);
+
+        if (existingIndex !== -1) {
+            const newProductos = [...productos];
+            newProductos[existingIndex].cantidad += quantity;
+            setProductos(newProductos);
+        } else {
+            setProductos(prev => [...prev, {
+                id: Date.now(),
+                nombre: selectedProduct.nombre,
+                cantidad: quantity,
+                precio: selectedProduct.precio
+            }]);
+        }
         setProductosError("");
         setIsModalOpen(false);
     };
 
-    const handleRemoveProduct = (index) => {
-        setProductos(productos.filter((_, i) => i !== index));
+    const handleRemoveProduct = (productId) => {
+        setProductos(productos.filter(p => p.id !== productId));
+        // Ajustar página si se queda vacía
+        const totalAfterRemove = productos.length - 1;
+        const totalPagesAfterRemove = Math.max(1, Math.ceil(totalAfterRemove / ITEMS_PER_PAGE));
+        if (currentPage > totalPagesAfterRemove) {
+            setCurrentPage(totalPagesAfterRemove);
+        }
     };
 
     const calcularTotales = () => {
@@ -135,6 +172,13 @@ export default function CreateSales() {
     };
 
     const { subtotal, iva, total } = calcularTotales();
+
+    // Lógica de Paginación
+    const totalPages = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
+    const paginatedProducts = productos.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
 
     const handleForm = (e) => {
         e.preventDefault();
@@ -259,36 +303,24 @@ export default function CreateSales() {
 
                     {/* FILA 2 */}
                     <div className="grid grid-cols-2 gap-6">
-                        <div className="flex flex-col gap-0">
-                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Fecha *</span></div>
-                            <input
-                                type="date"
-                                name="fecha"
-                                value={formData.fecha}
-                                onChange={handleChange}
-                                onBlur={() => tocar("fecha")}
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 ${ringClass(estadoFecha)}`}
-                            />
-                            {tocado.fecha && (
-                                <ValidationMessage
-                                    error={!estadoFecha?.valido ? estadoFecha?.mensaje : null}
-                                    success={estadoFecha?.valido}
-                                    successMessage="Listo"
-                                />
-                            )}
-                        </div>
+                        <Calendar
+                            fechaISO={formData.fecha}
+                            onFechaChange={(val) => {
+                                setFormData(prev => ({ ...prev, fecha: val }));
+                                tocar("fecha");
+                            }}
+                            label="Fecha"
+                            required={true}
+                        />
 
                         <div className="flex flex-col gap-0">
-                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Estado *</span></div>
-                            <select
-                                name="estado"
+                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Estado</span></div>
+                            <input
+                                type="text"
+                                readOnly
                                 value={formData.estado}
-                                onChange={handleChange}
-                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                            >
-                                <option value="Vigente">Vigente</option>
-                                <option value="Finalizado">Finalizado</option>
-                            </select>
+                                className="bg-gray-200/70 rounded-xl px-4 py-3 text-sm shadow-inner text-gray-500 cursor-default outline-none"
+                            />
                         </div>
                     </div>
 
@@ -332,22 +364,22 @@ export default function CreateSales() {
                                             </td>
                                         </tr>
                                     ) : (
-                                        productos.map((producto, index) => (
+                                        paginatedProducts.map((producto) => (
                                             <tr key={producto.id} className="border-b border-gray-200 hover:bg-gray-50">
                                                 <td className="px-4 py-3 text-gray-800">{producto.nombre}</td>
                                                 <td className="px-4 py-3 text-center">
                                                     <input
                                                         type="number"
                                                         value={producto.cantidad}
-                                                        onChange={(e) => handleProductChange(index, "cantidad", e.target.value)}
+                                                        onChange={(e) => handleProductChange(producto.id, "cantidad", e.target.value)}
                                                         min="1"
                                                         className="w-full bg-gray-100 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3 text-right">${parseFloat(producto.precio).toFixed(2)}</td>
-                                                <td className="px-4 py-3 text-right font-semibold">${(producto.cantidad * producto.precio).toFixed(2)}</td>
+                                                <td className="px-4 py-3 text-right">{formatCOP(producto.precio)}</td>
+                                                <td className="px-4 py-3 text-right font-semibold">{formatCOP(producto.cantidad * producto.precio)}</td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <button type="button" onClick={() => handleRemoveProduct(index)} className="p-1 hover:bg-red-100 rounded transition cursor-pointer">
+                                                    <button type="button" onClick={() => handleRemoveProduct(producto.id)} className="p-1 hover:bg-red-100 rounded transition cursor-pointer">
                                                         <Trash size={16} className="text-red-600" />
                                                     </button>
                                                 </td>
@@ -356,22 +388,34 @@ export default function CreateSales() {
                                     )}
                                 </tbody>
                             </table>
-                        </div>
-                    </div>
 
-                    {/* TOTALES */}
-                    <div className="grid grid-cols-3 gap-4 bg-white rounded-lg p-4">
-                        <div className="flex flex-col items-center">
-                            <p className="text-gray-600 text-sm mb-2">Subtotal</p>
-                            <p className="text-2xl font-bold text-gray-800">${subtotal.toFixed(2)}</p>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <p className="text-gray-600 text-sm mb-2">IVA (19%)</p>
-                            <p className="text-2xl font-bold text-blue-600">${iva.toFixed(2)}</p>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <p className="text-gray-600 text-sm mb-2">Total</p>
-                            <p className="text-2xl font-bold text-green-600">${total.toFixed(2)}</p>
+                            {/* PIE DE TABLA (TOTALES Y PAGINACIÓN INTEGRADOS) */}
+                            <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex items-center justify-between">
+                                <div className="flex items-center gap-8 text-sm font-medium text-gray-700">
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-gray-500 text-[10px] uppercase tracking-wider font-bold">Subtotal</span>
+                                        <span className="font-semibold text-gray-800 leading-tight">{formatCOP(subtotal)}</span>
+                                    </div>
+                                    <div className="flex flex-col items-start border-l border-gray-200 pl-4">
+                                        <span className="text-blue-600/70 text-[10px] uppercase tracking-wider font-bold">IVA (19%)</span>
+                                        <span className="font-semibold text-blue-600 leading-tight">{formatCOP(iva)}</span>
+                                    </div>
+                                    <div className="flex flex-col items-start border-l border-gray-300 pl-8 ml-2">
+                                        <span className="text-gray-900 text-[10px] uppercase tracking-wider font-black">Total a pagar</span>
+                                        <span className="font-bold text-xl text-gray-900 tracking-tight leading-none">{formatCOP(total)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    {productos.length > ITEMS_PER_PAGE && (
+                                        <Pagination
+                                            currentPage={currentPage}
+                                            totalPages={totalPages}
+                                            onPageChange={setCurrentPage}
+                                        />
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
 

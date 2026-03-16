@@ -4,9 +4,10 @@ import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import DevolutionForm from "../components/DevolutionForm";
 
 /**
- * DevolutionProductDetails — Imagen 5
- * Formulario readonly con el detalle completo de la devolución.
- * Se accede desde el Eye de la tabla de productos en DevolutionDetails.
+ * DevolutionProductDetails
+ * Formulario de solo lectura con el detalle completo de una devolución de producto.
+ * Se accede desde el botón "Ver detalle" en la tabla de productos de ReturnSalesPage.
+ * Al volver, regresa a la Devolución de venta (ReturnSalesPage) para el idVenta correspondiente.
  */
 export default function DevolutionProductDetails() {
     const navigate = useNavigate();
@@ -33,15 +34,21 @@ export default function DevolutionProductDetails() {
         );
     }
 
+    // Regresa a la vista Devolución de venta del idVenta correspondiente
+    const handleVolver = () => {
+        navigate("/dashboard/sales-management/return", {
+            state: { idVenta: form.idVenta },
+        });
+    };
+
     return (
         <DevolutionForm
             form={form}
             onChange={() => {}}
             onSubmit={() => {}}
-            // Volver regresa a DevolutionDetails, no al listado
-            onCancel={() => navigate(`/dashboard/devolutions/details/${id}`)}
+            onCancel={handleVolver}
             readOnly={true}
-            title="Detalle producto devolución"
+            title="Detalle de devolución de producto"
         />
     );
 }

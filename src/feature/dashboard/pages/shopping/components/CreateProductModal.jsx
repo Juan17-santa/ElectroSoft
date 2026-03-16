@@ -4,7 +4,7 @@ import {
     AlertCircle, CheckCircle2, Hash, ShieldCheck,
     Plus, Trash, Tag, ChevronDown
 } from "lucide-react";
-import { formatCOP, parseCOP } from "../helpers/shoppingHelpers";
+import { parseCOP } from "../helpers/shoppingHelpers";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 import { ServicesCharacteristics } from "../../products/services/ServicesCharacteristics";
@@ -59,11 +59,17 @@ export default function CreateProductModal({ onClose, onSuccess }) {
         garantia: false,
     });
 
+    // ─── Nombres de productos existentes (para validar duplicados) ────────────
+    const [nombresExistentes, setNombresExistentes] = useState([]);
+
     // ─── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
         setCategoriasList(ServiceProductCategory.get());
         setCharacteristicOptions(ServicesCharacteristics.getCharacteristics());
         setMeasureOptions(ServicesCharacteristics.getMeasures());
+        // Cargar nombres de productos ya creados para validar duplicados
+        const productos = ServicesProducts.get();
+        setNombresExistentes(productos.map((p) => p.nombre.trim().toLowerCase()));
     }, []);
 
     // ─── Validaciones ─────────────────────────────────────────────────────────
@@ -71,6 +77,8 @@ export default function CreateProductModal({ onClose, onSuccess }) {
         if (!val || val.trim() === "") return { valido: false, mensaje: "El nombre es obligatorio." };
         if (val.trim().length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
         if (val.trim().length > 100) return { valido: false, mensaje: "Máximo 100 caracteres." };
+        if (nombresExistentes.includes(val.trim().toLowerCase()))
+            return { valido: false, mensaje: "Ya existe un producto con ese nombre." };
         return { valido: true, mensaje: "" };
     };
 
@@ -635,7 +643,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                                         className="bg-gray-100 rounded-lg px-3 py-2 text-sm border border-gray-300 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-200"
                                     />
                                 </div>
-                            </div>
+                            </div> 
 
                             <div className="flex gap-3 justify-end">
                                 <button

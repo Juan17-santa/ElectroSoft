@@ -29,12 +29,12 @@ export const Sidebar = () => {
     // Submenu para ventas
     const [openVentas, setOpenVentas] = useState(false);
 
-    const isPathInCompras = (path) => ["/dashboard/productCategory", "/dashboard/products", "/dashboard/providers", "/dashboard/shopping"].some(p => path.startsWith(p));
-    const isPathInVentas = (path) => ["/dashboard/clients", "/dashboard/orders", "/dashboard/sales-management", "/dashboard/payments", "/dashboard/Devolutions"].some(p => path.startsWith(p));
+    const isPathInCompras = (path) => ["/dashboard/productCategory", "/dashboard/products", "/dashboard/providers", "/dashboard/shopping"].some(p => path.toLowerCase().startsWith(p.toLowerCase()));
+    const isPathInVentas = (path) => ["/dashboard/clients", "/dashboard/orders", "/dashboard/sales-management", "/dashboard/payments", "/dashboard/devolutions"].some(p => path.toLowerCase().startsWith(p.toLowerCase()));
 
     useEffect(() => {
-        if (!isPathInCompras(location.pathname)) setOpenCompras(false);
-        if (!isPathInVentas(location.pathname)) setOpenVentas(false);
+        setOpenCompras(isPathInCompras(location.pathname));
+        setOpenVentas(isPathInVentas(location.pathname));
     }, [location.pathname]);
 
     // Función para determinar si una ruta está activa
@@ -192,8 +192,8 @@ export const Sidebar = () => {
                             </NavLink>
 
                             <NavLink
-                                to="/dashboard/Devolutions"
-                                className={activeSubLink("/dashboard/Devolutions")}
+                                to="/dashboard/devolutions"
+                                className={activeSubLink("/dashboard/devolutions")}
                             >
                                 Devoluciones
                             </NavLink>

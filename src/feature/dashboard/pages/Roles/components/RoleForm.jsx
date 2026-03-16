@@ -1,4 +1,4 @@
-import { User, FileText, Check, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { Tag, FileText, Check, AlertCircle, CheckCircle2, X, Activity, Calendar } from "lucide-react";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { PERMISSION_SCOPES } from "../services/RolesService";
@@ -43,22 +43,19 @@ export default function RoleForm({
     ];
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 h-full">
+
             {formError && (
                 <Alert type="error" message={formError} onClose={() => setFormError(null)} />
             )}
 
-            <div className={`grid grid-cols-1 ${isUpdate ? 'md:grid-cols-2 gap-x-12 gap-y-6' : 'md:grid-cols-2 gap-6'}`}>
-
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${isUpdate ? 'gap-x-12 gap-y-6' : 'gap-6'}`}>
                 {/* FIELDS */}
                 <div className="flex flex-col gap-4">
-                    {isUpdate && (
-                        <div className="flex items-center text-yellow-500 gap-2 font-bold mb-[-12px]">
-                            <User size={18} />
-                            <span>Nombre del rol</span>
-                        </div>
-                    )}
+                    <div className="flex items-center text-yellow-500 gap-2 font-bold mb-[-12px]">
+                        <Tag size={18} />
+                        <span>Nombre del rol</span>
+                    </div>
 
                     <div className="flex flex-col">
                         <div className={`rounded-xl px-4 py-3 flex items-center justify-between shadow-sm transition-all duration-300 ${ringClass(estadoNombre)} ${!estadoNombre || estadoNombre.valido ? 'bg-gray-200/50' : ''}`}>
@@ -76,106 +73,84 @@ export default function RoleForm({
                     </div>
 
                     <div className="flex gap-4">
-                        <div className={`${isUpdate ? 'w-full' : 'w-1/2'}`}>
-                            {isUpdate && (
-                                <div className="flex items-center text-yellow-500 gap-2 font-bold mb-2">
-                                    <User size={18} />
-                                    <span>Estado</span>
-                                </div>
-                            )}
-                           <CustomSelect
-                               options={statusOptions}
-                               value={formData.estado}
-                               onChange={(val) => handleSelectChange("estado", val)}
-                               placeholder="Seleccionar Estado"
-                           />
+                        <div className="w-1/2">
+                            <div className="flex items-center text-yellow-500 gap-2 font-bold mb-2">
+                                <Activity size={18} />
+                                <span>Estado</span>
+                            </div>
+                            <CustomSelect
+                                options={statusOptions}
+                                value={formData.estado}
+                                onChange={(val) => handleSelectChange("estado", val)}
+                                placeholder="Seleccionar Estado"
+                            />
                         </div>
 
-                        {!isUpdate && (
-                             <div className="w-1/2 bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200 text-gray-500">
-                                 {formData.fechaCreacion || formData.fecha}
-                             </div>
-                        )}
+                        <div className="w-1/2 flex flex-col justify-end">
+                            <div className="flex items-center text-yellow-500 gap-2 font-bold mb-2">
+                                <Calendar size={18} />
+                                <span>Fecha de creación</span>
+                            </div>
+                            <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200 text-gray-700 min-h-[48px]">
+                                {formData.fechaCreacion || formData.fecha || "Automática"}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {isUpdate ? (
-                    <>
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center text-yellow-500 gap-2 font-bold">
-                                <FileText size={18} />
-                                <span>Descripción</span>
-                            </div>
-                            <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200">
-                                <input
-                                    type="text"
-                                    name="descripcion"
-                                    value={formData.descripcion}
-                                    onChange={handleChange}
-                                    placeholder="Descripción"
-                                    className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            <div className="flex items-center text-yellow-500 gap-2 font-bold">
-                                <User size={18} />
-                                <span>Fecha de creación</span>
-                            </div>
-                            <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200 text-gray-700">
-                                {formData.fechaCreacion || formData.fecha}
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <div className="h-full">
+                <div className="flex flex-col gap-3 h-full">
+                    <div className="flex items-center text-yellow-500 gap-2 font-bold">
+                        <FileText size={18} />
+                        <span>Descripción</span>
+                    </div>
+                    <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200 h-full flex-1">
                         <textarea
                             name="descripcion"
                             value={formData.descripcion}
                             onChange={handleChange}
                             placeholder="Descripción"
-                            className="w-full h-full bg-gray-200/50 rounded-xl px-4 py-3 shadow-sm border border-gray-200 text-gray-700 placeholder-gray-500 outline-none resize-none"
+                            className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none resize-none min-h-[48px]"
                         ></textarea>
                     </div>
-                )}
+                </div>
             </div>
 
-            {/* GRID DE PERMISOS */}
-             {isUpdate ? (
-                <h3 className="text-xl font-bold text-gray-800 mt-4">Permisos y <span className="text-yellow-500">privilegios</span></h3>
-             ) : null}
 
-            <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${!isUpdate ? 'mt-4' : ''}`}>
+            {/* GRID DE PERMISOS */}
+            {isUpdate ? (
+                <h3 className="text-xl font-bold text-gray-800 mt-2">Permisos y <span className="text-yellow-500">privilegios</span></h3>
+            ) : null}
+
+            <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${!isUpdate ? 'mt-1' : ''} flex-1`}>
                 {PERMISSION_SCOPES.map((scope) => {
                     const currentActions = formData.permisos[scope.name] || [];
                     const isAllSelected = currentActions.length === scope.actions.length;
 
                     return (
-                        <div key={scope.name} className="bg-gray-200/40 rounded-2xl p-4 shadow-sm">
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-gray-800 text-lg">{scope.name}</h3>
+                        <div key={scope.name} className="bg-white rounded-xl p-3 shadow-sm border border-gray-200 hover:border-yellow-400 transition-all duration-200 flex flex-col justify-center">
+                            <div className="flex justify-between items-center mb-2 border-b border-gray-100 pb-1">
+                                <h3 className="font-bold text-gray-800 text-sm truncate" title={scope.name}>{scope.name}</h3>
                                 <div
                                     onClick={() => handleScopeToggle(scope.name, scope.actions)}
-                                    className={`w-6 h-6 rounded-md cursor-pointer flex items-center justify-center transition
-                                        ${isAllSelected ? 'bg-gray-500 text-white' : 'bg-gray-300 text-transparent'}`}
+                                    className={`w-5 h-5 rounded cursor-pointer flex items-center justify-center transition
+                                        ${isAllSelected ? 'bg-yellow-500 text-white' : 'bg-gray-200 text-transparent hover:bg-gray-300'}`}
                                 >
-                                    <Check size={16} strokeWidth={4} />
+                                    <Check size={14} strokeWidth={4} />
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap gap-3 items-center">
+                            <div className="flex flex-wrap gap-2 items-center mt-1">
                                 {scope.actions.map(action => {
                                     const isChecked = currentActions.includes(action);
                                     return (
-                                        <div key={action} className="flex items-center gap-2">
-                                            <span className="text-sm font-bold text-gray-700">{action}</span>
+                                        <div key={action} className="flex items-center gap-1.5 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                                            <span className="text-[10px] font-bold text-gray-600 uppercase">{action}</span>
                                             <div
                                                 onClick={() => handlePermissionChange(scope.name, action)}
-                                                className={`w-5 h-5 rounded hover:scale-105 transition cursor-pointer flex items-center justify-center
-                                                    ${isChecked ? 'bg-gray-600 text-white' : 'bg-gray-300 text-transparent'}`}
+                                                className={`w-4 h-4 rounded-sm hover:scale-110 transition cursor-pointer flex items-center justify-center
+                                                    ${isChecked ? 'bg-green-500 text-white' : 'bg-gray-300 text-transparent'}`}
                                             >
-                                                <Check size={14} strokeWidth={4} />
+                                                <Check size={12} strokeWidth={4} />
                                             </div>
                                         </div>
                                     )
@@ -187,7 +162,7 @@ export default function RoleForm({
             </div>
 
             {/* BOTONES */}
-            <div className={`flex mt-4 ${isUpdate ? 'justify-between md:px-20' : 'justify-end gap-6'}`}>
+            <div className="flex justify-end gap-6 mt-auto">
                 <button
                     type="button"
                     onClick={onCancel}

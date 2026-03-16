@@ -149,31 +149,28 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
 
     // FUNCION PARA CONVERTIR PEDIDO EN VENTA PROCESADA
     const processOrderToSale = (order) => {
-        const storedSales = SalesService.get();
         const storedOrders = ServicesOrders.get();
 
-        // DETERMINAR ESTADO SEGÚN FORMA DE PAGO (CONTADO = FINALIZADO)
-        const nuevoEstado = order.formaPago === "Contado" ? "Finalizado" : "Vigente";
-
-        // CONSTRUCCIÓN DEL OBJETO DE VENTA
-        const newSale = {
-            id: Date.now(),
+        // CONSTRUCCIÓN DEL OBJETO DE VENTA PARA EL SERVICIO
+        // SalesService.create se encarga de:
+        // 1. Calcular numeroVenta (auto-incremental)
+        // 2. Calcular subtotal, IVA, total
+        // 3. Gestionar montos pagados/por pagar según tipoVenta
+        // 4. Restar stock de productos automaticamente
+        const saleData = {
             numeroDocumento: order.documento,
-            cliente: order.nombreCliente,
-            fecha: new Date().toISOString().split('T')[0],
             tipoVenta: order.formaPago,
-            total: order.total,
-            montoPagado: order.formaPago === "Contado" ? order.total : 0,
-            montoPorPagar: order.formaPago === "Contado" ? 0 : order.total,
-            estado: nuevoEstado,
-            productos: order.productos,
-            iva: order.iva,
-            subtotal: order.subtotal,
-            abonos: [] // INICIA SIN ABONOS
+            fecha: new Date().toISOString().split('T')[0],
+            estado: order.formaPago === "Contado" ? "Finalizado" : "Vigente",
+            productos: order.productos.map(p => ({
+                nombre: p.nombre,
+                precio: p.precio,
+                cantidad: p.cantidad
+            }))
         };
 
-        // GUARDAR LA NUEVA VENTA EN VENTAS
-        localStorage.setItem("sales", JSON.stringify([...storedSales, newSale]));
+        // LLAMAR AL SERVICIO PARA CREAR LA VENTA
+        SalesService.create(saleData);
 
         // ELIMINAR EL PEDIDO (YA ES UNA VENTA)
         const updatedOrders = storedOrders.filter(o => o.id !== order.id);

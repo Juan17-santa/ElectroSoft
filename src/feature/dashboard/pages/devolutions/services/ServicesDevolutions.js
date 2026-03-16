@@ -23,31 +23,35 @@ export const ServicesDevolutions = {
 
     create(devolution) {
         const all = this.get();
+        const hoy = new Date().toISOString().split("T")[0];
         const nueva = {
-            id:                 Date.now(),
-            idVenta:            devolution.idVenta            ?? "",
-            motivo:             devolution.motivo             ?? "",
-            submotivo:          devolution.submotivo          ?? "",
-            producto:           devolution.producto           ?? "",
-            cantidad:           devolution.cantidad           ?? "",
-            condicionProducto:  devolution.condicionProducto  ?? "",
-            gestion:            devolution.gestion            ?? "",
-            responsable:        devolution.responsable        ?? "",
-            garantiaProveedor:  devolution.garantiaProveedor  ?? false,
-            descripcion:        devolution.descripcion        ?? "",
-            observaciones:      devolution.observaciones      ?? "",
-            fecha:              devolution.fecha              ?? "",
-            estadoResolucion:   devolution.estadoResolucion   ?? "",
-            creadoEn:           new Date().toISOString(),
+            id: Date.now(),
+            idVenta: devolution.idVenta ?? "",
+            motivo: devolution.motivo ?? "",
+            submotivo: devolution.submotivo ?? "",
+            producto: devolution.producto ?? "",
+            cantidad: devolution.cantidad ?? "",
+            condicionProducto: devolution.condicionProducto ?? "",
+            gestion: devolution.gestion ?? "",
+            responsable: devolution.responsable ?? "",
+            garantiaProveedor: devolution.garantiaProveedor ?? false,
+            descripcion: devolution.descripcion ?? "",
+            observaciones: devolution.observaciones ?? "",
+            fecha: devolution.fecha ?? "",
+            fechaISO: devolution.fechaISO ?? hoy,
+            fechaEstado: hoy,
+            estadoResolucion: devolution.estadoResolucion ?? "",
+            creadoEn: new Date().toISOString(),
         };
         localStorage.setItem(KEY, JSON.stringify([...all, nueva]));
         return nueva;
     },
 
     update(devolucionActualizada) {
+        const hoy = new Date().toISOString().split("T")[0];
         const updated = this.get().map((d) =>
             String(d.id) === String(devolucionActualizada.id)
-                ? { ...d, ...devolucionActualizada }
+                ? { ...d, ...devolucionActualizada, fechaEstado: hoy }
                 : d
         );
         localStorage.setItem(KEY, JSON.stringify(updated));
@@ -63,6 +67,17 @@ export const ServicesDevolutions = {
     anular(id) {
         const updated = this.get().map((d) =>
             String(d.id) === String(id)
+                ? { ...d, estadoResolucion: "Anulada" }
+                : d
+        );
+        localStorage.setItem(KEY, JSON.stringify(updated));
+        return updated;
+    },
+
+    /** Anula TODAS las devoluciones de una venta */
+    anularByIdVenta(idVenta) {
+        const updated = this.get().map((d) =>
+            String(d.idVenta) === String(idVenta)
                 ? { ...d, estadoResolucion: "Anulada" }
                 : d
         );

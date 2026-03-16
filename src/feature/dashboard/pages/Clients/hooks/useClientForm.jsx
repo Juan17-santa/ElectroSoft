@@ -45,7 +45,7 @@ export function useClientForm({ initialData = null, onSubmit }) {
 
     const handleChange = (e) => {
         let { name, value } = e.target;
-        if (name === "documento") value = value.replace(/\D/g, "").slice(0, 10);
+        if (name === "documento") value = value.replace(/\D/g, "").slice(0, 15);
         if (name === "telefono") value = value.replace(/\D/g, "").slice(0, 15);
         if (name === "nombres" || name === "apellidos") value = value.replace(/[0-9]/g, "");
 

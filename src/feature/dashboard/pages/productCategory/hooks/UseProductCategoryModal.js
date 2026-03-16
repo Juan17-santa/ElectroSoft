@@ -1,59 +1,45 @@
-/*
-useProductCategoryForm
-
-Hook personalizado encargado de gestionar la lógica del formulario de creación y 
-edición de categorías de productos.
-
-Este hook centraliza el estado, validaciones y envío del formulario, permitiendo que el 
-componente visual (ProductCategoryForm) se mantenga libre de lógica de negocio.
-
-Responsabilidades:
-✔ Gestionar el estado del formulario (formData)
-✔ Gestionar el estado de errores de validación (errors)
-✔ Validar campos individualmente
-✔ Ejecutar validación en tiempo real (handleChange)
-✔ Validar el formulario completo antes del envío
-✔ Ejecutar la acción correspondiente según el modo (create / update)
-✔ Invocar la función onSuccess después de una operación exitosa
-
-Dependencias:
-- ServiceProductCategory → Para operaciones de creación y actualización
-- Validations → Para reglas de validación reutilizables
-*/
-
 import { useState, useEffect } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ServiceProductCategory } from "../services/ServicesProductCategory";
 
+// HOOK PERSONALIZADO PARA MANEJAR EL FORMULARIO DE CREACRION Y EDICION DE CATEGORIAS
 export default function useProductCategoryModal({
     initialData = null,
     onSuccess,
-    onClose, // Agregamos onClose para cerrar tras éxito
+    onClose,
     mode
 }) {
-    // Estado inicial limpio
+
+    // ESTADO INICIAL LIMPIO
     const defaultState = {
         nombre: "",
         descripcion: "",
         estado: true
     };
 
+    // ESTADO PARA LOS DATOS DEL FORMULARIO
     const [formData, setFormData] = useState(defaultState);
+
+    // ESTADO PARA LOS ERRORES DE VALIDACION
     const [errors, setErrors] = useState({});
 
-    // IMPORTANTE: Sincroniza el formulario cuando initialData cambie
+    // SINCRONIZA LOS DATOS DEL FORMULARIO CUANDO CAMBIA
+    // ESTO PERMITE CARGAR LOS DATOS AL EDITAR UNA CATEGORIA
     useEffect(() => {
         if (initialData && mode === "update") {
+            // SI ES EDICION SE CARGAN LOS DATOS
             setFormData({
                 ...defaultState,
                 ...initialData,
             });
         } else {
+            // SI ES CREACION SE RESETEA EL FORMULARIO PARA QUE QUEDE LIMPIO
             setFormData(defaultState);
         }
-        setErrors({}); // Limpiar errores al cambiar de modo/datos
+        setErrors({});
     }, [initialData, mode]);
 
+    // FUNCION PARA VALIDAR LOS CAMPOS INDIVIDUALES
     const validateField = (name, value) => {
         let error = "";
         switch (name) {
@@ -72,17 +58,19 @@ export default function useProductCategoryModal({
         return error;
     };
 
+    // FUNCION PARA MANEJAR LOS CAMBIOS EN LOS INPUTS
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
+        // VALIDAR EL CAMPO EN TIEMPO REAL
         const error = validateField(name, value);
         setErrors(prev => ({ ...prev, [name]: error }));
     };
 
+    // FUNCION PARA VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
         let newErrors = {};
-        // Validamos solo los campos que nos interesan (nombre en este caso)
         const errorNombre = validateField("nombre", formData.nombre);
         if (errorNombre) newErrors.nombre = errorNombre;
 
@@ -90,6 +78,7 @@ export default function useProductCategoryModal({
         return Object.keys(newErrors).length === 0;
     };
 
+    // FUNCION PARA MANEJAR EL ENVIO DEL FOMULARIO
     const handleSubmit = (e) => {
         if (e) e.preventDefault();
 
@@ -102,16 +91,16 @@ export default function useProductCategoryModal({
                 ServiceProductCategory.update(formData);
             }
 
-            // Si la API responde bien, ejecutamos el éxito y cerramos
+            // SI TODO SALE BIEN SE EJECUTAN LAS ACCIONES Y SE CIERRA LA MODAL
             if (onSuccess) onSuccess();
             if (onClose) onClose();
 
         } catch (error) {
             console.error("Error al procesar la categoría:", error);
-            // Aquí podrías setear un error general si tuvieras un estado para ello
         }
     };
 
+    // RETORNAMOS LAS FUNCIONES Y ESTADO PARA USAR EN EL MODAL
     return {
         formData,
         errors,

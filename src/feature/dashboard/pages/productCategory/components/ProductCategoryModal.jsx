@@ -1,13 +1,19 @@
-import { X, Tag, FileText, Layers } from "lucide-react";
+import { X, Tag, FileText } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import useProductCategoryModal from "../hooks/UseProductCategoryModal";
+import ValidationMessage from "../../../components/ui/ValidationMessage";
 
-export default function ProductCategoryModal({ onClose, onSave, categoryData = null }) {
+// COMPONENTE MODAL PARA CREAR Y EDITAR LAS CATEGORIAS DE PRODUCTOS
+export default function ProductCategoryModal({
+    onClose,
+    onSave,
+    categoryData = null
+}) {
 
-    // 1. DEFINIR isEdit AQUÍ:
+    // DETERMINAR SI EL MODAL ES PARA EDITAR O PARA CREAR
     const isEdit = Boolean(categoryData && categoryData.id);
 
-    // 2. LUEGO EL HOOK:
+    // USO DEL HOOK PERSONALIZADO PARA MANEJAR EL FORMULARIO
     const {
         formData,
         errors,
@@ -17,7 +23,7 @@ export default function ProductCategoryModal({ onClose, onSave, categoryData = n
         initialData: categoryData,
         onSuccess: onSave,
         onClose: onClose,
-        mode: isEdit ? "update" : "create" // Usamos isEdit para pasar el modo
+        mode: isEdit ? "update" : "create"
     });
 
     return (
@@ -44,13 +50,6 @@ export default function ProductCategoryModal({ onClose, onSave, categoryData = n
                                 {isEdit ? "Modifique los campos de la categoría" : "Complete los campos para la nueva categoría"}
                             </p>
                         </div>
-
-                        <button
-                            onClick={onClose}
-                            className="hover:bg-gray-100 p-2 rounded-lg transition cursor-pointer"
-                        >
-                            <X size={18} />
-                        </button>
                     </div>
 
                     {/* FORMULARIO */}
@@ -70,7 +69,11 @@ export default function ProductCategoryModal({ onClose, onSave, categoryData = n
                                 className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
                                 ${errors.nombre ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                             />
-                            {errors.nombre && <p className="text-red-500 text-xs">{errors.nombre}</p>}
+                            <ValidationMessage
+                                error={errors.nombre}
+                                success={formData.nombre}
+                                successMessage={"Nombre valido"}
+                            />
                         </div>
 
                         {/* DESCRIPCIÓN */}
@@ -92,14 +95,17 @@ export default function ProductCategoryModal({ onClose, onSave, categoryData = n
 
                         {/* BOTONES */}
                         <div className="flex justify-end gap-4 pt-2">
+                            {/* BOTON CANCELAR */}
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="bg-gray-200 hover:bg-gray-300 transition px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
+                                className="px-5 py-2  text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer"
                             >
+                                <X size={16} />
                                 Cancelar
                             </button>
 
+                            {/* BOTON PRINCIPAL (CREAR / ACTUALIZAR) */}
                             <PrimaryButton
                                 type="submit"
                                 disabled={Object.values(errors).some(error => error)}

@@ -22,6 +22,14 @@ import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import CancellationModal from "./components/CancellationModal";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 
+const formatCOP = (val) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+    }).format(val || 0);
+};
+
 const ITEMS_PER_PAGE = 8;
 
 export default function SalesManagement() {
@@ -135,13 +143,13 @@ export default function SalesManagement() {
                 const reportTitle = "Gestión de Ventas - Reporte";
                 const columns = ["# Venta", "Cliente", "Fecha", "Tipo", "Total", "Pagado", "Por Pagar", "Estado"];
                 const data = filteredSales.map(sale => [
-                    sale.numeroDocumento,
+                    String(sale.numeroVenta || "").padStart(2, '0'),
                     sale.cliente || "-",
                     sale.fecha,
                     sale.tipoVenta,
-                    `$${sale.total?.toLocaleString() || "0"}`,
-                    `$${sale.montoPagado?.toLocaleString() || "0"}`,
-                    `$${sale.montoPorPagar?.toLocaleString() || "0"}`,
+                    formatCOP(sale.total),
+                    formatCOP(sale.montoPagado),
+                    formatCOP(sale.montoPorPagar),
                     sale.estado
                 ]);
 
@@ -163,8 +171,9 @@ export default function SalesManagement() {
             case "Finalizado": case "Finalizadas": return "bg-green-500";
             case "Vigente": return "bg-yellow-500";
             case "Anulado": return "bg-red-500";
-            case "Devuelto": return "bg-gray-500";
-            default: return "bg-gray-500";
+            case "Devuelto": return "bg-gray-100 text-gray-600";
+            case "Devolución Parcial": return "bg-amber-100 text-amber-600";
+            default: return "bg-gray-100 text-gray-600";
         }
     };
 
@@ -212,13 +221,13 @@ export default function SalesManagement() {
                                 ) : (
                                     paginatedSales.map((sale) => (
                                         <tr key={sale.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                            <td className="px-3 py-3 font-medium">#{sale.numeroVenta || '-'}</td>
+                                            <td className="px-3 py-3 font-medium">#{String(sale.numeroVenta || "").padStart(2, '0') || '-'}</td>
                                             <td className="px-3 py-3">{sale.cliente || "-"}</td>
                                             <td className="px-3 py-3">{sale.fecha}</td>
                                             <td className="px-3 py-3">{sale.tipoVenta}</td>
-                                            <td className="px-3 py-3">{sale.total?.toLocaleString() || "0"}</td>
-                                            <td className="px-3 py-3">{sale.montoPagado?.toLocaleString() || "0"}</td>
-                                            <td className="px-3 py-3">{sale.montoPorPagar?.toLocaleString() || "0"}</td>
+                                            <td className="px-3 py-3">{formatCOP(sale.total)}</td>
+                                            <td className="px-3 py-3">{formatCOP(sale.montoPagado)}</td>
+                                            <td className="px-3 py-3">{formatCOP(sale.montoPorPagar)}</td>
                                             <td className="px-3 py-3">
                                                 <div className="flex items-center gap-2">
                                                     <span className={`w-2 h-2 rounded-full ${getEstadoDot(sale.estado)}`}></span>
@@ -300,7 +309,7 @@ export default function SalesManagement() {
             {/* MODAL DE CONFIRMACION ANULACION */}
             {cancelModalSale && (
                 <CancellationModal 
-                    saleId={cancelModalSale.numeroDocumento} 
+                    saleId={cancelModalSale.numeroVenta || cancelModalSale.id} 
                     onConfirm={confirmAnull} 
                     onCancel={() => setCancelModalSale(null)} 
                 />

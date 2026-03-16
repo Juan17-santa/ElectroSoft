@@ -29,7 +29,7 @@ export default function UpdateRoles() {
                     fechaCreacion: formData.fechaCreacion, // Keep the same creation date
                     permisos: formData.permisos
                 });
-                
+
                 setAlert({ type: "success", message: "Rol actualizado correctamente!" });
                 localStorage.removeItem("roleToEdit");
                 setTimeout(() => navigate("/dashboard/roles"), 1500);
@@ -42,26 +42,28 @@ export default function UpdateRoles() {
 
     return (
         <>
-            <div className="bg-gray-100 p-8 rounded-3xl min-h-full h-full font-sans shadow-inner">
-                <div className="mb-6">
+            <div className="bg-gray-100 p-8 rounded-3xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4">
+                <div className="mb-0">
                     <h1 className="text-2xl font-bold text-gray-800">
                         Editar <span className="text-yellow-500">rol</span>
                     </h1>
                 </div>
 
-                {initialData ? (
-                    <RoleForm
-                        {...formHook}
-                        buttonText="Guardar cambios"
-                        onCancel={() => {
-                            localStorage.removeItem("roleToEdit");
-                            navigate("/dashboard/roles");
-                        }}
-                        isUpdate={true}
-                    />
-                ) : (
-                    <div className="text-gray-500">Cargando datos del rol...</div>
-                )}
+                <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 flex-1 flex flex-col">
+                    {initialData ? (
+                        <RoleForm
+                            {...formHook}
+                            buttonText="Guardar cambios"
+                            onCancel={() => {
+                                localStorage.removeItem("roleToEdit");
+                                navigate("/dashboard/roles");
+                            }}
+                            isUpdate={true}
+                        />
+                    ) : (
+                        <div className="text-gray-500 py-10 text-center">Cargando datos del rol...</div>
+                    )}
+                </div>
             </div>
 
             {alert && (
