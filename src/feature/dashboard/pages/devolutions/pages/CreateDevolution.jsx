@@ -12,28 +12,34 @@ import {
 } from "../helpers/devolutionsHelpers";
 
 // ─── Estado vacío del formulario ──────────────────────────────────────────────
-const EMPTY_FORM = {
-    idVenta:            "",
-    motivo:             "",
-    submotivo:          "",
-    producto:           "",
-    cantidad:           "",
-    condicionProducto:  "",
-    gestion:            "",
-    responsable:        "",
-    garantiaProveedor:  null,
-    descripcion:        "",
-    observaciones:      "",
-    fechaISO:           "",
-    fecha:              "",
-    estadoResolucion:   "CREADA",
-};
+const EMPTY_FORM = (() => {
+    const hoy   = new Date().toISOString().split("T")[0];
+    // Fecha formateada DD/MM/YYYY para mostrar
+    const [a, m, d] = hoy.split("-");
+    const fechaFormateada = `${d}/${m}/${a}`;
+    return {
+        idVenta:            "",
+        motivo:             "",
+        submotivo:          "",
+        producto:           "",
+        cantidad:           "",
+        condicionProducto:  "",
+        gestion:            "",
+        responsable:        "",
+        garantiaProveedor:  null,
+        descripcion:        "",
+        observaciones:      "",
+        fechaISO:           hoy,
+        fecha:              fechaFormateada,
+        estadoResolucion:   "CREADA",
+    };
+})();
 
 const EMPTY_TOCADOS = {
     idVenta: false, motivo: false, submotivo: false, producto: false,
     cantidad: false, condicionProducto: false, gestion: false,
     responsable: false, garantiaProveedor: false, descripcion: false,
-    observaciones: false, fecha: false,
+    observaciones: false,
 };
 
 // ─── Validaciones ─────────────────────────────────────────────────────────────
@@ -189,7 +195,6 @@ export default function CreateDevolution() {
             case "garantiaProveedor": return validarGarantia(form.garantiaProveedor, form.motivo);
             case "descripcion":       return validarDescripcion(form.descripcion);
             case "observaciones":     return validarObservaciones(form.observaciones);
-            case "fecha":             return validarFecha(form.fechaISO, form.idVenta, ventasList);
             default:                  return null;
         }
     };
@@ -206,7 +211,6 @@ export default function CreateDevolution() {
             validarGarantia(form.garantiaProveedor, form.motivo),
             validarDescripcion(form.descripcion),
             validarObservaciones(form.observaciones),
-            validarFecha(form.fechaISO, form.idVenta, ventasList),
         ];
         return validaciones.filter((v) => v !== null).every((v) => v.valido);
     };

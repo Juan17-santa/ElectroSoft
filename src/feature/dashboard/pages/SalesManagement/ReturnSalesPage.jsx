@@ -135,6 +135,7 @@ export default function ReturnSalesPage() {
             title: "Registrar devolución",
             message: "¿Estás seguro? El estado de la venta cambiará a 'Devuelto'.",
             onConfirm: () => {
+                const esParcial = devolucionesVenta.length < productos.length;
                 SalesService.returnSale(sale.id, esParcial);
                 localStorage.removeItem("saleToReturn");
                 setAlertMsg({ type: "success", message: "Devolución registrada correctamente." });
@@ -261,6 +262,7 @@ export default function ReturnSalesPage() {
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200 text-left">
                                     <th className="px-3 py-2.5 font-semibold">Producto</th>
+                                    <th className="px-3 py-2.5 font-semibold text-center">Cantidad</th>
                                     <th className="px-3 py-2.5 font-semibold">Motivo</th>
                                     <th className="px-3 py-2.5 font-semibold">Condición</th>
                                     <th className="px-3 py-2.5 font-semibold">Gestión</th>
@@ -271,7 +273,7 @@ export default function ReturnSalesPage() {
                             <tbody>
                                 {paginatedDevs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="py-6 text-center text-gray-400 text-sm">
+                                        <td colSpan={7} className="py-6 text-center text-gray-400 text-sm">
                                             {isFromSales
                                                 ? "Usa el botón ↩ para agregar productos a devolver."
                                                 : "No hay productos devueltos para esta venta."}
@@ -283,6 +285,7 @@ export default function ReturnSalesPage() {
                                         return (
                                             <tr key={dev.id} className="border-b border-gray-100 hover:bg-gray-50">
                                                 <td className="px-3 py-2.5 text-xs font-medium">{dev.producto}</td>
+                                                <td className="px-3 py-2.5 text-xs text-center">{dev.cantidad ?? "—"}</td>
                                                 <td className="px-3 py-2.5 text-xs">{dev.motivo?.replace(/_/g, " ") || "—"}</td>
                                                 <td className="px-3 py-2.5 text-xs">{dev.condicionProducto?.replace(/_/g, " ") || "—"}</td>
                                                 <td className="px-3 py-2.5 text-xs">{dev.gestion?.replace(/_/g, " ") || "—"}</td>

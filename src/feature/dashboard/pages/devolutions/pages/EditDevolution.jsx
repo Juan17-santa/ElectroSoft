@@ -17,7 +17,7 @@ const EMPTY_TOCADOS = {
     idVenta: false, motivo: false, submotivo: false, producto: false,
     cantidad: false, condicionProducto: false, gestion: false,
     responsable: false, garantiaProveedor: false, descripcion: false,
-    observaciones: false, fecha: false,
+    observaciones: false,
 };
 
 // ─── Funciones de validación (retornan { valido, mensaje } o null) ────────────
@@ -154,7 +154,6 @@ export default function EditDevolution() {
         // ⚠️ Lee directamente de ServicesDevolutions para no depender del estado
         // del hook (que puede aún no haberse cargado al montar la página).
         const found = ServicesDevolutions.getById(id);
-        // fechaISO ya está persistido en el registro; si por algún motivo falta, se usa la fecha guardada
         if (found) setForm({ ...found, fechaISO: found.fechaISO ?? "" });
     }, [id]);
 
@@ -220,7 +219,6 @@ export default function EditDevolution() {
             case "garantiaProveedor": return validarGarantia(form.garantiaProveedor, form.motivo);
             case "descripcion":       return validarDescripcion(form.descripcion);
             case "observaciones":     return validarObservaciones(form.observaciones);
-            case "fecha":             return validarFecha(form.fechaISO, form.idVenta, ventasList);
             default:                  return null;
         }
     };
@@ -235,7 +233,6 @@ export default function EditDevolution() {
             validarGarantia(form.garantiaProveedor, form.motivo),
             validarDescripcion(form.descripcion),
             validarObservaciones(form.observaciones),
-            validarFecha(form.fechaISO, form.idVenta, ventasList),
         ];
         return validaciones
             .filter((v) => v !== null)

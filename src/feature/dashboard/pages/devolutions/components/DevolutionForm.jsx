@@ -294,26 +294,16 @@ export default function DevolutionForm({
 
                 <div className="grid grid-cols-2 gap-x-8">
 
-                    {/* FECHA */}
-                    {esReadOnly("fecha") ? (
-                        <Field icon={CalendarDays} label="Fecha">
-                            <input type="text" value={form.fecha} readOnly className={fieldBase("fecha")} />
-                        </Field>
-                    ) : (
-                        <div className="flex flex-col">
-                            <Calendar
-                                fechaISO={form.fechaISO || ""}
-                                onFechaChange={(iso) => {
-                                    onChange("fechaISO", iso);
-                                    onChange("fecha", formatearFecha(iso));
-                                    onFieldBlur("fecha");
-                                }}
-                                label="Fecha"
-                                required={false}
-                            />
-                            <FieldStatus estado={estadoCampo("fecha")} />
-                        </div>
-                    )}
+                    {/* FECHA — siempre automática, no editable */}
+                    <Field icon={CalendarDays} label="Fecha de devolución">
+                        <input
+                            type="text"
+                            value={form.fecha || "—"}
+                            readOnly
+                            className={`${fieldBase("fecha")} cursor-not-allowed opacity-75`}
+                        />
+                        <p className="text-xs text-gray-400 mt-0.5">Se asigna automáticamente.</p>
+                    </Field>
 
                     {/* GARANTÍA PROVEEDOR — solo activa cuando motivo = GARANTIA */}
                     <Field icon={ShieldCheck} label="Garantía proveedor *">
