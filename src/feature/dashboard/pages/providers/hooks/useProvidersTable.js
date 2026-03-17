@@ -15,7 +15,9 @@ export default function useProvidersTable({
 
     // AL CARGAR COMPONENTE CARGAR LOS PROVEEDORES
     useEffect(() => {
-        const storedProviders = ServicesProviders.get();
+        const storedProviders = ServicesProviders.get().sort(
+            (a, b) => b.id - a.id
+        );
 
         setProviders(storedProviders);
     }, [])
@@ -71,7 +73,7 @@ export default function useProvidersTable({
             pro.tipoDoc?.toLowerCase().includes(query) ||
             pro.documento?.toLowerCase().includes(query) ||
             pro.nombreContacto?.toLowerCase().includes(query) ||
-            telefono.includes(query) ||         
+            telefono.includes(query) ||
             (pro.estado ? "activo" : "inactivo").includes(query)
         );
     });

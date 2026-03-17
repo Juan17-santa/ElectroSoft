@@ -15,7 +15,10 @@ export default function useProductCategoryTable({
 
     // FUNCION PARA CARGAR LAS CATEGORIAS 
     const loadCategories = () => {
-        const storedCategories = ServiceProductCategory.get();
+        const storedCategories = ServiceProductCategory.get().sort(
+            (a,b) => b.id - a.id
+        );
+
         setCategories(storedCategories);
     };
 
