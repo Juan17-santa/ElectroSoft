@@ -1,340 +1,543 @@
 import { useState, useEffect, useRef } from "react";
-import { Box, Hash, ChevronDown, XCircle } from "lucide-react";
-import ValidationMessage from "./ValidationMessage";
+import { X, Search, Plus, Trash2, Package, ShoppingCart, ChevronDown, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import { Validations } from "../../../../utils/validations";
-import PrimaryButton from "./PrimaryButton";
-import Pagination from "./Pagination";
+import ValidationMessage from "./ValidationMessage";
 
+/**
+ * AddProductModal — Modal reutilizable para agregar productos en cola
+ *
+ * Props:
+ * @param {boolean}  isOpen            - Controla visibilidad del modal
+ * @param {function} onClose           - Callback para cerrar
+ * @param {function} onConfirm         - Callback final con array [{...producto, cantidad}]
+ * @param {Array}    products          - Lista de productos disponibles
+ * @param {function} getAvailableStock - (producto) => number — stock disponible
+ * @param {string}   title             - Título del modal (opcional)
+ * @param {string}   confirmText       - Texto del botón confirmar (opcional)
+ */
 export default function AddProductModal({
     isOpen,
     onClose,
-    onAdd,
-    products,
+    onConfirm,
+    products = [],
     getAvailableStock,
-    buttonText
+    title = "Agregar Productos",
+    confirmText = "Confirmar selección",
 }) {
-
-    // ID DEL PRODUCTO SELECCIONADO DESDE EL COMBO
-    const [selectedProductId, setSelectedProductId] = useState("");
-
-    // CANTIDAD DE PRODUCTOS A AGREGAR
+    // ── BUSCADOR / COMBO ─────────────────────────────────────────────────────
+    const [searchTerm, setSearchTerm] = useState("");
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
     const [quantity, setQuantity] = useState("");
 
-    // MENSAJES DE ERROR PARA VALIDACIONES
-    const [quantityError, setQuantityError] = useState("");
-    const [productError, setProductError] = useState("");
-
-    // TEXTO QUE EL USUARIO ESCRIBE EN EL INPUT DE BUSQUEDA
-    const [searchTerm, setSearchTerm] = useState("");
-
-    // CONTROL PARA ABRIR O CERRAR EL DROPDOWN DEL COMBO
-    const [isOpenCombo, setIsOpenCombo] = useState(false);
-
-    // PAGINACION
+    // ── PAGINACIÓN DEL DROPDOWN ──────────────────────────────────────────────
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 5;
 
-    // REFERENCIA DEL CONTENEDOR PARA DETECTAR CLICKS FUERA DEL COMPONENTE
-    const comboRef = useRef(null);
+    // ── COLA DE PRODUCTOS ────────────────────────────────────────────────────
+    const [queue, setQueue] = useState([]);
 
-    // FILTRA LOS PRODUCTOS SEGÚN EL TEXTO ESCRITO EN EL BUSCADOR
-    const filteredProducts = products.filter(p =>
+    // ── ERRORES ──────────────────────────────────────────────────────────────
+    const [productError, setProductError] = useState("");
+    const [quantityError, setQuantityError] = useState("");
+
+    const dropdownRef = useRef(null);
+    const quantityInputRef = useRef(null);
+
+    // ── STOCK REAL (descuenta lo que ya está en cola) ────────────────────────
+    const getRealStock = (product) => {
+        if (!product) return 0;
+        const base = getAvailableStock?.(product) ?? 0;
+        const inQueue = queue.find((q) => String(q.id) === String(product.id));
+        return base - (inQueue?.cantidad ?? 0);
+    };
+
+    // ── PRODUCTOS FILTRADOS + PAGINADOS ──────────────────────────────────────
+    const filteredProducts = products.filter((p) =>
         p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
     const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
-    const paginatedProducts = filteredProducts.slice(
+    const paginatedItems = filteredProducts.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
         currentPage * ITEMS_PER_PAGE
     );
 
-    // HELPERS PARA CALCULAR STOCK
-    // OBTENER EL PRODUCTO SELECCIONADO DESDE LA LISTA DE PRODUCTOS
-    const selectedProduct = products.find(p => String(p.id) === String(selectedProductId));
-
-    const availableStock = selectedProduct
-    ? getAvailableStock?.(selectedProduct)
-    : 0;
-
-    // ESTA FUNCIÓN SE EJECUTA CUANDO EL USUARIO PRESIONA LA "X"
-    // LIMPIA EL TEXTO, EL PRODUCTO SELECCIONADO Y REABRE EL COMBO
-    const handleClearSearch = () => {
-        setSearchTerm("");
-        setSelectedProductId("");
-        setProductError("");
-        setIsOpenCombo(true); // REABRIMOS EL COMBO PARA MOSTRAR TODOS LOS PRODUCTOS
-    };
-
-    // SI EL USUARIO HACE CLICK FUERA DEL BUSCADOR
-    // CERRAMOS EL DROPDOWN PARA MEJOR UX
+    // ── CERRAR DROPDOWN FUERA DE CLICK ───────────────────────────────────────
     useEffect(() => {
-        const handleClickOutside = (e) => {
-            if (comboRef.current && !comboRef.current.contains(e.target)) {
-                setIsOpenCombo(false);
-
-                // SI EL USUARIO YA TENÍA UN PRODUCTO SELECCIONADO
-                // RESTAURAMOS EL NOMBRE REAL DEL PRODUCTO
-                // PARA EVITAR TEXTO INVALIDO
-                setSearchTerm(selectedProduct?.nombre || "");
+        const handler = (e) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+                setIsDropdownOpen(false);
+                if (selectedProduct) setSearchTerm(selectedProduct.nombre);
             }
         };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
     }, [selectedProduct]);
 
-    // MANEJAR EL CAMBIO DE TEXTO EN EL BUSCADOR
-    // ESTA FUNCIÓN SOLO CONTROLA EL TEXTO Y FILTRADO
-    // NO CONFIRMA SELECCIÓN DE PRODUCTO (ESO SOLO PASA AL HACER CLICK)
-    const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearchTerm(value);
-        setIsOpenCombo(true);
-        setCurrentPage(1); // Reset to first page on search
-
-        // SI EL USUARIO MODIFICA EL TEXTO
-        // INVALIDAMOS EL PRODUCTO SELECCIONADO
-        // PARA EVITAR INCONSISTENCIAS
-        if (!selectedProduct || value !== selectedProduct.nombre) {
-            setSelectedProductId("");
-            // MOSTRAMOS ERROR INMEDIATO
-            setProductError("Seleccione un producto válido de la lista");
-        } else {
-            setProductError("");
-        }
-    };
-
-    // SELECCIONAR PRODUCTO DEL DROPDOWN
-    // ESTA ES LA ÚNICA FORMA VÁLIDA DE SELECCIONAR UN PRODUCTO
-    const handleSelectProduct = (p) => {
-
-        // GUARDAMOS EL ID REAL DEL PRODUCTO
-        setSelectedProductId(p.id);
-
-        // MOSTRAMOS EL NOMBRE EN EL INPUT
-        setSearchTerm(p.nombre);
-
-        // CERRAMOS EL DROPDOWN
-        setIsOpenCombo(false);
-
-        // LIMPIAMOS ERRORES PORQUE YA ES UNA SELECCIÓN VÁLIDA
-        setProductError("");
-    };
-
-    // CADA VEZ QUE EL MODAL SE ABRE
-    // LIMPIAMOS TODOS LOS ESTADOS
+    // ── RESET AL ABRIR ───────────────────────────────────────────────────────
     useEffect(() => {
         if (isOpen) {
-            setSelectedProductId("");
             setSearchTerm("");
+            setSelectedProduct(null);
             setQuantity("");
+            setQueue([]);
             setProductError("");
             setQuantityError("");
+            setIsDropdownOpen(false);
+            setCurrentPage(1);
         }
     }, [isOpen]);
-    
+
     if (!isOpen) return null;
 
-    // VALIDAR CANTIDAD
-    // - QUE NO ESTÉ VACÍA
-    // - QUE SEA NUMÉRICA
-    // - QUE NO EXCEDA EL STOCK DISPONIBLE
-    const validateQuantity = (value, product) => {
-        if (value === "") return "La cantidad es obligatoria";
+    // ── HANDLERS ─────────────────────────────────────────────────────────────
+    const handleSelectProduct = (product) => {
+        setSelectedProduct(product);
+        setSearchTerm(product.nombre);
+        setIsDropdownOpen(false);
+        setProductError("");
+        setTimeout(() => quantityInputRef.current?.focus(), 50);
+    };
 
-        const qty = Number(value);
-        if (isNaN(qty) || qty <= 0) return "Cantidad invalida";
+    const handleSearchChange = (e) => {
+        const val = e.target.value;
+        setSearchTerm(val);
+        setIsDropdownOpen(true);
+        setCurrentPage(1);
+        if (selectedProduct && val !== selectedProduct.nombre) {
+            setSelectedProduct(null);
+            setProductError("Selecciona un producto de la lista");
+        } else if (selectedProduct) {
+            setProductError("");
+        }
+    };
 
-        if (product && qty > availableStock) {
-            return `Solo quedan ${availableStock} unidades disponibles`;
+    const handleClearProduct = () => {
+        setSearchTerm("");
+        setSelectedProduct(null);
+        setProductError("");
+        setIsDropdownOpen(true);
+        setCurrentPage(1);
+    };
+
+    const validateQty = (val, product) => {
+        if (!val) return "Ingresa una cantidad";
+        const num = Number(val);
+        if (isNaN(num) || num <= 0 || !Number.isInteger(num)) return "Cantidad inválida";
+        if (product) {
+            const stock = getRealStock(product);
+            if (num > stock) return `Máximo disponible: ${stock}`;
         }
         return "";
     };
 
-    // FUNCION PARA AGREGAR PRODUCTOS
-    // ESTA FUNCIÓN ES LA RESPONSABLE FINAL
-    // DE VALIDAR Y ENVIAR EL PRODUCTO AL PADRE
-    const handleAddProduct = () => {
+    const handleAddToQueue = () => {
+        let hasError = false;
+        if (!selectedProduct) { setProductError("Selecciona un producto válido"); hasError = true; }
+        const qError = validateQty(quantity, selectedProduct);
+        if (qError) { setQuantityError(qError); hasError = true; }
+        if (hasError) return;
 
-        // BUSCAMOS EL PRODUCTO REAL EN EL STORE
-        const productByStore = products.find(p => String(p.id) === String(selectedProductId));
+        const qty = Number(quantity);
+        const existing = queue.find((q) => String(q.id) === String(selectedProduct.id));
+        setQueue(existing
+            ? queue.map((q) => String(q.id) === String(selectedProduct.id) ? { ...q, cantidad: q.cantidad + qty } : q)
+            : [...queue, { ...selectedProduct, cantidad: qty }]
+        );
+        setSelectedProduct(null); setSearchTerm(""); setQuantity("");
+        setProductError(""); setQuantityError("");
+    };
 
-        // VALIDAMOS QUE EL TEXTO DEL INPUT COINCIDA EXACTAMENTE
-        // CON EL PRODUCTO SELECCIONADO
-        if (!productByStore || searchTerm !== productByStore.nombre) {
-            setProductError("Seleccione un producto válido de la lista");
-            return;
-        }
+    const handleRemoveFromQueue = (productId) => {
+        setQueue(queue.filter((q) => String(q.id) !== String(productId)));
+    };
 
-        // VALIDAMOS LA CANTIDAD
-        const qError = validateQuantity(quantity, productByStore);
-
-        if (qError) {
-            setQuantityError(qError);
-            return;
-        }
-
-        // ENVIAMOS AL COMPONENTE PADRE:
-        // PRODUCTO + CANTIDAD
-        onAdd(productByStore, Number(quantity));
-
-        // LIMPIAMOS ESTADOS PARA PRÓXIMA APERTURA
-        setSearchTerm("");
-        setQuantity(1);
-        setCurrentPage(1);
-
-        // CERRAMOS EL MODAL
+    const handleConfirm = () => {
+        if (queue.length === 0) return;
+        onConfirm(queue);
         onClose();
     };
 
-    // SI EXISTE ALGÚN ERROR
-    // EL BOTÓN DE AÑADIR SE DESHABILITA
-    const isInvalid = !!productError || !!quantityError
+    // ── TOTALES ──────────────────────────────────────────────────────────────
+    const totalItems = queue.reduce((acc, p) => acc + p.cantidad, 0);
+    const totalValue = queue.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
+
+    const fmt = (n) => new Intl.NumberFormat("es-CO", {
+        style: "currency", currency: "COP", minimumFractionDigits: 0,
+    }).format(n);
+
+    // ── ESTILO BASE DE INPUTS ─────────────────────────────────────────────────
+    const inputBase = {
+        width: "100%", backgroundColor: "#f3f4f6", border: "1.5px solid #e5e7eb",
+        borderRadius: "10px", padding: "10px 14px", fontSize: "14px",
+        color: "#111827", outline: "none", transition: "border-color 0.15s, box-shadow 0.15s",
+    };
+
+    const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
+        .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+        .reduce((acc, p, idx, arr) => {
+            if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+            acc.push(p);
+            return acc;
+        }, []);
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-gray-100 rounded-2xl shadow-2xl w-full max-w-3xl overflow-visible">
-                <div className="p-10">
-                    <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ backgroundColor: "rgba(0,0,0,0.45)", backdropFilter: "blur(3px)" }}>
 
-                        <div className="grid grid-cols-2 gap-8 mb-8">
-                            {/* SELECTOR DE PRODUCTOS CON BUSCADOR */}
-                            <div className="flex flex-col gap-3 relative" ref={comboRef}>
-                                <div className="flex items-center text-yellow-500 gap-2 text-md font-medium">
-                                    <Box size={18} />
-                                    <span>Productos *</span>
-                                </div>
+            <div className="w-full flex flex-col bg-white"
+                style={{
+                    maxWidth: "820px", maxHeight: "90vh", borderRadius: "20px",
+                    boxShadow: "0 25px 60px rgba(0,0,0,0.18)", border: "1px solid #e5e7eb"
+                }}>
 
-                                {/* INPUT BUSCADOR */}
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Buscar producto..."
-                                        value={searchTerm}
-                                        onFocus={() => setIsOpenCombo(true)}
-                                        onChange={handleSearchChange}
-                                        className={`w-full bg-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-all
-                                            ${(productError || (selectedProductId && searchTerm !== selectedProduct?.nombre)) ? "ring-2 ring-red-500" : "focus:ring-2 focus:ring-yellow-400"}`
-                                        }
-                                    />
-                                    {/* BOTÓN DE LA X */}
-                                    {searchTerm && (
-                                        <button
-                                            type="button"
-                                            onClick={handleClearSearch}
-                                            className="absolute right-10 top-3 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                                        >
-                                            <XCircle size={18} />
-                                        </button>
-                                    )}
-                                    <ChevronDown
-                                        size={18}
-                                        className={`absolute right-3 top-3.5 text-gray-400 transition-transform ${isOpenCombo ? "rotate-180" : ""}`}
-                                    />
-                                </div>
+                {/* ── HEADER ─────────────────────────────────────────────── */}
+                <div className="flex items-center justify-between px-7 py-5"
+                    style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-xl"
+                            style={{ backgroundColor: "#facc15" }}>
+                            <ShoppingCart size={17} color="#1f2937" strokeWidth={2.2} />
+                        </div>
+                        <div>
+                            <h2 className="font-semibold text-gray-800"
+                                style={{ fontSize: "16px", letterSpacing: "-0.01em" }}>{title}</h2>
+                            <p className="text-xs text-gray-400" style={{ marginTop: "1px" }}>
+                                {queue.length === 0
+                                    ? "Ningún producto añadido"
+                                    : `${queue.length} ${queue.length === 1 ? "producto" : "productos"} · ${totalItems} unidades`}
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" onClick={onClose}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-gray-400 hover:text-gray-700 hover:bg-gray-100">
+                        <X size={16} />
+                    </button>
+                </div>
 
-                                {/* DROPDOWN DE RESULTADOS */}
-                                {isOpenCombo && (
-                                    <div className="absolute top-full mt-2 w-full bg-white shadow-xl rounded-xl border border-gray-100 z-50 p-2 flex flex-col gap-2">
-                                        <div className="max-h-60 overflow-y-auto">
-                                            {paginatedProducts.length > 0 ? (
-                                                paginatedProducts.map((p) => (
-                                                    <button
-                                                        key={p.id}
-                                                        type="button"
+                {/* ── ZONA SELECCIÓN ─────────────────────────────────────── */}
+                <div className="px-7 py-5"
+                    style={{ borderBottom: "1px solid #f3f4f6", backgroundColor: "#fafafa" }}>
+                    <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 130px 110px" }}>
+
+                        {/* Buscador / combo */}
+                        <div className="flex flex-col gap-1.5" ref={dropdownRef}>
+                            <label className="text-xs font-semibold text-yellow-500 flex items-center gap-1.5"
+                                style={{ letterSpacing: "0.03em" }}>
+                                <Package size={13} /> Producto *
+                            </label>
+
+                            <div className="relative">
+                                <Search size={14}
+                                    className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
+                                <input type="text" value={searchTerm}
+                                    onChange={handleSearchChange}
+                                    onFocus={() => setIsDropdownOpen(true)}
+                                    placeholder="Buscar producto..."
+                                    style={{
+                                        ...inputBase, paddingLeft: "36px", paddingRight: "60px",
+                                        borderColor: productError ? "#f87171" : isDropdownOpen ? "#facc15" : "#e5e7eb",
+                                        boxShadow: isDropdownOpen ? "0 0 0 3px rgba(250,204,21,0.15)" : "none",
+                                    }} />
+                                {searchTerm && (
+                                    <button type="button" onClick={handleClearProduct}
+                                        className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-300 hover:text-red-400 transition-colors">
+                                        <X size={13} />
+                                    </button>
+                                )}
+                                <ChevronDown size={14}
+                                    className="absolute right-3 top-1/2 pointer-events-none text-gray-400 transition-transform"
+                                    style={{ transform: isDropdownOpen ? "translateY(-50%) rotate(180deg)" : "translateY(-50%)" }} />
+
+                                {/* ── DROPDOWN ─────────────────────────────── */}
+                                {isDropdownOpen && (
+                                    <div className="absolute left-0 right-0 top-full mt-2 z-50 bg-white overflow-hidden"
+                                        style={{
+                                            borderRadius: "12px", border: "1.5px solid #facc15",
+                                            boxShadow: "0 10px 30px rgba(0,0,0,0.12)"
+                                        }}>
+
+                                        {/* Cabecera columnas */}
+                                        <div className="grid px-4 py-2"
+                                            style={{
+                                                gridTemplateColumns: "1fr 80px 70px",
+                                                backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a"
+                                            }}>
+                                            {["Nombre producto", "Precio", "Stock"].map((h, i) => (
+                                                <p key={i} className="text-xs font-semibold text-yellow-600"
+                                                    style={{
+                                                        textTransform: "uppercase", letterSpacing: "0.05em",
+                                                        textAlign: i > 0 ? "right" : "left"
+                                                    }}>{h}</p>
+                                            ))}
+                                        </div>
+
+                                        {/* Filas paginadas */}
+                                        <div>
+                                            {paginatedItems.length > 0 ? paginatedItems.map((p) => {
+                                                const stock = getRealStock(p);
+                                                const inQueue = queue.some((q) => String(q.id) === String(p.id));
+                                                const isSelected = selectedProduct && String(selectedProduct.id) === String(p.id);
+                                                return (
+                                                    <button key={p.id} type="button"
                                                         onClick={() => handleSelectProduct(p)}
-                                                        className="w-full text-left px-4 py-3 rounded-lg hover:bg-yellow-50 text-sm transition flex justify-between items-center"
-                                                    >
-                                                        <span className="font-medium text-gray-700">{p.nombre}</span>
-                                                        <span className="text-gray-400 text-xs">${parseFloat(p.precio || 0).toLocaleString()}</span>
+                                                        className={`w-full grid px-4 py-3 text-left btn-row-product ${isSelected ? "bg-yellow-50" : ""}`}
+                                                        style={{ gridTemplateColumns: "1fr 80px 70px", borderBottom: "1px solid #f9fafb" }}>
+                                                        <div className="flex items-center gap-2 overflow-hidden">
+                                                            <span className="text-sm font-medium text-gray-700 truncate">{p.nombre}</span>
+                                                            {inQueue && (
+                                                                <span className="shrink-0 font-semibold px-1.5 py-0.5 rounded"
+                                                                    style={{ backgroundColor: "#fef9c3", color: "#a16207", fontSize: "10px" }}>
+                                                                    En lista
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs font-medium text-gray-500 text-right tabular-nums self-center">
+                                                            {fmt(p.precio)}
+                                                        </p>
+                                                        <div className="flex justify-end items-center">
+                                                            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg"
+                                                                style={{
+                                                                    backgroundColor: stock > 20 ? "#f0fdf4" : stock > 0 ? "#fffbeb" : "#fef2f2",
+                                                                    color: stock > 20 ? "#16a34a" : stock > 0 ? "#ca8a04" : "#dc2626",
+                                                                }}>{stock}</span>
+                                                        </div>
                                                     </button>
-                                                ))
-                                            ) : (
-                                                <div className="p-4 text-center text-gray-400 text-sm italic">
-                                                    No se encontraron productos
-                                                </div>
+                                                );
+                                            }) : (
+                                                <div className="py-8 text-center text-sm text-gray-400 italic">Sin resultados</div>
                                             )}
                                         </div>
-                                        
+
+                                        {/* ── PAGINADOR ────────────────────── */}
                                         {totalPages > 1 && (
-                                            <div className="border-t border-gray-100 pt-2 flex justify-center">
-                                                <Pagination 
-                                                    currentPage={currentPage}
-                                                    totalPages={totalPages}
-                                                    onPageChange={setCurrentPage}
-                                                />
+                                            <div className="flex items-center justify-between px-4 py-2.5"
+                                                style={{ borderTop: "1px solid #f3f4f6", backgroundColor: "#fafafa" }}>
+                                                <p className="text-xs text-gray-400">Página {currentPage} de {totalPages}</p>
+                                                <div className="flex items-center gap-1">
+                                                    <button type="button" disabled={currentPage === 1}
+                                                        onClick={() => setCurrentPage((p) => p - 1)}
+                                                        className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors disabled:opacity-30 bg-white btn-page"
+                                                        style={{ border: "1px solid #e5e7eb" }}>
+                                                        <ChevronLeft size={13} className="text-gray-500" />
+                                                    </button>
+
+                                                    {pageNumbers.map((p, idx) =>
+                                                        p === "..." ? (
+                                                            <span key={`dots-${idx}`} className="text-xs text-gray-400 px-1">…</span>
+                                                        ) : (
+                                                            <button key={p} type="button" onClick={() => setCurrentPage(p)}
+                                                                className={`flex items-center justify-center w-7 h-7 rounded-lg text-xs font-semibold transition-colors ${currentPage !== p ? "btn-page" : ""}`}
+                                                                style={{
+                                                                    backgroundColor: currentPage === p ? "#facc15" : "white",
+                                                                    color: currentPage === p ? "#1f2937" : "#6b7280",
+                                                                    border: currentPage === p ? "1px solid #facc15" : "1px solid #e5e7eb",
+                                                                }}>{p}</button>
+                                                        )
+                                                    )}
+
+                                                    <button type="button" disabled={currentPage === totalPages}
+                                                        onClick={() => setCurrentPage((p) => p + 1)}
+                                                        className="flex items-center justify-center w-7 h-7 rounded-lg transition-colors disabled:opacity-30 bg-white btn-page"
+                                                        style={{ border: "1px solid #e5e7eb" }}>
+                                                        <ChevronRight size={13} className="text-gray-500" />
+                                                    </button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
                                 )}
-
-                                {/* MENSAJES DE VALIDACIÓN DINÁMICOS */}
-                                <ValidationMessage error={productError} />
-
-                                {/* EL MENSAJE DE EXITO SOLO APARECE SI HAY UN ID Y EL TEXTO DE BUSQUEDA COINCIDE EXACTAMENTE */}
-                                <ValidationMessage
-                                    success={!!selectedProductId && searchTerm === selectedProduct?.nombre}
-                                    successMessage="Producto listo para añadir"
-                                />
-
-                                {/* STOCK VISIBLE SOLO SI EL PRODUCTO ES VALIDO */}
-                                {selectedProductId && searchTerm === selectedProduct?.nombre && (
-                                    <p className={`text-xs ${availableStock === 0 ? "text-red-500" : "text-gray-500"}`}>
-                                        Stock disponible: {availableStock}
-                                    </p>
-                                )}
                             </div>
 
-                            {/* INPUT DE CANTIDAD */}
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center text-yellow-500 gap-2 text-md font-medium">
-                                    <Hash size={18} />
-                                    <span>Cantidad *</span>
-                                </div>
-                                <input
-                                    type="text"
-                                    value={quantity}
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (val === "" || Validations.soloNumeros(val)) {
-                                            setQuantity(val);
-                                            setQuantityError(validateQuantity(val, selectedProduct));
-                                        }
-                                    }}
-                                    placeholder="0"
-                                    className="w-full bg-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-yellow-400 outline-none"
-                                />
-
-                                {/* USO DEL COMPONENTE REUTILIZABLE PARA LOS ERRORES CON EL ICONO*/}
-                                <ValidationMessage error={quantityError} />
-                                {quantity !== "" && !quantityError && (
-                                    <ValidationMessage
-                                        success={true}
-                                        successMessage="Cantidad válida"
-                                    />
-                                )}
-                            </div>
+                            <ValidationMessage error={productError} />
+                            <ValidationMessage
+                                success={!!selectedProduct && !productError}
+                                successMessage={`Producto válido · Stock: ${getRealStock(selectedProduct)}`}
+                            />
                         </div>
 
-                        {/* BOTONES */}
-                        <div className="flex justify-between items-center mt-8">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-8 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium cursor-pointer hover:bg-gray-300 transition shadow-md"
-                            >
-                                Cancelar
-                            </button>
+                        {/* Cantidad */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold text-yellow-500" style={{ letterSpacing: "0.03em" }}>
+                                Cantidad *
+                            </label>
+                            <input ref={quantityInputRef} type="number" min="1"
+                                value={quantity}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "" || Validations.soloNumeros(val)) {
+                                        setQuantity(val);
+                                        setQuantityError(validateQty(val, selectedProduct));
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (["e", "E", "+", "-", ".", ","].includes(e.key)) e.preventDefault();
+                                }}
+                                placeholder="0"
+                                style={{
+                                    ...inputBase,
+                                    borderColor: quantityError ? "#f87171" : "#e5e7eb",
+                                    boxShadow: quantityError ? "0 0 0 3px rgba(248,113,113,0.12)" : "none",
+                                    MozAppearance: "textfield",
+                                }}
+                                onFocus={(e) => {
+                                    e.currentTarget.style.borderColor = "#facc15";
+                                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(250,204,21,0.15)";
+                                }}
+                                onBlur={(e) => {
+                                    e.currentTarget.style.borderColor = quantityError ? "#f87171" : "#e5e7eb";
+                                    e.currentTarget.style.boxShadow = quantityError ? "0 0 0 3px rgba(248,113,113,0.12)" : "none";
+                                }}
+                            />
+                            <ValidationMessage error={quantityError} />
+                            <ValidationMessage success={quantity !== "" && !quantityError} successMessage="Cantidad válida" />
+                        </div>
 
-                            <PrimaryButton
-                                onClick={handleAddProduct}
-                                disabled={isInvalid}
-                            >
-                                {buttonText || "Añadir producto"}
-                            </PrimaryButton>
+                        {/* Botón añadir */}
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-xs font-semibold opacity-0 select-none">.</label>
+                            <button type="button" onClick={handleAddToQueue}
+                                disabled={!selectedProduct || !quantity}
+                                className="flex items-center justify-center gap-2 w-full font-semibold text-sm rounded-xl transition-all btn-add"
+                                style={{
+                                    padding: "10px 14px", height: "42px", border: "none",
+                                    backgroundColor: !selectedProduct || !quantity ? "#e5e7eb" : "#facc15",
+                                    color: !selectedProduct || !quantity ? "#9ca3af" : "#1f2937",
+                                    cursor: !selectedProduct || !quantity ? "not-allowed" : "pointer",
+                                }}>
+                                <Plus size={15} /> Añadir
+                            </button>
                         </div>
                     </div>
                 </div>
+
+                {/* ── TABLA ──────────────────────────────────────────────── */}
+                <div className="flex flex-col flex-1 overflow-hidden">
+
+                    {/* Cabecera */}
+                    <div className="grid px-7 py-3"
+                        style={{
+                            gridTemplateColumns: "1fr 90px 130px 130px 48px",
+                            backgroundColor: "#f9fafb", borderBottom: "1px solid #f3f4f6"
+                        }}>
+                        {["Producto", "Cant.", "Precio unit.", "Subtotal", ""].map((h, i) => (
+                            <p key={i} className="text-xs font-semibold text-gray-400"
+                                style={{
+                                    textTransform: "uppercase", letterSpacing: "0.05em",
+                                    textAlign: i === 0 ? "left" : "right"
+                                }}>{h}</p>
+                        ))}
+                    </div>
+
+                    {/* Filas */}
+                    <div className="overflow-y-auto flex-1" style={{ minHeight: "150px", maxHeight: "240px" }}>
+                        {queue.length > 0 ? queue.map((item, index) => (
+                            <div key={item.id}
+                                className="grid px-7 py-3.5 items-center transition-colors btn-row-queue"
+                                style={{
+                                    gridTemplateColumns: "1fr 90px 130px 130px 48px",
+                                    borderBottom: "1px solid #f9fafb", animation: "rowIn 0.18s ease-out"
+                                }}>
+
+                                <div className="flex items-center gap-2.5 overflow-hidden">
+                                    <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-xs font-bold"
+                                        style={{ backgroundColor: "#fef9c3", color: "#a16207" }}>
+                                        {index + 1}
+                                    </span>
+                                    <p className="text-sm font-medium text-gray-700 truncate">{item.nombre}</p>
+                                </div>
+
+                                <div className="flex justify-end">
+                                    <span className="text-sm font-semibold tabular-nums px-3 py-0.5 rounded-lg"
+                                        style={{ backgroundColor: "#fef9c3", color: "#a16207" }}>
+                                        {item.cantidad}
+                                    </span>
+                                </div>
+
+                                <p className="text-sm text-gray-400 text-right tabular-nums">{fmt(item.precio)}</p>
+                                <p className="text-sm font-semibold text-gray-700 text-right tabular-nums">{fmt(item.precio * item.cantidad)}</p>
+
+                                <div className="flex justify-end">
+                                    <button type="button" onClick={() => handleRemoveFromQueue(item.id)}
+                                        className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-gray-300 btn-row-delete">
+                                        <Trash2 size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="flex flex-col items-center justify-center h-full py-14 gap-3">
+                                <div className="flex items-center justify-center w-12 h-12 rounded-2xl"
+                                    style={{ backgroundColor: "#f9fafb", border: "1.5px dashed #d1d5db" }}>
+                                    <Package size={20} className="text-gray-300" />
+                                </div>
+                                <p className="text-sm text-gray-400">Añade productos</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Totales */}
+                    {queue.length > 0 && (
+                        <div className="grid px-7 py-3.5 items-center"
+                            style={{
+                                gridTemplateColumns: "1fr 90px 130px 130px 48px",
+                                borderTop: "2px solid #fde68a", backgroundColor: "#fffbeb"
+                            }}>
+                            <p className="text-xs font-semibold text-yellow-600"
+                                style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                Total · {queue.length} {queue.length === 1 ? "referencia" : "referencias"}
+                            </p>
+                            <p className="text-sm font-bold text-yellow-700 text-right tabular-nums">{totalItems}</p>
+                            <div />
+                            <p className="text-sm font-bold text-yellow-700 text-right tabular-nums">{fmt(totalValue)}</p>
+                            <div />
+                        </div>
+                    )}
+                </div>
+
+                {/* ── FOOTER ─────────────────────────────────────────────── */}
+                <div className="flex gap-3 px-7 py-5" style={{ borderTop: "1px solid #f3f4f6" }}>
+                    <button type="button" onClick={onClose}
+                        className="flex-1 py-3 text-sm font-medium rounded-xl transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        style={{ backgroundColor: "#f3f4f6", border: "none" }}>
+                        Cancelar
+                    </button>
+
+                    <button type="button" onClick={handleConfirm} disabled={queue.length === 0}
+                        className="flex-[2.5] flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-xl transition-all btn-confirm"
+                        style={{
+                            backgroundColor: queue.length === 0 ? "#e5e7eb" : "#facc15",
+                            color: queue.length === 0 ? "#9ca3af" : "#1f2937",
+                            cursor: queue.length === 0 ? "not-allowed" : "pointer",
+                            border: "none",
+                            boxShadow: queue.length > 0 ? "0 4px 14px rgba(250,204,21,0.35)" : "none",
+                        }}>
+                        <CheckCircle size={15} />
+                        {confirmText}
+                        {queue.length > 0 && (
+                            <span className="ml-1 px-2 py-0.5 rounded-md text-xs font-bold"
+                                style={{ backgroundColor: "rgba(0,0,0,0.1)", color: "#1f2937" }}>
+                                {queue.length}
+                            </span>
+                        )}
+                    </button>
+                </div>
             </div>
-        </div >
+
+            <style>{`
+                @keyframes rowIn {
+                    from { opacity: 0; transform: translateY(-6px); }
+                    to   { opacity: 1; transform: translateY(0); }
+                }
+                input[type=number]::-webkit-inner-spin-button,
+                input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+ 
+                .btn-add:not(:disabled):hover     { background-color: #fde047 !important; }
+                .btn-confirm:not(:disabled):hover { background-color: #fde047 !important; }
+                .btn-page:not(:disabled):hover    { background-color: #f9fafb !important; }
+                .btn-row-product:hover            { background-color: #f9fafb !important; }
+                .btn-row-queue:hover              { background-color: #fafafa !important; }
+                .btn-row-delete:hover             { background-color: #fef2f2 !important; color: #ef4444 !important; }
+            `}</style>
+        </div>
     );
 }
