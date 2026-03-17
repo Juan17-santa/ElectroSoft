@@ -1,15 +1,16 @@
-import { User, FileText, X, Plus, Trash, AlertCircle, CheckCircle2, ChevronDown } from "lucide-react";
+import { User, FileText, X, Plus, Trash, AlertCircle, CheckCircle2, ChevronDown, Boxes } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { SalesService } from "./services/SalesService";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { ClientsService } from "../Clients/services/ClientsService";
-import AddProductModal from "./AddProductModal";
+import AddProductModal from "../../components/ui/AddProductModal";
 import Alert from "../../components/ui/Alert";
 import ValidationMessage from "../../components/ui/ValidationMessage";
 import Calendar from "../../components/ui/Calendar";
 import Pagination from "../../components/ui/Pagination";
+import PrimaryButton from "../../components/ui/PrimaryButton";
 import { Validations } from "../../../../utils/validations";
 
 const formatCOP = (val) => {
@@ -187,6 +188,13 @@ export default function CreateSales() {
         }
     };
 
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('es-CO', {
+            style: 'decimal',
+            minimumFractionDigits: 0,
+        }).format(value);
+    };
+
     const calcularTotales = () => {
         const subtotal = productos.reduce((sum, p) => sum + p.cantidad * p.precio, 0);
         const iva = subtotal * 0.19;
@@ -346,41 +354,46 @@ export default function CreateSales() {
                     </div>
 
                     {/* TABLA DE PRODUCTOS */}
-                    <div className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                                <FileText size={16} /><span>Productos *</span>
+                    <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-full">
+                        {/* ENCABEZADO */}
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2 text-yellow-400 font-semibold text-base">
+                                <Boxes size={20} />
+                                <span>Productos</span>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => setIsModalOpen(true)}
-                                className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 text-sm px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition cursor-pointer font-medium"
-                            >
-                                <Plus size={16} />Agregar Producto
-                            </button>
+                            <div className="flex gap-3">
+                                <PrimaryButton
+                                    type="button"
+                                    icon={Plus}
+                                    onClick={() => setIsModalOpen(true)}
+                                >
+                                    Agregar Producto
+                                </PrimaryButton>
+                            </div>
                         </div>
 
                         {productosError && (
-                            <div className="flex items-center gap-1 text-xs text-red-500">
+                            <div className="flex items-center gap-1 text-xs text-red-500 mb-2">
                                 <AlertCircle size={12} /><span>{productosError}</span>
                             </div>
                         )}
 
-                        <div className="bg-white rounded-lg overflow-x-auto">
+                        {/* TABLA */}
+                        <div className="overflow-hidden rounded-xl border border-gray-200">
                             <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="bg-gray-200 border-b border-gray-300">
-                                        <th className="px-4 py-3 text-left font-semibold">Producto</th>
-                                        <th className="px-4 py-3 text-center font-semibold w-24">Cantidad</th>
-                                        <th className="px-4 py-3 text-right font-semibold w-32">Precio</th>
-                                        <th className="px-4 py-3 text-right font-semibold w-32">Subtotal</th>
-                                        <th className="px-4 py-3 text-center font-semibold w-12">Acción</th>
+                                <thead className="bg-gray-100">
+                                    <tr className="text-left border-b border-gray-200">
+                                        <th className="px-4 py-2 font-semibold">Producto</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-24">Cantidad</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-28">Precio Unit</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-32">Subtotal</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-16">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {productos.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="px-4 py-8 text-center text-gray-400">
+                                            <td colSpan="5" className="text-center py-8 text-gray-400">
                                                 No hay productos agregados. Haga clic en "Agregar Producto".
                                             </td>
                                         </tr>
@@ -397,11 +410,12 @@ export default function CreateSales() {
                                                         className="w-full bg-gray-100 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3 text-right">{formatCOP(producto.precio)}</td>
-                                                <td className="px-4 py-3 text-right font-semibold">{formatCOP(producto.cantidad * producto.precio)}</td>
+                                                <td className="px-4 py-3 text-center">{formatCOP(producto.precio)}</td>
+                                                <td className="px-4 py-3 text-center font-semibold">{formatCOP(producto.cantidad * producto.precio)}</td>
                                                 <td className="px-4 py-3 text-center">
-                                                    <button type="button" onClick={() => handleRemoveProduct(producto.id)} className="p-1 hover:bg-red-100 rounded transition cursor-pointer">
-                                                        <Trash size={16} className="text-red-600" />
+                                                    <button type="button" onClick={() => handleRemoveProduct(producto.id)} 
+                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-500 cursor-pointer">
+                                                        <Trash size={18} />
                                                     </button>
                                                 </td>
                                             </tr>
@@ -409,33 +423,25 @@ export default function CreateSales() {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
 
-                            {/* PIE DE TABLA (TOTALES Y PAGINACIÓN INTEGRADOS) */}
-                            <div className="bg-gray-50 border-t border-gray-200 px-4 py-3 flex items-center justify-between">
-                                <div className="flex items-center gap-8 text-sm font-medium text-gray-700">
-                                    <div className="flex flex-col items-start">
-                                        <span className="text-gray-500 text-[10px] uppercase tracking-wider font-bold">Subtotal</span>
-                                        <span className="font-semibold text-gray-800 leading-tight">{formatCOP(subtotal)}</span>
-                                    </div>
-                                    <div className="flex flex-col items-start border-l border-gray-200 pl-4">
-                                        <span className="text-blue-600/70 text-[10px] uppercase tracking-wider font-bold">IVA (19%)</span>
-                                        <span className="font-semibold text-blue-600 leading-tight">{formatCOP(iva)}</span>
-                                    </div>
-                                    <div className="flex flex-col items-start border-l border-gray-300 pl-8 ml-2">
-                                        <span className="text-gray-900 text-[10px] uppercase tracking-wider font-black">Total a pagar</span>
-                                        <span className="font-bold text-xl text-gray-900 tracking-tight leading-none">{formatCOP(total)}</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end">
-                                    {productos.length > ITEMS_PER_PAGE && (
+                        {/* PIE DE TABLA (TOTALES Y PAGINACIÓN INTEGRADOS) */}
+                        <div className="w-full flex px-6 py-3 justify-between items-center bg-gray-50 border-t border-gray-200">
+                            <div>
+                                {productos.length > ITEMS_PER_PAGE && (
+                                    <div className="flex justify-center">
                                         <Pagination
                                             currentPage={currentPage}
                                             totalPages={totalPages}
                                             onPageChange={setCurrentPage}
                                         />
-                                    )}
-                                </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex gap-6">
+                                <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formatCurrency(subtotal)}</span></span>
+                                <span className="text-gray-600 text-sm">IVA (19%): <span className="font-bold text-blue-600">{formatCurrency(iva)}</span></span>
+                                <span className="text-gray-600 text-sm font-bold">Total: <span className="font-bold text-green-600 text-lg">{formatCurrency(total)}</span></span>
                             </div>
                         </div>
                     </div>
@@ -456,9 +462,11 @@ export default function CreateSales() {
                 <AddProductModal
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
-                    onAdd={handleSaveProduct}
+                    onConfirm={handleSaveProduct}
                     products={availableProducts}
                     getAvailableStock={getAvailableStock}
+                    title="Agregar Productos a la Venta"
+                    confirmText="Cargar a la venta"
                 />
             </div>
 
