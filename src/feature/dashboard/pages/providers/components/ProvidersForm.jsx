@@ -33,13 +33,13 @@ export default function ProviderForm({
             {/* FORMULARIO */}
             <form onSubmit={handleSubmit} className="flex flex-col flex-1">
 
-                <div className="flex flex-col items-center gap-12 mt-6 justify-around mx-28">
+                <div className="flex flex-col items-center gap-14 mt-6 justify-around mx-28">
 
                     {/* PRIMERA FILA */}
                     <div className="flex gap-20">
 
                         {/* ================= TIPO DOCUMENTO ================= */}
-                        <div className="flex flex-col gap-1 w-80">
+                        <div className="flex flex-col gap-1 w-96">
                             <CustomSelect
                                 label="Tipo de documento *"
                                 icon={IdCard}
@@ -65,7 +65,7 @@ export default function ProviderForm({
                         </div>
 
                         {/* ================= DOCUMENTO ================= */}
-                        <div className="flex flex-col gap-1 w-80">
+                        <div className="flex flex-col gap-1 w-96">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <FileText size={16} />
                                 <span>Documento *</span>
@@ -91,7 +91,7 @@ export default function ProviderForm({
                     <div className="flex gap-20">
 
                         {/* ================= NOMBRE PROVEEDOR ================= */}
-                        <div className="flex flex-col gap-1 w-80">
+                        <div className="flex flex-col gap-1 w-96">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <User size={16} />
                                 <span>Nombre Proveedor *</span>
@@ -121,7 +121,7 @@ export default function ProviderForm({
                             onChange={setCategoriasAsociadas}
                             multiple
                             placeholder="Seleccionar categorías"
-                            width="w-80"
+                            width="w-96"
                         />
                     </div>
 
@@ -129,7 +129,7 @@ export default function ProviderForm({
                     <div className="flex gap-20">
 
                         {/* ================= NOMBRE CONTACTO ================= */}
-                        <div className="flex flex-col gap-1 w-80">
+                        <div className="flex flex-col gap-1 w-96">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <User size={16} />
                                 <span>Nombre Contacto *</span>
@@ -151,7 +151,7 @@ export default function ProviderForm({
                         </div>
 
                         {/* ================= TELÉFONO CONTACTO ================= */}
-                        <div className="flex flex-col gap-1 w-80">
+                        <div className="flex flex-col gap-1 w-96">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <User size={16} />
                                 <span>Telefono Contacto *</span>

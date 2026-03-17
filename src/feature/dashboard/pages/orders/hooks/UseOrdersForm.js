@@ -184,97 +184,44 @@ export function useOrdersForm({ onSuccess }) {
         }));
     };
 
-    // FUNCIÓN PARA CALCULAR SUBTOTAL, IVA (19%) Y TOTAL DEL PEDIDO
-    const calculateTotals = (productos) => {
-
-        const subtotal = productos.reduce((acc, p) => acc + p.subtotal, 0);
-        const iva = subtotal * 0.19;
-        const total = subtotal + iva;
-
-        return { subtotal, iva, total };
-    };
-
     // FUNCION PARA AÑADIR PRODUCTOS
-    const addProduct = (product, quantity) => {
+    const addProduct = (productosNuevos) => {
+        // Normalizar: si llega un objeto solo, convertir a array
+        const lista = Array.isArray(productosNuevos)
+            ? productosNuevos
+            : [productosNuevos];
 
-        const productoExistente = formData.productos.find(
-            p => p.id === product.id
-        );
+        setFormData(prev => {
+            let productos = [...prev.productos];
 
-        // CASO 1: EL PRODUCTO YA ESTÁ EN EL CARRITO
-        if (productoExistente) {
+            lista.forEach(({ cantidad, ...product }) => {
+                const existente = productos.find(p => p.id === product.id);
+                if (existente) {
+                    productos = productos.map(p =>
+                        p.id === product.id
+                            ? { ...p, cantidad: p.cantidad + cantidad, subtotal: (p.cantidad + cantidad) * p.precio }
+                            : p
+                    );
+                } else {
+                    productos.push({
+                        id: product.id,
+                        nombre: product.nombre,
+                        precio: product.precio,
+                        cantidad,
+                        subtotal: product.precio * cantidad
+                    });
+                }
+            });
 
-            const nuevaCantidad = productoExistente.cantidad + quantity;
+            const subtotal = productos.reduce((acc, p) => acc + p.subtotal, 0);
+            const iva = subtotal * 0.19;
+            const total = subtotal + iva;
 
-            // VALIDAR QUE LA NUEVA CANTIDAD NO EXCEDA EL STOCK
-            if (nuevaCantidad > product.stock) {
-                setErrors(prev => ({
-                    ...prev,
-                    productos: `Solo hay ${product.stock} unidades disponibles`
-                }));
-                return;
-            }
+            return { ...prev, productos, subtotal, iva, total };
+        });
 
-            const productosActualizados = formData.productos.map(p =>
-                p.id === product.id
-                    ? {
-                        ...p,
-                        cantidad: nuevaCantidad,
-                        subtotal: nuevaCantidad * p.precio
-                    }
-                    : p
-            );
-
-            const { subtotal, iva, total } = calculateTotals(productosActualizados);
-
-            setFormData(prev => ({
-                ...prev,
-                productos: productosActualizados,
-                subtotal,
-                iva,
-                total
-            }));
-
-            setErrors(prev => ({ ...prev, productos: "" }));
-
-        } else {
-            // CASO 2: PRODUCTO NUEVO EN EL PEDIDO
-            if (quantity > product.stock) {
-                setErrors(prev => ({
-                    ...prev,
-                    productos: `Solo hay ${product.stock} unidades disponibles`
-                }));
-                return;
-            }
-
-            const newProduct = {
-                id: product.id,
-                nombre: product.nombre,
-                precio: product.precio,
-                cantidad: quantity,
-                subtotal: product.precio * quantity
-            };
-
-            const nuevosProductos = [...formData.productos, newProduct];
-
-            const { subtotal, iva, total } = calculateTotals(nuevosProductos);
-
-            setFormData(prev => ({
-                ...prev,
-                productos: nuevosProductos,
-                subtotal,
-                iva,
-                total
-            }));
-
-            setErrors(prev => ({ ...prev, productos: "" }));
-
-            // NAVEGAR A LA PÁGINA 1 SI ES EL PRIMER PRODUCTO
-            if (nuevosProductos.length > 0 && currentPage === 0) {
-                setCurrentPage(1);
-            }
-        };
-    }
+        setErrors(prev => ({ ...prev, productos: "" }));
+    };
 
     // VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
@@ -309,7 +256,7 @@ export function useOrdersForm({ onSuccess }) {
         // DETENER LA EJECUCIÓN SI EL FORMULARIO NO ES VÁLIDO
         if (!validateForm()) return;
 
-       // OBTENER ESTADO ACTUAL DE PRODUCTOS PARA ACTUALIZAR STOCK
+        // OBTENER ESTADO ACTUAL DE PRODUCTOS PARA ACTUALIZAR STOCK
         const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
 
         // ACTUALIZAR STOCK SEGÚN LOS PRODUCTOS DEL PEDIDO

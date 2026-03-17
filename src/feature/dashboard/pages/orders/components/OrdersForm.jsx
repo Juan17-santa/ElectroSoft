@@ -70,10 +70,10 @@ export default function OrdersForm({
                 <div className="flex flex-col items-center gap-12 mt-6">
 
                     {/* ================= PRIMERA FILA ================= */}
-                    <div className="flex gap-16">
+                    <div className="grid grid-cols-2 gap-16 w-full">
 
                         {/* DOCUMENTO */}
-                        <div className="flex flex-col gap-3 w-80">
+                        <div className="flex flex-col gap-3 w-full">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <FileText size={16} />
                                 <span>Documento *</span>
@@ -96,7 +96,7 @@ export default function OrdersForm({
                         </div>
 
                         {/* CLIENTE (AUTOMATICO) */}
-                        <div className="flex flex-col gap-3 w-80">
+                        <div className="flex flex-col gap-3 w-full">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <CircleUser size={16} />
                                 <span>Cliente</span>
@@ -123,10 +123,10 @@ export default function OrdersForm({
                     </div>
 
                     {/* ================= SEGUNDA FILA ================= */}
-                    <div className="flex gap-16">
+                    <div className="grid grid-cols-3 gap-16 w-full">
 
                         {/* FECHA PEDIDO */}
-                        <div className="flex flex-col gap-3 w-52">
+                        <div className="flex flex-col gap-3 w-full">
                             <Calendar
                                 fechaISO={formData.fechaPedido}
                                 onFechaChange={(fecha) =>
@@ -144,7 +144,7 @@ export default function OrdersForm({
                         </div>
 
                         {/* FECHA VENCIMIENTO */}
-                        <div className="flex flex-col gap-3 w-52">
+                        <div className="flex flex-col gap-3 w-full">
                             <Calendar
                                 fechaISO={formData.fechaVencimiento}
                                 onFechaChange={() => { }}
@@ -159,7 +159,7 @@ export default function OrdersForm({
                         </div>
 
                         {/* TIPO DE PAGO */}
-                        <div className="flex flex-col gap-2 w-52">
+                        <div className="flex flex-col gap-2 w-full">
 
                             <CustomSelect
                                 label="Forma de pago *"
@@ -184,7 +184,7 @@ export default function OrdersForm({
 
                     {/* ================= TERCERA FILA ================= */}
                     {/* SECCIÓN DE PRODUCTOS */}
-                    <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-3xl">
+                    <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-full">
 
                         {/* ENCABEZADO */}
                         <div className="flex items-center justify-between mb-3">
@@ -211,7 +211,7 @@ export default function OrdersForm({
                                         <th className="px-4 py-2 font-semibold">Producto</th>
                                         <th className="px-4 py-2 font-semibold text-center w-24">Cantidad</th>
                                         <th className="px-4 py-2 font-semibold text-center w-28">Precio Unit</th>
-                                        <th className="px-4 py-2 font-semibold text-center w-28">Subtotal</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-32">Subtotal</th>
                                         <th className="px-4 py-2 font-semibold text-center w-16">Acciones</th>
                                     </tr>
                                 </thead>
@@ -302,9 +302,11 @@ export default function OrdersForm({
             <AddProductModal
                 isOpen={openProductModal}
                 onClose={() => setOpenProductModal(false)}
-                onAdd={addProduct}
+                onConfirm={(productosSeleccionados) => addProduct(productosSeleccionados)}
                 products={products}
                 getAvailableStock={getAvailableStock}
+                title="Agregar Productos al Pedido"
+                confirmText="Cargar al pedido"
             />
         </>
     );

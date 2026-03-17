@@ -151,12 +151,6 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
     const processOrderToSale = (order) => {
         const storedOrders = ServicesOrders.get();
 
-        // CONSTRUCCIÓN DEL OBJETO DE VENTA PARA EL SERVICIO
-        // SalesService.create se encarga de:
-        // 1. Calcular numeroVenta (auto-incremental)
-        // 2. Calcular subtotal, IVA, total
-        // 3. Gestionar montos pagados/por pagar según tipoVenta
-        // 4. Restar stock de productos automaticamente
         const saleData = {
             numeroDocumento: order.documento,
             tipoVenta: order.formaPago,
@@ -169,14 +163,30 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
             }))
         };
 
-        // LLAMAR AL SERVICIO PARA CREAR LA VENTA
         SalesService.create(saleData);
 
-        // ELIMINAR EL PEDIDO (YA ES UNA VENTA)
+        // ── FIX BUG 1: SalesService ya descontó el stock otra vez, lo revertimos
+        const storedProducts = ServicesProducts.get();
+        const restoredProducts = storedProducts.map(product => {
+            const productInOrder = order.productos.find(p => p.nombre === product.nombre);
+            return productInOrder
+                ? { ...product, stock: product.stock + productInOrder.cantidad }
+                : product;
+        });
+        localStorage.setItem("products", JSON.stringify(restoredProducts));
+
+        // FIX BUG 2: sumar el total al totalCompras del cliente ← ESTO FALTABA
+        const storedClients = ClientsService.get();
+        const updatedClients = storedClients.map(client =>
+            client.id === order.clienteId
+                ? { ...client, totalCompras: (Number(client.totalCompras) || 0) + order.total }
+                : client
+        );
+        localStorage.setItem("clients", JSON.stringify(updatedClients));
+        // ────────────────────────────────────────────────────────────────────────
+
         const updatedOrders = storedOrders.filter(o => o.id !== order.id);
         localStorage.setItem("orders", JSON.stringify(updatedOrders));
-
-        // ACTUALIZAR ESTADO LOCAL PARA REMOVER DE LA TABLA DE PEDIDOS
         setOrders(prev => prev.filter(o => o.id !== order.id));
     };
 
