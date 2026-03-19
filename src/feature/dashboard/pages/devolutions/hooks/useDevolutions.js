@@ -17,13 +17,13 @@ export function useDevolutions() {
         const term = searchTerm.toLowerCase().trim();
         if (!term) return true;
         return (
-            String(d.id).toLowerCase().includes(term)                ||
-            (d.idVenta           || "").toLowerCase().includes(term) ||
-            (d.motivo            || "").toLowerCase().includes(term) ||
-            (d.producto          || "").toLowerCase().includes(term) ||
-            (d.responsable       || "").toLowerCase().includes(term) ||
-            (d.estadoResolucion  || "").toLowerCase().includes(term) ||
-            (d.fecha             || "").toLowerCase().includes(term)
+            String(d.id              ?? "").toLowerCase().includes(term) ||
+            String(d.idVenta         ?? "").toLowerCase().includes(term) ||
+            String(d.motivo          ?? "").toLowerCase().includes(term) ||
+            String(d.producto        ?? "").toLowerCase().includes(term) ||
+            String(d.responsable     ?? "").toLowerCase().includes(term) ||
+            String(d.estadoResolucion ?? "").toLowerCase().includes(term) ||
+            String(d.fecha           ?? "").toLowerCase().includes(term)
         );
     });
 
