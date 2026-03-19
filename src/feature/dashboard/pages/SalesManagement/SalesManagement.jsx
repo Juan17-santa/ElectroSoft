@@ -74,7 +74,9 @@ export default function SalesManagement() {
                 }
                 return sale;
             });
-            setSales(salesConCliente);
+            // Ordenar por ID descendente (más recientes primero)
+            const sortedSales = salesConCliente.sort((a, b) => b.id - a.id);
+            setSales(sortedSales);
         } catch (error) {
             console.error(error);
         }
@@ -266,7 +268,7 @@ export default function SalesManagement() {
                                                     </button>
 
                                                     {/* CREDITO */}
-                                                    {sale.tipoVenta === "Credito" && sale.estado === "Vigente" && (
+                                                    {sale.tipoVenta === "Credito" && (sale.estado === "Vigente" || sale.estado === "Finalizado") && (
                                                         <button
                                                             className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
                                                             onClick={() => handleViewCredit(sale)}

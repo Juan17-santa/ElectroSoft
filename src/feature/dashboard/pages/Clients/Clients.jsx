@@ -5,7 +5,8 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
-import { Eye, Pencil, Trash } from "lucide-react";
+import AssignQuotaModal from "./components/AssignQuotaModal";
+import { Eye, Pencil, Trash, CreditCard } from "lucide-react";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 
@@ -17,6 +18,7 @@ export default function Clients() {
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
+    const [assignQuotaClient, setAssignQuotaClient] = useState(null);
     const [alert, setAlert] = useState(null);
 
     const showAlert = (type, message) => setAlert({ type, message });
@@ -64,6 +66,19 @@ export default function Clients() {
                 setConfirmData(null);
             }
         });
+    };
+
+    const handleAsignarCupo = (client) => {
+        setAssignQuotaClient(client);
+    };
+
+    const confirmAssignQuota = (amount) => {
+        if (!assignQuotaClient) return;
+        const clientActualizado = { ...assignQuotaClient, cupoActivo: true, cupoTotal: amount };
+        const newData = ClientsService.update(clientActualizado);
+        setClients(newData);
+        showAlert("success", `Cupo de $${amount.toLocaleString("es-CO")} asignado exitosamente.`);
+        setAssignQuotaClient(null);
     };
 
     const handleEditNavigation = (client) => {
@@ -161,6 +176,15 @@ export default function Clients() {
                                             <td className="px-3 py-2 w-24">${client.totalCompras?.toLocaleString("es-CO")}</td>
                                             <td className="px-3 py-2 w-24">
                                                 <div className="flex justify-center gap-1.5">
+                                                    {client.totalCompras > 1000000 && (
+                                                        <button
+                                                            className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition duration-300 cursor-pointer"
+                                                            onClick={() => handleAsignarCupo(client)}
+                                                            title="Asignar cupo"
+                                                        >
+                                                            <CreditCard size={18} className="text-green-600" />
+                                                        </button>
+                                                    )}
                                                     <button
                                                         className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
                                                         onClick={() => handleViewDetails(client)}
@@ -212,6 +236,14 @@ export default function Clients() {
                     onCancel={() => setConfirmData(null)}
                 />
             )}
+
+            {/* MODAL ASIGNAR CUPO */}
+            <AssignQuotaModal
+                isOpen={!!assignQuotaClient}
+                onClose={() => setAssignQuotaClient(null)}
+                onConfirm={confirmAssignQuota}
+                clientName={assignQuotaClient ? `${assignQuotaClient.nombres} ${assignQuotaClient.apellidos}` : ''}
+            />
 
             {/* ALERTA */}
             {alert && (
