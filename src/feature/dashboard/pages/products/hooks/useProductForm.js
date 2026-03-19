@@ -72,20 +72,18 @@ export default function useProductForm({
             case "precio":
                 if (!value.trim()) {
                     error = "El precio es obligatorio";
-                } else if (isNaN(Number(value))) {
-                    error = "El precio debe ser un número válido";
+                } else if (!/^[0-9]+$/.test(value.trim())) {
+                    error = "El precio solo debe contener números";
                 } else if (Number(value) <= 0) {
                     error = "El precio debe ser mayor a 0";
-                } else if (Number(value) > 999999) {
-                    error = "El precio es demasiado alto";
                 }
                 break;
 
             case "stock":
                 if (!value.trim()) {
                     error = "El stock es obligatorio";
-                } else if (isNaN(Number(value))) {
-                    error = "El stock debe ser un número válido";
+                } else if (!/^[0-9]+$/.test(value.trim())) {
+                    error = "El stock solo debe contener números";
                 } else if (Number(value) < 0) {
                     error = "El stock no puede ser negativo";
                 } else if (!Number.isInteger(Number(value))) {

@@ -16,11 +16,10 @@ import ProductCategory from "../feature/dashboard/pages/productCategory/pages/Pr
 import ProductCategoryDetails from "../feature/dashboard/pages/productCategory/pages/ProductCategoryDetails";
 
 // PRODUCTOS
-import Products from "../feature/dashboard/pages/products/Products";
-import CreateProducts from "../feature/dashboard/pages/products/CreateProducts";
-import EditProducts from "../feature/dashboard/pages/products/EditProducts";
-import ProductDetails from "../feature/dashboard/pages/products/ProductDetails";
-
+import Products from "../feature/dashboard/pages/products/pages/Products";
+import CreateProducts from "../feature/dashboard/pages/products/pages/CreateProducts";
+import EditProducts from "../feature/dashboard/pages/products/pages/EditProducts";
+import ProductDetails from "../feature/dashboard/pages/products/pages/ProductDetails";
 // PROVEEDORES
 import Providers from "../feature/dashboard/pages/providers/pages/Providers";
 import CreateProvider from "../feature/dashboard/pages/providers/pages/CreateProvider";
