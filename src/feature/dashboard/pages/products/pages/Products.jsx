@@ -1,12 +1,13 @@
-import { Trash, Pencil, Plus, Search, FileText, Eye } from "lucide-react";
+import { Trash, Pencil, Plus, Search, FileText, Eye, Package } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ServicesProducts } from "./services/ServicesProducts";
-import { ServiceProductCategory } from "../productCategory/services/ServicesProductCategory";
-import Alert from "../../components/ui/alert";
-import ConfirmModal from "../../components/ui/ConfirmModal";
-import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
-import useProductTable from "./hooks/useProductTable";
+import { ServicesProducts } from "../services/ServicesProducts";
+import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
+import Alert from "../../../components/ui/alert";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
+import Searchbar from "../../../components/ui/Searchbar";
+import useProductTable from "../hooks/useProductTable";
 
 
 
@@ -98,16 +99,16 @@ export default function Products() {
         toggleEstado(id);
     };
 
-    /** Genera reporte PDF de productos filtrados */
+    /** Genera reporte Excel de productos filtrados */
     const handleGenerateReport = () => {
         setConfirmData({
             type: "info",
             title: "Generar reporte",
-            message: "¿Deseas descargar el reporte de productos?",
+            message: "¿Deseas descargar el reporte de productos en Excel?",
             onConfirm: () => {
-                generatePDFReport({
+                generateExcelReport({
                     title: "Gestión de Productos - Reporte",
-                    fileName: "reporte_productos.pdf",
+                    fileName: "reporte_productos.xlsx",
                     columns: [
                         "Nombre",
                         "Categoría",
@@ -138,45 +139,24 @@ export default function Products() {
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
 
-            <p className="text-xl font-semibold">Control de productos</p>
+            <p className="text-xl font-semibold flex items-center gap-2">
+                <Package size={22} className="text-yellow-500" />
+                Control de productos
+            </p>
 
             {/* BUSCADOR, REPORTE Y BOTÓN */}
-            <div className="flex justify-between items-start">
-                <div className="flex flex-col gap-4 w-4/5">
-                    <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-2">
-                        <Search size={20} className="text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar productos.."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full outline-none text-md placeholder-gray-400"
-                        />
-                    </div>
-
-                    <div>
-                        <button
-                            type="button"
-                            onClick={handleGenerateReport}
-                            className="flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition cursor-pointer w-fit"
-                        >
-                            <FileText size={16} />
-                            Generar reporte
-                        </button>
-                    </div>
-                </div>
-
-                <div className="flex items-center bg-linear-to-r from-white to-yellow-300 px-4 py-2 rounded-lg font-medium cursor-pointer gap-2 shadow-md hover:shadow-lg transition">
-                    <Plus />
-                    <button
-                        type="button"
-                        className="cursor-pointer"
-                        onClick={() => navigate("/dashboard/products/create")}
-                    >
-                        Crear producto
-                    </button>
-                </div>
-            </div>
+            <Searchbar
+                searchTerm={search}
+                onSearchChange={(e) => {
+                    setSearch(e.target.value);
+                    setPresentPage(1);
+                }}
+                placeholder="Buscar por nombre, categoría, precio o stock..."
+                onCreateClick={() => navigate("/dashboard/products/create")}
+                createButtonText="Crear producto"
+                showReportButton={true}
+                onReportClick={handleGenerateReport}
+            />
 
             {/* TABLA */}
             <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">

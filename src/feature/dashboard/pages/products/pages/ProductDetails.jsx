@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Info, X } from "lucide-react";
-import { ServicesProducts } from "./services/ServicesProducts";
-import { ServiceProductCategory } from "../productCategory/services/ServicesProductCategory";
+import { ServicesProducts } from "../services/ServicesProducts";
+import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 
 export default function ProductDetails() {
     const navigate = useNavigate();

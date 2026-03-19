@@ -8,6 +8,7 @@ import { parseCOP } from "../helpers/shoppingHelpers";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 import { ServicesCharacteristics } from "../../products/services/ServicesCharacteristics";
+import CategorySelect from "../../../components/ui/CategorySelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 
 // ─── Mini-componente: Indicador de validación ──────────────────────────────────
@@ -304,30 +305,16 @@ export default function CreateProductModal({ onClose, onSuccess }) {
 
                         {/* CATEGORÍA */}
                         <div className="flex flex-col gap-2">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                                <Layers size={20} />
-                                <span>Categoría *</span>
-                            </div>
-                            <div className="relative">
-                                <select
-                                    value={categoriaId}
-                                    onChange={(e) => { setCategoriaId(e.target.value); tocar("categoriaId"); }}
-                                    onBlur={() => tocar("categoriaId")}
-                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 cursor-pointer w-full appearance-none
-                                        ${estadoCategoria === null
-                                            ? "focus:ring-gray-400 text-gray-500"
-                                            : estadoCategoria.valido
-                                                ? "ring-1 ring-green-300 text-gray-700"
-                                                : "ring-1 ring-red-300 text-gray-500"
-                                        }`}
-                                >
-                                    <option value="">Elige una categoría...</option>
-                                    {categoriasList.filter((c) => c.estado).map((cat) => (
-                                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                                    ))}
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
-                            </div>
+                            <CategorySelect
+                                label="Categoría"
+                                icon={Layers}
+                                options={categoriasList.filter((c) => c.estado)}
+                                value={categoriaId}
+                                onChange={(value) => { setCategoriaId(value); tocar("categoriaId"); }}
+                                placeholder="Elige una categoría..."
+                                width="w-full"
+                                hasError={estadoCategoria !== null && !estadoCategoria.valido}
+                            />
                             <FieldStatus estado={estadoCategoria} />
                         </div>
 

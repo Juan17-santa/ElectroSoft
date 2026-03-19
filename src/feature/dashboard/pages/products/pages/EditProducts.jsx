@@ -1,11 +1,12 @@
 import { Package, Tag, DollarSign, Boxes, Hash, ShieldCheck, X, Trash, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { ServicesProducts } from "./services/ServicesProducts";
-import { ServiceProductCategory } from "../productCategory/services/ServicesProductCategory";
-import Alert from "../../components/ui/alert";
-import ConfirmModal from "../../components/ui/ConfirmModal";
-import useProductEditForm from "./hooks/useProductEditForm";
+import { ServicesProducts } from "../services/ServicesProducts";
+import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
+import Alert from "../../../components/ui/alert";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import CategorySelect from "../../../components/ui/CategorySelect";
+import useProductEditForm from "../hooks/useProductEditForm";
 
 export default function EditProducts() {
 
@@ -133,27 +134,16 @@ export default function EditProducts() {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                    <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                        <Tag size={16} /> Categoría *
-                    </label>
-                    <div className="relative">
-                        <select
-                            name="categoriaId"
-                            value={formData.categoriaId}
-                            onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full appearance-none focus:outline-none focus:ring-2 focus:ring-yellow-400 border-2 ${
-                                errors.categoriaId ? 'border-red-500' : 'border-transparent'
-                            }`}
-                        >
-                            <option hidden value="">Seleccione una categoría</option>
-                            {categorias.map(cat => (
-                                <option key={cat.id} value={cat.id}>
-                                    {cat.nombre}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
-                    </div>
+                    <CategorySelect
+                        label="Categoría"
+                        icon={Tag}
+                        options={categorias}
+                        value={formData.categoriaId}
+                        onChange={(value) => handleChange({ target: { name: 'categoriaId', value } })}
+                        placeholder="Seleccione una categoría"
+                        width="w-full"
+                        hasError={!!errors.categoriaId}
+                    />
                     {errors.categoriaId && (
                         <p className="text-red-500 text-sm">{errors.categoriaId}</p>
                     )}
@@ -163,15 +153,17 @@ export default function EditProducts() {
                     <label className="flex items-center gap-2 text-yellow-500 font-medium">
                         <DollarSign size={16} /> Precio *
                     </label>
-                    <input
-                        name="precio"
-                        value={formData.precio}
-                        onChange={handleChange}
-                        type="number"
-                        className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${
-                            errors.precio ? 'border-red-500' : 'border-transparent'
-                        }`}
-                    />
+                        <input
+                            name="precio"
+                            value={formData.precio}
+                            onChange={handleChange}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${
+                                errors.precio ? 'border-red-500' : 'border-transparent'
+                            }`}
+                        />
                     {errors.precio && (
                         <p className="text-red-500 text-sm">{errors.precio}</p>
                     )}
@@ -181,15 +173,17 @@ export default function EditProducts() {
                     <label className="flex items-center gap-2 text-yellow-500 font-medium">
                         <Boxes size={16} /> Stock *
                     </label>
-                    <input
-                        name="stock"
-                        value={formData.stock}
-                        onChange={handleChange}
-                        type="number"
-                        className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${
-                            errors.stock ? 'border-red-500' : 'border-transparent'
-                        }`}
-                    />
+                        <input
+                            name="stock"
+                            value={formData.stock}
+                            onChange={handleChange}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${
+                                errors.stock ? 'border-red-500' : 'border-transparent'
+                            }`}
+                        />
                     {errors.stock && (
                         <p className="text-red-500 text-sm">{errors.stock}</p>
                     )}
