@@ -48,65 +48,68 @@ export default function useProductForm({
     const validateField = (name, value) => {
 
         let error = "";
+        
+        // Convertir a string para operaciones de trim
+        const strValue = String(value).trim();
 
         switch (name) {
 
             case "nombre":
-                if (!value.trim()) {
+                if (!strValue) {
                     error = "El nombre del producto es obligatorio";
-                } else if (!Validations.nombreProducto(value)) {
+                } else if (!Validations.nombreProducto(strValue)) {
                     error = "El nombre debe contener letras (puede incluir números)";
-                } else if (value.trim().length < 3) {
+                } else if (strValue.length < 3) {
                     error = "El nombre debe tener mínimo 3 caracteres";
-                } else if (value.trim().length > 100) {
+                } else if (strValue.length > 100) {
                     error = "El nombre no puede exceder 100 caracteres";
                 }
                 break;
 
             case "categoriaId":
-                if (!value.trim()) {
+                if (!strValue) {
                     error = "Debe seleccionar una categoría";
                 }
                 break;
 
             case "precio":
-                if (!value.trim()) {
+                if (!strValue) {
                     error = "El precio es obligatorio";
-                } else if (!/^[0-9]+$/.test(value.trim())) {
+                } else if (!/^[0-9]+$/.test(strValue)) {
                     error = "El precio solo debe contener números";
-                } else if (Number(value) <= 0) {
+                } else if (Number(strValue) <= 0) {
                     error = "El precio debe ser mayor a 0";
                 }
                 break;
 
             case "stock":
-                if (!value.trim()) {
+                if (!strValue) {
                     error = "El stock es obligatorio";
-                } else if (!/^[0-9]+$/.test(value.trim())) {
+                } else if (!/^[0-9]+$/.test(strValue)) {
                     error = "El stock solo debe contener números";
-                } else if (Number(value) < 0) {
+                } else if (Number(strValue) < 0) {
                     error = "El stock no puede ser negativo";
-                } else if (!Number.isInteger(Number(value))) {
+                } else if (!Number.isInteger(Number(strValue))) {
                     error = "El stock debe ser un número entero";
                 }
                 break;
 
             case "serial":
-                if (!value.trim()) {
+                if (!strValue) {
                     error = "El serial es obligatorio";
-                } else if (!Validations.alfanumerico(value.replace(/[-_]/g, ''))) {
+                } else if (!Validations.alfanumerico(strValue.replace(/[-_]/g, ''))) {
                     error = "El serial solo puede contener letras, números, guiones y guiones bajos";
-                } else if (value.trim().length < 2) {
+                } else if (strValue.length < 2) {
                     error = "El serial debe tener mínimo 2 caracteres";
-                } else if (value.trim().length > 50) {
+                } else if (strValue.length > 50) {
                     error = "El serial no puede exceder 50 caracteres";
                 }
                 break;
 
             case "garantia":
-                if (!value.trim()) {
+                if (!strValue) {
                     error = "Debe seleccionar una garantía";
-                } else if (!["3 meses", "6 meses", "12 meses"].includes(value)) {
+                } else if (!["3 meses", "6 meses", "12 meses"].includes(strValue)) {
                     error = "Garantía no válida";
                 }
                 break;

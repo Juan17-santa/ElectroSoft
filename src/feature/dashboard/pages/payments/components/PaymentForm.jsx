@@ -1,8 +1,8 @@
-import { FileText, CircleUser, CreditCard, ChevronDown, X, DollarSign } from "lucide-react";
+import { FileText, CircleUser, CreditCard, ChevronDown, X, DollarSign, AlertTriangle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
-import paymentsService from "../services/PaymentsService";
+import paymentsService from "../services/paymentsService";
 
 const METODOS_PAGO = ["Efectivo", "Transferencia", "Tarjeta Débito", "Tarjeta Crédito", "Cheque"];
 const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
@@ -40,15 +40,18 @@ export default function PaymentForm({
         });
     };
 
+    // ✅ corregido: montoPorPagar y a.monto
     const abonosTable = formData.ventaId
         ? paymentsService.buildAbonosTable({
             ...formData,
             id: formData.ventaId,
             abonos: formData.abonos,
-            total: formData.saldoPendiente + (formData.abonos || []).reduce((acc, a) => acc + a.amount, 0),
+            total: formData.montoPorPagar + (formData.abonos || []).reduce((acc, a) => acc + Number(a.monto), 0),
             fecha: formData.abonos?.[0]?.fecha || "-",
         })
         : [];
+
+    const isVencida = formData.estadoVenta === "Anulada"; // ✅
 
     return (
         <form onSubmit={handleSubmit}>
@@ -78,7 +81,6 @@ export default function PaymentForm({
                                 success={formData.clienteNombre}
                                 successMessage="Cliente encontrado"
                             />
-
                         </div>
                     </div>
 
@@ -97,6 +99,22 @@ export default function PaymentForm({
                         />
                     </div>
                 </div>
+
+                {/* ===== AVISO VENTA VENCIDA ===== */}
+                {isVencida && (
+                    <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-5 py-3 w-full max-w-3xl">
+                        <AlertTriangle size={20} className="text-red-500 shrink-0" />
+                        <div>
+                            <p className="text-red-600 font-semibold text-sm">
+                                Esta venta está vencida
+                            </p>
+                            <p className="text-red-500 text-xs mt-0.5">
+                                Para saldar la deuda debes pagar el total exacto de{" "}
+                                <span className="font-bold">${fmt(formData.montoPorPagar)}</span>
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* ===== SEGUNDA FILA: Venta + Método + Monto ===== */}
                 <div className="flex gap-16">
@@ -117,7 +135,8 @@ export default function PaymentForm({
                                 <option value="" disabled>Seleccionar</option>
                                 {ventasDelDocumento.map((v) => (
                                     <option key={v.id} value={v.id}>
-                                        {v.numeroVenta} — ${fmt(v.saldoPendiente)}
+                                        {v.numeroVenta || `V-${v.id}`} — ${fmt(v.montoPorPagar)} {/* ✅ */}
+                                        {v.estado === "Anulada" ? " ⚠ Vencida" : ""}
                                     </option>
                                 ))}
                             </select>
@@ -127,7 +146,11 @@ export default function PaymentForm({
                                 value={formData.numeroVenta || ""}
                                 disabled
                                 placeholder="—"
-                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md text-gray-500"
+                                className={`rounded-xl px-4 py-3 text-sm shadow-md text-gray-500
+                                    ${isVencida
+                                        ? "bg-red-50 border border-red-200"  // ✅ rojo si vencida
+                                        : "bg-gray-200"
+                                    }`}
                             />
                         )}
                         <div className="h-4">
@@ -185,7 +208,6 @@ export default function PaymentForm({
                                     success={formData.metodoPago}
                                     successMessage="Método de pago válido"
                                 />
-
                             </div>
                         </div>
                     </div>
@@ -198,7 +220,11 @@ export default function PaymentForm({
                                 Monto *
                                 {formData.ventaId && (
                                     <span className="text-xs text-gray-400 font-normal ml-1">
-                                        máx: ${fmt(formData.saldoPendiente)}
+                                        {/* ✅ si vencida muestra "exacto", si no muestra "máx" */}
+                                        {isVencida
+                                            ? `exacto: $${fmt(formData.montoPorPagar)}`
+                                            : `máx: $${fmt(formData.montoPorPagar)}`
+                                        }
                                     </span>
                                 )}
                             </span>
@@ -218,19 +244,22 @@ export default function PaymentForm({
                                 success={formData.monto && !errors.monto}
                                 successMessage="Monto válido"
                             />
-
                         </div>
                     </div>
                 </div>
 
-                {/* ===== TABLA HISTORIAL DE ABONOS — siempre visible ===== */}
+                {/* ===== TABLA HISTORIAL DE ABONOS ===== */}
                 <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-3xl">
                     <div className="flex items-center gap-2 text-yellow-400 font-semibold text-base mb-1">
                         <FileText size={18} />
                         <span>Historial de abonos</span>
                         {formData.ventaId && (
                             <span className="text-gray-400 text-sm font-normal ml-2">
-                                Saldo pendiente: <span className="font-bold text-gray-700">${fmt(formData.saldoPendiente)}</span>
+                                Saldo pendiente:{" "}
+                                {/* ✅ montoPorPagar */}
+                                <span className={`font-bold ${isVencida ? "text-red-600" : "text-gray-700"}`}>
+                                    ${fmt(formData.montoPorPagar)}
+                                </span>
                             </span>
                         )}
                     </div>
@@ -262,17 +291,18 @@ export default function PaymentForm({
                                     abonosTable.map((row, i) => (
                                         <tr
                                             key={i}
-                                            className={`border-b border-gray-100 ${row.tipo === "inicio" ? "text-red-500 font-medium" :
+                                            className={`border-b border-gray-100 ${
+                                                row.tipo === "inicio" ? "text-red-500 font-medium" :
                                                 row.tipo === "ultimo" ? "text-blue-500 font-medium" :
-                                                    "text-gray-600"
-                                                }`}
+                                                "text-gray-600"
+                                            }`}
                                         >
                                             <td className="px-4 py-2">{row.fecha}</td>
                                             <td className="px-4 py-2 text-gray-400 text-xs">{row.metodoPago || "—"}</td>
                                             <td className="px-4 py-2 text-center">
                                                 {row.abono === 0 ? "0"
                                                     : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
-                                                        : `+${fmt(row.abono)}`}
+                                                    : `+${fmt(row.abono)}`}
                                             </td>
                                             <td className="px-4 py-2 text-center">{fmt(row.saldoPendiente)}</td>
                                         </tr>

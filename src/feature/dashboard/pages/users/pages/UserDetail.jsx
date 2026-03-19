@@ -33,7 +33,7 @@ export default function UserDetail() {
 
             <div
                 className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
-                style={{ backgroundImage: 'url("/background-shopping-details.png")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+                style={{ backgroundImage: 'url("/background-shopping.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
             >
                 <div className="absolute inset-0 bg-white/20 rounded-3xl h-full"></div>
 

@@ -41,14 +41,30 @@ export default function Users() {
         }
     };
 
+    // RESETEAR PÁGINA AL BUSCAR
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [search]);
+
     // FILTRO
+    const tipoDocLabel = {
+        CC: "c.c",
+        CE: "c.e",
+        NIT: "nit",
+        Pasaporte: "pasaporte",
+    };
+
     const filteredUsers = users.filter(user => {
-        const query = search.toLowerCase();
+        const query = search.toLowerCase().trim();
+        if (!query) return true;
 
         return (
             user.nombre?.toLowerCase().includes(query) ||
             user.email?.toLowerCase().includes(query) ||
             user.rol?.toLowerCase().includes(query) ||
+            user.documento?.toString().includes(query) ||
+            user.telefono?.toString().includes(query) ||
+            (tipoDocLabel[user.tipoDoc] || user.tipoDoc?.toLowerCase() || "").includes(query) ||
             (user.estado ? "activo" : "inactivo").includes(query)
         );
     });
@@ -60,7 +76,6 @@ export default function Users() {
     const currentRecords = filteredUsers.slice(firstIndex, lastIndex);
 
     // NAVEGACIÓN
-    // En Users.jsx
     const handleEditNavigation = (user) => {
         navigate(`/dashboard/users/${user.id}/update`, {
             state: { user },

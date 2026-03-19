@@ -55,6 +55,7 @@ import SaleDetailsPage from "../feature/dashboard/pages/SalesManagement/SaleDeta
 import Payments from "../feature/dashboard/pages/payments/pages/Payments"
 import CreatePayment from "../feature/dashboard/pages/payments/pages/CreatePayment"
 import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDetail"
+import PaymentClientDetail from "../feature/dashboard/pages/payments/pages/PaymentClientDetail"
 
 // DEVOLUCIONES
 import Devolutions from "../feature/dashboard/pages/devolutions/pages/Devolutions";
@@ -130,8 +131,10 @@ export default function RoutersApp() {
 
                 {/* PAGOS Y ABONOS */}
                 <Route path="payments" element={<Payments />} />
+                <Route path="payments/client/:documento" element={<PaymentClientDetail />} />
+                <Route path="payments/detail/:id" element={<PaymentDetail />} />
                 <Route path="payments/create" element={<CreatePayment />} />
-                <Route path="payments/details/:id" element={<PaymentDetail />} />
+                <Route path="payments/create/:ventaId" element={<CreatePayment />} />
 
                 {/* DEVOLUCIONES */}
                 <Route path="devolutions" element={<Devolutions />} />

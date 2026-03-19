@@ -1,6 +1,7 @@
 import PrimaryButton from "../../../components/ui/PrimaryButton";
-import { IdCard, FileText, User, Mail, Phone, X } from "lucide-react";
+import { FileText, User, Mail, Phone, X, IdCard } from "lucide-react";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
+import CustomSelect from "../../../components/ui/CustomSelect";
 
 export default function UserForm({
     formData,
@@ -21,27 +22,22 @@ export default function UserForm({
                 <div className="flex gap-20">
 
                     {/* TIPO DOCUMENTO */}
-                    <div className="flex flex-col gap-3 w-80">
-
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <IdCard size={16} />
-                            <span>Tipo documento *</span>
-                        </div>
-
-                        <select
-                            name="tipoDoc"
+                    <div className="flex flex-col gap-1 w-80">
+                        <CustomSelect
+                            label="Tipo documento *"
+                            icon={IdCard}
                             value={formData.tipoDoc}
-                            onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.tipoDoc ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        >
-                            <option value="" hidden>Seleccione un tipo</option>
-                            <option value="CC">C.C</option>
-                            <option value="CE">C.E</option>
-                            <option value="NIT">NIT</option>
-                            <option value="TI">T.I</option>
-                        </select>
-
+                            onChange={(value) =>
+                                handleChange({ target: { name: "tipoDoc", value } })
+                            }
+                            options={[
+                                { value: "CC", label: "C.C" },
+                                { value: "CE", label: "C.E" },
+                                { value: "NIT", label: "NIT" },
+                                { value: "Pasaporte", label: "Pasaporte" },
+                            ]}
+                            placeholder="Seleccione un tipo"
+                        />
                         <ValidationMessage
                             error={errors.tipoDoc}
                             success={formData.tipoDoc}
@@ -51,12 +47,10 @@ export default function UserForm({
 
                     {/* DOCUMENTO */}
                     <div className="flex flex-col gap-3 w-80">
-
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <FileText size={16} />
                             <span>Documento *</span>
                         </div>
-
                         <input
                             type="text"
                             name="documento"
@@ -66,7 +60,6 @@ export default function UserForm({
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
                             ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
-
                         <ValidationMessage
                             error={errors.documento}
                             success={formData.documento}
@@ -80,12 +73,10 @@ export default function UserForm({
 
                     {/* NOMBRE */}
                     <div className="flex flex-col gap-3 w-80">
-
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <User size={16} />
                             <span>Nombre *</span>
                         </div>
-
                         <input
                             type="text"
                             name="nombre"
@@ -95,7 +86,6 @@ export default function UserForm({
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
                             ${errors.nombre ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
-
                         <ValidationMessage
                             error={errors.nombre}
                             success={formData.nombre}
@@ -105,12 +95,10 @@ export default function UserForm({
 
                     {/* EMAIL */}
                     <div className="flex flex-col gap-3 w-80">
-
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <Mail size={16} />
                             <span>Email *</span>
                         </div>
-
                         <input
                             type="email"
                             name="email"
@@ -120,7 +108,6 @@ export default function UserForm({
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
                             ${errors.email ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
-
                         <ValidationMessage
                             error={errors.email}
                             success={formData.email}
@@ -134,12 +121,10 @@ export default function UserForm({
 
                     {/* TELEFONO */}
                     <div className="flex flex-col gap-3 w-80">
-
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <Phone size={16} />
                             <span>Teléfono *</span>
                         </div>
-
                         <input
                             type="text"
                             name="telefono"
@@ -149,7 +134,6 @@ export default function UserForm({
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
                             ${errors.telefono ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
-
                         <ValidationMessage
                             error={errors.telefono}
                             success={formData.telefono}
@@ -158,25 +142,20 @@ export default function UserForm({
                     </div>
 
                     {/* ROL */}
-                    <div className="flex flex-col gap-3 w-80">
-
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <User size={16} />
-                            <span>Rol *</span>
-                        </div>
-
-                        <select
-                            name="rol"
+                    <div className="flex flex-col gap-1 w-80">
+                        <CustomSelect
+                            label="Rol *"
+                            icon={User}
                             value={formData.rol}
-                            onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.rol ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        >
-                            <option value="" hidden>Seleccione un rol</option>
-                            <option value="Admin">Admin</option>
-                            <option value="Empleado">Empleado</option>
-                        </select>
-
+                            onChange={(value) =>
+                                handleChange({ target: { name: "rol", value } })
+                            }
+                            options={[
+                                { value: "Admin", label: "Admin" },
+                                { value: "Empleado", label: "Empleado" },
+                            ]}
+                            placeholder="Seleccione un rol"
+                        />
                         <ValidationMessage
                             error={errors.rol}
                             success={formData.rol}
@@ -189,8 +168,6 @@ export default function UserForm({
 
             {/* ================= BOTONES ================= */}
             <div className="flex justify-end mt-auto gap-4">
-
-                {/* CANCELAR */}
                 <button
                     type="button"
                     onClick={onCancel}
@@ -199,8 +176,6 @@ export default function UserForm({
                     <X size={16} />
                     Cancelar
                 </button>
-
-                {/* BOTON PRINCIPAL */}
                 <PrimaryButton
                     type="submit"
                     disabled={Object.values(errors).some(error => error)}

@@ -1,62 +1,232 @@
 import { SalesService } from "../../../../../feature/dashboard/pages/SalesManagement/services/SalesService";
+import { ServicesOrders } from "../../../../../feature/dashboard/pages/orders/services/ServicesOrders";
+import { ClientsService } from "../../../../../feature/dashboard/pages/Clients/services/ClientsService";
+
+const getClientName = (documento, clienteId) => {
+    try {
+        const clients = ClientsService.get();
+        const found = documento
+            ? clients.find(c => c.documento === String(documento))
+            : clients.find(c => c.id === Number(clienteId));
+        if (!found) return "Sin nombre";
+        return `${found.nombres} ${found.apellidos}`;
+    } catch {
+        return "Sin nombre";
+    }
+};
+
+const calcularFechaLimite = (fecha) => {
+    if (!fecha) return null;
+    const d = new Date(fecha);
+    d.setDate(d.getDate() + 60);
+    return d.toISOString().split("T")[0];
+};
+
+const enriquecerVenta = (venta) => {
+    if (venta.fechaLimite) return venta;
+    return {
+        ...venta,
+        fechaLimite: calcularFechaLimite(venta.fecha),
+    };
+};
 
 const paymentsService = {
 
+    checkAndExpireOverdue() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const sales = SalesService.get().map(s =>
+            (s.tipoVenta === "Crédito" || s.tipoVenta === "Credito") ? enriquecerVenta(s) : s
+        );
+
+        sales.forEach(sale => {
+            if (
+                (sale.tipoVenta === "Crédito" || sale.tipoVenta === "Credito") &&
+                sale.estado === "Vigente" &&
+                sale.fechaLimite
+            ) {
+                const fechaLimite = new Date(sale.fechaLimite);
+                fechaLimite.setHours(0, 0, 0, 0);
+                if (fechaLimite < today) {
+                    SalesService.update({ ...sale, estado: "Anulada" });
+                    try {
+                        const clients = ClientsService.get();
+                        const client = clients.find(c => c.documento === String(sale.numeroDocumento));
+                        if (client && client.estado !== false) {
+                            ClientsService.update({ ...client, estado: false });
+                        }
+                    } catch (e) {
+                        console.error("Error suspendiendo cliente:", e);
+                    }
+                }
+            }
+        });
+    },
+
     getPending() {
-        return SalesService.get()
+        const ventas = SalesService.get()
             .filter(s =>
                 (s.tipoVenta === "Crédito" || s.tipoVenta === "Credito") &&
-                s.estado === "Vigente"
+                (s.estado === "Vigente" || s.estado === "Anulada")
             )
             .map(s => {
-                // ✅ Calculamos montoPorPagar en tiempo real por si Sales no lo guarda
-                const totalAbonado = (s.abonos || []).reduce((acc, a) => acc + Number(a.monto), 0);
+                const totalAbonado = (s.abonos || [])
+                    .filter(a => !a.anulado)
+                    .reduce((acc, a) => acc + Number(a.monto), 0);
                 const montoPorPagar = s.total - totalAbonado;
-                return {
+                return enriquecerVenta({
                     ...s,
+                    fuente: "venta",
+                    cliente: s.cliente || getClientName(s.numeroDocumento, null),
                     montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
-                };
+                });
             })
-            .filter(s => s.montoPorPagar > 0); // solo las que aún tienen saldo
+            .filter(s => s.montoPorPagar > 0);
+
+        const pedidos = ServicesOrders.get()
+            .filter(o =>
+                (o.formaPago === "Crédito" || o.formaPago === "Credito") &&
+                o.estado === "Pendiente"
+            )
+            .map(o => {
+                const subtotal = (o.productos || []).reduce((acc, p) => acc + (Number(p.precio) * Number(p.cantidad)), 0);
+                const total = subtotal * 1.19;
+                const totalAbonado = (o.abonos || [])
+                    .filter(a => !a.anulado)
+                    .reduce((acc, a) => acc + Number(a.monto), 0);
+                const montoPorPagar = total - totalAbonado;
+                return enriquecerVenta({
+                    id: o.id,
+                    fuente: "pedido",
+                    numeroVenta: `P-${o.id}`,
+                    numeroDocumento: o.documento,
+                    cliente: getClientName(o.documento, o.clienteId),
+                    tipoVenta: o.formaPago,
+                    fecha: o.fechaPedido,
+                    fechaLimite: o.fechaVencimiento,
+                    estado: "Vigente",
+                    total,
+                    montoPagado: totalAbonado,
+                    montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+                    abonos: o.abonos || [],
+                });
+            })
+            .filter(o => o.montoPorPagar > 0);
+
+        return [...ventas, ...pedidos];
     },
 
     getById(id) {
-        return SalesService.getById(Number(id)) || null;
-    },
+        const venta = SalesService.getById(Number(id));
+        if (venta) return enriquecerVenta(venta);
 
-    getByDocument(documento) {
-        return SalesService.get().filter(s => s.numeroDocumento === documento);
+        const pedido = ServicesOrders.get().find(o => o.id === Number(id));
+        if (!pedido) return null;
+
+        const subtotal = (pedido.productos || []).reduce((acc, p) => acc + (Number(p.precio) * Number(p.cantidad)), 0);
+        const total = subtotal * 1.19;
+        const totalAbonado = (pedido.abonos || [])
+            .filter(a => !a.anulado)
+            .reduce((acc, a) => acc + Number(a.monto), 0);
+
+        return enriquecerVenta({
+            id: pedido.id,
+            fuente: "pedido",
+            numeroVenta: `P-${pedido.id}`,
+            numeroDocumento: pedido.documento,
+            cliente: getClientName(pedido.documento, pedido.clienteId),
+            fecha: pedido.fechaPedido,
+            fechaLimite: pedido.fechaVencimiento,
+            estado: "Vigente",
+            total,
+            montoPagado: totalAbonado,
+            montoPorPagar: total - totalAbonado > 0 ? total - totalAbonado : 0,
+            abonos: pedido.abonos || [],
+        });
     },
 
     createAbono(documento, ventaId, { paymentMethod, amount }) {
-        const sales = SalesService.get();
-
-        const sale = ventaId
-            ? sales.find(s => s.id === Number(ventaId))
-            : sales.find(s => s.numeroDocumento === documento);
-
-        if (!sale) return null;
-
         const nuevoAbono = {
             fecha: new Date().toISOString().split("T")[0],
             monto: Number(amount),
             metodoPago: paymentMethod,
         };
 
-        const abonos = [...(sale.abonos || []), nuevoAbono];
-        const totalAbonado = abonos.reduce((acc, a) => acc + a.monto, 0);
-        const montoPorPagar = sale.total - totalAbonado;
+        const sales = SalesService.get();
+        const sale = sales.find(s => s.id === Number(ventaId));
 
-        const ventaActualizada = {
-            ...sale,
-            abonos,
-            montoPagado: totalAbonado,
-            montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
-            estado: montoPorPagar <= 0 ? "Finalizado" : "Vigente",
-        };
+        if (sale) {
+            const abonos = [...(sale.abonos || []), nuevoAbono];
+            const totalAbonado = abonos
+                .filter(a => !a.anulado)
+                .reduce((acc, a) => acc + Number(a.monto), 0);
+            const montoPorPagar = sale.total - totalAbonado;
+            const saldado = montoPorPagar <= 0;
 
-        SalesService.update(ventaActualizada);
-        return ventaActualizada;
+            const ventaEnriquecida = enriquecerVenta(sale);
+
+            const ventaActualizada = {
+                ...ventaEnriquecida,
+                abonos,
+                montoPagado: totalAbonado,
+                montoPorPagar: saldado ? 0 : montoPorPagar,
+                estado: saldado ? "Finalizado" : sale.estado,
+            };
+
+            SalesService.update(ventaActualizada);
+
+            // ✅ Notificar a todos los componentes
+            window.dispatchEvent(new Event("payments-updated"));
+
+            if (saldado) {
+                try {
+                    const clients = ClientsService.get();
+                    const client = clients.find(c => c.documento === String(sale.numeroDocumento));
+                    if (client && client.estado === false) {
+                        ClientsService.update({ ...client, estado: true });
+                    }
+                } catch (e) {
+                    console.error("Error reactivando cliente:", e);
+                }
+            }
+
+            return ventaActualizada;
+        }
+
+        const orders = ServicesOrders.get();
+        const order = orders.find(o => o.id === Number(ventaId));
+
+        if (order) {
+            const abonos = [...(order.abonos || []), nuevoAbono];
+            const subtotal = (order.productos || []).reduce((acc, p) => acc + (Number(p.precio) * Number(p.cantidad)), 0);
+            const total = subtotal * 1.19;
+            const totalAbonado = abonos
+                .filter(a => !a.anulado)
+                .reduce((acc, a) => acc + Number(a.monto), 0);
+            const montoPorPagar = total - totalAbonado;
+            const saldado = montoPorPagar <= 0;
+
+            const pedidoActualizado = {
+                ...order,
+                abonos,
+                montoPagado: totalAbonado,
+                montoPorPagar: saldado ? 0 : montoPorPagar,
+                estado: saldado ? "Finalizado" : "Pendiente",
+            };
+
+            const ordersActualizados = orders.map(o =>
+                o.id === Number(ventaId) ? pedidoActualizado : o
+            );
+            localStorage.setItem("orders", JSON.stringify(ordersActualizados));
+
+            // ✅ Notificar a todos los componentes
+            window.dispatchEvent(new Event("payments-updated"));
+
+            return pedidoActualizado;
+        }
+
+        return null;
     },
 
     buildAbonosTable(venta) {
@@ -72,14 +242,16 @@ const paymentsService = {
         let saldo = venta.total;
 
         (venta.abonos || []).forEach((abono, i, arr) => {
-            saldo -= Number(abono.monto);
-            const esUltimo = i === arr.length - 1 && saldo <= 0;
+            if (!abono.anulado) saldo -= Number(abono.monto);
+            const esUltimo = i === arr.length - 1 && saldo <= 0 && !abono.anulado;
             rows.push({
                 fecha: abono.fecha,
                 abono: -Number(abono.monto),
                 saldoPendiente: Math.max(saldo, 0),
                 metodoPago: abono.metodoPago,
-                tipo: esUltimo ? "ultimo" : "abono",
+                tipo: abono.anulado ? "anulado" : esUltimo ? "ultimo" : "abono",
+                esUltimoReal: i === arr.length - 1,
+                anulado: abono.anulado || false,
             });
         });
 
@@ -88,6 +260,177 @@ const paymentsService = {
 
     formatCurrency(value) {
         return new Intl.NumberFormat("es-CO").format(value ?? 0);
+    },
+
+    isClienteSuspendido(documento) {
+        try {
+            const clients = ClientsService.get();
+            const client = clients.find(c => c.documento === String(documento));
+            return client ? client.estado === false : false;
+        } catch {
+            return false;
+        }
+    },
+
+    getClientesConCupo() {
+        const clients = ClientsService.get().filter(c => c.cupoCredito && c.cupoCredito > 0);
+        return clients.map(c => this.getResumenCliente(c.documento));
+    },
+
+    getResumenCliente(documento) {
+        const clients = ClientsService.get();
+        const client = clients.find(c => c.documento === String(documento));
+        if (!client) return null;
+
+        const ventasCredito = this.getVentasCredito(documento);
+        const cupoOcupado   = ventasCredito.reduce((acc, v) => acc + v.montoPorPagar, 0);
+        const cupoCredito   = client.cupoCredito || 0;
+        const cupoDisponible = Math.max(cupoCredito - cupoOcupado, 0);
+
+        return {
+            id:            client.id,
+            documento:     client.documento,
+            tipoDocumento: client.tipoDocumento,
+            nombres:       client.nombres,
+            apellidos:     client.apellidos,
+            email:         client.email,
+            telefono:      client.telefono,
+            estado:        client.estado,
+            cupoCredito,
+            cupoOcupado,
+            cupoDisponible,
+            totalVentas:   ventasCredito.length,
+        };
+    },
+
+    getVentasCredito(documento) {
+        const ventas = SalesService.get()
+            .filter(s =>
+                String(s.numeroDocumento) === String(documento) &&
+                (s.tipoVenta === "Crédito" || s.tipoVenta === "Credito") &&
+                (s.estado === "Vigente" || s.estado === "Anulada")
+            )
+            .map(s => {
+                const totalAbonado = (s.abonos || [])
+                    .filter(a => !a.anulado)
+                    .reduce((acc, a) => acc + Number(a.monto), 0);
+                const montoPorPagar = s.total - totalAbonado;
+                return enriquecerVenta({
+                    ...s,
+                    fuente: "venta",
+                    cliente: s.cliente || getClientName(s.numeroDocumento, null),
+                    montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+                });
+            })
+            .filter(s => s.montoPorPagar > 0);
+
+        const pedidos = ServicesOrders.get()
+            .filter(o =>
+                String(o.documento) === String(documento) &&
+                (o.formaPago === "Crédito" || o.formaPago === "Credito") &&
+                o.estado === "Pendiente"
+            )
+            .map(o => {
+                const subtotal = (o.productos || []).reduce((acc, p) => acc + (Number(p.precio) * Number(p.cantidad)), 0);
+                const total = subtotal * 1.19;
+                const totalAbonado = (o.abonos || [])
+                    .filter(a => !a.anulado)
+                    .reduce((acc, a) => acc + Number(a.monto), 0);
+                const montoPorPagar = total - totalAbonado;
+                return enriquecerVenta({
+                    id: o.id,
+                    fuente: "pedido",
+                    numeroVenta: `P-${o.id}`,
+                    numeroDocumento: o.documento,
+                    cliente: getClientName(o.documento, o.clienteId),
+                    tipoVenta: o.formaPago,
+                    fecha: o.fechaPedido,
+                    fechaLimite: o.fechaVencimiento,
+                    estado: "Vigente",
+                    total,
+                    montoPagado: totalAbonado,
+                    montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+                    abonos: o.abonos || [],
+                });
+            })
+            .filter(o => o.montoPorPagar > 0);
+
+        return [...ventas, ...pedidos];
+    },
+
+    anularUltimoAbono(ventaId) {
+        const sales = SalesService.get();
+        const sale  = sales.find(s => s.id === Number(ventaId));
+
+        if (sale) {
+            const abonos = [...(sale.abonos || [])];
+            if (abonos.length === 0) return null;
+
+            const ultimoIndex = abonos.length - 1;
+            if (abonos[ultimoIndex].anulado) return null;
+
+            abonos[ultimoIndex] = { ...abonos[ultimoIndex], anulado: true };
+
+            const totalAbonado = abonos
+                .filter(a => !a.anulado)
+                .reduce((acc, a) => acc + Number(a.monto), 0);
+            const montoPorPagar = sale.total - totalAbonado;
+
+            const ventaActualizada = {
+                ...sale,
+                abonos,
+                montoPagado: totalAbonado,
+                montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+                estado: montoPorPagar > 0 ? "Vigente" : "Finalizado",
+            };
+
+            SalesService.update(ventaActualizada);
+
+            // ✅ Notificar a todos los componentes
+            window.dispatchEvent(new Event("payments-updated"));
+
+            return ventaActualizada;
+        }
+
+        const orders = ServicesOrders.get();
+        const order  = orders.find(o => o.id === Number(ventaId));
+
+        if (order) {
+            const abonos = [...(order.abonos || [])];
+            if (abonos.length === 0) return null;
+
+            const ultimoIndex = abonos.length - 1;
+            if (abonos[ultimoIndex].anulado) return null;
+
+            abonos[ultimoIndex] = { ...abonos[ultimoIndex], anulado: true };
+
+            const subtotal = (order.productos || []).reduce((acc, p) => acc + (Number(p.precio) * Number(p.cantidad)), 0);
+            const total    = subtotal * 1.19;
+            const totalAbonado = abonos
+                .filter(a => !a.anulado)
+                .reduce((acc, a) => acc + Number(a.monto), 0);
+            const montoPorPagar = total - totalAbonado;
+
+            const pedidoActualizado = {
+                ...order,
+                abonos,
+                montoPagado: totalAbonado,
+                montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+                estado: montoPorPagar > 0 ? "Pendiente" : "Finalizado",
+            };
+
+            const ordersActualizados = orders.map(o =>
+                o.id === Number(ventaId) ? pedidoActualizado : o
+            );
+            localStorage.setItem("orders", JSON.stringify(ordersActualizados));
+
+            // ✅ Notificar a todos los componentes
+            window.dispatchEvent(new Event("payments-updated"));
+
+            return pedidoActualizado;
+        }
+
+        return null;
     },
 };
 

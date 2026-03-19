@@ -1,9 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { X, User, Mail, Phone, Shield, Lock, Image, FileText, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
-import Alert from "../../dashboard/components/ui/Alert";
+import { useEffect, useState } from "react";
+import Alert from "../../dashboard/components/ui/alert";
 import Modal from "../components/Modal";
 import PrimaryButton from "../../dashboard/components/ui/PrimaryButton";
+import CustomSelect from "../../dashboard/components/ui/CustomSelect";
 import useEditProfile, { getPasswordStrength } from "../hooks/useEditProfile";
 
 // ── InputField ───────────────────────────────────────────────────────────────
@@ -26,8 +27,8 @@ function InputField({ icon: Icon, label, name, value, onChange, placeholder, err
                     disabled={disabled}
                     className={`w-full bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition
                         ${disabled ? "cursor-not-allowed opacity-60" : ""}
-                        ${touched && error ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"       : ""}
-                        ${hasSuccess       ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400" : ""}
+                        ${touched && error ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400" : ""}
+                        ${hasSuccess ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400" : ""}
                         ${!touched || (!error && !hasSuccess) ? "focus:ring-yellow-400" : ""}
                         ${showToggle ? "pr-10" : ""}`}
                 />
@@ -39,40 +40,14 @@ function InputField({ icon: Icon, label, name, value, onChange, placeholder, err
                 )}
             </div>
             {touched && error && <p className="text-red-500 text-xs flex items-center gap-1"><span>⚠</span>{error}</p>}
-            {hasSuccess        && <p className="text-green-600 text-xs flex items-center gap-1"><span>✓</span>Correcto</p>}
+            {hasSuccess && <p className="text-green-600 text-xs flex items-center gap-1"><span>✓</span>Correcto</p>}
         </div>
     );
 }
 
-// ── SelectField ──────────────────────────────────────────────────────────────
-function SelectField({ icon: Icon, label, name, value, onChange, options, error, touched }) {
-    const hasSuccess = touched && !error && value;
-
-    return (
-        <div className="flex flex-col gap-1 w-80">
-            <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                <Icon size={16} />
-                <span>{label} *</span>
-            </div>
-            <select name={name} value={value} onChange={onChange}
-                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition
-                    ${touched && error ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"       : ""}
-                    ${hasSuccess       ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400" : ""}
-                    ${!touched || (!error && !hasSuccess) ? "focus:ring-yellow-400" : ""}`}
-            >
-                {options.map(opt => (
-                    <option key={opt.value} value={opt.value} hidden={opt.hidden}>{opt.label}</option>
-                ))}
-            </select>
-            {touched && error && <p className="text-red-500 text-xs flex items-center gap-1"><span>⚠</span>{error}</p>}
-            {hasSuccess        && <p className="text-green-600 text-xs flex items-center gap-1"><span>✓</span>Correcto</p>}
-        </div>
-    );
-}
-
-// ── PasswordField con fortaleza ───────────────────────────────────────────────
+// ── PasswordFieldWithStrength ─────────────────────────────────────────────────
 function PasswordFieldWithStrength({ label, name, value, onChange, error, touched, showValue, onToggle }) {
-    const strength   = getPasswordStrength(value);
+    const strength = getPasswordStrength(value);
     const hasSuccess = touched && !error && value;
 
     return (
@@ -88,8 +63,8 @@ function PasswordFieldWithStrength({ label, name, value, onChange, error, touche
                     onChange={onChange}
                     placeholder="Ingrese la contraseña"
                     className={`w-full px-4 py-3.5 rounded-xl bg-gray-100 shadow-sm focus:outline-none focus:ring-2 transition pr-10
-                        ${touched && error ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"       : ""}
-                        ${hasSuccess       ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400" : ""}
+                        ${touched && error ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400" : ""}
+                        ${hasSuccess ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400" : ""}
                         ${!touched || (!error && !hasSuccess) ? "focus:ring-yellow-400" : ""}`}
                 />
                 <button type="button" onClick={onToggle}
@@ -97,15 +72,12 @@ function PasswordFieldWithStrength({ label, name, value, onChange, error, touche
                     {showValue ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
             </div>
-
             {touched && error && (
                 <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1"><span>⚠</span>{error}</p>
             )}
             {hasSuccess && (
                 <p className="mt-1.5 text-xs text-green-600 flex items-center gap-1"><span>✓</span>Contraseña válida</p>
             )}
-
-            {/* Barra de fortaleza */}
             {value && !error && (
                 <div className="mt-2">
                     <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -142,8 +114,8 @@ function PasswordSimpleField({ label, name, value, onChange, error, touched, sho
                     onChange={onChange}
                     placeholder={placeholder}
                     className={`w-full px-4 py-3.5 rounded-xl bg-gray-100 shadow-sm focus:outline-none focus:ring-2 transition pr-10
-                        ${touched && error ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"       : ""}
-                        ${hasSuccess       ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400" : ""}
+                        ${touched && error ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400" : ""}
+                        ${hasSuccess ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400" : ""}
                         ${!touched || (!error && !hasSuccess) ? "focus:ring-yellow-400" : ""}`}
                 />
                 <button type="button" onClick={onToggle}
@@ -163,8 +135,7 @@ function PasswordSimpleField({ label, name, value, onChange, error, touched, sho
 
 // ── EditProfile ──────────────────────────────────────────────────────────────
 export default function EditProfile() {
-    const navigate    = useNavigate();
-    const handleClose = () => navigate("/dashboard/users");
+    const navigate = useNavigate();
 
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew,     setShowNew]     = useState(false);
@@ -182,27 +153,30 @@ export default function EditProfile() {
         alert,
         setAlert,
         fileRef,
+        success,
         handleChange,
         handlePasswordChange,
         handleAvatarChange,
         handleSubmit,
         handleChangePassword,
-    } = useEditProfile(handleClose);
+    } = useEditProfile();
+
+    // 🔥 La vista decide qué hacer cuando el hook reporta éxito
+    useEffect(() => {
+        if (success) navigate(-1);
+    }, [success]);
 
     return (
         <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
 
-            {/* ── Alert global ── */}
-            {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
+            {/* ALERTA */}
+            {alert && (
+                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
+            )}
 
-            {/* ════════════════════════════════════════════════════
-                MODAL CAMBIAR CONTRASEÑA — flotante con Modal.jsx,
-                contenido con estilo de ResetPassword
-            ════════════════════════════════════════════════════ */}
+            {/* MODAL CAMBIAR CONTRASEÑA */}
             {showPasswordSection && (
                 <Modal onClose={() => setShowPasswordSection(false)}>
-
-                    {/* Título estilo ResetPassword */}
                     <h2 className="text-2xl font-semibold text-center mb-1 tracking-wide">
                         Cambiar contraseña
                     </h2>
@@ -211,8 +185,6 @@ export default function EditProfile() {
                     </p>
 
                     <div className="flex flex-col gap-5">
-
-                        {/* Contraseña actual */}
                         <PasswordSimpleField
                             label="Contraseña actual"
                             name="currentPassword"
@@ -224,8 +196,6 @@ export default function EditProfile() {
                             onToggle={() => setShowCurrent(p => !p)}
                             placeholder="Ingresa tu contraseña actual"
                         />
-
-                        {/* Nueva contraseña + barra de fortaleza */}
                         <PasswordFieldWithStrength
                             label="Nueva contraseña"
                             name="newPassword"
@@ -236,8 +206,6 @@ export default function EditProfile() {
                             showValue={showNew}
                             onToggle={() => setShowNew(p => !p)}
                         />
-
-                        {/* Confirmar contraseña */}
                         <PasswordSimpleField
                             label="Confirmar contraseña"
                             name="confirmPassword"
@@ -251,7 +219,6 @@ export default function EditProfile() {
                         />
                     </div>
 
-                    {/* Botones estilo ResetPassword */}
                     <div className="flex gap-4 mt-8">
                         <button
                             onClick={() => setShowPasswordSection(false)}
@@ -269,9 +236,7 @@ export default function EditProfile() {
                 </Modal>
             )}
 
-            {/* ════════════════════════════════════════════════════
-                FORMULARIO EDITAR PERFIL
-            ════════════════════════════════════════════════════ */}
+            {/* FORMULARIO */}
             <div className="w-full max-w-4xl bg-white rounded-3xl shadow-lg p-12 flex flex-col gap-2 overflow-hidden justify-center mx-auto">
 
                 {/* Header */}
@@ -280,19 +245,23 @@ export default function EditProfile() {
                         <p className="text-xl font-semibold">Editar perfil</p>
                         <p className="text-sm text-gray-600">Actualiza tu información y foto de perfil</p>
                     </div>
-                    <button onClick={handleClose}><X size={20} /></button>
+                    {/* 🔥 navigate(-1) directo, sin handleClose */}
+                    <button type="button" onClick={() => navigate(-1)}>
+                        <X size={20} />
+                    </button>
                 </div>
 
                 {/* Avatar */}
                 <div className="flex items-center gap-5">
                     {formData.avatar ? (
-                        <img src={formData.avatar} alt="avatar" className="w-20 h-20 rounded-full object-cover ring-2 ring-yellow-400" />
+                        <img src={formData.avatar} alt="avatar"
+                            className="w-20 h-20 rounded-full object-cover ring-2 ring-yellow-400" />
                     ) : (
                         <div className="w-20 h-20 rounded-full bg-yellow-100 ring-2 ring-yellow-400 flex items-center justify-center text-yellow-400">
                             <User size={36} />
                         </div>
                     )}
-                    <button onClick={() => fileRef.current.click()}
+                    <button type="button" onClick={() => fileRef.current.click()}
                         className="flex flex-col items-center gap-1 text-yellow-500 hover:text-yellow-600 transition">
                         <Image size={22} />
                         <span className="text-sm font-semibold">Cambiar foto</span>
@@ -300,51 +269,79 @@ export default function EditProfile() {
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </div>
 
-                {/* Formulario */}
-                <form onSubmit={e => { e.preventDefault(); handleSubmit(); }} className="flex flex-col gap-8 w-full">
+                {/* 🔥 Un solo form, onSubmit directo al hook */}
+                <form onSubmit={handleSubmit} className="flex flex-col gap-8 w-full">
 
                     <div className="flex flex-wrap gap-8 justify-between">
-                        <SelectField
-                            icon={FileText} label="Tipo documento" name="documentType"
-                            value={formData.documentType} onChange={handleChange}
-                            touched={touched.documentType} error={errors.documentType}
-                            options={[
-                                { value: "",          label: "Seleccione un tipo", hidden: true },
-                                { value: "C.C",       label: "C.C" },
-                                { value: "T.I",       label: "T.I" },
-                                { value: "C.E",       label: "C.E" },
-                                { value: "Pasaporte", label: "Pasaporte" },
-                            ]}
-                        />
-                        <InputField icon={User} label="Documento" name="document"
-                            value={formData.document} onChange={handleChange}
+                        <div className="flex flex-col gap-1 w-80">
+                            <CustomSelect
+                                label="Tipo documento *"
+                                icon={FileText}
+                                value={formData.tipoDoc}
+                                onChange={(value) =>
+                                    handleChange({ target: { name: "tipoDoc", value } })
+                                }
+                                options={[
+                                    { value: "CC",        label: "C.C" },
+                                    { value: "CE",        label: "C.E" },
+                                    { value: "NIT",       label: "NIT" },
+                                    { value: "Pasaporte", label: "Pasaporte" },
+                                ]}
+                                placeholder="Seleccione un tipo"
+                            />
+                            {touched.tipoDoc && errors.tipoDoc && (
+                                <p className="text-red-500 text-xs flex items-center gap-1">
+                                    <span>⚠</span>{errors.tipoDoc}
+                                </p>
+                            )}
+                            {touched.tipoDoc && !errors.tipoDoc && formData.tipoDoc && (
+                                <p className="text-green-600 text-xs flex items-center gap-1">
+                                    <span>✓</span>Correcto
+                                </p>
+                            )}
+                        </div>
+                        <InputField
+                            icon={User} label="Documento" name="documento"
+                            value={formData.documento} onChange={handleChange}
                             placeholder="Ingrese el documento"
-                            error={errors.document} touched={touched.document} />
+                            error={errors.documento} touched={touched.documento}
+                        />
                     </div>
 
                     <div className="flex flex-wrap gap-8 justify-between">
-                        <InputField icon={User} label="Nombre completo" name="fullName"
-                            value={formData.fullName} onChange={handleChange}
+                        <InputField
+                            icon={User} label="Nombre completo" name="nombre"
+                            value={formData.nombre} onChange={handleChange}
                             placeholder="Ingrese el nombre"
-                            error={errors.fullName} touched={touched.fullName} />
-                        <InputField icon={Mail} label="Email" name="email"
+                            error={errors.nombre} touched={touched.nombre}
+                        />
+                        <InputField
+                            icon={Mail} label="Email" name="email"
                             value={formData.email} onChange={handleChange}
                             placeholder="Ingrese el email"
-                            error={errors.email} touched={touched.email} />
+                            error={errors.email} touched={touched.email}
+                        />
                     </div>
 
                     <div className="flex flex-wrap gap-8 justify-between">
-                        <InputField icon={Phone} label="Teléfono" name="phone"
-                            value={formData.phone} onChange={handleChange}
+                        <InputField
+                            icon={Phone} label="Teléfono" name="telefono"
+                            value={formData.telefono} onChange={handleChange}
                             placeholder="Ingrese el teléfono"
-                            error={errors.phone} touched={touched.phone} />
-                        <InputField icon={Shield} label="Rol" name="role"
-                            value={formData.role} onChange={handleChange}
-                            error={false} touched={false} placeholder="" disabled />
+                            error={errors.telefono} touched={touched.telefono}
+                        />
+                        <InputField
+                            icon={Shield} label="Rol" name="rol"
+                            value={formData.rol} onChange={handleChange}
+                            error={false} touched={false} placeholder="" disabled
+                        />
                     </div>
 
-                    <button type="button" onClick={() => setShowPasswordSection(true)}
-                        className="text-sm font-semibold text-blue-600 hover:underline mb-2 self-start">
+                    <button
+                        type="button"
+                        onClick={() => setShowPasswordSection(true)}
+                        className="text-sm font-semibold text-blue-600 hover:underline mb-2 self-start"
+                    >
                         ¿Deseas cambiar tu contraseña?
                     </button>
 

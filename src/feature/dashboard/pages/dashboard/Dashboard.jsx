@@ -12,14 +12,15 @@ import {
     RotateCcw, Users, AlertCircle, FileText,
 } from "lucide-react";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import { getAuthUser } from "../../../auth/services/authService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const MESES      = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-const MESES_FULL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const MESES_FULL = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-const formatCOP  = (n) => {
+const formatCOP = (n) => {
     if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000)     return `$${(n / 1_000).toFixed(0)}K`;
+    if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
     return `$${n.toLocaleString("es-CO")}`;
 };
 const formatFull = (n) => "$" + Number(n).toLocaleString("es-CO");
@@ -38,8 +39,8 @@ const toDate = (f) => {
     return new Date(f);
 };
 
-const now          = new Date();
-const currentYear  = now.getFullYear();
+const now = new Date();
+const currentYear = now.getFullYear();
 const currentMonth = now.getMonth();
 
 // ─── Animated counter ─────────────────────────────────────────────────────────
@@ -61,22 +62,22 @@ function useCountUp(target, ms = 900) {
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 function KpiCard({ icon: Icon, label, value, delta, color, isMoney = true, delay = 0 }) {
-    const animated  = useCountUp(value);
-    const positive  = delta >= 0;
+    const animated = useCountUp(value);
+    const positive = delta >= 0;
     const displayed = isMoney ? formatFull(animated) : animated.toLocaleString("es-CO");
     return (
         <div
             className="bg-white/85 backdrop-blur-sm rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden shadow-sm"
             style={{ animation: "kpiFadeUp .5s ease both", animationDelay: `${delay}ms` }}
         >
-            <div className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-2xl"
+            <div className="absolute left-0 top-0 bottom-0 w-0.75 rounded-l-2xl"
                 style={{ background: `linear-gradient(to bottom, ${color} 0%, ${color}99 40%, ${color}33 75%, transparent 100%)` }} />
             <div className="flex items-start justify-between pl-2">
                 <div>
                     <p className="text-[11px] text-gray-400 font-semibold tracking-widest uppercase">{label}</p>
                     <p className="text-[1.55rem] font-bold text-gray-900 mt-1 tabular-nums leading-none">{displayed}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                     style={{ background: color + "1a" }}>
                     <Icon size={20} style={{ color }} strokeWidth={2} />
                 </div>
@@ -98,7 +99,7 @@ function Card({ title, subtitle, children, delay = 0, className = "", action }) 
     return (
         <div className={`bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col ${className}`}
             style={{ animation: "kpiFadeUp .6s ease both", animationDelay: `${delay}ms` }}>
-            <div className="mb-4 flex-shrink-0 flex items-start justify-between">
+            <div className="mb-4 shrink-0 flex items-start justify-between">
                 <div>
                     <p className="text-sm font-semibold text-gray-800">{title}</p>
                     {subtitle && <p className="text-[11px] text-gray-400 mt-0.5">{subtitle}</p>}
@@ -127,7 +128,7 @@ const Tip = ({ active, payload, label, isMoney = true }) => {
 
 // ─── Empty ────────────────────────────────────────────────────────────────────
 const Empty = ({ msg }) => (
-    <div className="flex flex-col items-center justify-center flex-1 gap-2 text-gray-300 min-h-[120px]">
+    <div className="flex flex-col items-center justify-center flex-1 gap-2 text-gray-300 min-h-30">
         <AlertCircle size={26} />
         <p className="text-xs text-gray-400">{msg}</p>
     </div>
@@ -136,8 +137,8 @@ const Empty = ({ msg }) => (
 // ─── Dropdown con Portal ──────────────────────────────────────────────────────
 function Dropdown({ label, items, value, onChange, icon: Icon }) {
     const [open, setOpen] = useState(false);
-    const btnRef          = useRef(null);
-    const menuRef         = useRef(null);
+    const btnRef = useRef(null);
+    const menuRef = useRef(null);
     const [rect, setRect] = useState(null);
 
     const handleToggle = () => {
@@ -158,7 +159,7 @@ function Dropdown({ label, items, value, onChange, icon: Icon }) {
     const menu = open && rect
         ? createPortal(
             <div ref={menuRef}
-                style={{ position:"fixed", top: rect.bottom+6, right: window.innerWidth-rect.right, zIndex:99999, maxHeight:260, overflowY:"auto", minWidth:145 }}
+                style={{ position: "fixed", top: rect.bottom + 6, right: window.innerWidth - rect.right, zIndex: 99999, maxHeight: 260, overflowY: "auto", minWidth: 145 }}
                 className="bg-white border border-gray-100 rounded-xl shadow-2xl py-1">
                 {items.map((it) => (
                     <button key={it.value}
@@ -186,7 +187,7 @@ function Dropdown({ label, items, value, onChange, icon: Icon }) {
     );
 }
 
-const DONUT_COLORS = ["#FFC107","#1f2937","#F59E0B","#6b7280","#D97706","#374151","#FBBF24","#4B5563"];
+const DONUT_COLORS = ["#FFC107", "#1f2937", "#F59E0B", "#6b7280", "#D97706", "#374151", "#FBBF24", "#4B5563"];
 
 // ══════════════════════════════════════════════════════════════════════════════
 // GENERADOR DE INSIGHTS AUTOMÁTICOS
@@ -230,16 +231,16 @@ function generarInsights(kpis, stats, topProductos, donut) {
 //  7. Pie de página numerado en cada hoja
 // ══════════════════════════════════════════════════════════════════════════════
 function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topProductos, donut, stats }) {
-    const doc        = new jsPDF();
-    const AMARILLO   = [234, 179, 8];
+    const doc = new jsPDF();
+    const AMARILLO = [234, 179, 8];
     const AMARILLO_S = [253, 246, 213];  // amarillo suave para filas alternas
-    const OSCURO     = [31,  41,  55];
+    const OSCURO = [31, 41, 55];
     const GRIS_CLARO = [249, 250, 251];
-    const VERDE      = [16,  185, 129];
-    const ROJO       = [239, 68,  68];
-    const mesNombre  = MESES_FULL[month];
-    const hoy        = new Date().toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
-    const insights   = generarInsights(kpis, stats, topProductos, donut);
+    const VERDE = [16, 185, 129];
+    const ROJO = [239, 68, 68];
+    const mesNombre = MESES_FULL[month];
+    const hoy = new Date().toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
+    const insights = generarInsights(kpis, stats, topProductos, donut);
 
     const sectionTitle = (doc, num, title, y) => {
         doc.setTextColor(...OSCURO);
@@ -315,15 +316,15 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
     y = sectionTitle(doc, 1, `Indicadores Financieros — ${mesNombre} ${year}`, y);
 
     const kpiBoxes = [
-        { label: "MONTO DE VENTAS",    value: formatFull(kpis.ventas),           delta: kpis.deltaVentas,   sub: "Ingresos del período"         },
-        { label: "PRODUCTOS VENDIDOS", value: Number(kpis.prodVend).toLocaleString("es-CO"), delta: kpis.deltaProd, sub: "Unidades despachadas"  },
-        { label: "MONTO DE COMPRAS",   value: formatFull(kpis.compras),          delta: kpis.deltaCompras,  sub: "Inversión en inventario"      },
-        { label: "GANANCIA NETA",      value: formatFull(kpis.ganancia),         delta: kpis.deltaGanancia, sub: kpis.ganancia >= 0 ? "Rentabilidad positiva" : "Resultado negativo" },
+        { label: "MONTO DE VENTAS", value: formatFull(kpis.ventas), delta: kpis.deltaVentas, sub: "Ingresos del período" },
+        { label: "PRODUCTOS VENDIDOS", value: Number(kpis.prodVend).toLocaleString("es-CO"), delta: kpis.deltaProd, sub: "Unidades despachadas" },
+        { label: "MONTO DE COMPRAS", value: formatFull(kpis.compras), delta: kpis.deltaCompras, sub: "Inversión en inventario" },
+        { label: "GANANCIA NETA", value: formatFull(kpis.ganancia), delta: kpis.deltaGanancia, sub: kpis.ganancia >= 0 ? "Rentabilidad positiva" : "Resultado negativo" },
     ];
 
     const BOX_W = 43.5, BOX_H = 26, BOX_GAP = 2;
     kpiBoxes.forEach((k, i) => {
-        const x   = 14 + i * (BOX_W + BOX_GAP);
+        const x = 14 + i * (BOX_W + BOX_GAP);
         const pos = k.delta >= 0;
         const isGanancia = i === 3;
         const ganNeg = isGanancia && kpis.ganancia < 0;
@@ -365,9 +366,9 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
     if (y > 185) { doc.addPage(); y = 20; }
     y = sectionTitle(doc, 2, `Evolución Financiera Anual — ${year}`, y);
 
-    const totalVentasAnio  = serieVentas.reduce((a, d) => a + d.total, 0);
+    const totalVentasAnio = serieVentas.reduce((a, d) => a + d.total, 0);
     const totalComprasAnio = serieCompras.reduce((a, d) => a + d.total, 0);
-    const balanceAnio      = totalVentasAnio - totalComprasAnio;
+    const balanceAnio = totalVentasAnio - totalComprasAnio;
 
     autoTable(doc, {
         startY: y,
@@ -388,11 +389,11 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
             formatFull(totalComprasAnio),
             formatFull(balanceAnio),
         ]],
-        styles:          { fontSize: 8, cellPadding: 2.5 },
-        headStyles:      { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
-        footStyles:      { fillColor: AMARILLO, textColor: OSCURO, fontStyle: "bold" },
+        styles: { fontSize: 8, cellPadding: 2.5 },
+        headStyles: { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
+        footStyles: { fillColor: AMARILLO, textColor: OSCURO, fontStyle: "bold" },
         alternateRowStyles: { fillColor: AMARILLO_S },
-        columnStyles:    {
+        columnStyles: {
             0: { fontStyle: "bold", cellWidth: 22 },
             1: { halign: "right" },
             2: { halign: "right" },
@@ -402,7 +403,7 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
             if (data.section === "body" && data.column.index === 3) {
                 const raw = serieVentas[data.row.index]?.total - serieCompras[data.row.index]?.total;
                 if (raw < 0) data.cell.styles.textColor = ROJO;
-                else         data.cell.styles.textColor = VERDE;
+                else data.cell.styles.textColor = VERDE;
             }
         },
         margin: { left: 14, right: 14 },
@@ -431,12 +432,12 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
                 `${totalTop ? ((p.cantidad / totalTop) * 100).toFixed(1) : 0}%`,
             ]),
             foot: [["", "TOTAL", String(totalTop), "100%"]],
-            styles:      { fontSize: 8.5, cellPadding: 3 },
-            headStyles:  { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
-            footStyles:  { fillColor: AMARILLO, textColor: OSCURO, fontStyle: "bold" },
+            styles: { fontSize: 8.5, cellPadding: 3 },
+            headStyles: { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
+            footStyles: { fillColor: AMARILLO, textColor: OSCURO, fontStyle: "bold" },
             alternateRowStyles: { fillColor: AMARILLO_S },
-            columnStyles:{ 0: { cellWidth: 10, halign: "center" }, 2: { halign: "center" }, 3: { halign: "center", fontStyle: "bold" } },
-            margin:      { left: 14, right: 14 },
+            columnStyles: { 0: { cellWidth: 10, halign: "center" }, 2: { halign: "center" }, 3: { halign: "center", fontStyle: "bold" } },
+            margin: { left: 14, right: 14 },
         });
         y = doc.lastAutoTable.finalY + 12;
     }
@@ -459,17 +460,17 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
             body: donut.map((d, i) => {
                 const pct = donutTotal ? (d.value / donutTotal) * 100 : 0;
                 let impacto = "Baja rotación";
-                if (i === 0)      impacto = "Alta rotación";
+                if (i === 0) impacto = "Alta rotación";
                 else if (i === 1) impacto = "Rotación media";
-                if (pct >= 30)    impacto = "Alta rotación";
+                if (pct >= 30) impacto = "Alta rotación";
                 else if (pct >= 15) impacto = "Rotación media";
                 return [d.name, String(d.value), `${pct.toFixed(1)}%`, impacto];
             }),
-            styles:       { fontSize: 8.5, cellPadding: 3 },
-            headStyles:   { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
+            styles: { fontSize: 8.5, cellPadding: 3 },
+            headStyles: { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
             alternateRowStyles: { fillColor: AMARILLO_S },
             columnStyles: { 1: { halign: "center" }, 2: { halign: "center", fontStyle: "bold" }, 3: { halign: "center" } },
-            margin:       { left: 14, right: 14 },
+            margin: { left: 14, right: 14 },
         });
         y = doc.lastAutoTable.finalY + 12;
     }
@@ -492,7 +493,7 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
                 String(stats.devMes),
                 stats.devMes > 10 ? "Nivel alto — requiere revisión urgente"
                     : stats.devMes > 0 ? "Nivel normal — monitorear"
-                    : "Sin devoluciones registradas",
+                        : "Sin devoluciones registradas",
             ],
             [
                 "Productos con stock crítico (≤ 5 unidades)",
@@ -505,8 +506,8 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
                 kpis.ganancia >= 0 ? "✓ Período rentable" : "⚠ Período con pérdida neta",
             ],
         ],
-        styles:       { fontSize: 8.5, cellPadding: 3.5 },
-        headStyles:   { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
+        styles: { fontSize: 8.5, cellPadding: 3.5 },
+        headStyles: { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
         alternateRowStyles: { fillColor: AMARILLO_S },
         columnStyles: { 0: { cellWidth: 80 }, 1: { halign: "center", cellWidth: 28 }, 2: { cellWidth: 74 } },
         didParseCell: (data) => {
@@ -526,21 +527,21 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
     if (y > 230) { doc.addPage(); y = 20; }
     y = sectionTitle(doc, 6, "Conclusión y Recomendaciones", y);
 
-    const esRentable   = kpis.ganancia >= 0;
-    const creceVentas  = kpis.deltaVentas > 0;
-    const hayRiesgo    = stats.devMes > 10 || stats.stockBajo > 0;
-    const conclusion   = esRentable
+    const esRentable = kpis.ganancia >= 0;
+    const creceVentas = kpis.deltaVentas > 0;
+    const hayRiesgo = stats.devMes > 10 || stats.stockBajo > 0;
+    const conclusion = esRentable
         ? `El período ${mesNombre} ${year} presenta un comportamiento positivo en términos de rentabilidad, con una ganancia neta de ${formatFull(kpis.ganancia)}.`
         : `El período ${mesNombre} ${year} registra un resultado negativo con una pérdida neta de ${formatFull(Math.abs(kpis.ganancia))}. Se recomienda revisar la estructura de costos.`;
-    const tendencia    = creceVentas
+    const tendencia = creceVentas
         ? `Las ventas muestran crecimiento frente al mes anterior (+${kpis.deltaVentas.toFixed(1)}%), lo que indica una trayectoria favorable.`
         : `Las ventas presentan una reducción frente al mes anterior (${kpis.deltaVentas.toFixed(1)}%), lo que requiere atención en la estrategia comercial.`;
 
     const recomendaciones = [];
     if (stats.devMes > 10) recomendaciones.push("Analizar las causas raíz de las devoluciones y establecer protocolos de control de calidad.");
     if (stats.stockBajo > 0) recomendaciones.push(`Gestionar reabastecimiento para los ${stats.stockBajo} producto(s) con stock crítico.`);
-    if (!esRentable)         recomendaciones.push("Revisar márgenes y estructura de costos para recuperar rentabilidad.");
-    if (!creceVentas)        recomendaciones.push("Fortalecer acciones comerciales para reactivar el crecimiento en ventas.");
+    if (!esRentable) recomendaciones.push("Revisar márgenes y estructura de costos para recuperar rentabilidad.");
+    if (!creceVentas) recomendaciones.push("Fortalecer acciones comerciales para reactivar el crecimiento en ventas.");
     if (topProductos.length > 0) {
         const tot = topProductos.reduce((a, p) => a + p.cantidad, 0);
         const pct = tot ? (topProductos[0].cantidad / tot) * 100 : 0;
@@ -574,7 +575,7 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
 
     ty = wrapText(doc, conclusion, 19, ty, maxW, lineH);
     ty += 2;
-    ty = wrapText(doc, tendencia,  19, ty, maxW, lineH);
+    ty = wrapText(doc, tendencia, 19, ty, maxW, lineH);
     ty += 4;
 
     doc.setFont("helvetica", "bold");
@@ -611,7 +612,7 @@ function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topPr
 
 // ══════════════════════════════════════════════════════════════════════════════
 export default function Dashboard() {
-    const [year,  setYear]  = useState(currentYear);
+    const [year, setYear] = useState(currentYear);
     const [month, setMonth] = useState(currentMonth);
     const [showConfirm, setShowConfirm] = useState(false);
 
@@ -621,23 +622,22 @@ export default function Dashboard() {
 
     useEffect(() => {
         setRaw({
-            sales:       JSON.parse(localStorage.getItem("sales")           || "[]"),
-            compras:     JSON.parse(localStorage.getItem("compras")         || "[]"),
-            products:    JSON.parse(localStorage.getItem("products")        || "[]"),
-            clients:     JSON.parse(localStorage.getItem("clients")         || "[]"),
-            devolutions: JSON.parse(localStorage.getItem("devolutions")     || "[]"),
-            categories:  JSON.parse(localStorage.getItem("productCategory") || "[]"),
+            sales: JSON.parse(localStorage.getItem("sales") || "[]"),
+            compras: JSON.parse(localStorage.getItem("compras") || "[]"),
+            products: JSON.parse(localStorage.getItem("products") || "[]"),
+            clients: JSON.parse(localStorage.getItem("clients") || "[]"),
+            devolutions: JSON.parse(localStorage.getItem("devolutions") || "[]"),
+            categories: JSON.parse(localStorage.getItem("productCategory") || "[]"),
         });
     }, []);
 
     const [nombre, setNombre] = useState("Usuario");
+
     useEffect(() => {
         const loadNombre = () => {
-            try {
-                const u = JSON.parse(localStorage.getItem("auth_user") || "{}");
-                const n = u?.fullName || u?.nombre || u?.name || "";
-                if (n) setNombre(n.split(" ")[0]);
-            } catch {}
+            const user = getAuthUser(); // ✅ trae el usuario completo desde "users"
+            const n = user?.fullName || user?.nombre || user?.name || "";
+            if (n) setNombre(n.split(" ")[0]);
         };
         loadNombre();
         window.addEventListener("profile-updated", loadNombre);
@@ -652,23 +652,23 @@ export default function Dashboard() {
     };
     const prevYM = month === 0 ? { y: year - 1, m: 11 } : { y: year, m: month - 1 };
 
-    const salesNow  = raw.sales.filter(s => inM(s.fecha, year, month)        && s.estado !== "Anulado");
+    const salesNow = raw.sales.filter(s => inM(s.fecha, year, month) && s.estado !== "Anulado");
     const salesPrev = raw.sales.filter(s => inM(s.fecha, prevYM.y, prevYM.m) && s.estado !== "Anulado");
 
-    const sum   = (arr, fn) => arr.reduce((a, x) => a + fn(x), 0);
+    const sum = (arr, fn) => arr.reduce((a, x) => a + fn(x), 0);
     const delta = (cur, prev) => prev ? ((cur - prev) / Math.abs(prev)) * 100 : 0;
 
-    const totalVentas  = sum(salesNow,  s => parseMoney(s.total));
-    const prevVentas   = sum(salesPrev, s => parseMoney(s.total));
-    const prodVend     = sum(salesNow,  s => sum(s.productos || [], p => Number(p.cantidad || 0)));
+    const totalVentas = sum(salesNow, s => parseMoney(s.total));
+    const prevVentas = sum(salesPrev, s => parseMoney(s.total));
+    const prodVend = sum(salesNow, s => sum(s.productos || [], p => Number(p.cantidad || 0)));
     const prevProdVend = sum(salesPrev, s => sum(s.productos || [], p => Number(p.cantidad || 0)));
 
-    const comprasNow   = raw.compras.filter(c => inM(c.fechaCompra, year, month)        && c.estado !== "Anulada");
-    const comprasPrev  = raw.compras.filter(c => inM(c.fechaCompra, prevYM.y, prevYM.m) && c.estado !== "Anulada");
-    const totalCompras = sum(comprasNow,  c => parseMoney(c.total));
-    const prevCompras  = sum(comprasPrev, c => parseMoney(c.total));
-    const ganancia     = totalVentas - totalCompras;
-    const prevGanancia = prevVentas  - prevCompras;
+    const comprasNow = raw.compras.filter(c => inM(c.fechaCompra, year, month) && c.estado !== "Anulada");
+    const comprasPrev = raw.compras.filter(c => inM(c.fechaCompra, prevYM.y, prevYM.m) && c.estado !== "Anulada");
+    const totalCompras = sum(comprasNow, c => parseMoney(c.total));
+    const prevCompras = sum(comprasPrev, c => parseMoney(c.total));
+    const ganancia = totalVentas - totalCompras;
+    const prevGanancia = prevVentas - prevCompras;
 
     const serieCompras = MESES.map((mes, i) => ({
         mes, total: sum(raw.compras.filter(c => inM(c.fechaCompra, year, i) && c.estado !== "Anulada"), c => parseMoney(c.total)),
@@ -688,18 +688,18 @@ export default function Dashboard() {
     const catMap = {};
     salesNow.forEach(s => (s.productos || []).forEach(p => {
         const prod = raw.products.find(pr => pr.nombre === p.nombre);
-        const cat  = raw.categories.find(c => String(c.id) === String(prod?.categoriaId));
-        const lbl  = cat?.nombre || "Sin categoría";
+        const cat = raw.categories.find(c => String(c.id) === String(prod?.categoriaId));
+        const lbl = cat?.nombre || "Sin categoría";
         catMap[lbl] = (catMap[lbl] || 0) + Number(p.cantidad || 0);
     }));
-    const donut      = Object.entries(catMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    const donut = Object.entries(catMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
     const donutTotal = donut.reduce((a, d) => a + d.value, 0);
 
     const clientesActivos = raw.clients.filter(c => c.estado !== false && c.estado !== "Inactivo").length;
-    const devMes          = raw.devolutions.filter(d => inM(d.creadoEn || d.fecha, year, month)).length;
-    const stockBajo       = raw.products.filter(p => Number(p.stock) <= 5 && p.stock > 0 && p.estado !== false).length;
+    const devMes = raw.devolutions.filter(d => inM(d.creadoEn || d.fecha, year, month)).length;
+    const stockBajo = raw.products.filter(p => Number(p.stock) <= 5 && p.stock > 0 && p.estado !== false).length;
 
-    const yearItems  = [currentYear, currentYear - 1, currentYear - 2].map(y => ({ label: `Año ${y}`, value: y }));
+    const yearItems = [currentYear, currentYear - 1, currentYear - 2].map(y => ({ label: `Año ${y}`, value: y }));
     const monthItems = MESES_FULL.map((m, i) => ({ label: m, value: i }));
 
     // ─── Handler PDF ─────────────────────────────────────────────────────────
@@ -707,10 +707,10 @@ export default function Dashboard() {
         generarReportePDF({
             year, month,
             kpis: {
-                ventas: totalVentas,  deltaVentas:   delta(totalVentas, prevVentas),
-                prodVend,             deltaProd:     delta(prodVend, prevProdVend),
-                compras: totalCompras,deltaCompras:  delta(totalCompras, prevCompras),
-                ganancia,             deltaGanancia: delta(ganancia, prevGanancia),
+                ventas: totalVentas, deltaVentas: delta(totalVentas, prevVentas),
+                prodVend, deltaProd: delta(prodVend, prevProdVend),
+                compras: totalCompras, deltaCompras: delta(totalCompras, prevCompras),
+                ganancia, deltaGanancia: delta(ganancia, prevGanancia),
             },
             serieVentas, serieCompras, topProductos, donut,
             stats: { clientesActivos, devMes, stockBajo },
@@ -730,7 +730,7 @@ export default function Dashboard() {
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner overflow-auto">
 
                 {/* HEADER */}
-                <div className="flex items-center justify-between flex-shrink-0"
+                <div className="flex items-center justify-between shrink-0"
                     style={{ animation: "kpiFadeUp .4s ease both" }}>
                     <div>
                         <h1 className="text-[1.6rem] font-bold text-gray-900 leading-tight">
@@ -751,32 +751,32 @@ export default function Dashboard() {
                             Generar reporte
                         </button>
 
-                        <Dropdown label={`Año ${year}`}     items={yearItems}  value={year}  onChange={setYear}  icon={Calendar} />
+                        <Dropdown label={`Año ${year}`} items={yearItems} value={year} onChange={setYear} icon={Calendar} />
                         <Dropdown label={MESES_FULL[month]} items={monthItems} value={month} onChange={setMonth} icon={Calendar} />
                     </div>
                 </div>
 
                 {/* KPIs con imagen de fondo */}
-                <div className="relative rounded-3xl overflow-hidden flex-shrink-0 shadow-md"
+                <div className="relative rounded-3xl overflow-hidden shrink-0 shadow-md"
                     style={{
-                        backgroundImage:    'url("/background-details.jpg")',
-                        backgroundSize:     "cover",
+                        backgroundImage: 'url("/background-details.jpg")',
+                        backgroundSize: "cover",
                         backgroundPosition: "center",
-                        backgroundRepeat:   "no-repeat",
-                        animation:          "kpiFadeUp .5s ease both",
-                        animationDelay:     "50ms",
+                        backgroundRepeat: "no-repeat",
+                        animation: "kpiFadeUp .5s ease both",
+                        animationDelay: "50ms",
                     }}>
                     <div className="absolute inset-0 bg-white/20 rounded-3xl" />
                     <div className="relative z-10 grid grid-cols-4 gap-4 p-6">
-                        <KpiCard icon={DollarSign}  label="Monto de Ventas"   value={totalVentas}           delta={delta(totalVentas, prevVentas)}   color="#FFC107" isMoney        delay={0}   />
-                        <KpiCard icon={Package}     label="Productos Vendidos" value={prodVend}              delta={delta(prodVend, prevProdVend)}    color="#6366f1" isMoney={false} delay={80}  />
-                        <KpiCard icon={ShoppingBag} label="Monto de Compras"  value={totalCompras}          delta={delta(totalCompras, prevCompras)} color="#f59e0b" isMoney        delay={160} />
-                        <KpiCard icon={TrendingUp}  label="Ganancia Neta"     value={ganancia} delta={delta(ganancia, prevGanancia)}    color={ganancia >= 0 ? "#10b981" : "#ef4444"} isMoney        delay={240} />
+                        <KpiCard icon={DollarSign} label="Monto de Ventas" value={totalVentas} delta={delta(totalVentas, prevVentas)} color="#FFC107" isMoney delay={0} />
+                        <KpiCard icon={Package} label="Productos Vendidos" value={prodVend} delta={delta(prodVend, prevProdVend)} color="#6366f1" isMoney={false} delay={80} />
+                        <KpiCard icon={ShoppingBag} label="Monto de Compras" value={totalCompras} delta={delta(totalCompras, prevCompras)} color="#f59e0b" isMoney delay={160} />
+                        <KpiCard icon={TrendingUp} label="Compras vs Ventas" value={ganancia} delta={delta(ganancia, prevGanancia)} color={ganancia >= 0 ? "#10b981" : "#ef4444"} isMoney delay={240} />
                     </div>
                 </div>
 
                 {/* FILA 2 */}
-                <div className="grid grid-cols-5 gap-4 flex-shrink-0">
+                <div className="grid grid-cols-5 gap-4 shrink-0">
                     <div className="col-span-3">
                         <Card title="Evolución mensual de compras" subtitle={`Año ${year}`} delay={300} className="h-full">
                             {serieCompras.every(d => d.total === 0)
@@ -785,7 +785,7 @@ export default function Dashboard() {
                                     <AreaChart data={serieCompras} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="gc" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%"  stopColor="#FFC107" stopOpacity={.35} />
+                                                <stop offset="5%" stopColor="#FFC107" stopOpacity={.35} />
                                                 <stop offset="95%" stopColor="#FFC107" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
@@ -809,7 +809,7 @@ export default function Dashboard() {
                                     <BarChart data={topProductos} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }} barCategoryGap="30%">
                                         <defs>
                                             <linearGradient id="gb" x1="0" y1="0" x2="1" y2="0">
-                                                <stop offset="0%"   stopColor="#FFC107" />
+                                                <stop offset="0%" stopColor="#FFC107" />
                                                 <stop offset="100%" stopColor="#F59E0B" />
                                             </linearGradient>
                                         </defs>
@@ -826,7 +826,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* FILA 3 */}
-                <div className="grid grid-cols-5 gap-4 flex-shrink-0">
+                <div className="grid grid-cols-5 gap-4 shrink-0">
 
                     <Card title="Ventas por categoría" subtitle={`${MESES_FULL[month]} ${year}`} delay={420}>
                         {donut.length === 0
@@ -850,9 +850,9 @@ export default function Dashboard() {
                                     {donut.slice(0, 4).map((d, i) => (
                                         <div key={i} className="flex items-center justify-between">
                                             <div className="flex items-center gap-1.5">
-                                                <span className="w-2 h-2 rounded-full flex-shrink-0"
+                                                <span className="w-2 h-2 rounded-full shrink-0"
                                                     style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
-                                                <span className="text-[11px] text-gray-500 truncate max-w-[100px]">{d.name}</span>
+                                                <span className="text-[11px] text-gray-500 truncate max-w-25">{d.name}</span>
                                             </div>
                                             <span className="text-[11px] font-semibold text-gray-700">
                                                 {donutTotal ? Math.round(d.value / donutTotal * 100) : 0}%
@@ -867,7 +867,7 @@ export default function Dashboard() {
                     <div className="col-span-3">
                         <Card title="Monto total de ventas" subtitle={`Año ${year}`} delay={480} className="h-full"
                             action={
-                                <span className="flex items-center gap-1 text-[11px] font-medium bg-yellow-50 border border-yellow-200 text-yellow-700 px-2.5 py-1 rounded-lg flex-shrink-0">
+                                <span className="flex items-center gap-1 text-[11px] font-medium bg-yellow-50 border border-yellow-200 text-yellow-700 px-2.5 py-1 rounded-lg shrink-0">
                                     <Calendar size={11} />
                                     {year}
                                 </span>
@@ -878,7 +878,7 @@ export default function Dashboard() {
                                     <AreaChart data={serieVentas} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="gv" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%"  stopColor="#10b981" stopOpacity={.28} />
+                                                <stop offset="5%" stopColor="#10b981" stopOpacity={.28} />
                                                 <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
@@ -898,11 +898,13 @@ export default function Dashboard() {
                     <div className="flex flex-col gap-4"
                         style={{ animation: "kpiFadeUp .6s ease both", animationDelay: "540ms" }}>
                         {[
-                            { icon: Users,     color: "#3b82f6", bg: "#eff6ff", val: clientesActivos, label: "Clientes activos",      warn: false },
-                            { icon: RotateCcw, color: "#f59e0b", bg: "#fffbeb", val: devMes,          label: "Devoluciones este mes", warn: false },
-                            { icon: Package,   color: stockBajo > 0 ? "#ef4444" : "#9ca3af",
-                                               bg:    stockBajo > 0 ? "#fef2f2" : "#f9fafb",
-                                val: stockBajo, label: "Stock bajo (≤5 uds)", warn: stockBajo > 0 },
+                            { icon: Users, color: "#3b82f6", bg: "#eff6ff", val: clientesActivos, label: "Clientes activos", warn: false },
+                            { icon: RotateCcw, color: "#f59e0b", bg: "#fffbeb", val: devMes, label: "Devoluciones este mes", warn: false },
+                            {
+                                icon: Package, color: stockBajo > 0 ? "#ef4444" : "#9ca3af",
+                                bg: stockBajo > 0 ? "#fef2f2" : "#f9fafb",
+                                val: stockBajo, label: "Stock bajo (≤5 uds)", warn: stockBajo > 0
+                            },
                         ].map(({ icon: Icon, color, bg, val, label, warn }, i) => (
                             <div key={i} className={`rounded-2xl p-4 shadow-sm border flex flex-col gap-2 flex-1
                                 ${warn ? "border-red-100 bg-red-50" : "border-gray-100 bg-white"}`}>

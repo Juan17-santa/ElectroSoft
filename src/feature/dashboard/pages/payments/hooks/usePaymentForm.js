@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import paymentsService from "../services/PaymentsService";
+import paymentsService from "../services/paymentsService";
 
-export function usePaymentForm({ onSuccess }) {
+export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, documentoPreseleccionado = null }) {
 
     const [formData, setFormData] = useState({
-        documento: "",
+        documento: documentoPreseleccionado || "",
         clienteNombre: "",
         ventaId: null,
         numeroVenta: "",
@@ -17,16 +17,38 @@ export function usePaymentForm({ onSuccess }) {
     const [allSales, setAllSales] = useState([]);
     const [ventasDelDocumento, setVentasDelDocumento] = useState([]);
     const [errors, setErrors] = useState({});
+    const [initialized, setInitialized] = useState(false);
 
     const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
-    // Cargar ventas pendientes al montar
     useEffect(() => {
-        setAllSales(paymentsService.getPending());
+        const sales = paymentsService.getPending();
+        setAllSales(sales);
+
+        // Si viene con ventaId preseleccionado desde la URL
+        if (ventaIdPreseleccionada) {
+            const found = sales.find(s => s.id === Number(ventaIdPreseleccionada));
+            if (found) {
+                setFormData(prev => ({
+                    ...prev,
+                    documento: found.numeroDocumento || documentoPreseleccionado || "",
+                    clienteNombre: found.cliente,
+                    ventaId: found.id,
+                    numeroVenta: found.numeroVenta || `V-${found.id}`,
+                    montoPorPagar: found.montoPorPagar,
+                    abonos: found.abonos || [],
+                }));
+            }
+        }
+
+        setInitialized(true);
     }, []);
 
     // Buscar automáticamente al escribir el documento
     useEffect(() => {
+        if (!initialized) return;
+        if (ventaIdPreseleccionada) return; // no buscar si ya viene preseleccionado
+
         if (!formData.documento.trim()) {
             setVentasDelDocumento([]);
             setFormData(prev => ({
@@ -57,7 +79,6 @@ export function usePaymentForm({ onSuccess }) {
                 abonos: v.abonos || [],
             }));
             setErrors(prev => ({ ...prev, documento: "" }));
-
         } else if (encontradas.length > 1) {
             setFormData(prev => ({
                 ...prev,
@@ -68,7 +89,6 @@ export function usePaymentForm({ onSuccess }) {
                 abonos: [],
             }));
             setErrors(prev => ({ ...prev, documento: "" }));
-
         } else {
             setFormData(prev => ({
                 ...prev,
@@ -83,15 +103,13 @@ export function usePaymentForm({ onSuccess }) {
                 documento: "No se encontró ninguna venta pendiente para ese documento."
             }));
         }
+    }, [formData.documento, allSales, initialized]);
 
-    }, [formData.documento, allSales]);
-
-    // ── Validación por campo ──────────────────────────────────────────────────
     const validateField = (name, value) => {
         switch (name) {
             case "documento":
                 if (!value) return "El documento es obligatorio";
-                if (ventasDelDocumento.length === 0 && value) return "No se encontró ninguna venta pendiente";
+                if (ventasDelDocumento.length === 0 && !ventaIdPreseleccionada) return "No se encontró ninguna venta pendiente";
                 return "";
             case "ventaId":
                 if (!value) return "Selecciona una venta";
@@ -110,7 +128,6 @@ export function usePaymentForm({ onSuccess }) {
         }
     };
 
-    // ── Handlers ─────────────────────────────────────────────────────────────
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -132,7 +149,6 @@ export function usePaymentForm({ onSuccess }) {
         }
     };
 
-    // ── Validar formulario completo ───────────────────────────────────────────
     const validateForm = () => {
         const newErrors = {};
         ["documento", "ventaId", "metodoPago", "monto"].forEach(field => {
@@ -143,7 +159,6 @@ export function usePaymentForm({ onSuccess }) {
         return Object.keys(newErrors).length === 0;
     };
 
-    // ── Submit ────────────────────────────────────────────────────────────────
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -157,7 +172,6 @@ export function usePaymentForm({ onSuccess }) {
         );
 
         if (!resultado) return;
-
         onSuccess();
     };
 

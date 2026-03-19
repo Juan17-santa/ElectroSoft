@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import Alert from "../../../components/ui/Alert";
+import Alert from "../../../components/ui/Alert"
 import UserForm from "../components/UserForm";
 import { useUserForm } from "../hooks/useUserForm";
 
