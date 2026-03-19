@@ -60,7 +60,7 @@ import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDet
 import Devolutions from "../feature/dashboard/pages/devolutions/pages/Devolutions";
 import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/CreateDevolution";
 import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
-import DevolutionProductDetails from "../feature/dashboard/pages/devolutions/pages/DevolutionProductDetails";
+import DevolutionProductDetails from "../feature/dashboard/pages/devolutions/pages/Devolutionproductdetails";
 
 //USUARIOS
 import Users from "../feature/dashboard/pages/users/pages/Users";

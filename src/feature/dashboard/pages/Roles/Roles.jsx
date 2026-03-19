@@ -102,7 +102,7 @@ export default function Roles() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Gestión de roles</p>
 
@@ -144,11 +144,16 @@ export default function Roles() {
                                                 {String((pageActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                             </td>
                                             <td className="px-3 py-3 font-medium text-gray-800">{role.nombre}</td>
-                                            <td className="px-3 py-3 max-w-md">
+                                            <td className="px-3 py-3 max-w-xs">
                                                 {!role.descripcion || role.descripcion.length === 0 ? (
                                                     <span className="text-gray-400 italic">Sin descripción</span>
                                                 ) : (
-                                                    <span className="text-gray-500">{role.descripcion}</span>
+                                                    <span
+                                                        className="text-gray-500 block truncate max-w-[220px]"
+                                                        title={role.descripcion}
+                                                    >
+                                                        {role.descripcion}
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="px-3 py-3">

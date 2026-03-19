@@ -27,7 +27,7 @@ export function useClientForm({ initialData = null, onSubmit }) {
             documento: Validations.validarDocumentoCliente(formData.tipoDocumento, formData.documento).valido ? null : Validations.validarDocumentoCliente(formData.tipoDocumento, formData.documento).mensaje,
             nombres: Validations.validarNombreApellido(formData.nombres).valido ? null : Validations.validarNombreApellido(formData.nombres).mensaje,
             apellidos: Validations.validarNombreApellido(formData.apellidos).valido ? null : Validations.validarNombreApellido(formData.apellidos).mensaje,
-            email: Validations.formatoEmail(formData.email) ? null : "Ingrese un email válido.",
+            email: Validations.validarEmail(formData.email).valido ? null : Validations.validarEmail(formData.email).mensaje,
             telefono: Validations.validarTelefono(formData.telefono).valido ? null : Validations.validarTelefono(formData.telefono).mensaje
         };
     };
@@ -47,7 +47,7 @@ export function useClientForm({ initialData = null, onSubmit }) {
         let { name, value } = e.target;
         if (name === "documento") value = value.replace(/\D/g, "").slice(0, 15);
         if (name === "telefono") value = value.replace(/\D/g, "").slice(0, 15);
-        if (name === "nombres" || name === "apellidos") value = value.replace(/[0-9]/g, "");
+        if (name === "nombres" || name === "apellidos") { value = value.replace(/[0-9]/g, ""); value = value.slice(0, 40); }
 
         setFormData(prev => ({ ...prev, [name]: value }));
         tocar(name);
