@@ -23,12 +23,13 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, Pencil, Trash2, Undo2, X } from "lucide-react";
+import { Eye, Pencil, Trash2, Undo2, X, FileText } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
-import Alert       from "../../components/ui/Alert";
+import Alert        from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
@@ -145,6 +146,29 @@ export default function ReturnSalesPage() {
         });
     };
 
+    const handleGenerarPDF = () => {
+        generatePDFReport({
+            title: `Devolución de venta — ${sale.numeroDocumento ?? sale.id}`,
+            fileName: `devolucion_${sale.numeroDocumento ?? sale.id}.pdf`,
+            extraInfo: [
+                `ID venta: ${sale.numeroDocumento ?? sale.id}`,
+                `Fecha creación: ${sale.fecha ?? "—"}`,
+                `Total venta: ${formatCOP(sale.total)}`,
+                `Estado: ${sale.estado ?? "—"}`,
+                `Productos devueltos: ${devolucionesVenta.length}`,
+            ],
+            columns: ["Producto", "Cantidad", "Motivo", "Condición", "Gestión", "Estado resolución"],
+            data: devolucionesVenta.map((d) => [
+                d.producto ?? "—",
+                d.cantidad ?? "—",
+                (d.motivo ?? "—").replace(/_/g, " "),
+                (d.condicionProducto ?? "—").replace(/_/g, " "),
+                (d.gestion ?? "—").replace(/_/g, " "),
+                d.estadoResolucion ?? "—",
+            ]),
+        });
+    };
+
     const handleVolver = () => {
         if (isFromSales) {
             localStorage.removeItem("saleToReturn");
@@ -187,9 +211,19 @@ export default function ReturnSalesPage() {
                             </span>
                         )}
                     </h2>
-                    <button onClick={handleVolver} className="p-2 hover:bg-gray-200 rounded-lg transition cursor-pointer" title="Cerrar">
-                        <X size={20} />
-                    </button>
+                <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleGenerarPDF}
+                            className="flex items-center gap-2 text-sm text-gray-600 bg-white border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition cursor-pointer shadow-sm"
+                            title="Generar reporte PDF"
+                        >
+                            <FileText size={15} />
+                            Generar reporte
+                        </button>
+                        <button onClick={handleVolver} className="p-2 hover:bg-gray-200 rounded-lg transition cursor-pointer" title="Cerrar">
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Información venta */}

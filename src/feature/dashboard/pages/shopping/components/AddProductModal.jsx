@@ -5,20 +5,11 @@ import { ServicesProducts } from "../../products/services/ServicesProducts";
 import CreateProductModal from "./CreateProductModal";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 
-// ─── Indicador de validación ──────────────────────────────────────────────────
 function FieldStatus({ estado }) {
     if (estado === null) return null;
     return (
-        <div
-            className={`flex items-center gap-1 text-xs mt-1 transition-all duration-300 ${
-                estado.valido ? "text-green-500" : "text-red-500"
-            }`}
-            style={{ minHeight: "16px" }}
-        >
-            {estado.valido
-                ? <><CheckCircle2 size={12} /><span>Listo</span></>
-                : <><AlertCircle size={12} /><span>{estado.mensaje}</span></>
-            }
+        <div className={`flex items-center gap-1 text-xs mt-1 transition-all duration-300 ${estado.valido ? "text-green-500" : "text-red-500"}`} style={{ minHeight: "16px" }}>
+            {estado.valido ? <><CheckCircle2 size={12} /><span>Listo</span></> : <><AlertCircle size={12} /><span>{estado.mensaje}</span></>}
         </div>
     );
 }
@@ -32,63 +23,40 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
     const [modalPrecio,        setModalPrecio]        = useState("");
     const [modalCosteProducto, setModalCosteProducto] = useState("");
     const [modalPrecioVenta,   setModalPrecioVenta]   = useState("");
-    const [seleccionPrecio,    setSeleccionPrecio]    = useState("wac"); // "wac" | "sugerido"
+    const [seleccionPrecio,    setSeleccionPrecio]    = useState("wac");
 
-    const [tocados, setTocados] = useState({
-        producto: false, cantidad: false, precio: false,
-        costeProducto: false, precioVenta: false,
-    });
+    const [tocados, setTocados] = useState({ producto: false, cantidad: false, precio: false, costeProducto: false, precioVenta: false });
 
-    // ─── Cargar productos ─────────────────────────────────────────────────────
     useEffect(() => {
         const data = ServicesProducts.get().filter((p) => p.estado !== false);
         setProductosList(data);
     }, [showCreateProductModal]);
 
-    // ─── Producto seleccionado ────────────────────────────────────────────────
-    const productoSeleccionado = productosList.find(
-        (p) => String(p.id) === String(modalProducto)
-    );
+    const productoSeleccionado = productosList.find((p) => String(p.id) === String(modalProducto));
+    const productoYaAgregado   = productosYaAgregados.find((p) => String(p.id) === String(modalProducto) && !p.anulado);
 
-    // ─── ¿Ya fue agregado activo? ─────────────────────────────────────────────
-    const productoYaAgregado = productosYaAgregados.find(
-        (p) => String(p.id) === String(modalProducto) && !p.anulado
-    );
-
-    // ─── WAC calculado (derivado) ─────────────────────────────────────────────
     const wacCalculado = useMemo(() => {
         if (!productoSeleccionado || !modalPrecioVenta || !modalCantidad) return null;
-        const precioVenta  = parseCOP(modalPrecioVenta);
-        const cantidad     = parseInt(modalCantidad) || 0;
-        const stockAnt     = productoSeleccionado.stock ?? 0;
-        const precioActual = productoSeleccionado.precio ?? 0;
-        const stockNuevo   = stockAnt + cantidad;
+        const precioVenta = parseCOP(modalPrecioVenta);
+        const cantidad    = parseInt(modalCantidad) || 0;
+        const stockAnt    = productoSeleccionado.stock ?? 0;
+        const precioAct   = productoSeleccionado.precio ?? 0;
+        const stockNuevo  = stockAnt + cantidad;
         if (precioVenta <= 0 || cantidad <= 0) return null;
-        const wacExacto = stockAnt > 0
-            ? (stockAnt * precioActual + cantidad * precioVenta) / stockNuevo
-            : precioVenta;
-        return Math.ceil(wacExacto / 100) * 100;
+        const wac = stockAnt > 0 ? (stockAnt * precioAct + cantidad * precioVenta) / stockNuevo : precioVenta;
+        return Math.ceil(wac / 100) * 100;
     }, [productoSeleccionado, modalPrecioVenta, modalCantidad]);
 
-    // Si WAC === precioVenta no hace falta preguntar; mostrar las tarjetas solo cuando difieren
-    const mostrarSeleccionPrecio =
-        wacCalculado !== null && wacCalculado !== parseCOP(modalPrecioVenta);
+    const mostrarSeleccionPrecio = wacCalculado !== null && wacCalculado !== parseCOP(modalPrecioVenta);
 
-    // Resetear selección cuando cambia el producto o ya no hace falta preguntar
-    useEffect(() => {
-        if (!mostrarSeleccionPrecio) setSeleccionPrecio("wac");
-    }, [mostrarSeleccionPrecio]);
+    useEffect(() => { if (!mostrarSeleccionPrecio) setSeleccionPrecio("wac"); }, [mostrarSeleccionPrecio]);
 
-    // ─── Al seleccionar producto → autocargar precio (o pre-cargar si ya existe) ──
     const handleSelectProducto = (id) => {
         setModalProducto(id);
         setTocados((t) => ({ ...t, producto: true }));
-
-        const found     = productosList.find((p) => String(p.id) === String(id));
-        const yaExiste  = productosYaAgregados.find((p) => String(p.id) === String(id) && !p.anulado);
-
+        const found    = productosList.find((p) => String(p.id) === String(id));
+        const yaExiste = productosYaAgregados.find((p) => String(p.id) === String(id) && !p.anulado);
         if (yaExiste) {
-            // Pre-cargar con los valores que ya tiene en la compra
             setModalPrecio(String(found?.precio ?? ""));
             setModalCantidad(String(yaExiste.cantidad));
             setModalCosteProducto(String(yaExiste.costeProducto));
@@ -105,34 +73,11 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
         }
     };
 
-    // ─── Validaciones ─────────────────────────────────────────────────────────
-    const validarProducto = (val) => {
-        if (!val) return { valido: false, mensaje: "Selecciona un producto." };
-        return { valido: true, mensaje: "" };
-    };
-    const validarCantidad = (val) => {
-        if (!val) return { valido: false, mensaje: "Ingresa la cantidad." };
-        if (isNaN(parseInt(val)) || parseInt(val) <= 0)
-            return { valido: false, mensaje: "Debe ser mayor a 0." };
-        return { valido: true, mensaje: "" };
-    };
-    const validarPrecio = (val) => {
-        if (!val) return { valido: false, mensaje: "El precio es obligatorio." };
-        if (parseCOP(val) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." };
-        return { valido: true, mensaje: "" };
-    };
-    const validarCosteProducto = (val) => {
-        if (!val) return { valido: false, mensaje: "El coste es obligatorio." };
-        if (parseCOP(val) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." };
-        return { valido: true, mensaje: "" };
-    };
-    const validarPrecioVenta = (val) => {
-        if (!val) return { valido: false, mensaje: "El precio de venta es obligatorio." };
-        if (parseCOP(val) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." };
-        if (parseCOP(val) <= parseCOP(modalCosteProducto))
-            return { valido: false, mensaje: "Debe ser mayor al coste del producto." };
-        return { valido: true, mensaje: "" };
-    };
+    const validarProducto      = (v) => !v ? { valido: false, mensaje: "Selecciona un producto." } : { valido: true, mensaje: "" };
+    const validarCantidad      = (v) => { if (!v) return { valido: false, mensaje: "Ingresa la cantidad." }; if (isNaN(parseInt(v)) || parseInt(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; return { valido: true, mensaje: "" }; };
+    const validarPrecio        = (v) => { if (!v) return { valido: false, mensaje: "El precio es obligatorio." }; if (parseCOP(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; return { valido: true, mensaje: "" }; };
+    const validarCosteProducto = (v) => { if (!v) return { valido: false, mensaje: "El coste es obligatorio." }; if (parseCOP(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; return { valido: true, mensaje: "" }; };
+    const validarPrecioVenta   = (v) => { if (!v) return { valido: false, mensaje: "El precio de venta es obligatorio." }; if (parseCOP(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; if (parseCOP(v) <= parseCOP(modalCosteProducto)) return { valido: false, mensaje: "Debe ser mayor al coste." }; return { valido: true, mensaje: "" }; };
 
     const estadoProducto      = tocados.producto      ? validarProducto(modalProducto)           : null;
     const estadoCantidad      = tocados.cantidad      ? validarCantidad(modalCantidad)            : null;
@@ -142,37 +87,24 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
     const fmt = (n) => `$${Number(n).toLocaleString("es-CO")}`;
 
-    // ─── Submit ───────────────────────────────────────────────────────────────
+    const ring = (estado) => {
+        if (estado === null) return "focus:ring-gray-400";
+        return estado.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300";
+    };
+
     const handleSubmit = () => {
         setTocados({ producto: true, cantidad: true, precio: true, costeProducto: true, precioVenta: true });
-
-        if (
-            !validarProducto(modalProducto).valido ||
-            !validarCantidad(modalCantidad).valido  ||
-            !validarPrecio(modalPrecio).valido       ||
-            !validarCosteProducto(modalCosteProducto).valido ||
-            !validarPrecioVenta(modalPrecioVenta).valido
-        ) return;
-
+        if (!validarProducto(modalProducto).valido || !validarCantidad(modalCantidad).valido || !validarPrecio(modalPrecio).valido || !validarCosteProducto(modalCosteProducto).valido || !validarPrecioVenta(modalPrecioVenta).valido) return;
         const found         = productosList.find((p) => String(p.id) === String(modalProducto));
-        const cantidad      = parseInt(modalCantidad);
-        const precio        = parseCOP(modalPrecio);
-        const costeProducto = parseCOP(modalCosteProducto);
-        const precioVenta   = parseCOP(modalPrecioVenta);
-
-        // El usuario eligió "sugerido" → usaremos precioVenta directamente.
-        // El usuario eligió "wac" (o no hubo diferencia) → se aplicará el WAC en guardarCompra.
-        // Pasamos sobreescribirConSugerido para que CreateShopping.finalizarCompra lo maneje.
         const sobreescribirConSugerido = mostrarSeleccionPrecio && seleccionPrecio === "sugerido";
-
         onAnadir({
             id:                    found?.id ?? Date.now(),
             nombre:                found?.nombre ?? modalProducto,
-            cantidad,
-            precio,
-            costeProducto,
-            precioVenta,
-            subtotal:              cantidad * costeProducto,
+            cantidad:              parseInt(modalCantidad),
+            precio:                parseCOP(modalPrecio),
+            costeProducto:         parseCOP(modalCosteProducto),
+            precioVenta:           parseCOP(modalPrecioVenta),
+            subtotal:              parseInt(modalCantidad) * parseCOP(modalCosteProducto),
             sobreescribirConSugerido,
             esActualizacion:       !!productoYaAgregado,
         });
@@ -180,60 +112,38 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
     return (
         <>
-            {/* OVERLAY */}
             <div className="absolute inset-0 bg-white/30 backdrop-blur-sm rounded-2xl z-10" onClick={onClose} />
 
-            {/* TARJETA */}
+            {/* Modal más ancha: max-w-2xl */}
             <div className="absolute inset-0 flex items-start justify-center z-20 pointer-events-none overflow-y-auto py-4">
-                <div
-                    className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-xl pointer-events-auto border border-gray-300 my-auto"
-                    onClick={(e) => e.stopPropagation()}
-                >
+                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl pointer-events-auto border border-gray-300 my-auto" onClick={(e) => e.stopPropagation()}>
+
                     {/* HEADER */}
-                    <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-start justify-between mb-4">
                         <div>
                             <p className="text-base font-semibold">
-                                {productoYaAgregado
-                                    ? <>Actualizar <span className="text-yellow-400">producto</span> en la compra</>
-                                    : <>Añadir <span className="text-yellow-400">producto</span> a la compra</>
-                                }
+                                {productoYaAgregado ? <>Actualizar <span className="text-yellow-400">producto</span> en la compra</> : <>Añadir <span className="text-yellow-400">producto</span> a la compra</>}
                             </p>
                             <p className="text-xs text-gray-500 mt-0.5">
-                                {productoYaAgregado
-                                    ? "Modifica los valores y confirma para actualizar."
-                                    : "Complete todos los campos del formulario."}
+                                {productoYaAgregado ? "Modifica los valores y confirma para actualizar." : "Complete todos los campos del formulario."}
                             </p>
                         </div>
-                        <button type="button" onClick={onClose} className="hover:bg-gray-100 p-1.5 rounded-lg transition cursor-pointer">
-                            <X size={18} />
-                        </button>
+                        <button type="button" onClick={onClose} className="hover:bg-gray-100 p-1.5 rounded-lg transition cursor-pointer"><X size={18} /></button>
                     </div>
 
-                    {/* CAMPOS */}
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-4 mt-4">
+                    {/* FILA 1 — Producto y Cantidad */}
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-4">
 
                         {/* PRODUCTO */}
                         <div className="flex flex-col gap-2">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                                <Box size={20} /><span>Producto *</span>
-                            </div>
-                            <div className="flex items-center gap-2 w-full">
-                                <select
-                                    value={modalProducto}
-                                    onChange={(e) => handleSelectProducto(e.target.value)}
-                                    onBlur={() => setTocados((t) => ({ ...t, producto: true }))}
-                                    className={`flex-1 min-w-0 bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 cursor-pointer
-                                        ${estadoProducto === null ? "focus:ring-gray-400 text-gray-500"
-                                            : estadoProducto.valido ? "ring-1 ring-green-300 text-gray-700"
-                                            : "ring-1 ring-red-300 text-gray-500"}`}
-                                >
+                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><Box size={18} /><span>Producto *</span></div>
+                            <div className="flex items-center gap-2">
+                                <select value={modalProducto} onChange={(e) => handleSelectProducto(e.target.value)} onBlur={() => setTocados((t) => ({ ...t, producto: true }))}
+                                    className={`flex-1 bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all cursor-pointer ${estadoProducto === null ? "focus:ring-gray-400 text-gray-500" : estadoProducto.valido ? "ring-1 ring-green-300 text-gray-700" : "ring-1 ring-red-300 text-gray-500"}`}>
                                     <option value="">Elige un producto...</option>
-                                    {productosList.map((p) => (
-                                        <option key={p.id} value={p.id}>{p.nombre}</option>
-                                    ))}
+                                    {productosList.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                                 </select>
-                                <button type="button" onClick={() => setShowCreateProductModal(true)}
-                                    className="bg-yellow-400 hover:bg-yellow-500 transition p-3 rounded-xl shadow-md cursor-pointer flex-shrink-0">
+                                <button type="button" onClick={() => setShowCreateProductModal(true)} className="bg-yellow-400 hover:bg-yellow-500 transition p-3 rounded-xl shadow-md cursor-pointer flex-shrink-0">
                                     <Plus size={18} className="text-white" />
                                 </button>
                             </div>
@@ -242,17 +152,11 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
                         {/* CANTIDAD */}
                         <div className="flex flex-col gap-2">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                                <Boxes size={20} /><span>Cantidad *</span>
-                            </div>
-                            <input type="number" min="1" placeholder="Unidades a comprar"
-                                value={modalCantidad}
+                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><Boxes size={18} /><span>Cantidad *</span></div>
+                            <input type="number" min="1" placeholder="Unidades a comprar" value={modalCantidad}
                                 onChange={(e) => { setModalCantidad(e.target.value); setTocados((t) => ({ ...t, cantidad: true })); }}
                                 onBlur={() => setTocados((t) => ({ ...t, cantidad: true }))}
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300
-                                    ${estadoCantidad === null ? "focus:ring-gray-400"
-                                        : estadoCantidad.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300"}`}
-                            />
+                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${ring(estadoCantidad)}`} />
                             {productoSeleccionado && (
                                 <div className="flex items-center justify-between rounded-lg px-3 py-1.5 text-xs bg-gray-50 border border-gray-200">
                                     <span className="text-gray-500">Stock en inventario:</span>
@@ -262,53 +166,42 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                             <FieldStatus estado={estadoCantidad} />
                         </div>
 
+                    </div>
+
+                    {/* FILA 2 — 3 campos de precio en grid de 3 columnas */}
+                    <div className="grid grid-cols-3 gap-x-5 gap-y-4 mt-4">
+
                         {/* PRECIO INVENTARIO */}
                         <div className="flex flex-col gap-2">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                                <DollarSign size={16} /><span>Precio en inventario</span>
-                            </div>
-                            <input type="number" readOnly value={modalPrecio}
-                                placeholder="Se carga al seleccionar"
+                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={16} /><span>Precio inventario</span></div>
+                            <input type="number" readOnly value={modalPrecio} placeholder="carga automatica"
                                 className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm cursor-not-allowed opacity-75" />
-                            <p className="text-xs text-gray-400 -mt-1">Precio actual del producto (referencia)</p>
+                            <p className="text-xs text-gray-400 -mt-1">Precio actual (referencia)</p>
                         </div>
 
                         {/* COSTE COMPRA */}
                         <div className="flex flex-col gap-2">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                                <DollarSign size={16} /><span>Coste de compra *</span>
-                            </div>
-                            <input type="number" min="1" placeholder="Lo que pagas al proveedor"
-                                value={modalCosteProducto}
+                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={16} /><span>Coste de compra *</span></div>
+                            <input type="number" min="1" placeholder="precio proveedor" value={modalCosteProducto}
                                 onChange={(e) => { setModalCosteProducto(e.target.value); setTocados((t) => ({ ...t, costeProducto: true })); }}
                                 onBlur={() => setTocados((t) => ({ ...t, costeProducto: true }))}
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300
-                                    ${estadoCosteProducto === null ? "focus:ring-gray-400"
-                                        : estadoCosteProducto.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300"}`}
-                            />
+                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${ring(estadoCosteProducto)}`} />
                             <FieldStatus estado={estadoCosteProducto} />
                         </div>
 
                         {/* PRECIO VENTA */}
-                        <div className="col-span-2 flex flex-col gap-2">
-                            <div className="flex items-center gap-2 text-sm font-medium">
-                                <DollarSign size={16} className="text-blue-400" />
-                                <span className="text-blue-400">Precio de venta *</span>
-                            </div>
-                            <input type="number" min="0" placeholder="Debe ser mayor al coste de compra"
-                                value={modalPrecioVenta}
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 text-sm font-medium"><DollarSign size={16} className="text-blue-400" /><span className="text-blue-400">Precio de venta *</span></div>
+                            <input type="number" min="0" placeholder="Mayor al coste" value={modalPrecioVenta}
                                 onChange={(e) => { setModalPrecioVenta(e.target.value); setTocados((t) => ({ ...t, precioVenta: true })); }}
                                 onBlur={() => setTocados((t) => ({ ...t, precioVenta: true }))}
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300
-                                    ${estadoPrecioVenta === null ? "focus:ring-gray-400"
-                                        : estadoPrecioVenta.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300"}`}
-                            />
+                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${ring(estadoPrecioVenta)}`} />
                             <FieldStatus estado={estadoPrecioVenta} />
                         </div>
 
                     </div>
 
-                    {/* ── SELECCIÓN DE PRECIO — aparece cuando WAC ≠ precioVenta ── */}
+                    {/* SELECCIÓN WAC — aparece cuando WAC ≠ precioVenta */}
                     {mostrarSeleccionPrecio && (
                         <div className="mt-4">
                             <div className="flex items-center gap-2 mb-2">
@@ -318,47 +211,23 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                                 </p>
                             </div>
                             <div className="grid grid-cols-2 gap-2.5">
-
-                                {/* Opción WAC */}
                                 <button type="button" onClick={() => setSeleccionPrecio("wac")}
-                                    className={`relative flex flex-col gap-1 p-3 rounded-xl border-2 text-left transition-all cursor-pointer
-                                        ${seleccionPrecio === "wac"
-                                            ? "border-blue-400 bg-blue-50"
-                                            : "border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30"}`}
-                                >
+                                    className={`relative flex flex-col gap-1 p-3 rounded-xl border-2 text-left transition-all cursor-pointer ${seleccionPrecio === "wac" ? "border-blue-400 bg-blue-50" : "border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30"}`}>
                                     {seleccionPrecio === "wac" && <CheckCircle2 size={13} className="absolute top-2 right-2 text-blue-500" />}
-                                    <span className="flex items-center gap-1 text-xs text-gray-400 font-medium uppercase tracking-wide">
-                                        <Info size={10} />Precio promedio (WAC)
-                                    </span>
+                                    <span className="flex items-center gap-1 text-xs text-gray-400 font-medium uppercase tracking-wide"><Info size={10} />Precio promedio (WAC)</span>
                                     <span className="text-base font-bold text-blue-600">{fmt(wacCalculado)}</span>
                                     <span className="text-xs text-gray-400 leading-tight">Calculado con el inventario actual</span>
                                 </button>
-
-                                {/* Opción sugerido */}
                                 <button type="button" onClick={() => setSeleccionPrecio("sugerido")}
-                                    className={`relative flex flex-col gap-1 p-3 rounded-xl border-2 text-left transition-all cursor-pointer
-                                        ${seleccionPrecio === "sugerido"
-                                            ? "border-yellow-400 bg-yellow-50"
-                                            : "border-gray-200 bg-white hover:border-yellow-200 hover:bg-yellow-50/30"}`}
-                                >
+                                    className={`relative flex flex-col gap-1 p-3 rounded-xl border-2 text-left transition-all cursor-pointer ${seleccionPrecio === "sugerido" ? "border-yellow-400 bg-yellow-50" : "border-gray-200 bg-white hover:border-yellow-200 hover:bg-yellow-50/30"}`}>
                                     {seleccionPrecio === "sugerido" && <CheckCircle2 size={13} className="absolute top-2 right-2 text-yellow-500" />}
                                     <div className="flex items-center gap-1.5">
-                                        <span className="flex items-center gap-1 text-xs text-gray-400 font-medium uppercase tracking-wide">
-                                            <Tag size={10} />Precio sugerido
-                                        </span>
-                                        {(() => {
-                                            const diff = parseCOP(modalPrecioVenta) - wacCalculado;
-                                            return (
-                                                <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${diff > 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
-                                                    {diff > 0 ? "▲" : "▼"} {fmt(Math.abs(diff))}
-                                                </span>
-                                            );
-                                        })()}
+                                        <span className="flex items-center gap-1 text-xs text-gray-400 font-medium uppercase tracking-wide"><Tag size={10} />Precio sugerido</span>
+                                        {(() => { const d = parseCOP(modalPrecioVenta) - wacCalculado; return <span className={`text-xs font-medium px-1.5 py-0.5 rounded-full ${d > 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>{d > 0 ? "▲" : "▼"} {fmt(Math.abs(d))}</span>; })()}
                                     </div>
                                     <span className="text-base font-bold text-yellow-600">{fmt(parseCOP(modalPrecioVenta))}</span>
                                     <span className="text-xs text-gray-400 leading-tight">Ingresado en esta compra</span>
                                 </button>
-
                             </div>
                         </div>
                     )}
@@ -366,35 +235,19 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                     {/* PREVISUALIZACIÓN */}
                     {modalCantidad && modalCosteProducto && modalPrecioVenta && (
                         <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 text-sm text-gray-700 flex items-center justify-between">
-                            <span>
-                                <span className="font-medium">Subtotal compra: </span>
-                                <span className="font-semibold text-gray-900">
-                                    {formatCOP((parseInt(modalCantidad) || 0) * parseCOP(modalCosteProducto))}
-                                </span>
-                            </span>
-                            <span>
-                                <span className="font-medium">Margen unitario: </span>
-                                <span className="font-semibold text-green-600">
-                                    {formatCOP(parseCOP(modalPrecioVenta) - parseCOP(modalCosteProducto))}
-                                </span>
-                            </span>
+                            <span><span className="font-medium">Subtotal compra: </span><span className="font-semibold text-gray-900">{formatCOP((parseInt(modalCantidad) || 0) * parseCOP(modalCosteProducto))}</span></span>
+                            <span><span className="font-medium">Margen unitario: </span><span className="font-semibold text-green-600">{formatCOP(parseCOP(modalPrecioVenta) - parseCOP(modalCosteProducto))}</span></span>
                         </div>
                     )}
 
                     {/* BOTONES */}
                     <div className="flex justify-between mt-6">
-                        <button type="button" onClick={onClose}
-                            className="bg-gray-200 hover:bg-gray-300 transition px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer">
-                            Cancelar
-                        </button>
-                        <PrimaryButton onClick={handleSubmit}>
-                            {productoYaAgregado ? "Actualizar producto" : "Añadir producto"}
-                        </PrimaryButton>
+                        <button type="button" onClick={onClose} className="bg-gray-200 hover:bg-gray-300 transition px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer">Cancelar</button>
+                        <PrimaryButton onClick={handleSubmit}>{productoYaAgregado ? "Actualizar producto" : "Añadir producto"}</PrimaryButton>
                     </div>
                 </div>
             </div>
 
-            {/* MODAL CREAR PRODUCTO */}
             {showCreateProductModal && (
                 <CreateProductModal
                     onClose={() => setShowCreateProductModal(false)}

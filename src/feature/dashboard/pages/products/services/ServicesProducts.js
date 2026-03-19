@@ -24,7 +24,6 @@ export const ServicesProducts = {
             nombre: producto.nombre || "",
             categoriaId: producto.categoriaId || "",
             precio: Number(producto.precio) || 0,
-            costoPromedio: Number(producto.costoPromedio) || Number(producto.precio) || 0,
             stock: Number(producto.stock) || 0,
             serial: producto.serial || "",
             garantia: producto.garantia || "",
@@ -51,8 +50,7 @@ export const ServicesProducts = {
                     ...prod,
                     ...productoActualizado,
                     precio: Number(productoActualizado.precio),
-                    stock: Number(productoActualizado.stock),
-                    costoPromedio: Number(productoActualizado.costoPromedio ?? prod.costoPromedio ?? 0)
+                    stock: Number(productoActualizado.stock)
                 }
                 : prod
         );
