@@ -23,6 +23,9 @@ export default function AddProductModal({
     getAvailableStock,
     title = "Agregar Productos",
     confirmText = "Confirmar selección",
+    isCredit = false,
+    quotaAmount = 0,
+    currentSaleTotal = 0
 }) {
     // ── BUSCADOR / COMBO ─────────────────────────────────────────────────────
     const [searchTerm, setSearchTerm] = useState("");
@@ -127,6 +130,17 @@ export default function AddProductModal({
         if (product) {
             const stock = getRealStock(product);
             if (num > stock) return `Máximo disponible: ${stock}`;
+            
+            if (isCredit) {
+                const totalValue = queue.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
+                const currentQueueIVA = totalValue * 0.19;
+                const addedItemIVA = (num * product.precio) * 0.19;
+                
+                const newTotalSaleValue = currentSaleTotal + totalValue + currentQueueIVA + (num * product.precio) + addedItemIVA;
+                if (newTotalSaleValue > quotaAmount) {
+                    return "El monto superaría el cupo";
+                }
+            }
         }
         return "";
     };
@@ -161,6 +175,9 @@ export default function AddProductModal({
     // ── TOTALES ──────────────────────────────────────────────────────────────
     const totalItems = queue.reduce((acc, p) => acc + p.cantidad, 0);
     const totalValue = queue.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
+
+    const totalQueueWithIva = totalValue * 1.19;
+    const isExceedingQuota = isCredit && (currentSaleTotal + totalQueueWithIva > quotaAmount);
 
     const fmt = (n) => new Intl.NumberFormat("es-CO", {
         style: "currency", currency: "COP", minimumFractionDigits: 0,
@@ -200,8 +217,16 @@ export default function AddProductModal({
                             <ShoppingCart size={17} color="#1f2937" strokeWidth={2.2} />
                         </div>
                         <div>
-                            <h2 className="font-semibold text-gray-800"
-                                style={{ fontSize: "16px", letterSpacing: "-0.01em" }}>{title}</h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="font-semibold text-gray-800"
+                                    style={{ fontSize: "16px", letterSpacing: "-0.01em" }}>{title}</h2>
+                                {isCredit && (
+                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-md"
+                                        style={{ backgroundColor: "#dcfce7", color: "#166534" }}>
+                                        Cupo: {fmt(quotaAmount)}
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-xs text-gray-400" style={{ marginTop: "1px" }}>
                                 {queue.length === 0
                                     ? "Ningún producto añadido"
@@ -502,18 +527,18 @@ export default function AddProductModal({
                         Cancelar
                     </button>
 
-                    <button type="button" onClick={handleConfirm} disabled={queue.length === 0}
+                    <button type="button" onClick={handleConfirm} disabled={queue.length === 0 || isExceedingQuota}
                         className="flex-[2.5] flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-xl transition-all btn-confirm"
                         style={{
-                            backgroundColor: queue.length === 0 ? "#e5e7eb" : "#facc15",
-                            color: queue.length === 0 ? "#9ca3af" : "#1f2937",
-                            cursor: queue.length === 0 ? "not-allowed" : "pointer",
+                            backgroundColor: (queue.length === 0 || isExceedingQuota) ? "#e5e7eb" : "#facc15",
+                            color: (queue.length === 0 || isExceedingQuota) ? "#9ca3af" : "#1f2937",
+                            cursor: (queue.length === 0 || isExceedingQuota) ? "not-allowed" : "pointer",
                             border: "none",
-                            boxShadow: queue.length > 0 ? "0 4px 14px rgba(250,204,21,0.35)" : "none",
+                            boxShadow: (queue.length > 0 && !isExceedingQuota) ? "0 4px 14px rgba(250,204,21,0.35)" : "none",
                         }}>
                         <CheckCircle size={15} />
-                        {confirmText}
-                        {queue.length > 0 && (
+                        {isExceedingQuota ? "Cupo excedido" : confirmText}
+                        {queue.length > 0 && !isExceedingQuota && (
                             <span className="ml-1 px-2 py-0.5 rounded-md text-xs font-bold"
                                 style={{ backgroundColor: "rgba(0,0,0,0.1)", color: "#1f2937" }}>
                                 {queue.length}

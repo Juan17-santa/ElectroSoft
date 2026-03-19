@@ -59,9 +59,12 @@ export default function CreateSales() {
     const resultadoDoc = validarDocumentoCliente(formData.numeroDocumento);
     const estadoNumDoc = tocado.numeroDocumento ? resultadoDoc : null;
 
-    // Opciones de tipo de venta según historial de compras del cliente
+    // Opciones de tipo de venta según el historial (1M) y el cupo asignado
     const totalComprasCliente = Number(resultadoDoc.cliente?.totalCompras) || 0;
-    const opcionesTipoVenta = totalComprasCliente > 1000000
+    const clienteTieneCupo = resultadoDoc.cliente?.cupoActivo;
+    const puedeTenerCredito = totalComprasCliente > 1000000 && clienteTieneCupo;
+    
+    const opcionesTipoVenta = puedeTenerCredito
         ? [
             { value: "Contado", label: "Contado" },
             { value: "Credito", label: "Crédito" }
@@ -88,12 +91,13 @@ export default function CreateSales() {
         setClients(ClientsService.get());
     }, []);
 
-    // Si el cliente cambia y ya no cumple el mínimo, resetear tipoVenta a Contado
+    // Si el cliente cambia y ya no cumple los requisitos, resetear tipoVenta a Contado
     useEffect(() => {
-        if (totalComprasCliente <= 1000000 && formData.tipoVenta === "Credito") {
+        const canCredit = (Number(resultadoDoc.cliente?.totalCompras) || 0) > 1000000 && resultadoDoc.cliente?.cupoActivo;
+        if (!canCredit && formData.tipoVenta === "Credito") {
             setFormData(prev => ({ ...prev, tipoVenta: "Contado" }));
         }
-    }, [totalComprasCliente]);
+    }, [resultadoDoc.cliente?.cupoActivo, resultadoDoc.cliente?.totalCompras, formData.tipoVenta]);
 
     // Automatizar Estado del Pedido
     useEffect(() => {
@@ -223,6 +227,11 @@ export default function CreateSales() {
 
         if (productos.length === 0) {
             setProductosError("Debe agregar al menos un producto.");
+            return;
+        }
+
+        if (formData.tipoVenta === "Credito" && total > (resultadoDoc.cliente?.cupoTotal || 0)) {
+            setAlert({ type: "error", message: `El total de la venta ($${total.toLocaleString("es-CO")}) supera el cupo asignado ($${(resultadoDoc.cliente?.cupoTotal || 0).toLocaleString("es-CO")}).` });
             return;
         }
 
@@ -425,6 +434,12 @@ export default function CreateSales() {
                             </table>
                         </div>
 
+                        {formData.tipoVenta === "Credito" && total > (resultadoDoc.cliente?.cupoTotal || 0) && (
+                            <div className="flex items-center gap-2 bg-red-50 text-red-600 px-6 py-3 border-t border-red-200">
+                                <AlertCircle size={18} />
+                                <span className="text-sm font-medium">EL total supera el cupo asignado de {formatCurrency(resultadoDoc.cliente?.cupoTotal || 0)}. Ajuste las cantidades.</span>
+                            </div>
+                        )}
                         {/* PIE DE TABLA (TOTALES Y PAGINACIÓN INTEGRADOS) */}
                         <div className="w-full flex px-6 py-3 justify-between items-center bg-gray-50 border-t border-gray-200">
                             <div>
@@ -467,6 +482,9 @@ export default function CreateSales() {
                     getAvailableStock={getAvailableStock}
                     title="Agregar Productos a la Venta"
                     confirmText="Cargar a la venta"
+                    isCredit={formData.tipoVenta === "Credito"}
+                    quotaAmount={resultadoDoc.cliente?.cupoTotal || 0}
+                    currentSaleTotal={total}
                 />
             </div>
 

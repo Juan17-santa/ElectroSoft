@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Info, X } from "lucide-react";
+import { Info, X, CreditCard } from "lucide-react";
+import ConfirmModal from "../../components/ui/ConfirmModal";
+import Alert from "../../components/ui/Alert";
+import AssignQuotaModal from "./components/AssignQuotaModal";
+import { ClientsService } from "./services/ClientsService";
 
 export default function ClientDetailsPage() {
     const navigate = useNavigate();
     const [client, setClient] = useState(null);
+    const [confirmData, setConfirmData] = useState(null);
+    const [isAssignQuotaOpen, setIsAssignQuotaOpen] = useState(false);
+    const [alert, setAlert] = useState(null);
 
     useEffect(() => {
         const data = localStorage.getItem("clientToView");
@@ -18,6 +25,21 @@ export default function ClientDetailsPage() {
         navigate("/dashboard/clients");
     };
 
+    const showAlert = (type, message) => setAlert({ type, message });
+
+    const handleAsignarCupo = () => {
+        setIsAssignQuotaOpen(true);
+    };
+
+    const confirmAssignQuota = (amount) => {
+        const clientActualizado = { ...client, cupoActivo: true, cupoTotal: amount };
+        ClientsService.update(clientActualizado);
+        setClient(clientActualizado);
+        localStorage.setItem("clientToView", JSON.stringify(clientActualizado));
+        showAlert("success", `Cupo de $${amount.toLocaleString("es-CO")} asignado exitosamente.`);
+        setIsAssignQuotaOpen(false);
+    };
+
     return (
         <>
             <div
@@ -29,6 +51,17 @@ export default function ClientDetailsPage() {
                     backgroundRepeat: 'no-repeat'
                 }}
             >
+                {/* ALERTA (Flotante) */}
+                {alert && (
+                    <div className="absolute top-4 right-4 z-50">
+                        <Alert
+                            type={alert.type}
+                            message={alert.message}
+                            onClose={() => setAlert(null)}
+                        />
+                    </div>
+                )}
+
                 {/* Capa de transparencia */}
                 <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
 
@@ -88,13 +121,30 @@ export default function ClientDetailsPage() {
                                         ${client.totalCompras?.toLocaleString("es-CO") || "0"}
                                     </p>
                                 </div>
+                                {client.cupoActivo && (
+                                    <div>
+                                        <p className="text-sm text-yellow-400 mb-1">Cupo Asignado</p>
+                                        <p className="text-sm font-bold text-gray-800">
+                                            ${client.cupoTotal ? client.cupoTotal.toLocaleString("es-CO") : "0"}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                     {/* FIN CONTENEDOR PRINCIPAL */}
 
-                    {/* BOTÓN VOLVER */}
-                    <div className="flex justify-end mt-auto">
+                    {/* BOTONES */}
+                    <div className="flex justify-end mt-auto gap-4">
+                        {client.totalCompras > 1000000 && (
+                            <button
+                                onClick={handleAsignarCupo}
+                                className="bg-linear-to-r from-green-400 to-green-500 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium text-white shadow cursor-pointer flex items-center gap-2"
+                            >
+                                <CreditCard size={18} />
+                                Asignar Cupo
+                            </button>
+                        )}
                         <button
                             onClick={handleClose}
                             className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
@@ -104,6 +154,25 @@ export default function ClientDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* MODAL DE CONFIRMACION */}
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={() => setConfirmData(null)}
+                />
+            )}
+
+            {/* MODAL ASIGNAR CUPO */}
+            <AssignQuotaModal
+                isOpen={isAssignQuotaOpen}
+                onClose={() => setIsAssignQuotaOpen(false)}
+                onConfirm={confirmAssignQuota}
+                clientName={client ? `${client.nombres} ${client.apellidos}` : ''}
+            />
         </>
     );
 }
