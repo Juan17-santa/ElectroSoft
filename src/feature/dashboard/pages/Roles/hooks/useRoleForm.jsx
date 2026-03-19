@@ -11,11 +11,12 @@ export function useRoleForm({ initialData = null, onSubmit }) {
         permisos: {}
     });
 
-    const [tocado, setTocado] = useState({ nombre: false });
+    const [tocado, setTocado] = useState({ nombre: false, descripcion: false });
     const [formError, setFormError] = useState(null);
 
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
     const estadoNombre = tocado.nombre ? Validations.validarNombreRol(formData.nombre) : null;
+    const estadoDescripcion = tocado.descripcion ? Validations.validarDescripcionRol(formData.descripcion) : null;
 
     useEffect(() => {
         if (initialData) {
@@ -70,16 +71,14 @@ export function useRoleForm({ initialData = null, onSubmit }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setTocado({ nombre: true });
         setFormError(null);
 
         const vNombre = Validations.validarNombreRol(formData.nombre);
-        if (!vNombre.valido) {
-            return;
-        }
+        const vDescripcion = Validations.validarDescripcionRol(formData.descripcion);
 
-        if (formData.descripcion && formData.descripcion.length > 200) {
-            setFormError("La descripción no debe exceder los 200 caracteres.");
+        setTocado({ nombre: true, descripcion: true });
+
+        if (!vNombre.valido || !vDescripcion.valido) {
             return;
         }
 
@@ -97,6 +96,7 @@ export function useRoleForm({ initialData = null, onSubmit }) {
         tocado,
         tocar,
         estadoNombre,
+        estadoDescripcion,
         formError,
         setFormError,
         handleChange,

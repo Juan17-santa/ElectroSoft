@@ -24,7 +24,7 @@ export default function RoleDetailsPage() {
 
     return (
         <>
-            <div className="bg-gray-100 p-4 rounded-2xl flex flex-col gap-4 h-full shadow-inner">
+            <div className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-4 h-full shadow-inner">
 
                 {/* CONTENEDOR PRINCIPAL CON IMAGEN DE FONDO */}
                 <div

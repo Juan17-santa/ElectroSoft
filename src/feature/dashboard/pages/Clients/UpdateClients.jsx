@@ -34,7 +34,7 @@ export default function UpdateClients() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>

@@ -19,6 +19,7 @@ export default function RoleForm({
     tocado,
     tocar,
     estadoNombre,
+    estadoDescripcion,
     formError,
     setFormError,
     handleChange,
@@ -103,14 +104,22 @@ export default function RoleForm({
                         <FileText size={18} />
                         <span>Descripción</span>
                     </div>
-                    <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200 h-full flex-1">
-                        <textarea
-                            name="descripcion"
-                            value={formData.descripcion}
-                            onChange={handleChange}
-                            placeholder="Descripción"
-                            className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none resize-none min-h-[48px]"
-                        ></textarea>
+                    <div className="flex flex-col flex-1">
+                        <div className={`rounded-xl px-4 py-3 flex flex-col shadow-sm transition-all duration-300 h-full flex-1 ${ringClass(estadoDescripcion)} ${!estadoDescripcion || estadoDescripcion.valido ? 'bg-gray-200/50' : ''}`}>
+                            <textarea
+                                name="descripcion"
+                                value={formData.descripcion}
+                                onChange={handleChange}
+                                onBlur={() => tocar("descripcion")}
+                                placeholder="Descripción del rol (mínimo 10 caracteres)"
+                                className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none resize-none min-h-[80px] flex-1"
+                                maxLength={200}
+                            ></textarea>
+                            <span className={`text-[11px] mt-1 self-end ${formData.descripcion.length > 180 ? 'text-red-400' : 'text-gray-400'}`}>
+                                {formData.descripcion.length}/200
+                            </span>
+                        </div>
+                        <FieldStatus estado={estadoDescripcion} />
                     </div>
                 </div>
             </div>

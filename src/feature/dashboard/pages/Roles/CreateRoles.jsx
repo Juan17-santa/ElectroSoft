@@ -30,7 +30,7 @@ export default function CreateRoles() {
 
     return (
         <>
-            <div className="bg-gray-100 p-8 rounded-3xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4">
+            <div className="bg-gray-50 p-8 rounded-3xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4">
                 <div className="mb-0">
                     <h1 className="text-2xl font-bold text-gray-800">
                         Crear nuevo <span className="text-yellow-500">rol</span>

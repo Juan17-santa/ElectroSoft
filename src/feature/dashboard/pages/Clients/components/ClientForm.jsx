@@ -132,6 +132,11 @@ export default function ClientForm({
                             success={tocado.email && !errors.email} 
                             successMessage="Listo" 
                         />
+                        {!tocado.email && (
+                            <p className="text-[11px] text-gray-400 mt-1 ml-1">
+                                Dominios aceptados: gmail, hotmail, outlook, yahoo, icloud, entre otros.
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex flex-col gap-0 w-80">
