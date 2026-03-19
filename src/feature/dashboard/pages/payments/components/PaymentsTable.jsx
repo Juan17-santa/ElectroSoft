@@ -11,12 +11,12 @@ export default function PaymentsTable({ data, onDetails }) {
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
                             <th className="px-4 py-2 w-8 font-semibold">ID</th>
-                            <th className="px-4 py-2 w-20 font-semibold">Numero venta</th>
-                            <th className="px-4 py-2 w-20 font-semibold">Fecha</th>
-                            <th className="px-4 py-2 w-20 font-semibold">Fecha limite</th>
-                            <th className="px-4 py-2 w-30 font-semibold">Cliente</th>
-                            <th className="px-4 py-2 w-25 font-semibold">Metodo de pago</th>
-                            <th className="px-4 py-2 w-22 font-semibold">Monto</th>
+                            <th className="px-4 py-2 w-24 font-semibold">Número</th>
+                            <th className="px-4 py-2 w-24 font-semibold">Fecha</th>
+                            <th className="px-4 py-2 w-24 font-semibold">Fecha límite</th>
+                            <th className="px-4 py-2 w-32 font-semibold">Cliente</th>
+                            <th className="px-4 py-2 w-28 font-semibold">Método de pago</th>
+                            <th className="px-4 py-2 w-24 font-semibold">Último abono</th>
                             <th className="px-4 py-2 w-28 font-semibold">Saldo pendiente</th>
                             <th className="px-4 py-2 w-28 font-semibold text-center">Estado</th>
                             <th className="px-4 py-2 w-20 font-semibold text-center">Acciones</th>
@@ -27,71 +27,110 @@ export default function PaymentsTable({ data, onDetails }) {
                         {data.length === 0 ? (
                             <tr>
                                 <td colSpan="10" className="text-center py-4 text-gray-500">
-                                    No se encontraron ventas a crédito pendientes.
+                                    No se encontraron ventas o pedidos a crédito pendientes.
                                 </td>
                             </tr>
                         ) : (
                             data.map((payment, index) => {
                                 const abonos = payment.abonos || [];
-                                const ultimoAbono = abonos.length > 0 ? abonos[abonos.length - 1] : null;
+                                const ultimoAbono = abonos.length > 0
+                                    ? abonos[abonos.length - 1]
+                                    : null;
+
                                 const isPendiente = payment.estado === "Vigente";
+                                const isVencida  = payment.estado === "Anulada"; // ✅ nuevo
+                                const esPedido   = payment.fuente === "pedido";
 
                                 return (
-                                    <tr key={payment.id} className="border-b border-gray-200">
+                                    <tr
+                                        key={payment.id}
+                                        className={`border-b border-gray-200 ${
+                                            isVencida ? "bg-red-50" : ""  // ✅ fila roja si vencida
+                                        }`}
+                                    >
 
+                                        {/* ID */}
                                         <td className="px-4 py-2">
                                             {String(index + 1).padStart(2, "0")}
                                         </td>
 
+                                        {/* NÚMERO */}
                                         <td className="px-4 py-2">
-                                            {payment.numeroVenta || `V-${payment.id}`}
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">
+                                                    {payment.numeroVenta || `V-${payment.id}`}
+                                                </span>
+                                                <span className={`text-xs font-semibold w-fit px-1.5 py-0.5 rounded-full mt-0.5
+                                                    ${esPedido
+                                                        ? "bg-blue-100 text-blue-600"
+                                                        : "bg-yellow-100 text-yellow-600"
+                                                    }`}>
+                                                    {esPedido ? "Pedido" : "Venta"}
+                                                </span>
+                                            </div>
                                         </td>
 
+                                        {/* FECHA */}
                                         <td className="px-4 py-2">
                                             {payment.fecha || "—"}
                                         </td>
 
-                                        <td className="px-4 py-2">
+                                        {/* FECHA LÍMITE — rojo si vencida */}
+                                        <td className={`px-4 py-2 ${isVencida ? "text-red-600 font-semibold" : ""}`}>
                                             {payment.fechaLimite || "—"}
                                         </td>
 
+                                        {/* CLIENTE */}
                                         <td className="px-4 py-2">
                                             <div className="flex flex-col">
-                                                <span className="font-medium">
+                                                <span className="font-medium truncate">
                                                     {payment.cliente || "Sin nombre"}
                                                 </span>
                                                 <span className="text-xs text-gray-500">
-                                                    {/* ✅ numeroDocumento (SalesService) */}
-                                                    C.C {payment.numeroDocumento}
+                                                    {payment.numeroDocumento || "—"}
                                                 </span>
                                             </div>
                                         </td>
 
-                                        {/* ✅ metodoPago en vez de paymentMethod */}
+                                        {/* MÉTODO DE PAGO */}
                                         <td className="px-4 py-2">
                                             {ultimoAbono?.metodoPago || "—"}
                                         </td>
 
-                                        {/* ✅ monto en vez de amount */}
+                                        {/* ÚLTIMO ABONO */}
                                         <td className="px-4 py-2">
-                                            {ultimoAbono ? `$${fmt(ultimoAbono.monto)}` : "—"}
+                                            {ultimoAbono
+                                                ? `$${fmt(ultimoAbono.monto)}`
+                                                : "—"
+                                            }
                                         </td>
 
-                                        {/* ✅ montoPorPagar en vez de saldoPendiente */}
-                                        <td className="px-4 py-2">
+                                        {/* SALDO PENDIENTE */}
+                                        <td className={`px-4 py-2 font-semibold ${
+                                            isVencida ? "text-red-600" : ""
+                                        }`}>
                                             ${fmt(payment.montoPorPagar)}
                                         </td>
 
-                                        {/* ✅ estado es string "Vigente"/"Finalizado" */}
+                                        {/* ESTADO */}
                                         <td className="px-4 py-2">
                                             <div className="flex items-center justify-center gap-2">
                                                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                                                    isPendiente ? "bg-yellow-400" : "bg-green-500"
+                                                    isVencida   ? "bg-red-500"    :
+                                                    isPendiente ? "bg-yellow-400" :
+                                                                  "bg-green-500"
                                                 }`} />
-                                                <span>{isPendiente ? "Pendiente" : "Finalizado"}</span>
+                                                <span className={
+                                                    isVencida ? "text-red-600 font-semibold" : ""
+                                                }>
+                                                    {isVencida   ? "Vencida"   :
+                                                     isPendiente ? "Pendiente" :
+                                                                   "Finalizado"}
+                                                </span>
                                             </div>
                                         </td>
 
+                                        {/* ACCIONES */}
                                         <td className="px-4 py-2">
                                             <div className="flex justify-center">
                                                 <button
@@ -103,6 +142,7 @@ export default function PaymentsTable({ data, onDetails }) {
                                                 </button>
                                             </div>
                                         </td>
+
                                     </tr>
                                 );
                             })

@@ -1,21 +1,16 @@
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import Alert from "../../../components/ui/alert";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useState } from "react";
+import Alert from "../../../components/ui/Alert";
 import PaymentForm from "../components/PaymentForm";
 import { usePaymentForm } from "../hooks/usePaymentForm";
-import { seedPayments } from "../hooks/seedPayments";
+import { ArrowLeft } from "lucide-react";
 
 export default function CreatePayment() {
-
-    const navigate = useNavigate();
+    const navigate  = useNavigate();
+    const { ventaId } = useParams();
+    const location  = useLocation();
+    const documento = location.state?.documento || null;
     const [alert, setAlert] = useState(null);
-    // ⚠️ SOLO PRUEBAS — controla que el seed corra ANTES que el hook cargue
-    const [seeded, setSeeded] = useState(false);
-
-    useEffect(() => {
-        seedPayments();
-        setSeeded(true); // solo después del seed renderiza el formulario
-    }, []);
 
     const {
         formData,
@@ -25,24 +20,31 @@ export default function CreatePayment() {
         handleSubmit,
         ventasDelDocumento,
     } = usePaymentForm({
+        ventaIdPreseleccionada: ventaId,
+        documentoPreseleccionado: documento,
         onSuccess: () => {
             setAlert({ type: "success", message: "Abono creado correctamente" });
-            setTimeout(() => navigate("/dashboard/payments"), 2000);
+            setTimeout(() => navigate(
+                documento
+                    ? `/dashboard/payments/client/${documento}`
+                    : "/dashboard/payments"
+            ), 2000);
         }
     });
-
-    // ⚠️ SOLO PRUEBAS — espera a que el seed termine antes de renderizar
-    if (!seeded) return null;
 
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <p className="text-xl font-semibold mb-2">
-                            Crear nuevo <span className="text-yellow-500">Abono</span>
-                        </p>
-                    </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-2 rounded-xl hover:bg-gray-200 transition cursor-pointer"
+                    >
+                        <ArrowLeft size={18} />
+                    </button>
+                    <p className="text-xl font-semibold">
+                        Crear nuevo <span className="text-yellow-500">Abono</span>
+                    </p>
                 </div>
 
                 <PaymentForm
@@ -52,7 +54,7 @@ export default function CreatePayment() {
                     handleSelectVenta={handleSelectVenta}
                     handleSubmit={handleSubmit}
                     ventasDelDocumento={ventasDelDocumento}
-                    onCancel={() => navigate("/dashboard/payments")}
+                    onCancel={() => navigate(-1)}
                 />
             </div>
 

@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Mail, Lock, Eye, EyeOff, Lightbulb, CheckCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { login, initUsers } from "../services/authService";
+import { login } from "../services/authService";
 import { Validations } from "../../../utils/validations";
-import Alert from "../../dashboard/components/ui/alert";
+import Alert from "../../dashboard/components/ui/Alert";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -21,9 +21,6 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    initUsers();
-  }, []);
 
   // ─── Validación en tiempo real del EMAIL ───────────────────────────────────
   const handleEmailChange = (e) => {
@@ -91,7 +88,7 @@ export default function Login() {
 
     setAlert({
       type: "success",
-      message: `Bienvenido, ${result.user?.fullName || result.user?.nombre || "usuario"}.`,
+      message: `Bienvenid@, ${result.user?.fullName || result.user?.nombre || "usuario"}.`,
     });
     setTimeout(() => navigate("/dashboard"), 2000);
   };

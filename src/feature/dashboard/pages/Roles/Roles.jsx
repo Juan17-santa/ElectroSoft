@@ -114,7 +114,6 @@ export default function Roles() {
                     onCreateClick={() => navigate("/dashboard/roles/create")}
                     createButtonText="Nuevo Rol"
                     showReportButton={true}
-                    onReportClick={handleGenerarReporte}
                 />
 
                 {/* TABLA */}
@@ -196,7 +195,7 @@ export default function Roles() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-2">
+                <div className="flex justify-end mt-auto">
                     <Pagination
                         currentPage={pageActual}
                         totalPages={totalPages}
