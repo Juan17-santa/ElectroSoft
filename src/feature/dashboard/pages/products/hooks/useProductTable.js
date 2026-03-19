@@ -22,6 +22,8 @@ Dependencias:
 */
 
 import { ServicesProducts } from "../services/ServicesProducts";
+import { SalesService } from "../../SalesManagement/services/SalesService";
+import { ServicesOrders } from "../../orders/services/ServicesOrders";
 
 // HOOK PERSONALIZADO PARA MANEJAR LAS ACCIONES DE LA TABLA DE PRODUCTOS
 export default function useProductTable({
@@ -30,8 +32,53 @@ export default function useProductTable({
     showAlert,
 }) {
 
+    // FUNCION PARA VERIFICAR SI UN PRODUCTO TIENE VENTAS O PEDIDOS ASOCIADOS
+    const hasProductAssociations = (productName) => {
+        try {
+            // Obtener todas las ventas
+            const sales = SalesService.get();
+            const hasSales = sales.some(sale => 
+                sale.productos && sale.productos.some(p => p.nombre === productName)
+            );
+
+            if (hasSales) return { hasAssociations: true, type: "venta" };
+
+            // Obtener todas las órdenes
+            const orders = ServicesOrders.get();
+            const hasOrders = orders.some(order => 
+                order.productos && order.productos.some(p => p.nombre === productName)
+            );
+
+            if (hasOrders) return { hasAssociations: true, type: "pedido" };
+
+            return { hasAssociations: false };
+        } catch (error) {
+            console.error("Error verificando asociaciones:", error);
+            return { hasAssociations: false };
+        }
+    };
+
     // FUNCION PARA ELIMINAR UN PRODUCTO
     const deleteProduct = (id) => {
+        const productToDelete = ServicesProducts.getById(id);
+        
+        if (!productToDelete) {
+            showAlert("error", "Producto no encontrado");
+            return;
+        }
+
+        // Verificar si el producto tiene ventas o pedidos asociados
+        const { hasAssociations, type } = hasProductAssociations(productToDelete.nombre);
+
+        if (hasAssociations) {
+            const typeText = type === "venta" ? "una venta" : "un pedido";
+            showAlert(
+                "error", 
+                `No se puede eliminar este producto porque tiene ${typeText} asociada. Elimine o modifique las ${type === "venta" ? "ventas" : "órdenes"} relacionadas primero.`
+            );
+            return;
+        }
+
         setConfirmData({
             type: "delete",
             title: "Eliminar producto",
