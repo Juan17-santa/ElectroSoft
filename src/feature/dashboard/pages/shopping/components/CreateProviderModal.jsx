@@ -217,7 +217,7 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                             value={tipoDoc}
                             onChange={(e) => { setTipoDoc(e.target.value); tocar("tipoDoc"); }}
                             onBlur={() => tocar("tipoDoc")}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 cursor-pointer ${ring(estadoTipoDoc)}`}
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 cursor-pointer ${ring(estadoTipoDoc)}`}
                         >
                             <option value="">— Seleccionar —</option>
                             <option value="NIT">NIT</option>

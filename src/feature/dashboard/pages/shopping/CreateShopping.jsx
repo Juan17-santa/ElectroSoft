@@ -11,7 +11,6 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import { ServicesProviders } from "../providers/services/ServicesProviders";
 import { ServicesProducts } from "../products/services/ServicesProducts";
-import PriceReviewModal from "../shopping/components/PriceReviewModal";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 
@@ -71,21 +70,16 @@ export default function CreateShopping() {
     const [proveedoresList,         setProveedoresList]         = useState([]);
     const [confirmData,             setConfirmData]             = useState(null);
     const [alertData,               setAlertData]               = useState(null);
+    const [navegarACompras,         setNavegarACompras]         = useState(false);
 
     // Formulario superior
-    // #7: Guardar el ID del proveedor además de su nombre para trazabilidad
     const [proveedorId,             setProveedorId]             = useState("");
-    const [proveedor,               setProveedor]               = useState(""); // nombre display
+    const [proveedor,               setProveedor]               = useState("");
     const [fechaISO,                setFechaISO]                = useState("");
     const [numeroFactura,           setNumeroFactura]           = useState("");
     const [proveedorTocado,         setProveedorTocado]         = useState(false);
     const [fechaTocada,             setFechaTocada]             = useState(false);
     const [numeroFacturaTocado,     setNumeroFacturaTocado]     = useState(false);
-
-    // revisionPrecios: null = modal cerrado
-    //   { productos: [...con WAC], pendientes: [...para guardar] } = modal abierto
-    const [revisionPrecios,  setRevisionPrecios]  = useState(null);
-    const [navegarACompras,  setNavegarACompras]  = useState(false);
 
     // Productos en tabla
     const [productos, setProductos] = useState([]);
@@ -157,10 +151,23 @@ export default function CreateShopping() {
     };
 
     const handleAnadirProducto = (nuevoProducto) => {
-        const productoConEstado = { ...nuevoProducto, anulado: false };
-        const updated = [...productos, productoConEstado];
-        setProductos(updated);
-        setCurrentPage(Math.ceil(updated.length / ITEMS_PER_PAGE));
+        const { esActualizacion, sobreescribirConSugerido, ...producto } = nuevoProducto;
+        const productoConEstado = { ...producto, anulado: false, sobreescribirConSugerido };
+
+        if (esActualizacion) {
+            // Actualizar el producto ya existente en la tabla
+            setProductos((prev) =>
+                prev.map((p) =>
+                    String(p.id) === String(producto.id) && !p.anulado
+                        ? productoConEstado
+                        : p
+                )
+            );
+        } else {
+            const updated = [...productos, productoConEstado];
+            setProductos(updated);
+            setCurrentPage(Math.ceil(updated.length / ITEMS_PER_PAGE));
+        }
         setShowModal(false);
     };
 
@@ -171,11 +178,7 @@ export default function CreateShopping() {
         setProductos(updated);
     };
 
-    /**
-     * Paso final: persiste la compra y navega. Se llama tanto desde el flujo
-     * directo (sin diferencia de precios) como desde los callbacks del modal.
-     */
-    const finalizarCompra = (productosParaGuardar, overridesPrecio = []) => {
+    const finalizarCompra = (productosParaGuardar) => {
         guardarCompra({
             numeroFactura,
             fechaFactura: formatearFecha(fechaISO),
@@ -185,22 +188,20 @@ export default function CreateShopping() {
             productos: productosParaGuardar,
         });
 
-        // Si el usuario eligió usar su precioVenta en lugar del WAC, aplicarlo ahora.
-        // guardarCompra (síncrono) ya corrió, así que los precios originales fueron
-        // usados para calcular el WAC correctamente antes de este override.
-        overridesPrecio.forEach((p) => {
-            const actual = ServicesProducts.getById(p.id);
-            if (actual) ServicesProducts.update({ ...actual, precio: p.precioVenta });
+        // Aplicar override de precio para productos donde el usuario eligió "sugerido"
+        productosParaGuardar.forEach((p) => {
+            if (p.sobreescribirConSugerido) {
+                const actual = ServicesProducts.getById(p.id);
+                if (actual) ServicesProducts.update({ ...actual, precio: p.precioVenta });
+            }
         });
-// Mostrar alerta de éxito
+
         setAlertData({
             type: "success",
             message: `Compra registrada exitosamente. Número de factura: ${numeroFactura}`,
         });
-
-        
         setNumeroFacturaTocado(false);
-        setNavegarACompras(true); // dispara el useEffect de navegación
+        setNavegarACompras(true);
     };
 
     const handleCrearCompra = () => {
@@ -227,42 +228,25 @@ export default function CreateShopping() {
         }
 
         const productosParaGuardar = productosActuales.map(
-            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal }) => ({
-                id,
-                nombre,
-                cantidad,
-                precio,
+            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal, sobreescribirConSugerido }) => ({
+                id, nombre, cantidad, precio,
                 costeProducto: costeProducto || precio,
                 precioVenta:   precioVenta   || precio,
                 subtotal,
+                sobreescribirConSugerido: !!sobreescribirConSugerido,
             })
         );
 
-        // Pre-calcular WAC antes de guardarCompra para mostrar el valor correcto en el modal.
-        // Fórmula: WAC = (stockAnterior × precioActual + cantidadNueva × precioVenta) / stockNuevo
-        const productosConWac = productosParaGuardar.map((p) => {
-            const actual       = ServicesProducts.getById(p.id);
-            const stockAnt     = actual?.stock ?? 0;
-            const precioActual = actual?.precio ?? 0;
-            const precioVenta  = Number(p.precioVenta);
-            const stockNuevo   = stockAnt + p.cantidad;
-            const wacExacto    = stockAnt > 0
-                ? (stockAnt * precioActual + p.cantidad * precioVenta) / stockNuevo
-                : precioVenta;
-            return { ...p, wacCalculado: Math.ceil(wacExacto / 100) * 100 };
+        // Confirmar antes de guardar
+        setConfirmData({
+            type: "info",
+            title: "Confirmar compra",
+            message: `¿Confirmar la compra de ${productosActuales.length} producto(s) por un total de ${formatCOP(Math.round(total))}?`,
+            onConfirm: () => {
+                setConfirmData(null);
+                finalizarCompra(productosParaGuardar);
+            },
         });
-
-        // Solo preguntar si precioVenta difiere del WAC que se va a aplicar
-        const conPrecioDiferente = productosConWac.filter(
-            (p) => p.wacCalculado !== p.precioVenta
-        );
-
-        if (conPrecioDiferente.length > 0) {
-            setRevisionPrecios({ productos: conPrecioDiferente, pendientes: productosParaGuardar });
-            return;
-        }
-
-        finalizarCompra(productosParaGuardar);
     };
 
     return (
@@ -550,24 +534,6 @@ export default function CreateShopping() {
                         message={confirmData.message}
                         onConfirm={confirmData.onConfirm}
                         onCancel={() => setConfirmData(null)}
-                    />
-                )}
-
-                {/* MODAL REVISIÓN DE PRECIOS — exclusivo del módulo de compras */}
-                {revisionPrecios && (
-                    <PriceReviewModal
-                        productos={revisionPrecios.productos}
-                        onConfirmar={(selecciones) => {
-                            // Productos donde el usuario eligió el precio sugerido
-                            const overrides = revisionPrecios.productos.filter(
-                                (p) => selecciones[p.id] === "sugerido"
-                            );
-                            setRevisionPrecios(null);
-                            finalizarCompra(revisionPrecios.pendientes, overrides);
-                        }}
-                        onCancelar={() => {
-                            setRevisionPrecios(null);
-                        }}
                     />
                 )}
 
