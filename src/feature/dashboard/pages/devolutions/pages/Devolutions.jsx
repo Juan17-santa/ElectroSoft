@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, Pencil, Ban, RotateCcw, Check } from "lucide-react";
+import { Eye, Pencil, Ban, RotateCcw, Check, X } from "lucide-react";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { getEstadoColor } from "../helpers/devolutionsHelpers";
 import SearchBar    from "../../../components/ui/Searchbar";
@@ -242,7 +242,7 @@ export default function Devolutions() {
                                                             <Eye size={18} className="text-blue-600" />
                                                         </button>
 
-                                                        {/* EDITAR */}
+                                                        {/* EDITAR / COMPLETADO / ANULADO */}
                                                         <div className="relative group flex items-center">
 
                                                             <button
@@ -253,12 +253,17 @@ export default function Devolutions() {
                                                                     })
                                                                 }
                                                                 disabled={bloqueado}
-                                                                className={`p-2 rounded-lg transition ${bloqueado
-                                                                        ? "bg-green-100 cursor-default"
-                                                                        : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
-                                                                    }`}
+                                                                className={`p-2 rounded-lg transition ${
+                                                                    anulado
+                                                                        ? "bg-red-100 cursor-default"
+                                                                        : bloqueado
+                                                                            ? "bg-green-100 cursor-default"
+                                                                            : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
+                                                                }`}
                                                             >
-                                                                {bloqueado ? (
+                                                                {anulado ? (
+                                                                    <X size={18} className="text-red-500" />
+                                                                ) : bloqueado ? (
                                                                     <Check size={18} className="text-green-600" />
                                                                 ) : (
                                                                     <Pencil size={18} className="text-yellow-600" />
@@ -269,8 +274,8 @@ export default function Devolutions() {
                                                                 <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
                                                                         opacity-0 group-hover:opacity-100 pointer-events-none
                                                                         transition-all duration-200 transform group-hover:-translate-y-1
-                                                                        bg-gray-100 text-yellow-500 text-xs px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap">
-                                                                    ✔ Devolución completada
+                                                                        bg-gray-800 text-white text-xs px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap">
+                                                                    {anulado ? "✕ Devolución Anulada" : "✔ Devolución completada"}
                                                                 </div>
                                                             )}
 
