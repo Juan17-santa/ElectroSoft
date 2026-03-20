@@ -66,8 +66,12 @@ function validarCantidad(val, producto, idVenta, ventasList) {
     if (producto && idVenta) {
         const venta = ventasList.find((v) => String(v.id) === String(idVenta));
         const productoEnVenta = venta?.productos?.find((p) => p.nombre === producto);
-        if (productoEnVenta && cantidad > productoEnVenta.cantidad)
-            return { valido: false, mensaje: `No puedes devolver ${cantidad} unidades. Disponibles: ${productoEnVenta.cantidad}` };
+        if (productoEnVenta) {
+            const yaDevuelto = ServicesDevolutions.getCantidadDevuelta(idVenta, producto);
+            const disponible = productoEnVenta.cantidad - yaDevuelto;
+            if (cantidad > disponible)
+                return { valido: false, mensaje: `Disponible para devolver: ${disponible} unidad${disponible !== 1 ? "es" : ""}.` };
+        }
     }
     return { valido: true, mensaje: "" };
 }
@@ -151,12 +155,15 @@ export default function CreateDevolution() {
         const venta   = ventas.find((v) => String(v.id) === String(form.idVenta));
         if (!venta?.productos) { setProductosList([]); setSinProductos(false); return; }
 
-        const yaDevueltos = ServicesDevolutions.getProductosDevueltosByVenta(form.idVenta);
-        const disponibles = venta.productos.filter((p) => !yaDevueltos.includes(p.nombre));
-        setProductosList(disponibles);
-        setSinProductos(disponibles.length === 0);
+        // Solo mostrar productos con cantidad aún disponible para devolver
+        const conDisponible = venta.productos.filter((p) => {
+            const devuelto = ServicesDevolutions.getCantidadDevuelta(form.idVenta, p.nombre);
+            return devuelto < p.cantidad;
+        });
+        setProductosList(conDisponible);
+        setSinProductos(conDisponible.length === 0);
 
-        if (form.producto && !disponibles.find((p) => p.nombre === form.producto))
+        if (form.producto && !conDisponible.find((p) => p.nombre === form.producto))
             setForm((prev) => ({ ...prev, producto: "" }));
     }, [form.idVenta]);
 
@@ -219,11 +226,6 @@ export default function CreateDevolution() {
         tocarTodo();
         if (!formularioEsValido()) {
             setAlert({ type: "error", message: "Revisa los campos marcados en rojo antes de continuar." });
-            return;
-        }
-        const yaDevueltos = ServicesDevolutions.getProductosDevueltosByVenta(form.idVenta);
-        if (yaDevueltos.includes(form.producto)) {
-            setAlert({ type: "error", message: `El producto "${form.producto}" ya tiene una devolución registrada para esta venta.` });
             return;
         }
         setConfirmData({

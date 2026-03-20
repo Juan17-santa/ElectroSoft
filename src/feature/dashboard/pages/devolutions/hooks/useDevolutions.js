@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
-import { ServicesProducts } from "../../products/services/ServicesProducts";
 
 export function useDevolutions() {
     const [devolutions, setDevolutions] = useState([]);
@@ -31,12 +30,6 @@ export function useDevolutions() {
     const guardarDevolucion = (data) => {
         const nueva = ServicesDevolutions.create(data);
         setDevolutions((prev) => [...prev, nueva]);
-
-        const producto = ServicesProducts.get().find(p => p.nombre === data.producto);
-        if (producto) {
-            ServicesProducts.update({ ...producto, stock: producto.stock + Number(data.cantidad) });
-        }
-
         return nueva;
     };
     

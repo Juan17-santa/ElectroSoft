@@ -124,8 +124,36 @@ export default function DevolutionForm({
                 <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-transparent mt-3" />
             </div>
 
-            {/* ── FILA 1: Motivo · Submotivo · Producto ────────────────────────── */}
+            {/* ── FILA 1: Producto · Motivo · Submotivo ────────────────────────── */}
             <div className="grid grid-cols-3 gap-x-8 px-10">
+
+                {/* PRODUCTO — primero */}
+                <Field icon={Box} label="Producto *">
+                    {esReadOnly("producto") ? (
+                        <input type="text" value={form.producto} readOnly className={fieldBase("producto")} />
+                    ) : (
+                        <select
+                            value={form.producto}
+                            onChange={(e) => onChange("producto", e.target.value)}
+                            onBlur={() => onFieldBlur("producto")}
+                            disabled={!form.idVenta || productosList.length === 0}
+                            className={`${fieldBase("producto")} ${(!form.idVenta || productosList.length === 0) ? "opacity-40 cursor-not-allowed" : ""}`}
+                        >
+                            <option value="">{form.idVenta ? "Seleccionar..." : "Primero elige venta"}</option>
+                            {productosList.map((p) => (
+                                <option key={p.id ?? p.nombre} value={p.nombre}>{p.nombre}</option>
+                            ))}
+                        </select>
+                    )}
+                    {sinProductos && !esReadOnly("producto") ? (
+                        <div className="flex items-center gap-1 text-xs mt-1 text-amber-600">
+                            <AlertCircle size={12} />
+                            <span>Todos los productos de esta venta ya tienen devolución completa.</span>
+                        </div>
+                    ) : (
+                        <FieldStatus estado={estadoCampo("producto")} />
+                    )}
+                </Field>
 
                 {/* MOTIVO */}
                 <Field icon={AlertTriangle} label="Motivo *">
@@ -161,36 +189,6 @@ export default function DevolutionForm({
                         </select>
                     )}
                     <FieldStatus estado={estadoCampo("submotivo")} />
-                </Field>
-
-                {/* PRODUCTO */}
-                <Field icon={Box} label="Producto *">
-                    {esReadOnly("producto") ? (
-                        <input type="text" value={form.producto} readOnly className={fieldBase("producto")} />
-                    ) : (
-                        <select
-                            value={form.producto}
-                            onChange={(e) => onChange("producto", e.target.value)}
-                            onBlur={() => onFieldBlur("producto")}
-                            disabled={!form.idVenta || productosList.length === 0}
-                            className={`${fieldBase("producto")} ${(!form.idVenta || productosList.length === 0) ? "opacity-40 cursor-not-allowed" : ""}`}
-                        >
-                            <option value="">{form.idVenta ? "Seleccionar..." : "Primero elige venta"}</option>
-                            {productosList.map((p) => (
-                                <option key={p.id ?? p.nombre} value={p.nombre}>{p.nombre}</option>
-                            ))}
-                        </select>
-                    )}
-
-                    {/* Mensaje cuando no hay productos disponibles para devolver */}
-                    {sinProductos && !esReadOnly("producto") ? (
-                        <div className="flex items-center gap-1 text-xs mt-1 text-amber-600">
-                            <AlertCircle size={12} />
-                            <span>Todos los productos de esta venta ya tienen devolución registrada.</span>
-                        </div>
-                    ) : (
-                        <FieldStatus estado={estadoCampo("producto")} />
-                    )}
                 </Field>
 
             </div>
@@ -329,21 +327,8 @@ export default function DevolutionForm({
                 </div>
             </div>
 
-            {/* ── FILA 4: Descripción · Observaciones ────────────────────────── */}
+            {/* ── FILA 4: Observaciones · Descripción ────────────────────────── */}
             <div className="grid grid-cols-2 gap-x-10 px-10">
-
-                <Field icon={FileText} label="Descripción *">
-                    <textarea
-                        value={form.descripcion}
-                        onChange={(e) => onChange("descripcion", e.target.value)}
-                        onBlur={() => onFieldBlur("descripcion")}
-                        readOnly={esReadOnly("descripcion")}
-                        rows={4}
-                        placeholder="Describe el motivo detallado de la devolución..."
-                        className={`${fieldBase("descripcion")} resize-none`}
-                    />
-                    <FieldStatus estado={estadoCampo("descripcion")} />
-                </Field>
 
                 <Field icon={ClipboardList} label="Observaciones *">
                     <textarea
@@ -356,6 +341,19 @@ export default function DevolutionForm({
                         className={`${fieldBase("observaciones")} resize-none`}
                     />
                     <FieldStatus estado={estadoCampo("observaciones")} />
+                </Field>
+
+                <Field icon={FileText} label="Descripción *">
+                    <textarea
+                        value={form.descripcion}
+                        onChange={(e) => onChange("descripcion", e.target.value)}
+                        onBlur={() => onFieldBlur("descripcion")}
+                        readOnly={esReadOnly("descripcion")}
+                        rows={4}
+                        placeholder="Describe el motivo detallado de la devolución..."
+                        className={`${fieldBase("descripcion")} resize-none`}
+                    />
+                    <FieldStatus estado={estadoCampo("descripcion")} />
                 </Field>
 
             </div>

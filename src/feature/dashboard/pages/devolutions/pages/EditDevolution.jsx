@@ -5,7 +5,6 @@ import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import DevolutionForm from "../components/DevolutionForm";
 import ConfirmModal   from "../../../components/ui/ConfirmModal";
 import Alert          from "../../../components/ui/Alert";
-import { ServicesProducts } from "../../products/services/ServicesProducts";
 import {
     SUBMOTIVOS,
     getGestionesPermitidas,
@@ -47,28 +46,32 @@ function validarProducto(val, idVenta) {
     return { valido: true, mensaje: "" };
 }
 
-function validarCantidad(val, producto, idVenta, ventasList) {
+function validarCantidad(val, producto, idVenta, ventasList, devolucionId) {
     if (!val) return { valido: false, mensaje: "Ingresa la cantidad." };
-    
+
     const cantidad = Number(val);
-    if (isNaN(cantidad) || cantidad <= 0) 
+    if (isNaN(cantidad) || cantidad <= 0)
         return { valido: false, mensaje: "La cantidad debe ser mayor a 0." };
-    
-    // Validar que no supere la cantidad disponible en la venta
+
     if (producto && idVenta) {
         const venta = ventasList.find((v) => String(v.id) === String(idVenta));
         const productoEnVenta = venta?.productos?.find((p) => p.nombre === producto);
-        
-        if (productoEnVenta && cantidad > productoEnVenta.cantidad) {
-            return { 
-                valido: false, 
-                mensaje: `No puedes devolver ${cantidad} unidades. Disponibles: ${productoEnVenta.cantidad}`
-            };
+        if (productoEnVenta) {
+            const yaDevueltoPorOtros = ServicesDevolutions.getCantidadDevueltaExcluyendo(
+                idVenta, producto, devolucionId,
+            );
+            const disponible = productoEnVenta.cantidad - yaDevueltoPorOtros;
+            if (cantidad > disponible)
+                return {
+                    valido: false,
+                    mensaje: `Máximo disponible: ${disponible} unidad${disponible !== 1 ? "es" : ""}.`,
+                };
         }
     }
-    
+
     return { valido: true, mensaje: "" };
 }
+
 
 function validarCondicion(val, motivo) {
     if (!val) return { valido: false, mensaje: "Selecciona la condición del producto." };
@@ -146,15 +149,16 @@ export default function EditDevolution() {
     const [alert, setAlert]                 = useState(null);
 
     useEffect(() => {
-        setProductosList(ServicesProducts.get().filter((p) => p.estado !== false));
-
         const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
         setVentasList(ventas.filter((v) => v.estado !== "Anulado"));
 
-        // ⚠️ Lee directamente de ServicesDevolutions para no depender del estado
-        // del hook (que puede aún no haberse cargado al montar la página).
         const found = ServicesDevolutions.getById(id);
-        if (found) setForm({ ...found, fechaISO: found.fechaISO ?? "" });
+        if (found) {
+            setForm({ ...found, fechaISO: found.fechaISO ?? "" });
+            // Cargar productos de la venta para el campo read-only del formulario
+            const venta = ventas.find((v) => String(v.id) === String(found.idVenta));
+            setProductosList(venta?.productos ?? []);
+        }
     }, [id]);
 
     const handleChange = (field, value) => {
@@ -212,7 +216,7 @@ export default function EditDevolution() {
             case "motivo":            return validarMotivo(form.motivo);
             case "submotivo":         return validarSubmotivo(form.submotivo, form.motivo);
             case "producto":          return validarProducto(form.producto, form.idVenta);
-            case "cantidad":          return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList);
+            case "cantidad":          return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id);
             case "condicionProducto": return validarCondicion(form.condicionProducto, form.motivo);
             case "gestion":           return validarGestion(form.gestion, form.motivo, form.submotivo);
             case "responsable":       return validarResponsable(form.responsable, form.motivo, form.garantiaProveedor);
@@ -225,8 +229,8 @@ export default function EditDevolution() {
 
     // ─── Verificar si el formulario es válido en su totalidad ────────────────
     const formularioEsValido = () => {
-        // En modo edición, solo validamos los campos EDITABLES
         const validaciones = [
+            validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id),
             validarCondicion(form.condicionProducto, form.motivo),
             validarGestion(form.gestion, form.motivo, form.submotivo),
             validarResponsable(form.responsable, form.motivo, form.garantiaProveedor),
@@ -312,7 +316,7 @@ export default function EditDevolution() {
                 ventasList={ventasList}
                 estadoCampo={estadoCampo}
                 onFieldBlur={tocarCampo}
-                readOnlyFields={["idVenta", "motivo", "submotivo", "producto", "cantidad"]}
+                readOnlyFields={["idVenta", "motivo", "submotivo", "producto"]}
             />
 
             {confirmData && (

@@ -16,15 +16,41 @@ export const ServicesDevolutions = {
         return this.get().filter((d) => String(d.idVenta) === String(idVenta));
     },
 
-    /** Productos ya devueltos para una venta (nombres) */
+    /** Nombres de productos ya devueltos para una venta (incluyendo anuladas) */
     getProductosDevueltosByVenta(idVenta) {
         return this.getByIdVenta(idVenta).map((d) => d.producto);
     },
 
+    /**
+     * Cantidad total YA devuelta para un producto en una venta (sin contar anuladas).
+     * Usado para saber cuánto queda disponible para seguir devolviendo.
+     */
+    getCantidadDevuelta(idVenta, productoNombre) {
+        return this.getByIdVenta(idVenta)
+            .filter((d) => d.estadoResolucion !== "Anulada" && d.producto === productoNombre)
+            .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
+    },
+
+    /**
+     * Igual que getCantidadDevuelta pero excluye una devolución concreta.
+     * Útil en edición para no contar la propia devolución que se está editando.
+     */
+    getCantidadDevueltaExcluyendo(idVenta, productoNombre, excludeId) {
+        return this.getByIdVenta(idVenta)
+            .filter(
+                (d) =>
+                    String(d.id) !== String(excludeId) &&
+                    d.estadoResolucion !== "Anulada" &&
+                    d.producto === productoNombre,
+            )
+            .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
+    },
+
     create(devolution) {
-        const all = this.get();
-        const hoy  = new Date().toISOString().split("T")[0];
+        const all   = this.get();
+        const hoy   = new Date().toISOString().split("T")[0];
         const ahora = new Date().toISOString();
+        const estadoInicial = devolution.estadoResolucion ?? "CREADA";
         const nueva = {
             id:                 Date.now(),
             idVenta:            devolution.idVenta            ?? "",
@@ -41,9 +67,10 @@ export const ServicesDevolutions = {
             fecha:              devolution.fecha              ?? "",
             fechaISO:           devolution.fechaISO           ?? hoy,
             fechaEstado:        hoy,
-            estadoResolucion:   devolution.estadoResolucion   ?? "",
+            estadoResolucion:   estadoInicial,
             creadoEn:           ahora,
-            actualizadoEn:      ahora,   // timestamp completo para ordenar por edición
+            actualizadoEn:      ahora,
+            historialEstados:   [{ estado: estadoInicial, fecha: ahora }],
         };
         localStorage.setItem(KEY, JSON.stringify([...all, nueva]));
         return nueva;
@@ -52,11 +79,30 @@ export const ServicesDevolutions = {
     update(devolucionActualizada) {
         const hoy   = new Date().toISOString().split("T")[0];
         const ahora = new Date().toISOString();
-        const updated = this.get().map((d) =>
-            String(d.id) === String(devolucionActualizada.id)
-                ? { ...d, ...devolucionActualizada, fechaEstado: hoy, actualizadoEn: ahora }
-                : d
-        );
+        const updated = this.get().map((d) => {
+            if (String(d.id) !== String(devolucionActualizada.id)) return d;
+
+            // Agregar entrada al historial solo si el estado cambió
+            let historialEstados = d.historialEstados ||
+                [{ estado: d.estadoResolucion, fecha: d.creadoEn ?? ahora }];
+            if (
+                devolucionActualizada.estadoResolucion &&
+                devolucionActualizada.estadoResolucion !== d.estadoResolucion
+            ) {
+                historialEstados = [
+                    ...historialEstados,
+                    { estado: devolucionActualizada.estadoResolucion, fecha: ahora },
+                ];
+            }
+
+            return {
+                ...d,
+                ...devolucionActualizada,
+                historialEstados,
+                fechaEstado:   hoy,
+                actualizadoEn: ahora,
+            };
+        });
         localStorage.setItem(KEY, JSON.stringify(updated));
         return devolucionActualizada;
     },
@@ -68,22 +114,30 @@ export const ServicesDevolutions = {
     },
 
     anular(id) {
-        const updated = this.get().map((d) =>
-            String(d.id) === String(id)
-                ? { ...d, estadoResolucion: "Anulada" }
-                : d
-        );
+        const ahora = new Date().toISOString();
+        const updated = this.get().map((d) => {
+            if (String(d.id) !== String(id)) return d;
+            const historialEstados = [
+                ...(d.historialEstados || [{ estado: d.estadoResolucion, fecha: d.creadoEn ?? ahora }]),
+                { estado: "Anulada", fecha: ahora },
+            ];
+            return { ...d, estadoResolucion: "Anulada", historialEstados };
+        });
         localStorage.setItem(KEY, JSON.stringify(updated));
         return updated;
     },
 
     /** Anula TODAS las devoluciones de una venta */
     anularByIdVenta(idVenta) {
-        const updated = this.get().map((d) =>
-            String(d.idVenta) === String(idVenta)
-                ? { ...d, estadoResolucion: "Anulada" }
-                : d
-        );
+        const ahora = new Date().toISOString();
+        const updated = this.get().map((d) => {
+            if (String(d.idVenta) !== String(idVenta)) return d;
+            const historialEstados = [
+                ...(d.historialEstados || [{ estado: d.estadoResolucion, fecha: d.creadoEn ?? ahora }]),
+                { estado: "Anulada", fecha: ahora },
+            ];
+            return { ...d, estadoResolucion: "Anulada", historialEstados };
+        });
         localStorage.setItem(KEY, JSON.stringify(updated));
         return updated;
     },
