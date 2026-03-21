@@ -1,9 +1,8 @@
-import { Trash, Pencil, Eye } from "lucide-react";
+import { Trash, Pencil } from "lucide-react";
 
 // COMPONENTE QUE MUESTRA LA TABLA DE CATGEORIAS DE PRODUCTOS
 export default function ProductCategoryTable({
     data,
-    onDetails,
     onEdit,
     onToggleEstado,
     onDelete
@@ -58,14 +57,6 @@ export default function ProductCategoryTable({
                                     {/* ACCIONES */}
                                     <td className="px-4 py-1">
                                         <div className="flex justify-center gap-3">
-
-                                            {/* BOTON DE VER DETALLE */}
-                                            <button
-                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                onClick={() => onDetails(category)}
-                                            >
-                                                <Eye size={18} className="text-blue-600" />
-                                            </button>
 
                                             {/* BOTON EDITAR */}
                                             <button

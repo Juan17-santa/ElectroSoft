@@ -119,14 +119,14 @@ export default function Orders() {
     // EJECUTAR EL GENERAR REPORTE Y CERRAR LA MODAL
     const handleExecuteExport = () => {
         const columns = [
-            "📑 ID",
-            "👤 NOMBRE DEL CLIENTE           ",
-            "🪪 DOCUMENTO          ",
-            "📅 FECHA CREACIÓN     ",
-            "💰 TOTAL PEDIDO      ",
-            "⏳ VENCIMIENTO      ",
-            "💳 FORMA PAGO      ",
-            "🚩 ESTADO      "
+            "ID",
+            "NOMBRE DEL CLIENTE           ",
+            "DOCUMENTO          ",
+            "FECHA CREACIÓN     ",
+            "TOTAL PEDIDO      ",
+            "VENCIMIENTO      ",
+            "FORMA PAGO      ",
+            "ESTADO      "
         ];
 
         const excelData = data.map((order, index) => [
@@ -141,8 +141,8 @@ export default function Orders() {
         ]);
 
         generateExcelReport({
-            title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
-            fileName: `Reporte_Pedidos_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`,
+            title: "REPORTE GENERAL DE CONTROL DE PEDIDOS",
+            fileName: `Reporte_Pedidos.xlsx`,
             columns: columns,
             data: excelData
         });

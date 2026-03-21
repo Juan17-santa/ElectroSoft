@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Info, X } from "lucide-react";
 import { ServicesProducts } from "../services/ServicesProducts";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
+import PrimaryButton from "../../../components/ui/PrimaryButton";
 
 export default function ProductDetails() {
     const navigate = useNavigate();
@@ -38,9 +39,9 @@ export default function ProductDetails() {
         <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
 
             <div
-                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-100"
+                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
                 style={{
-                    backgroundImage: 'url("/background-shopping-details.png")',
+                    backgroundImage: 'url("/background-details.jpg")',
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat"
@@ -133,9 +134,9 @@ export default function ProductDetails() {
             </div>
 
             <div className="flex justify-end">
-                <button onClick={handleBack} className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer">
-                    <X size={18} className="inline-block mr-2" />Volver
-                </button>
+                <PrimaryButton type="button" onClick={handleBack}>
+                    <X size={18} className="inline-block mr-2" /> Volver
+                </PrimaryButton>
             </div>
 
         </div>

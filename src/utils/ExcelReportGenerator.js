@@ -9,25 +9,40 @@ export const generateExcelReport = ({
     columns,
     data
 }) => {
-    // Create worksheet
+    const ahora = new Date();
+
+    const fechaCreacion = ahora.toLocaleDateString('es-CO', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+
+    const horaCreacion = ahora.toLocaleTimeString('es-CO', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+
     const worksheetData = [
-        [title], // Optional: Title as the first row
-        [],      // Empty row
-        columns, // Header row
-        ...data  // Data rows
+        [title.toUpperCase()],
+        [`Fecha de creación: ${fechaCreacion} a las ${horaCreacion}`],
+        [],      // Fila vacía para separar
+        [],      // Fila vacía para separar
+        columns, // Encabezados de la tabla
+        ...data  // Filas de datos
     ];
 
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
 
-    // Basic styling/formatting (optional, xlsx basic version has limited styling)
-    // You can adjust column widths if needed
-    const columnWidths = columns.map(col => ({ wch: Math.max(col.length, 15) }));
+    // Ajuste de ancho de columnas (mínimo 15)
+    const columnWidths = columns.map(col => ({ 
+        wch: Math.max(col ? col.toString().length : 0, 15) 
+    }));
     worksheet["!cols"] = columnWidths;
 
-    // Create workbook and add the worksheet
+    // Crear libro y exportar
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
 
-    // Generate and download Excel file
     XLSX.writeFile(workbook, fileName);
 };

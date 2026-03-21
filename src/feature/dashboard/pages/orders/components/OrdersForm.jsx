@@ -30,6 +30,15 @@ export default function OrdersForm({
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
     const [openProductModal, setOpenProductModal] = useState(false);
 
+    const dateObj = new Date();
+
+    // Fecha de Hoy (Límite máximo)
+    const hoy = dateObj.toISOString().split('T')[0];
+
+    const tempDate = new Date();
+    tempDate.setDate(tempDate.getDate() - 3);
+    const haceTresDias = tempDate.toISOString().split('T')[0];
+
     // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA (PESOS COLOMBIANOS)
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', {
@@ -66,8 +75,8 @@ export default function OrdersForm({
 
     return (
         <>
-            <form onSubmit={handleSubmit}>
-                <div className="flex flex-col items-center gap-12 mt-6">
+            <form onSubmit={handleSubmit} className="h-full">
+                <div className="flex flex-col items-center gap-12 mt-6 h-full">
 
                     {/* ================= PRIMERA FILA ================= */}
                     <div className="grid grid-cols-2 gap-16 w-full">
@@ -139,7 +148,9 @@ export default function OrdersForm({
                                 }
                                 label="Fecha pedido"
                                 required
-                                readOnly
+                                // readOnly (Bloquear futuro y pasado, solo HOY)
+                                minDate={haceTresDias} 
+                                maxDate={hoy}
                             />
                         </div>
 
@@ -278,7 +289,7 @@ export default function OrdersForm({
                     </div>
 
                     {/* ================= BOTONES ================= */}
-                    <div className="flex justify-end w-full gap-6">
+                    <div className="flex justify-end w-full gap-6 mt-auto">
                         <button
                             type="button"
                             onClick={onCancel}

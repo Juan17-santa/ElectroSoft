@@ -12,7 +12,7 @@ const DIAS_SEMANA = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
  * @param {function} onCerrar - Callback para cerrar el calendario
  * @param {boolean} readOnly - Si es true, permite ver el calendario pero bloquea la selección de fechas
  */
-function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar, readOnly }) {
+function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar, readOnly, minDate, maxDate }) {
     const hoy = new Date();
     const [viewYear, setViewYear] = useState(fechaSeleccionada ? new Date(fechaSeleccionada + "T00:00:00").getFullYear() : hoy.getFullYear());
     const [viewMonth, setViewMonth] = useState(fechaSeleccionada ? new Date(fechaSeleccionada + "T00:00:00").getMonth() : hoy.getMonth());
@@ -41,6 +41,17 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar, readOnly
         return fecha > h;
     };
 
+    // NUEVA FUNCIÓN DE VALIDACIÓN
+    const esInvalida = (dia) => {
+        const fechaEvaluar = new Date(viewYear, viewMonth, dia);
+        fechaEvaluar.setHours(0, 0, 0, 0);
+
+        if (minDate && fechaEvaluar < new Date(minDate + "T00:00:00")) return true;
+        if (maxDate && fechaEvaluar > new Date(maxDate + "T00:00:00")) return true;
+
+        return false;
+    };
+
     const esHoy = (dia) => {
         return dia === hoy.getDate() && viewMonth === hoy.getMonth() && viewYear === hoy.getFullYear();
     };
@@ -52,8 +63,7 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar, readOnly
     };
 
     const handleDia = (dia) => {
-        if (readOnly) return;
-        if (esFuturo(dia)) return;
+        if (readOnly || esInvalida(dia)) return;
         const mes = String(viewMonth + 1).padStart(2, "0");
         const d = String(dia).padStart(2, "0");
         onSeleccionar(`${viewYear}-${mes}-${d}`);
@@ -118,7 +128,7 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar, readOnly
                 >
                     {celdas.map((dia, i) => {
                         if (!dia) return <div key={`empty-${i}`} />;
-                        const futuro = esFuturo(dia) || readOnly;
+                        const bloqueado = esInvalida(dia) || readOnly;
                         const hoyFlag = esHoy(dia);
                         const sel = esSeleccionado(dia);
                         return (
@@ -126,15 +136,14 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar, readOnly
                                 type="button"
                                 key={dia}
                                 onClick={() => handleDia(dia)}
-                                disabled={futuro}
+                                disabled={bloqueado}
                                 className={`
                                     w-8 h-8 mx-auto flex items-center justify-center rounded-full text-xs font-medium
                                     transition-all duration-200 cursor-pointer
                                     ${sel ? "bg-yellow-400 text-black shadow-md scale-110" : ""}
                                     ${!sel && hoyFlag ? "border border-yellow-400 text-black" : ""} 
-                                    ${!sel && !hoyFlag && !futuro ? "hover:bg-yellow-100 hover:scale-105 text-gray-700" : ""}
-                                    ${futuro && !hoyFlag ? "text-gray-300 cursor-not-allowed" : ""}
-                                    ${futuro && hoyFlag ? "cursor-not-allowed" : ""}
+                                    ${!sel && !hoyFlag && !bloqueado ? "hover:bg-yellow-100 hover:scale-105 text-gray-700" : ""}
+                                    ${bloqueado && !hoyFlag ? "text-gray-300 cursor-not-allowed opacity-50" : ""}
                                 `}
                             >
                                 {dia}
@@ -189,7 +198,9 @@ export default function Calendar({
     label = "Fecha",
     required = false,
     className = "",
-    readOnly = false
+    readOnly = false,
+    minDate,
+    maxDate
 }) {
     const [showCalendario, setShowCalendario] = useState(false);
     const calRef = useRef(null);
@@ -238,6 +249,8 @@ export default function Calendar({
                         onSeleccionar={onFechaChange}
                         onCerrar={() => setShowCalendario(false)}
                         readOnly={readOnly}
+                        minDate={minDate}
+                        maxDate={maxDate}
                     />
                 )}
             </div>

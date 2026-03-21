@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 // import { X } from "lucide-react";
-import Alert from "../../../components/ui/alert";
+import Alert from "../../../components/ui/Alert";
 import ProviderForm from "../components/ProvidersForm";
 import { useProviderForm } from "../hooks/useProviderForm";
+import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 
 export default function UpdateProvider() {
     // ESTADO PARA NAVEGAR
@@ -16,11 +17,24 @@ export default function UpdateProvider() {
     // ESTADO PARA LA ALERTA DE EXITO O ERROR
     const [alert, setAlert] = useState(null);
 
-    // LISTA DE CATEGORÍAS CARGADAS DESDE LOCALSTORAGE
-    const [categorias, setCategorias] = useState([]);
-
     // CONTROL DE APERTURA DEL DROPDOWN DE CATEGORÍAS
     const [open, setOpen] = useState(false);
+
+    const todasLasCategorias = ServiceProductCategory.get();
+
+    if (providerToEdit && providerToEdit.categoriasAsociadas) {
+        const idsExistentesMaestros = todasLasCategorias.map(c => String(c.id));
+
+        providerToEdit.categoriasAsociadas = providerToEdit.categoriasAsociadas.filter(catId =>
+            idsExistentesMaestros.includes(String(catId))
+        );
+    }
+
+    const idsDelProveedor = providerToEdit?.categoriasAsociadas || [];
+
+    const categoriasParaMostrar = todasLasCategorias.filter(cat =>
+        cat.estado === true || idsDelProveedor.some(id => String(id) === String(cat.id))
+    );
 
     // SI NO LLEGA EL PROVEEDOR, REDIRIGIR A LA LISTA
     useEffect(() => {
@@ -28,12 +42,6 @@ export default function UpdateProvider() {
             navigate("/dashboard/providers");
         }
     }, [providerToEdit, navigate]);
-
-    // CARGAR CATEGORÍAS AL INICIAR EL COMPONENTE
-    useEffect(() => {
-        const data = JSON.parse(localStorage.getItem("productCategory")) || [];
-        setCategorias(data);
-    }, []);
 
     // CONFIGURACION DEL HOOK PERSONALIZADO PARA EL FORMULARIO
     const {
@@ -82,7 +90,7 @@ export default function UpdateProvider() {
                 <ProviderForm
                     formData={formData}
                     errors={errors}
-                    categorias={categorias}
+                    categorias={categoriasParaMostrar}
                     open={open}
                     setOpen={setOpen}
                     handleChange={handleChange}
