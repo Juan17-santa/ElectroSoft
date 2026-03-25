@@ -36,13 +36,6 @@ export default function ProductCategory() {
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
-    // FUNCION PARA PREPARAR LA VISTA DE DETALLES
-    const handleDetailsNavigation = (category) => {
-        navigate("/dashboard/productCategory/detail", {
-            state: { category },
-        })
-    };
-
     // FUNCION PARA ABRIR EL MODAL EN MODO CREAR
     const handleOpenCreate = () => {
         setSelectedCategory(null); // LIMPIAMOS
@@ -87,7 +80,6 @@ export default function ProductCategory() {
                 {/* TABLA */}
                 <ProductCategoryTable
                     data={data}
-                    onDetails={handleDetailsNavigation}
                     onEdit={handleOpenEdit}
                     onDelete={deleteCategory}
                     onToggleEstado={toggleEstado}

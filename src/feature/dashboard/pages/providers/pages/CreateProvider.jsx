@@ -2,27 +2,19 @@ import { useEffect, useState } from "react";
 import { useProviderForm } from "../hooks/useProviderForm";
 import { useNavigate } from "react-router-dom";
 // import { X } from "lucide-react";
-import Alert from "../../../components/ui/alert";
+import Alert from "../../../components/ui/Alert";
 import ProviderForm from "../components/ProvidersForm";
+import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 
 export default function CreateProvider() {
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
-
-    // LISTA DE CATEGORÍAS CARGADAS DESDE LOCALSTORAGE
-    const [categorias, setCategorias] = useState([]);
 
     // CONTROL DE APERTURA DEL DROPDOWN DE CATEGORÍAS
     const [open, setOpen] = useState(false);
 
     // ESTADO PARA LA ALERTA DE ÉXITO O ERROR
     const [alert, setAlert] = useState(null);
-
-    // CARGAR CATEGORÍAS AL INICIAR EL COMPONENTE
-    useEffect(() => {
-        const data = JSON.parse(localStorage.getItem("productCategory")) || [];
-        setCategorias(data);
-    }, []);
 
     // CONFIGURACIÓN DEL HOOK PERSONALIZADO PARA EL FORMULARIO
     const {
@@ -43,6 +35,10 @@ export default function CreateProvider() {
             }, 2000);
         }
     });
+
+    // ... dentro del componente CreateProvider
+    const todasLasCategorias = ServiceProductCategory.get(); // Traes todas
+    const categoriasActivas = todasLasCategorias.filter(cat => cat.estado === true);
 
     return (
         <>
@@ -70,7 +66,7 @@ export default function CreateProvider() {
                 <ProviderForm
                     formData={formData}
                     errors={errors}
-                    categorias={categorias}
+                    categorias={categoriasActivas}
                     open={open}
                     setOpen={setOpen}
                     handleChange={handleChange}

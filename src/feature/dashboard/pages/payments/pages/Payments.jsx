@@ -6,6 +6,8 @@ import SearchBar from "../../../components/ui/Searchbar";
 import Pagination from "../../../components/ui/Pagination";
 import { CreditCard } from "lucide-react";
 import { generarReporteGeneral } from "../hooks/reportesPayments";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import Alert from "../../../components/ui/Alert";
 
 export default function Payments() {
     const navigate = useNavigate();
@@ -13,6 +15,8 @@ export default function Payments() {
 
     const [clientes, setClientes] = useState([]);
     const [search, setSearch] = useState("");
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [alert, setAlert] = useState()
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
@@ -26,7 +30,7 @@ export default function Payments() {
         cargarDatos();
     }, [location, cargarDatos]);
 
-    // ✅ Recarga en tiempo real si algo cambia
+    // Recarga en tiempo real si algo cambia
     useEffect(() => {
         window.addEventListener("payments-updated", cargarDatos);
         return () => window.removeEventListener("payments-updated", cargarDatos);
@@ -59,10 +63,7 @@ export default function Payments() {
                 onSearchChange={(e) => { setSearch(e.target.value); setPresentPage(1); }}
                 placeholder="Buscar cliente..."
                 showReportButton={true}
-                showDateFilter={true}                               // 👈 agrega
-                onReportClick={({ fechaInicio, fechaFin }) =>       // 👈 cambia
-                    generarReporteGeneral(clientes, fechaInicio, fechaFin)
-                }
+                onReportClick={() => setShowReportModal(true)}
             />
 
             <div className="flex flex-col gap-3">
@@ -74,7 +75,7 @@ export default function Payments() {
                                 ? "No se encontraron clientes con ese criterio."
                                 : "No hay clientes con cupo de crédito asignado."}
                         </p>
-                        {/* ✅ Mensaje orientativo — el cupo se asigna desde Clientes */}
+                        {/* Mensaje orientativo — el cupo se asigna desde Clientes */}
                         {!search && (
                             <p className="text-xs text-gray-400">
                                 Los cupos se asignan desde el módulo de{" "}
@@ -101,6 +102,41 @@ export default function Payments() {
                     onPageChange={(page) => setPresentPage(page)}
                 />
             </div>
+            {showReportModal && (
+                <ConfirmModal
+                    type="info"
+                    title="Generar reporte"
+                    message="Selecciona el rango de fechas para el reporte"
+                    showDateFilter={true}
+                    onCancel={() => setShowReportModal(false)}
+                    onConfirm={({ fechaInicio, fechaFin }) => {
+                        try {
+                            generarReporteGeneral(clientes, fechaInicio, fechaFin);
+
+                            setAlert({
+                                type: "success",
+                                message: "El reporte se generó correctamente"
+                            });
+
+                        } catch (error) {
+                            setAlert({
+                                type: "error",
+                                message: "Hubo un error al generar el reporte"
+                            });
+                        }
+
+                        setShowReportModal(false);
+                    }}
+                />
+            )}
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
+                />
+            )}
         </div>
+
     );
 }

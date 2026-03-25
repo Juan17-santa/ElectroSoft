@@ -213,9 +213,9 @@ export function useOrdersForm({ onSuccess }) {
                 }
             });
 
-            const subtotal = productos.reduce((acc, p) => acc + p.subtotal, 0);
-            const iva = subtotal * 0.19;
-            const total = subtotal + iva;
+            const total = productos.reduce((acc, p) => acc + p.subtotal, 0);
+            const iva = total * 0.19;
+            const subtotal = total - iva;
 
             return { ...prev, productos, subtotal, iva, total };
         });

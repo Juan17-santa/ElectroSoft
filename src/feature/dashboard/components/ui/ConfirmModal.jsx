@@ -1,4 +1,6 @@
 import { Trash2, AlertTriangle, Info } from "lucide-react";
+import { useState } from "react";
+import Calendar from "./Calendar";
 
 export default function ConfirmModal({
     type = "delete",
@@ -7,8 +9,35 @@ export default function ConfirmModal({
     onConfirm,
     onCancel,
     labelConfirmar = "Confirmar",
-    labelCancelar  = "Cancelar",
+    labelCancelar = "Cancelar",
+    showDateFilter = false,
 }) {
+
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const fmt = (d) => d.toISOString().split("T")[0];
+
+    const [fechaInicio, setFechaInicio] = useState(fmt(firstDayOfMonth));
+    const handleFechaInicio = (value) => {
+        if (value > fmt(today)) return;
+        if (value > fechaFin) return;
+        setFechaInicio(value);
+    };
+
+    const [fechaFin, setFechaFin] = useState(fmt(today));
+    const handleFechaFin = (value) => {
+        if (value > fmt(today)) return;
+        if (value < fechaInicio) return;
+        setFechaFin(value);
+    };
+
+    const handleConfirm = () => {
+        if (type === "info" && showDateFilter) {
+            onConfirm?.({ fechaInicio, fechaFin });
+        } else {
+            onConfirm?.();
+        }
+    };
 
     const variants = {
         delete: {
@@ -58,6 +87,28 @@ export default function ConfirmModal({
                     {message}
                 </p>
 
+                {/* FECHAS */}
+                {type === "info" && showDateFilter && (
+                    <div className="flex flex-col gap-4 mb-4">
+
+                        <Calendar
+                            label="Fecha inicio"
+                            fechaISO={fechaInicio}
+                            onFechaChange={handleFechaInicio}
+                            maxDate={fechaFin}
+                        />
+
+                        <Calendar
+                            label="Fecha fin"
+                            fechaISO={fechaFin}
+                            onFechaChange={handleFechaFin}
+                            minDate={fechaInicio}
+                            maxDate={fmt(today)}
+                        />
+
+                    </div>
+                )}
+
                 {/* BOTONES */}
                 <div className="flex justify-end gap-3">
 
@@ -71,7 +122,7 @@ export default function ConfirmModal({
 
                     <button
                         type="button"
-                        onClick={onConfirm}
+                        onClick={handleConfirm}
                         className={`px-4 py-2 rounded-lg text-white font-medium shadow-sm transition cursor-pointer ${current.button}`}
                     >
                         {labelConfirmar}

@@ -62,8 +62,8 @@ export default function OrdersTable({
 
                                     {/* FECHA CREACION */}
                                     <td className="px-4 py-2">
-                                        {order.fechaCreacion
-                                            ? new Date(order.fechaCreacion).toLocaleDateString()
+                                        {order.fechaPedido
+                                            ? new Date(order.fechaPedido).toLocaleDateString()
                                             : "-"}
                                     </td>
 

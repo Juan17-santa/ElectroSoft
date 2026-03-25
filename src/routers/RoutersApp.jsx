@@ -13,7 +13,6 @@ import Dashboard from "../feature/dashboard/pages/dashboard/Dashboard";
 // ========= COMPRAS =========
 // CATEGORIA DE PRODUCTOS
 import ProductCategory from "../feature/dashboard/pages/productCategory/pages/ProductCategory";
-import ProductCategoryDetails from "../feature/dashboard/pages/productCategory/pages/ProductCategoryDetails";
 
 // PRODUCTOS
 import Products from "../feature/dashboard/pages/products/pages/Products";
@@ -91,7 +90,6 @@ export default function RoutersApp() {
 
                 {/* CATEGORIA DE PRODUCTOS */}
                 <Route path="productCategory" element={<ProductCategory />} />
-                <Route path="productCategory/detail" element={<ProductCategoryDetails />} />
 
                 {/* PRODUCTOS */}
                 <Route path="products" element={<Products />} />

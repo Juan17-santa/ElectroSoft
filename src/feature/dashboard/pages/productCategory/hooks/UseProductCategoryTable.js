@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { ServiceProductCategory } from "../services/ServicesProductCategory";
+import { ServicesProducts } from "../../products/services/ServicesProducts";
+import { ServicesProviders } from "../../providers/services/ServicesProviders";
 
 // HOOK PERSONALIZADO PARA GESTIONAR LA LOGICA DE LA TABLA DE CATEGORIAS 
 export default function useProductCategoryTable({
@@ -15,10 +17,7 @@ export default function useProductCategoryTable({
 
     // FUNCION PARA CARGAR LAS CATEGORIAS 
     const loadCategories = () => {
-        const storedCategories = ServiceProductCategory.get().sort(
-            (a,b) => b.id - a.id
-        );
-
+        const storedCategories = ServiceProductCategory.get();
         setCategories(storedCategories);
     };
 
@@ -29,17 +28,43 @@ export default function useProductCategoryTable({
 
     // FUNCION PARA ELIMINAR UNA CATEGORIA DE PRODUCTO
     const deleteCategory = (id) => {
+        const categoryToDelete = categories.find(cat => cat.id === id);
+
+        if (!categoryToDelete) {
+            showAlert("error", "Categoría no encontrada");
+            return;
+        }
+
+        // VERIFICAR PRODUCTOS Y PROVEEDORES
+        const productosAsociados = ServicesProducts.get().filter(
+            p => Number(p.categoriaId) === Number(id)
+        );
+
+        const proveedoresAsociados = ServicesProviders.get().some(prov =>
+            prov.categoriasAsociadas?.some(catId => String(catId) === String(id))
+        );
+
+        // SI HAY PRODUCTOS O PROVEEDORES ASOCIADOS BLOQUEA LA ACCION DE ELIMINAR
+        if (productosAsociados.length > 0 || proveedoresAsociados === true) {
+            let mensaje = "No se puede eliminar: Esta categoría tiene ";
+            if (productosAsociados.length > 0) mensaje += "productos";
+            if (productosAsociados.length > 0 && proveedoresAsociados) mensaje += " y ";
+            if (proveedoresAsociados) mensaje += "proveedores";
+            mensaje += " asociados.";
+
+            showAlert("error", mensaje);
+            return;
+        }
+
         setConfirmData({
             type: "delete",
-            title: "Eliminar categoría de producto",
-            message: "¿Seguro que deseas eliminar esta categoría de producto? Esta acción no se puede deshacer.",
+            title: "Eliminar categoría",
+            message: "¿Seguro que deseas eliminar esta categoria? Esta acción no se puede deshacer.",
             onConfirm: () => {
                 const updated = ServiceProductCategory.delete(id);
-
                 setCategories(updated);
                 setConfirmData(null);
-
-                showAlert("success", "Categoría de producto eliminada con éxito");
+                showAlert("success", "Categoría eliminada con éxito");
             },
             onCancel: () => setConfirmData(null),
         });

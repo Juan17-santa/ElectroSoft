@@ -8,6 +8,7 @@ import Pagination from "../../../components/ui/Pagination"
 import Alert from "../../../components/ui/Alert";
 import CancellationModal from "../../../components/ui/CancellationModal";
 import ConfirmSaleModal from "../components/ConfirmSaleModal";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
 
 export default function Orders() {
 
@@ -28,6 +29,8 @@ export default function Orders() {
     // ESTADO ALERTA
     const [alert, setAlert] = useState(null);
 
+    // MODAL DEL GENERAR REPORTE
+    const [showReportModal, setShowReportModal] = useState(false);
 
     // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA COLOMBIANA
     const formatCurrency = (value) => {
@@ -77,42 +80,59 @@ export default function Orders() {
         }
     };
     const handleExecuteExport = (fechaInicio, fechaFin) => {
-    const columns = [
-        "📑 ID",
-        "👤 NOMBRE DEL CLIENTE           ",
-        "🪪 DOCUMENTO          ",
-        "📅 FECHA CREACIÓN     ",
-        "💰 TOTAL PEDIDO      ",
-        "⏳ VENCIMIENTO      ",
-        "💳 FORMA PAGO      ",
-        "🚩 ESTADO      "
-    ];
+        const columns = [
+            "ID",
+            "NOMBRE DEL CLIENTE           ",
+            "DOCUMENTO          ",
+            "FECHA CREACIÓN     ",
+            "TOTAL PEDIDO      ",
+            "VENCIMIENTO      ",
+            "FORMA PAGO      ",
+            "ESTADO      "
+        ];
 
-    const excelData = data.map((order, index) => [
-        String(index + 1),
-        String(order.nombreCliente || "Sin nombre"),
-        String(`${order.tipoDocumento || ""} ${order.documento || ""}`),
-        String(order.fechaCreacion ? new Date(order.fechaCreacion).toLocaleDateString() : "-"),
-        String(formatCurrency(order.total || 0)),
-        String(order.fechaVencimiento ? new Date(order.fechaVencimiento).toLocaleDateString() : "-"),
-        String(order.formaPago || "-"),
-        String(order.estado)
-    ]);
+        const filtrados = data.filter(order => {
+            const fecha = new Date(order.fechaPedido);
 
-    generateExcelReport({
-        title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
-        fileName: `Reporte_Pedidos_${fechaInicio}_${fechaFin}.xlsx`,  // 👈 usa las fechas
-        columns,
-        data: excelData
-    });
+            return (
+                fecha >= new Date(fechaInicio + "T00:00:00") &&
+                fecha <= new Date(fechaFin + "T23:59:59")
+            );
+        });
 
-    setAlert({
-        type: "success",
-        message: "Reporte de Excel generado correctamente."
-    });
+        if (filtrados.length === 0) {
+            setAlert({
+                type: "error",
+                message: "No hay pedidos en el rango de fechas seleccionado."
+            });
+            return;
+        }
 
-    setTimeout(() => setAlert(null), 3000);
-};
+        const excelData = filtrados.map((order, index) => [
+            String(index + 1),
+            String(order.nombreCliente || "Sin nombre"),
+            String(`${order.tipoDocumento || ""} ${order.documento || ""}`),
+            String(order.fechaPedido ? new Date(order.fechaPedido).toLocaleDateString() : "-"),
+            String(formatCurrency(order.total || 0)),
+            String(order.fechaVencimiento ? new Date(order.fechaVencimiento).toLocaleDateString() : "-"),
+            String(order.formaPago || "-"),
+            String(order.estado)
+        ]);
+
+        generateExcelReport({
+            title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
+            fileName: `Reporte_Pedidos_${fechaInicio}_${fechaFin}.xlsx`,
+            columns,
+            data: excelData
+        });
+
+        setAlert({
+            type: "success",
+            message: "Reporte de Excel generado correctamente."
+        });
+
+        setTimeout(() => setAlert(null), 3000);
+    };
 
     // ESTADO PARA CANCELAR UN PEDIDO
     const [orderToCancel, setOrderToCancel] = useState(null);
@@ -145,8 +165,6 @@ export default function Orders() {
         }
     };
 
-   
-
     // LOGICA DEL HOOK
     const {
         data,
@@ -167,15 +185,14 @@ export default function Orders() {
 
                 {/* BARRA DE BÚSQUEDA Y ACCIONES PRINCIPALES */}
                 <SearchBar
-    searchTerm={search}
-    onSearchChange={(e) => setSearch(e.target.value)}
-    placeholder="Buscar pedidos..."
-    showReportButton={true}
-    showDateFilter={true}
-    onReportClick={({ fechaInicio, fechaFin }) => handleExecuteExport(fechaInicio, fechaFin)}
-    onCreateClick={() => navigate("/dashboard/orders/create")}
-    createButtonText="Crear pedido"
-/>
+                    searchTerm={search}
+                    onSearchChange={(e) => setSearch(e.target.value)}
+                    placeholder="Buscar pedidos..."
+                    showReportButton={true}
+                    onReportClick={() => setShowReportModal(true)}
+                    onCreateClick={() => navigate("/dashboard/orders/create")}
+                    createButtonText="Crear pedido"
+                />
 
                 {/* TABLA */}
                 <OrdersTable
@@ -216,6 +233,20 @@ export default function Orders() {
                     placeholder="Describe el motivo de la anulación del pedido..."
                     onConfirm={handleCancelOrder}
                     onCancel={() => setOrderToCancel(null)}
+                />
+            )}
+
+            {showReportModal && (
+                <ConfirmModal
+                    type="info"
+                    title="Generar reporte de pedidos"
+                    message="Selecciona el rango de fechas para exportar el reporte"
+                    showDateFilter={true}
+                    onCancel={() => setShowReportModal(false)}
+                    onConfirm={({ fechaInicio, fechaFin }) => {
+                        handleExecuteExport(fechaInicio, fechaFin);
+                        setShowReportModal(false);
+                    }}
                 />
             )}
 
