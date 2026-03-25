@@ -5,7 +5,8 @@ export const ServicesProviders = {
     // OBTENER PROVEEDORES
     get() {
         const data = localStorage.getItem(KEY);
-        return data ? JSON.parse(data) : [];
+        const providers = data ? JSON.parse(data) : [];
+        return providers.sort((a, b) => b.id - a.id);
     },
 
     // CREAR UN PROVEEDOR

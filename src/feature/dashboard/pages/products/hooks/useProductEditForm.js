@@ -127,7 +127,7 @@ export default function useProductEditForm({
             case "garantia":
                 if (!strValue) {
                     error = "Debe seleccionar una garantía";
-                } else if (!["3 meses", "6 meses", "12 meses"].includes(strValue)) {
+                } else if (!["3 meses", "6 meses", "9 meses", "12 meses"].includes(strValue)) {
                     error = "Garantía no válida";
                 }
                 break;
@@ -198,9 +198,7 @@ export default function useProductEditForm({
             caracteristicas
         };
 
-        console.log("✅ Actualizando producto:", productoActualizado);
-        const resultado = ServicesProducts.update(productoActualizado);
-        console.log("✅ Resultado:", resultado);
+        ServicesProducts.update(productoActualizado);
         
         onSuccess();
     };

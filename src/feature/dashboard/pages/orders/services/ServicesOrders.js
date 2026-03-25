@@ -4,7 +4,8 @@ export const ServicesOrders = {
 
     get() {
         const data = localStorage.getItem(KEY);
-        return data ? JSON.parse(data) : [];
+        const orders = data ? JSON.parse(data) : [];
+        return orders.sort((a, b) => b.id - a.id);
     },
 
     create({ documento, clienteId, fechaPedido, fechaVencimiento, productos, formaPago }) {
