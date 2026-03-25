@@ -8,7 +8,6 @@ import Pagination from "../../../components/ui/Pagination"
 import Alert from "../../../components/ui/Alert";
 import CancellationModal from "../../../components/ui/CancellationModal";
 import ConfirmSaleModal from "../components/ConfirmSaleModal";
-import ConfirmModal from "../../../components/ui/ConfirmModal"
 
 export default function Orders() {
 
@@ -29,8 +28,6 @@ export default function Orders() {
     // ESTADO ALERTA
     const [alert, setAlert] = useState(null);
 
-    // ESTADO PARA CONTROLAR LA MODAL DE CONFIRMACIÓN DE EXPORTACIÓN
-    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
     // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA COLOMBIANA
     const formatCurrency = (value) => {
@@ -79,6 +76,43 @@ export default function Orders() {
             });
         }
     };
+    const handleExecuteExport = (fechaInicio, fechaFin) => {
+    const columns = [
+        "📑 ID",
+        "👤 NOMBRE DEL CLIENTE           ",
+        "🪪 DOCUMENTO          ",
+        "📅 FECHA CREACIÓN     ",
+        "💰 TOTAL PEDIDO      ",
+        "⏳ VENCIMIENTO      ",
+        "💳 FORMA PAGO      ",
+        "🚩 ESTADO      "
+    ];
+
+    const excelData = data.map((order, index) => [
+        String(index + 1),
+        String(order.nombreCliente || "Sin nombre"),
+        String(`${order.tipoDocumento || ""} ${order.documento || ""}`),
+        String(order.fechaCreacion ? new Date(order.fechaCreacion).toLocaleDateString() : "-"),
+        String(formatCurrency(order.total || 0)),
+        String(order.fechaVencimiento ? new Date(order.fechaVencimiento).toLocaleDateString() : "-"),
+        String(order.formaPago || "-"),
+        String(order.estado)
+    ]);
+
+    generateExcelReport({
+        title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
+        fileName: `Reporte_Pedidos_${fechaInicio}_${fechaFin}.xlsx`,  // 👈 usa las fechas
+        columns,
+        data: excelData
+    });
+
+    setAlert({
+        type: "success",
+        message: "Reporte de Excel generado correctamente."
+    });
+
+    setTimeout(() => setAlert(null), 3000);
+};
 
     // ESTADO PARA CANCELAR UN PEDIDO
     const [orderToCancel, setOrderToCancel] = useState(null);
@@ -111,51 +145,7 @@ export default function Orders() {
         }
     };
 
-    // ABRIR LA MODAL DE CONFIRMAR EL GENERAR REPORTE
-    const handleOpenExportConfirm = () => {
-        setIsExportModalOpen(true);
-    };
-
-    // EJECUTAR EL GENERAR REPORTE Y CERRAR LA MODAL
-    const handleExecuteExport = () => {
-        const columns = [
-            "📑 ID",
-            "👤 NOMBRE DEL CLIENTE           ",
-            "🪪 DOCUMENTO          ",
-            "📅 FECHA CREACIÓN     ",
-            "💰 TOTAL PEDIDO      ",
-            "⏳ VENCIMIENTO      ",
-            "💳 FORMA PAGO      ",
-            "🚩 ESTADO      "
-        ];
-
-        const excelData = data.map((order, index) => [
-            String(index + 1),
-            String(order.nombreCliente || "Sin nombre"),
-            String(`${order.tipoDocumento || ""} ${order.documento || ""}`),
-            String(order.fechaCreacion ? new Date(order.fechaCreacion).toLocaleDateString() : "-"),
-            String(formatCurrency(order.total || 0)),
-            String(order.fechaVencimiento ? new Date(order.fechaVencimiento).toLocaleDateString() : "-"),
-            String(order.formaPago || "-"),
-            String(order.estado)
-        ]);
-
-        generateExcelReport({
-            title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
-            fileName: `Reporte_Pedidos_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`,
-            columns: columns,
-            data: excelData
-        });
-
-        setIsExportModalOpen(false);
-
-        setAlert({
-            type: "success",
-            message: "Reporte de Excel generado correctamente."
-        });
-
-        setTimeout(() => setAlert(null), 3000);
-    };
+   
 
     // LOGICA DEL HOOK
     const {
@@ -177,14 +167,15 @@ export default function Orders() {
 
                 {/* BARRA DE BÚSQUEDA Y ACCIONES PRINCIPALES */}
                 <SearchBar
-                    searchTerm={search}
-                    onSearchChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar pedidos..."
-                    showReportButton={true}
-                    onReportClick={handleOpenExportConfirm}
-                    onCreateClick={() => navigate("/dashboard/orders/create")}
-                    createButtonText="Crear pedido"
-                />
+    searchTerm={search}
+    onSearchChange={(e) => setSearch(e.target.value)}
+    placeholder="Buscar pedidos..."
+    showReportButton={true}
+    showDateFilter={true}
+    onReportClick={({ fechaInicio, fechaFin }) => handleExecuteExport(fechaInicio, fechaFin)}
+    onCreateClick={() => navigate("/dashboard/orders/create")}
+    createButtonText="Crear pedido"
+/>
 
                 {/* TABLA */}
                 <OrdersTable
@@ -204,16 +195,6 @@ export default function Orders() {
                 </div>
             </div>
 
-            {/* MODAL DE CONFIRMACION PARA LA EXPORTACION DE DATOS */}
-            {isExportModalOpen && (
-                <ConfirmModal
-                    type="info"
-                    title="Confirmar generar reporte"
-                    message="¿Estás seguro de que deseas descargar el reporte de pedidos?"
-                    onConfirm={handleExecuteExport}
-                    onCancel={() => setIsExportModalOpen(false)}
-                />
-            )}
 
             {/* MODAL PARA PROCESAR EL PEDIDO COMO UNA VENTA FINAL */}
             <ConfirmSaleModal

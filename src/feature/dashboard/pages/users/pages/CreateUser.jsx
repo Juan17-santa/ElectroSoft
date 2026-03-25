@@ -1,12 +1,20 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import Alert from "../../../components/ui/Alert"
+import Alert from "../../../components/ui/Alert";
 import UserForm from "../components/UserForm";
 import { useUserForm } from "../hooks/useUserForm";
+import { RolesService } from "../../Roles/services/RolesService"; 
 
 export default function CreateUser() {
 
     const navigate = useNavigate();
+    const [roles, setRoles] = useState([]);
+
+    // Carga los roles del localStorage al montar el componente
+    useEffect(() => {
+        setRoles(RolesService.get());
+    }, []);
 
     const {
         formData,
@@ -56,6 +64,7 @@ export default function CreateUser() {
                     handleSubmit={handleSubmit}
                     onCancel={() => navigate("/dashboard/users")}
                     buttonText="Crear usuario"
+                    roles={roles}
                 />
             </div>
 
