@@ -8,6 +8,15 @@ export default function OrdersTable({
     onCancel,
     onProcess
 }) {
+
+    // FUNCION PARA FORMATEAR FECHA
+    const formatDate = (fecha) => {
+        if (!fecha) return "-";
+
+        const [year, month, day] = fecha.split("-");
+        return `${day}/${month}/${year}`;
+    };
+
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white ">
             <div className="bg-gray-100 rounded-2xl overflow-hidden">
@@ -62,9 +71,7 @@ export default function OrdersTable({
 
                                     {/* FECHA CREACION */}
                                     <td className="px-4 py-2">
-                                        {order.fechaPedido
-                                            ? new Date(order.fechaPedido).toLocaleDateString()
-                                            : "-"}
+                                        {formatDate(order.fechaPedido)}
                                     </td>
 
                                     {/* TOTAL */}
@@ -74,9 +81,7 @@ export default function OrdersTable({
 
                                     {/* FECHA VENCIMIENTO */}
                                     <td className="px-4 py-2">
-                                        {order.fechaVencimiento
-                                            ? new Date(order.fechaVencimiento).toLocaleDateString()
-                                            : "-"}
+                                        {formatDate(order.fechaVencimiento)}
                                     </td>
 
                                     {/* FORMA PAGO */}

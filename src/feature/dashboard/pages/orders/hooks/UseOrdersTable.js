@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { ServicesOrders } from "../services/ServicesOrders";
 import { ClientsService } from "../../Clients/services/ClientsService";
-import { ServicesProducts } from "../../products/services/ServicesProducts";
-import { SalesService } from "../../SalesManagement/services/SalesService";
 
 // HOOK PERSONALIZADO PARA GESTIONAR LA LÓGICA DE LA TABLA DE PEDIDOS
 export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
@@ -20,9 +18,9 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
         const formattedOrders = storedOrders.map(order => {
             const client = storedClients.find(c => c.id === order.clienteId);
 
-            const subtotal = order.productos?.reduce((acc, p) => acc + (p.subtotal || 0), 0) || 0;
-            const iva = subtotal * 0.19;
-            const total = subtotal + iva;
+            const subtotal = order.subtotal || 0;
+            const iva = order.iva || 0;
+            const total = order.total || 0;
 
             return {
                 ...order,

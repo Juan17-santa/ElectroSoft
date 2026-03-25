@@ -9,8 +9,17 @@ export const ServicesOrders = {
         return orders.sort((a, b) => b.id - a.id);
     },
 
-    create({ documento, clienteId, fechaPedido, fechaVencimiento, productos, formaPago }) {
-
+    create({
+        documento,
+        clienteId,
+        fechaPedido,
+        fechaVencimiento,
+        productos,
+        formaPago,
+        subtotal,
+        iva,
+        total
+    }) {
         const orders = this.get();
 
         const nuevoPedido = {
@@ -21,6 +30,9 @@ export const ServicesOrders = {
             fechaVencimiento,
             productos,
             formaPago,
+            subtotal,
+            iva,
+            total,
             estado: "Pendiente",
             fechaCreacion: new Date().toISOString()
         };
