@@ -21,16 +21,30 @@ export function useOrdersReport(data, setAlert) {
             return;
         }
 
-        const excelData = filtrados.map((order, index) => [
-            String(index + 1),
-            String(order.nombreCliente || "Sin nombre"),
-            String(`${order.tipoDocumento || ""} ${order.documento || ""}`),
-            String(order.fechaPedido),
-            String(order.total),
-            String(order.fechaVencimiento || "-"),
-            String(order.formaPago || "-"),
-            String(order.estado)
-        ]);
+        const excelData = [];
+
+        filtrados.forEach((order, index) => {
+
+            order.productos.forEach((prod, i) => {
+                excelData.push([
+                    i === 0 ? String(index + 1) : "",
+                    i === 0 ? String(order.nombreCliente || "Sin nombre") : "",
+                    i === 0 ? String(`${order.tipoDocumento || ""} ${order.documento || ""}`) : "",
+                    i === 0 ? String(order.fechaPedido) : "",
+
+                    prod.nombre,
+                    prod.cantidad,
+                    prod.precio,
+                    prod.subtotal,
+
+                    i === 0 ? order.total : "",
+                    i === 0 ? (order.fechaVencimiento || "-") : "",
+                    i === 0 ? (order.formaPago || "-") : "",
+                    i === 0 ? order.estado : ""
+                ]);
+            });
+            excelData.push([]);
+        });
 
         generateExcelReport({
             title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
@@ -40,6 +54,12 @@ export function useOrdersReport(data, setAlert) {
                 "CLIENTE",
                 "DOCUMENTO",
                 "FECHA",
+
+                "PRODUCTO",
+                "CANTIDAD",
+                "PRECIO",
+                "SUBTOTAL",
+
                 "TOTAL",
                 "VENCIMIENTO",
                 "PAGO",

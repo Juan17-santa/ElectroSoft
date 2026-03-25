@@ -29,6 +29,17 @@ export default function OrderDetails() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 4;
 
+    // FUNCION PARA FORMATEAR FECHA
+    const formatDate = (date) => {
+        if (!date) return "-";
+
+        return new Date(date).toLocaleDateString('es-CO', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    };
+
     // FUNCION PARA OBTENER LOS CLIENTES AL CARGAR
     useEffect(() => {
         if (orderDetail) {
@@ -91,9 +102,9 @@ export default function OrderDetails() {
         ]);
 
         // CALCULO DE TOTALES
-        const subtotal = order.productos.reduce((acc, prod) => acc + prod.subtotal, 0);
-        const iva = subtotal * 0.19;
-        const total = subtotal + iva;
+        const subtotal = order.subtotal || 0;
+        const iva = order.iva || 0;
+        const total = order.total || 0;
 
         generatePDFReport({
             title: `Reporte del Pedido #${order.id}`,
@@ -102,7 +113,7 @@ export default function OrderDetails() {
             data,
 
             extraInfo: [
-                `Fecha del pedido: ${order.fechaPedido}`,
+                `Fecha del pedido: ${formatDate(order.fechaPedido)}`,
                 `Documento: ${order.tipoDocumento} - ${order.documento}`,
                 `Cliente: ${order.nombres}`,
                 `Forma de pago: ${order.formaPago}`
@@ -110,7 +121,7 @@ export default function OrderDetails() {
 
             totals: [
                 `Subtotal: ${formatCurrency(subtotal)}`,
-                `IVA (19%): ${formatCurrency(iva)}`,
+                `IVA incluido (19%): ${formatCurrency(iva)}`,
                 `Total: ${formatCurrency(total)}`
             ]
         });
@@ -168,7 +179,7 @@ export default function OrderDetails() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <p className="text-sm text-yellow-500 font-medium">Fecha Pedido</p>
-                                            <p className="text-sm font-semibold text-gray-800">{order.fechaPedido}</p>
+                                            <p className="text-sm font-semibold text-gray-800">{formatDate(order.fechaPedido)}</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-yellow-500 font-medium">Forma de Pago</p>
@@ -231,7 +242,7 @@ export default function OrderDetails() {
                                             <span className="text-gray-800 font-semibold">{formatCurrency(order.subtotal)}</span>
                                         </div>
                                         <div className="flex gap-2">
-                                            <span className="text-gray-500 uppercase">IVA (19%):</span>
+                                            <span className="text-gray-500 uppercase">IVA incluido (19%):</span>
                                             <span className="text-blue-600 font-semibold">{formatCurrency(order.iva)}</span>
                                         </div>
                                         <div className="flex gap-2">
