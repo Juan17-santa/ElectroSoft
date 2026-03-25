@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useOrdersTable } from "../hooks/UseOrdersTable";
-import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 import SearchBar from "../../../components/ui/Searchbar";
 import OrdersTable from "../components/OrdersTable";
 import Pagination from "../../../components/ui/Pagination"
@@ -9,6 +8,7 @@ import Alert from "../../../components/ui/Alert";
 import CancellationModal from "../../../components/ui/CancellationModal";
 import ConfirmSaleModal from "../components/ConfirmSaleModal";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
+import { useOrdersReport } from "../hooks/useOrdersReport";
 
 export default function Orders() {
 
@@ -32,6 +32,7 @@ export default function Orders() {
     // MODAL DEL GENERAR REPORTE
     const [showReportModal, setShowReportModal] = useState(false);
 
+    
     // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA COLOMBIANA
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', {
@@ -40,38 +41,38 @@ export default function Orders() {
             minimumFractionDigits: 0,
         }).format(value);
     };
-
+    
     // FUNCION PARA PREPARAR LA VISTA DE DETALLES
     const handleDetailsNavigation = (order) => {
         navigate("/dashboard/orders/detail", {
             state: { order },
         })
     };
-
+    
     // FUNCION PARA ABRIR LA MODAL DE VENTA
     const handleOpenSaleConfirm = (order) => {
         setOrderToProcess(order);
         setIsSaleModalOpen(true);
     };
-
+    
     // FUNCION PARA CONFIRMAR LA VENTA Y REDIRIGIR
     const handleConfirmSale = (order) => {
         try {
             // EJECUTA LA LÓGICA DEL HOOK (GUARDAR EN VENTAS Y ELIMINAR DE PEDIDOS)
             processOrderToSale(order);
             setIsSaleModalOpen(false);
-
+            
             // MOSTRAR ALERTA DE EXITO
             setAlert({
                 type: "success",
                 message: "Venta procesada con éxito. Redirigiendo a facturación..."
             });
-
+            
             // REDIRIGIR TRAS 2 SEGUNDOS PARA VER LA ALERTA
             setTimeout(() => {
                 navigate("/dashboard/sales-management");
             }, 2000);
-
+            
         } catch (error) {
             setAlert({
                 type: "error",
@@ -79,64 +80,10 @@ export default function Orders() {
             });
         }
     };
-    const handleExecuteExport = (fechaInicio, fechaFin) => {
-        const columns = [
-            "ID",
-            "NOMBRE DEL CLIENTE           ",
-            "DOCUMENTO          ",
-            "FECHA CREACIÓN     ",
-            "TOTAL PEDIDO      ",
-            "VENCIMIENTO      ",
-            "FORMA PAGO      ",
-            "ESTADO      "
-        ];
-
-        const filtrados = data.filter(order => {
-            const fecha = new Date(order.fechaPedido);
-
-            return (
-                fecha >= new Date(fechaInicio + "T00:00:00") &&
-                fecha <= new Date(fechaFin + "T23:59:59")
-            );
-        });
-
-        if (filtrados.length === 0) {
-            setAlert({
-                type: "error",
-                message: "No hay pedidos en el rango de fechas seleccionado."
-            });
-            return;
-        }
-
-        const excelData = filtrados.map((order, index) => [
-            String(index + 1),
-            String(order.nombreCliente || "Sin nombre"),
-            String(`${order.tipoDocumento || ""} ${order.documento || ""}`),
-            String(order.fechaPedido ? new Date(order.fechaPedido).toLocaleDateString() : "-"),
-            String(formatCurrency(order.total || 0)),
-            String(order.fechaVencimiento ? new Date(order.fechaVencimiento).toLocaleDateString() : "-"),
-            String(order.formaPago || "-"),
-            String(order.estado)
-        ]);
-
-        generateExcelReport({
-            title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
-            fileName: `Reporte_Pedidos_${fechaInicio}_${fechaFin}.xlsx`,
-            columns,
-            data: excelData
-        });
-
-        setAlert({
-            type: "success",
-            message: "Reporte de Excel generado correctamente."
-        });
-
-        setTimeout(() => setAlert(null), 3000);
-    };
-
+    
     // ESTADO PARA CANCELAR UN PEDIDO
     const [orderToCancel, setOrderToCancel] = useState(null);
-
+    
     // FUNCION PARA ANULAR UN PEDIDO Y DEVOLVER STOCK
     const handleCancelOrder = ({ motivo, fechaAnulacion }) => {
         if (!orderToCancel) return;
@@ -164,7 +111,7 @@ export default function Orders() {
             });
         }
     };
-
+    
     // LOGICA DEL HOOK
     const {
         data,
@@ -176,7 +123,9 @@ export default function Orders() {
         presentPage,
         recordsPerPage
     );
-
+    
+    const { exportReport } = useOrdersReport(data, setAlert);
+    
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
@@ -244,7 +193,7 @@ export default function Orders() {
                     showDateFilter={true}
                     onCancel={() => setShowReportModal(false)}
                     onConfirm={({ fechaInicio, fechaFin }) => {
-                        handleExecuteExport(fechaInicio, fechaFin);
+                        exportReport(fechaInicio, fechaFin);
                         setShowReportModal(false);
                     }}
                 />
