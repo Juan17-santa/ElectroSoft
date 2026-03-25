@@ -9,7 +9,8 @@ export default function UserForm({
     handleChange,
     handleSubmit,
     buttonText,
-    onCancel
+    onCancel,
+    roles = []
 }) {
 
     return (
@@ -150,10 +151,7 @@ export default function UserForm({
                             onChange={(value) =>
                                 handleChange({ target: { name: "rol", value } })
                             }
-                            options={[
-                                { value: "Admin", label: "Admin" },
-                                { value: "Empleado", label: "Empleado" },
-                            ]}
+                            options={roles.map((r) => ({ value: r.nombre, label: r.nombre }))}
                             placeholder="Seleccione un rol"
                         />
                         <ValidationMessage

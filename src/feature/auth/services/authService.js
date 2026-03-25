@@ -13,9 +13,9 @@ export function login(email, password) {
     const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
     const user  = users.find((u) => u.email === email);
 
-    if (!user)                      return { ok: false, message: "Usuario no encontrado" };
+    if (!user)                      return { ok: false, message: "Correo o contraseña incorrecto" };
     if (!user.estado)               return { ok: false, message: "Usuario inactivo" };
-    if (user.password !== password) return { ok: false, message: "Contraseña incorrecta" };
+    if (user.password !== password) return { ok: false, message: "Usuario o contraseña invalida" };
 
     const ultimoAcceso = new Date().toLocaleString("es-CO", {
         day: "2-digit", month: "short", year: "numeric",

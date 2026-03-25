@@ -1,173 +1,306 @@
-import { generatePDFReport } from "../../../../../utils/PDFReportGenerator"; // ajusta el path
+import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
+import * as XLSX from "xlsx";
 
 const fmt = (val) => new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0
 }).format(val ?? 0);
 
+const hoy = () => new Date().toISOString().split("T")[0];
+
 /**
  * Reporte general — todos los clientes con cupo de crédito
+ * Una hoja por cliente con sus ventas y abonos detallados
+ * + una hoja resumen general
  */
 export const generarReporteGeneral = (clientes) => {
+    const workbook = XLSX.utils.book_new();
 
-    const columns = [
-        "Cliente",
-        "Documento",
-        "Cupo total",
-        "Cupo ocupado",
-        "Cupo disponible",
-        "Ventas pendientes",
-        "Estado"
-    ];
-
-    const data = clientes.map(c => [
-        `${c.nombres} ${c.apellidos}`,
-        `${c.tipoDocumento} ${c.documento}`,
-        fmt(c.cupoCredito),
-        fmt(c.cupoOcupado),
-        fmt(c.cupoDisponible),
-        String(c.totalVentas),
-        c.estado === false ? "Suspendido" : "Activo"
-    ]);
-
-    const totalCupoAsignado  = clientes.reduce((acc, c) => acc + c.cupoCredito,    0);
-    const totalCupoOcupado   = clientes.reduce((acc, c) => acc + c.cupoOcupado,    0);
+    // ── HOJA 1: Resumen general ──────────────────────────────────────
+    const totalCupoAsignado   = clientes.reduce((acc, c) => acc + c.cupoCredito,    0);
+    const totalCupoOcupado    = clientes.reduce((acc, c) => acc + c.cupoOcupado,    0);
     const totalCupoDisponible = clientes.reduce((acc, c) => acc + c.cupoDisponible, 0);
     const clientesSuspendidos = clientes.filter(c => c.estado === false).length;
 
-    generatePDFReport({
-        title: "Reporte General de Créditos y Abonos",
-        fileName: `reporte_creditos_${new Date().toISOString().split("T")[0]}.pdf`,
-        columns,
-        data,
-        extraInfo: [
-            `Total clientes con cupo: ${clientes.length}`,
-            `Clientes suspendidos: ${clientesSuspendidos}`,
-            `Clientes activos: ${clientes.length - clientesSuspendidos}`,
+    const resumenData = [
+        ["REPORTE GENERAL DE CRÉDITOS Y ABONOS"],
+        [`Generado: ${hoy()}`],
+        [],
+        ["RESUMEN EJECUTIVO"],
+        ["Total clientes con cupo",  clientes.length],
+        ["Clientes activos",         clientes.length - clientesSuspendidos],
+        ["Clientes suspendidos",     clientesSuspendidos],
+        ["Cupo total asignado",      fmt(totalCupoAsignado)],
+        ["Cupo total ocupado",       fmt(totalCupoOcupado)],
+        ["Cupo total disponible",    fmt(totalCupoDisponible)],
+        [],
+        ["DETALLE POR CLIENTE"],
+        [
+            "Cliente",
+            "Tipo Doc",
+            "Documento",
+            "Email",
+            "Teléfono",
+            "Estado cliente",
+            "Estado pago",
+            "Cupo total",
+            "Cupo ocupado",
+            "Cupo disponible",
+            "Ventas pendientes",
         ],
-        totals: [
-            `Cupo total asignado: ${fmt(totalCupoAsignado)}`,
-            `Cupo total ocupado: ${fmt(totalCupoOcupado)}`,
-            `Cupo total disponible: ${fmt(totalCupoDisponible)}`,
-        ],
-        headColor: [234, 179, 8]
-    });
-};
-
-/**
- * Reporte individual — cuenta de crédito de un cliente específico
- */
-export const generarReporteCliente = (resumen, ventas) => {
-
-    const columnsVentas = [
-        "N° Venta",
-        "Fecha",
-        "Fecha límite",
-        "Total venta",
-        "Pagado",
-        "Saldo pendiente",
-        "Abonos",
-        "Estado"
+        ...clientes.map(c => {
+            const estadoPago = c.estado === false
+                ? "Suspendido"
+                : c.cupoOcupado > 0 ? "Por pagar" : "Al día";
+            return [
+                `${c.nombres} ${c.apellidos}`,
+                c.tipoDocumento,
+                c.documento,
+                c.email    || "—",
+                c.telefono || "—",
+                c.estado === false ? "Suspendido" : "Activo",
+                estadoPago,
+                fmt(c.cupoCredito),
+                fmt(c.cupoOcupado),
+                fmt(c.cupoDisponible),
+                c.totalVentas,
+            ];
+        }),
     ];
 
-    const dataVentas = ventas.map(v => [
-        v.numeroVenta || `V-${v.id}`,
-        v.fecha       || "—",
-        v.fechaLimite || "—",
-        fmt(v.total),
-        fmt(v.montoPagado || 0),
-        fmt(v.montoPorPagar),
-        String((v.abonos || []).length),
-        v.estado === "Anulada" ? "Vencida" :
-        v.estado === "Finalizado" ? "Finalizado" : "Pendiente"
-    ]);
+    const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+    wsResumen["!cols"] = [
+        { wch: 28 }, { wch: 10 }, { wch: 14 }, { wch: 28 },
+        { wch: 14 }, { wch: 16 }, { wch: 12 }, { wch: 18 },
+        { wch: 18 }, { wch: 18 }, { wch: 18 },
+    ];
+    XLSX.utils.book_append_sheet(workbook, wsResumen, "Resumen general");
 
-    // Tabla de abonos detallada de cada venta
-    const detalleAbonos = [];
-    ventas.forEach(v => {
-        if ((v.abonos || []).length > 0) {
-            detalleAbonos.push([
-                `Abonos de ${v.numeroVenta || `V-${v.id}`}`, "", "", ""
-            ]);
-            v.abonos.forEach(a => {
-                detalleAbonos.push([
-                    a.fecha       || "—",
-                    a.metodoPago  || "—",
-                    fmt(a.monto),
-                    ""
-                ]);
+    // ── HOJA POR CLIENTE: ventas + abonos ───────────────────────────
+    clientes.forEach(c => {
+        const rows = [];
+
+        // Encabezado cliente
+        rows.push([`ESTADO DE CUENTA — ${c.nombres} ${c.apellidos}`]);
+        rows.push([`Documento: ${c.tipoDocumento} ${c.documento}`]);
+        rows.push([`Email: ${c.email || "—"}   Teléfono: ${c.telefono || "—"}`]);
+        rows.push([`Estado: ${c.estado === false ? "Suspendido" : "Activo"}`]);
+        rows.push([]);
+        rows.push(["Cupo total", fmt(c.cupoCredito), "Cupo ocupado", fmt(c.cupoOcupado), "Cupo disponible", fmt(c.cupoDisponible)]);
+        rows.push([]);
+
+        if (!c.ventas || c.ventas.length === 0) {
+            rows.push(["Sin ventas a crédito registradas."]);
+        } else {
+            c.ventas.forEach((v, vi) => {
+                const estadoVenta = v.estado === "Anulada" || v.estado === "Anulado"
+                    ? "Vencida"
+                    : v.estado === "Finalizado" ? "Finalizado" : "Pendiente";
+
+                // Cabecera venta
+                rows.push([`VENTA ${vi + 1} — ${v.numeroVenta || `V-${v.id}`}`]);
+                rows.push(["Fuente",         v.fuente === "pedido" ? "Pedido" : "Venta"]);
+                rows.push(["Fecha",          v.fecha       || "—"]);
+                rows.push(["Fecha límite",   v.fechaLimite || "—"]);
+                rows.push(["Total venta",    fmt(v.total)]);
+                rows.push(["Total pagado",   fmt(v.montoPagado || 0)]);
+                rows.push(["Saldo pendiente",fmt(v.montoPorPagar)]);
+                rows.push(["Estado",         estadoVenta]);
+                rows.push([]);
+
+                // Abonos de esta venta
+                const abonos = (v.abonos || []);
+                if (abonos.length === 0) {
+                    rows.push(["  Sin abonos registrados."]);
+                } else {
+                    rows.push(["  ABONOS"]);
+                    rows.push(["  #", "Fecha", "Método de pago", "Monto", "Estado abono"]);
+                    abonos.forEach((a, ai) => {
+                        rows.push([
+                            ai + 1,
+                            a.fecha       || "—",
+                            a.metodoPago  || "—",
+                            fmt(a.monto),
+                            a.anulado ? "Anulado" : "Válido",
+                        ]);
+                    });
+
+                    // Subtotal abonos válidos
+                    const totalAbonosValidos = abonos
+                        .filter(a => !a.anulado)
+                        .reduce((acc, a) => acc + Number(a.monto), 0);
+                    rows.push(["  Total abonado", "", "", fmt(totalAbonosValidos), ""]);
+                }
+                rows.push([]);
+                rows.push(["─────────────────────────────────────────────"]);
+                rows.push([]);
             });
         }
+
+        const wsCliente = XLSX.utils.aoa_to_sheet(rows);
+        wsCliente["!cols"] = [
+            { wch: 22 }, { wch: 18 }, { wch: 20 },
+            { wch: 18 }, { wch: 14 },
+        ];
+
+        // Nombre de hoja: máx 31 chars, sin caracteres especiales
+        const nombreHoja = `${c.nombres} ${c.apellidos}`
+            .substring(0, 28)
+            .replace(/[:\\/?*[\]]/g, "");
+
+        XLSX.utils.book_append_sheet(workbook, wsCliente, nombreHoja);
     });
 
-    const totalPendiente = ventas.reduce((acc, v) => acc + v.montoPorPagar,    0);
-    const totalPagado    = ventas.reduce((acc, v) => acc + (v.montoPagado || 0), 0);
-
-    generatePDFReport({
-        title: `Estado de Cuenta — ${resumen.nombres} ${resumen.apellidos}`,
-        fileName: `estado_cuenta_${resumen.documento}_${new Date().toISOString().split("T")[0]}.pdf`,
-        columns: columnsVentas,
-        data: dataVentas.length > 0 ? dataVentas : [["Sin ventas a crédito pendientes", "", "", "", "", "", "", ""]],
-        extraInfo: [
-            `Cliente: ${resumen.nombres} ${resumen.apellidos}`,
-            `Documento: ${resumen.tipoDocumento} ${resumen.documento}`,
-            `Email: ${resumen.email || "—"}`,
-            `Teléfono: ${resumen.telefono || "—"}`,
-            `Estado: ${resumen.estado === false ? "Suspendido" : "Activo"}`,
-            ``,
-            `Cupo total asignado: ${fmt(resumen.cupoCredito)}`,
-            `Cupo ocupado: ${fmt(resumen.cupoOcupado)}`,
-            `Cupo disponible: ${fmt(resumen.cupoDisponible)}`,
-        ],
-        totals: [
-            `Total pagado: ${fmt(totalPagado)}`,
-            `Saldo pendiente: ${fmt(totalPendiente)}`,
-        ],
-        headColor: [234, 179, 8]
-    });
+    XLSX.writeFile(workbook, `reporte_creditos_${hoy()}.xlsx`);
 };
 
 /**
- * Reporte detalle de una sola venta
+ * Reporte individual — estado de cuenta de un cliente
+ * Una sola hoja con sus ventas y el detalle de abonos de cada una
+ */
+export const generarReporteCliente = (resumen, ventas) => {
+    const rows = [];
+
+    // ── Encabezado ──────────────────────────────────────────────────
+    rows.push([`ESTADO DE CUENTA — ${resumen.nombres} ${resumen.apellidos}`]);
+    rows.push([`Generado: ${hoy()}`]);
+    rows.push([]);
+    rows.push(["DATOS DEL CLIENTE"]);
+    rows.push(["Nombre",    `${resumen.nombres} ${resumen.apellidos}`]);
+    rows.push(["Documento", `${resumen.tipoDocumento} ${resumen.documento}`]);
+    rows.push(["Email",     resumen.email    || "—"]);
+    rows.push(["Teléfono",  resumen.telefono || "—"]);
+    rows.push(["Estado",    resumen.estado === false ? "Suspendido" : "Activo"]);
+    rows.push([]);
+    rows.push(["RESUMEN DE CRÉDITO"]);
+    rows.push(["Cupo total asignado",  fmt(resumen.cupoCredito)]);
+    rows.push(["Cupo ocupado",         fmt(resumen.cupoOcupado)]);
+    rows.push(["Cupo disponible",      fmt(resumen.cupoDisponible)]);
+    rows.push(["Ventas pendientes",    resumen.totalVentas]);
+    rows.push([]);
+
+    // ── Ventas + abonos ─────────────────────────────────────────────
+    if (ventas.length === 0) {
+        rows.push(["Sin ventas a crédito registradas."]);
+    } else {
+        const totalPagado    = ventas.reduce((acc, v) => acc + (v.montoPagado || 0), 0);
+        const totalPendiente = ventas.reduce((acc, v) => acc + v.montoPorPagar,      0);
+
+        rows.push(["VENTAS A CRÉDITO"]);
+        rows.push([
+            "N° Venta", "Tipo", "Fecha", "Fecha límite",
+            "Total", "Pagado", "Saldo pendiente", "Estado",
+        ]);
+        ventas.forEach(v => {
+            const estadoVenta = v.estado === "Anulada" || v.estado === "Anulado"
+                ? "Vencida"
+                : v.estado === "Finalizado" ? "Finalizado" : "Pendiente";
+            rows.push([
+                v.numeroVenta || `V-${v.id}`,
+                v.fuente === "pedido" ? "Pedido" : "Venta",
+                v.fecha       || "—",
+                v.fechaLimite || "—",
+                fmt(v.total),
+                fmt(v.montoPagado || 0),
+                fmt(v.montoPorPagar),
+                estadoVenta,
+            ]);
+        });
+        rows.push(["", "", "", "", "TOTALES", fmt(totalPagado), fmt(totalPendiente), ""]);
+        rows.push([]);
+
+        // ── Detalle de abonos por venta ──────────────────────────────
+        rows.push(["DETALLE DE ABONOS POR VENTA"]);
+        rows.push([]);
+
+        ventas.forEach(v => {
+            const abonos = (v.abonos || []);
+            rows.push([`${v.numeroVenta || `V-${v.id}`} — ${v.fuente === "pedido" ? "Pedido" : "Venta"}`]);
+
+            if (abonos.length === 0) {
+                rows.push(["  Sin abonos registrados."]);
+            } else {
+                rows.push(["  #", "Fecha", "Método de pago", "Monto", "Estado abono"]);
+                abonos.forEach((a, i) => {
+                    rows.push([
+                        i + 1,
+                        a.fecha      || "—",
+                        a.metodoPago || "—",
+                        fmt(a.monto),
+                        a.anulado ? "Anulado" : "Válido",
+                    ]);
+                });
+                const totalValidos = abonos
+                    .filter(a => !a.anulado)
+                    .reduce((acc, a) => acc + Number(a.monto), 0);
+                rows.push(["  Total abonado", "", "", fmt(totalValidos), ""]);
+            }
+            rows.push([]);
+        });
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [
+        { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
+        { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 12 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Estado de cuenta");
+    XLSX.writeFile(wb, `estado_cuenta_${resumen.documento}_${hoy()}.xlsx`);
+};
+
+/**
+ * Reporte detalle de una sola venta con historial de abonos
  */
 export const generarReporteVenta = (venta, abonosTable) => {
+    const montoPagado = (venta.abonos || [])
+        .filter(a => !a.anulado)
+        .reduce((acc, a) => acc + Number(a.monto), 0);
 
-    const fmt = (val) => new Intl.NumberFormat("es-CO", {
-        style: "currency", currency: "COP", minimumFractionDigits: 0
-    }).format(val ?? 0);
+    const rows = [];
 
-    const montoPagado = (venta.abonos || []).reduce((acc, a) => acc + Number(a.monto), 0);
-
-    const columnsAbonos = ["Fecha", "Método de pago", "Abono", "Saldo pendiente"];
-
-    const dataAbonos = abonosTable.map(row => [
-        row.fecha || "—",
-        row.metodoPago || "—",
-        row.abono === 0 ? "$0"
-            : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
-            : `+${fmt(row.abono)}`,
-        fmt(row.saldoPendiente)
+    rows.push([`DETALLE DE VENTA — ${venta.numeroVenta || `V-${venta.id}`}`]);
+    rows.push([`Generado: ${hoy()}`]);
+    rows.push([]);
+    rows.push(["DATOS DE LA VENTA"]);
+    rows.push(["N° Venta",       venta.numeroVenta || `V-${venta.id}`]);
+    rows.push(["Cliente",        venta.cliente     || "—"]);
+    rows.push(["Fecha de venta", venta.fecha       || "—"]);
+    rows.push(["Fecha límite",   venta.fechaLimite || "—"]);
+    rows.push(["Estado",
+        venta.estado === "Anulada" || venta.estado === "Anulado" ? "Vencida" :
+        venta.estado === "Finalizado" ? "Finalizado" : "Pendiente"
     ]);
+    rows.push([]);
+    rows.push(["RESUMEN FINANCIERO"]);
+    rows.push(["Total venta",    fmt(venta.total)]);
+    rows.push(["Total pagado",   fmt(montoPagado)]);
+    rows.push(["Saldo pendiente",fmt(venta.montoPorPagar)]);
+    rows.push([]);
+    rows.push(["HISTORIAL DE ABONOS"]);
+    rows.push(["Fecha", "Método de pago", "Movimiento", "Saldo pendiente", "Tipo"]);
 
-    generatePDFReport({
-        title: `Detalle de Venta — ${venta.numeroVenta || `V-${venta.id}`}`,
-        fileName: `detalle_venta_${venta.numeroVenta || venta.id}_${new Date().toISOString().split("T")[0]}.pdf`,
-        columns: columnsAbonos,
-        data: dataAbonos.length > 0 ? dataAbonos : [["Sin abonos registrados", "", "", ""]],
-        extraInfo: [
-            `Cliente: ${venta.cliente || "—"}`,
-            `N° Venta: ${venta.numeroVenta || `V-${venta.id}`}`,
-            `Fecha de venta: ${venta.fecha || "—"}`,
-            `Fecha límite: ${venta.fechaLimite || "—"}`,
-            `Estado: ${venta.estado === "Anulada" ? "Vencida" : venta.estado === "Finalizado" ? "Finalizado" : "Pendiente"}`,
-            ``,
-            `Total venta: ${fmt(venta.total)}`,
-            `Monto pagado: ${fmt(montoPagado)}`,
-            `Saldo pendiente: ${fmt(venta.montoPorPagar)}`,
-        ],
-        totals: [
-            `Pagado: ${fmt(montoPagado)}`,
-            `Pendiente: ${fmt(venta.montoPorPagar)}`,
-        ],
-        headColor: [234, 179, 8]
+    abonosTable.forEach(row => {
+        rows.push([
+            row.fecha      || "—",
+            row.metodoPago || "—",
+            row.abono === 0     ? "$0"
+                : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
+                                : `+${fmt(row.abono)}`,
+            fmt(row.saldoPendiente),
+            row.tipo === "inicio"  ? "Deuda inicial" :
+            row.tipo === "anulado" ? "Anulado"       :
+            row.tipo === "ultimo"  ? "Saldo final"   : "Abono",
+        ]);
     });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws["!cols"] = [
+        { wch: 16 }, { wch: 20 }, { wch: 18 },
+        { wch: 18 }, { wch: 14 },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Detalle venta");
+    XLSX.writeFile(wb, `detalle_venta_${venta.numeroVenta || venta.id}_${hoy()}.xlsx`);
 };

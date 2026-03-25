@@ -30,26 +30,53 @@ const enriquecerVenta = (venta) => {
     };
 };
 
+const esCredito = (tipoVenta) =>
+    tipoVenta === "Crédito" || tipoVenta === "Credito";
+
+const esAnulada = (estado) =>
+    estado === "Anulada" || estado === "Anulado";
+
+const esPendiente = (estado) =>
+    estado === "Vigente" || esAnulada(estado);
+
 const paymentsService = {
+
+    // ✅ Cupos separados de ClientsService — nunca los pisa
+    getCupos() {
+        try {
+            return JSON.parse(localStorage.getItem("cupos") || "{}");
+        } catch { return {}; }
+    },
+
+    getCupo(documento) {
+        return this.getCupos()[String(documento)] || 0;
+    },
+
+    setCupo(documento, monto) {
+        const cupos = this.getCupos();
+        cupos[String(documento)] = monto;
+        localStorage.setItem("cupos", JSON.stringify(cupos));
+        window.dispatchEvent(new Event("payments-updated"));
+    },
 
     checkAndExpireOverdue() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const sales = SalesService.get().map(s =>
-            (s.tipoVenta === "Crédito" || s.tipoVenta === "Credito") ? enriquecerVenta(s) : s
+            esCredito(s.tipoVenta) ? enriquecerVenta(s) : s
         );
 
         sales.forEach(sale => {
             if (
-                (sale.tipoVenta === "Crédito" || sale.tipoVenta === "Credito") &&
+                esCredito(sale.tipoVenta) &&
                 sale.estado === "Vigente" &&
                 sale.fechaLimite
             ) {
                 const fechaLimite = new Date(sale.fechaLimite);
                 fechaLimite.setHours(0, 0, 0, 0);
                 if (fechaLimite < today) {
-                    SalesService.update({ ...sale, estado: "Anulada" });
+                    SalesService.update({ ...sale, estado: "Anulado" });
                     try {
                         const clients = ClientsService.get();
                         const client = clients.find(c => c.documento === String(sale.numeroDocumento));
@@ -67,8 +94,8 @@ const paymentsService = {
     getPending() {
         const ventas = SalesService.get()
             .filter(s =>
-                (s.tipoVenta === "Crédito" || s.tipoVenta === "Credito") &&
-                (s.estado === "Vigente" || s.estado === "Anulada")
+                esCredito(s.tipoVenta) &&
+                esPendiente(s.estado)
             )
             .map(s => {
                 const totalAbonado = (s.abonos || [])
@@ -86,7 +113,7 @@ const paymentsService = {
 
         const pedidos = ServicesOrders.get()
             .filter(o =>
-                (o.formaPago === "Crédito" || o.formaPago === "Credito") &&
+                esCredito(o.formaPago) &&
                 o.estado === "Pendiente"
             )
             .map(o => {
@@ -151,6 +178,7 @@ const paymentsService = {
             fecha: new Date().toISOString().split("T")[0],
             monto: Number(amount),
             metodoPago: paymentMethod,
+            anulado: false,
         };
 
         const sales = SalesService.get();
@@ -165,7 +193,6 @@ const paymentsService = {
             const saldado = montoPorPagar <= 0;
 
             const ventaEnriquecida = enriquecerVenta(sale);
-
             const ventaActualizada = {
                 ...ventaEnriquecida,
                 abonos,
@@ -175,8 +202,6 @@ const paymentsService = {
             };
 
             SalesService.update(ventaActualizada);
-
-            // ✅ Notificar a todos los componentes
             window.dispatchEvent(new Event("payments-updated"));
 
             if (saldado) {
@@ -219,8 +244,6 @@ const paymentsService = {
                 o.id === Number(ventaId) ? pedidoActualizado : o
             );
             localStorage.setItem("orders", JSON.stringify(ordersActualizados));
-
-            // ✅ Notificar a todos los componentes
             window.dispatchEvent(new Event("payments-updated"));
 
             return pedidoActualizado;
@@ -273,42 +296,70 @@ const paymentsService = {
     },
 
     getClientesConCupo() {
-        const clients = ClientsService.get().filter(c => c.cupoCredito && c.cupoCredito > 0);
-        return clients.map(c => this.getResumenCliente(c.documento));
-    },
+    const clients = JSON.parse(localStorage.getItem("clients") || "[]");
+    return clients
+        .filter(c => c.cupoActivo === true && c.cupoTotal && c.cupoTotal > 0)
+        .map(c => {
+            const resumen = this.getResumenCliente(c.documento);
+            return {
+                ...resumen,
+                ventas: this.getVentasCredito(c.documento), // ✅ incluye ventas para el reporte
+            };
+        });
+},
 
     getResumenCliente(documento) {
-        const clients = ClientsService.get();
+        // ✅ Lee raw directo — evita el bug de ClientsService.get()
+        const clients = JSON.parse(localStorage.getItem("clients") || "[]");
         const client = clients.find(c => c.documento === String(documento));
         if (!client) return null;
 
+        const cupoCredito = client.cupoTotal || 0;
         const ventasCredito = this.getVentasCredito(documento);
-        const cupoOcupado   = ventasCredito.reduce((acc, v) => acc + v.montoPorPagar, 0);
-        const cupoCredito   = client.cupoCredito || 0;
+        const cupoOcupado = ventasCredito.reduce((acc, v) => acc + v.montoPorPagar, 0);
         const cupoDisponible = Math.max(cupoCredito - cupoOcupado, 0);
 
         return {
-            id:            client.id,
-            documento:     client.documento,
+            id: client.id,
+            documento: client.documento,
             tipoDocumento: client.tipoDocumento,
-            nombres:       client.nombres,
-            apellidos:     client.apellidos,
-            email:         client.email,
-            telefono:      client.telefono,
-            estado:        client.estado,
+            nombres: client.nombres,
+            apellidos: client.apellidos,
+            email: client.email,
+            telefono: client.telefono,
+            estado: client.estado,
             cupoCredito,
             cupoOcupado,
             cupoDisponible,
-            totalVentas:   ventasCredito.length,
+            totalVentas: ventasCredito.length,
         };
+    },
+    actualizarCupo(documento, nuevoCupo) {
+        const clients = JSON.parse(localStorage.getItem("clients") || "[]");
+        const client = clients.find(c => c.documento === String(documento));
+        if (!client) return false;
+
+        const clientActualizado = {
+            ...client,
+            cupoActivo: true,
+            cupoTotal: Number(nuevoCupo),
+        };
+
+        const nuevosClients = clients.map(c =>
+            c.documento === String(documento) ? clientActualizado : c
+        );
+
+        localStorage.setItem("clients", JSON.stringify(nuevosClients));
+        window.dispatchEvent(new Event("payments-updated"));
+        return true;
     },
 
     getVentasCredito(documento) {
         const ventas = SalesService.get()
             .filter(s =>
                 String(s.numeroDocumento) === String(documento) &&
-                (s.tipoVenta === "Crédito" || s.tipoVenta === "Credito") &&
-                (s.estado === "Vigente" || s.estado === "Anulada")
+                esCredito(s.tipoVenta) &&
+                esPendiente(s.estado)
             )
             .map(s => {
                 const totalAbonado = (s.abonos || [])
@@ -327,7 +378,7 @@ const paymentsService = {
         const pedidos = ServicesOrders.get()
             .filter(o =>
                 String(o.documento) === String(documento) &&
-                (o.formaPago === "Crédito" || o.formaPago === "Credito") &&
+                esCredito(o.formaPago) &&
                 o.estado === "Pendiente"
             )
             .map(o => {
@@ -360,7 +411,7 @@ const paymentsService = {
 
     anularUltimoAbono(ventaId) {
         const sales = SalesService.get();
-        const sale  = sales.find(s => s.id === Number(ventaId));
+        const sale = sales.find(s => s.id === Number(ventaId));
 
         if (sale) {
             const abonos = [...(sale.abonos || [])];
@@ -381,19 +432,18 @@ const paymentsService = {
                 abonos,
                 montoPagado: totalAbonado,
                 montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
-                estado: montoPorPagar > 0 ? "Vigente" : "Finalizado",
+                estado: montoPorPagar > 0
+                    ? (esAnulada(sale.estado) ? sale.estado : "Vigente")
+                    : "Finalizado",
             };
 
             SalesService.update(ventaActualizada);
-
-            // ✅ Notificar a todos los componentes
             window.dispatchEvent(new Event("payments-updated"));
-
             return ventaActualizada;
         }
 
         const orders = ServicesOrders.get();
-        const order  = orders.find(o => o.id === Number(ventaId));
+        const order = orders.find(o => o.id === Number(ventaId));
 
         if (order) {
             const abonos = [...(order.abonos || [])];
@@ -405,7 +455,7 @@ const paymentsService = {
             abonos[ultimoIndex] = { ...abonos[ultimoIndex], anulado: true };
 
             const subtotal = (order.productos || []).reduce((acc, p) => acc + (Number(p.precio) * Number(p.cantidad)), 0);
-            const total    = subtotal * 1.19;
+            const total = subtotal * 1.19;
             const totalAbonado = abonos
                 .filter(a => !a.anulado)
                 .reduce((acc, a) => acc + Number(a.monto), 0);
@@ -423,10 +473,7 @@ const paymentsService = {
                 o.id === Number(ventaId) ? pedidoActualizado : o
             );
             localStorage.setItem("orders", JSON.stringify(ordersActualizados));
-
-            // ✅ Notificar a todos los componentes
             window.dispatchEvent(new Event("payments-updated"));
-
             return pedidoActualizado;
         }
 
