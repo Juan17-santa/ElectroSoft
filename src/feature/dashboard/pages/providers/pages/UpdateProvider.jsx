@@ -17,21 +17,21 @@ export default function UpdateProvider() {
     // ESTADO PARA LA ALERTA DE EXITO O ERROR
     const [alert, setAlert] = useState(null);
 
-    // CONTROL DE APERTURA DEL DROPDOWN DE CATEGORÍAS
-    const [open, setOpen] = useState(false);
-
+    // OBTENER LAS CATEGORIAS
     const todasLasCategorias = ServiceProductCategory.get();
 
-    if (providerToEdit && providerToEdit.categoriasAsociadas) {
-        const idsExistentesMaestros = todasLasCategorias.map(c => String(c.id));
+    // LIMPIAR EL PROVEEDOR PARA NO MUTAR EL ORIGINAL
+    const providerClean = {
+        ...providerToEdit,
+        categoriasAsociadas: providerToEdit?.categoriasAsociadas?.filter(catId =>
+            todasLasCategorias.some(c => String(c.id) === String(catId))
+        ) || []
+    };
 
-        providerToEdit.categoriasAsociadas = providerToEdit.categoriasAsociadas.filter(catId =>
-            idsExistentesMaestros.includes(String(catId))
-        );
-    }
+    // IDS DEL PROVEEDOR
+    const idsDelProveedor = providerClean.categoriasAsociadas;
 
-    const idsDelProveedor = providerToEdit?.categoriasAsociadas || [];
-
+    // CATEGORIAS ACTIVAS Y LAS INACTIVAS QUE TENGA EL PROVEEDOR
     const categoriasParaMostrar = todasLasCategorias.filter(cat =>
         cat.estado === true || idsDelProveedor.some(id => String(id) === String(cat.id))
     );
@@ -48,10 +48,10 @@ export default function UpdateProvider() {
         formData,
         errors,
         handleChange,
-        handleToggleCategoria,
-        handleSubmit
+        handleSubmit,
+        setCategoriasAsociadas,
     } = useProviderForm({
-        initialData: providerToEdit,
+        initialData: providerClean,
         mode: "update",
         onSuccess: () => {
             setAlert({
@@ -91,10 +91,8 @@ export default function UpdateProvider() {
                     formData={formData}
                     errors={errors}
                     categorias={categoriasParaMostrar}
-                    open={open}
-                    setOpen={setOpen}
                     handleChange={handleChange}
-                    handleToggleCategoria={handleToggleCategoria}
+                    setCategoriasAsociadas={setCategoriasAsociadas}
                     handleSubmit={handleSubmit}
                     onCancel={() => navigate("/dashboard/providers")}
                     buttonText="Actualizar proveedor"

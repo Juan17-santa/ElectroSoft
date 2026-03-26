@@ -9,7 +9,7 @@
  * - Devolver (undo) → navega a ReturnSalesPage
  * - Anular (ban) → cambia el estado a "Anulado"
  */
-import { Eye, Undo2, Ban, CreditCard } from "lucide-react";
+import { Eye, Undo2, Ban, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
@@ -17,8 +17,6 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
-import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
-import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import CancellationModal from "./components/CancellationModal";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { useSalesReport } from "./hooks/useSalesReport";
@@ -216,7 +214,7 @@ export default function SalesManagement() {
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <div className="flex justify-center gap-1.5">
+                                                <div className="flex gap-1.5">
                                                     {/* DEVOLVER */}
                                                     <button
                                                         className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
@@ -253,7 +251,7 @@ export default function SalesManagement() {
                                                             onClick={() => handleViewCredit(sale)}
                                                             title="Detalles del crédito"
                                                         >
-                                                            <CreditCard size={17} className="text-yellow-600" />
+                                                            <Wallet size={17} className="text-yellow-600" />
                                                         </button>
                                                     )}
                                                 </div>

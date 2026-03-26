@@ -55,7 +55,7 @@ export default function PaymentForm({
 
     return (
         <form onSubmit={handleSubmit}>
-            <div className="flex flex-col items-center gap-12 mt-6">
+            <div className="flex flex-col items-center gap-12 mt-6 h-full">
 
                 {/* ===== PRIMERA FILA: Documento + Cliente ===== */}
                 <div className="flex gap-16">
@@ -291,18 +291,17 @@ export default function PaymentForm({
                                     abonosTable.map((row, i) => (
                                         <tr
                                             key={i}
-                                            className={`border-b border-gray-100 ${
-                                                row.tipo === "inicio" ? "text-red-500 font-medium" :
-                                                row.tipo === "ultimo" ? "text-blue-500 font-medium" :
-                                                "text-gray-600"
-                                            }`}
+                                            className={`border-b border-gray-100 ${row.tipo === "inicio" ? "text-red-500 font-medium" :
+                                                    row.tipo === "ultimo" ? "text-blue-500 font-medium" :
+                                                        "text-gray-600"
+                                                }`}
                                         >
                                             <td className="px-4 py-2">{row.fecha}</td>
                                             <td className="px-4 py-2 text-gray-400 text-xs">{row.metodoPago || "—"}</td>
                                             <td className="px-4 py-2 text-center">
                                                 {row.abono === 0 ? "0"
                                                     : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
-                                                    : `+${fmt(row.abono)}`}
+                                                        : `+${fmt(row.abono)}`}
                                             </td>
                                             <td className="px-4 py-2 text-center">{fmt(row.saldoPendiente)}</td>
                                         </tr>
@@ -314,7 +313,7 @@ export default function PaymentForm({
                 </div>
 
                 {/* ===== BOTONES ===== */}
-                <div className="flex justify-end w-full gap-6">
+                <div className="flex justify-end w-full gap-6 mt-auto">
                     <button
                         type="button"
                         onClick={onCancel}

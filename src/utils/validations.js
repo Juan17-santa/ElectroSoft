@@ -102,15 +102,6 @@ export const Validations = {
         return { valido: true, mensaje: "" };
     },
 
-    validarDescripcionRol: (value) => {
-        if (!value || !value.trim()) return { valido: false, mensaje: "La descripción es requerida." };
-        if (value.trim().length < 10) return { valido: false, mensaje: "Mínimo 10 caracteres." };
-        if (value.length > 200) return { valido: false, mensaje: "Máximo 200 caracteres." };
-        if (!/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,;:\-()]+$/.test(value))
-            return { valido: false, mensaje: "Solo letras, números y puntuación básica." };
-        return { valido: true, mensaje: "" };
-    },
-
     // Validaciones para Ventas
     validarNumeroVenta: (value) => {
         if (!value || !value.trim()) return { valido: false, mensaje: "El número de documento es requerido." };

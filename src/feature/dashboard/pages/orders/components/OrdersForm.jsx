@@ -75,7 +75,7 @@ export default function OrdersForm({
     return (
         <>
             <form onSubmit={handleSubmit} className="h-full">
-                <div className="flex flex-col items-center gap-12 mt-6 h-full">
+                <div className="flex flex-col gap-12 mt-6 flex-1">
 
                     {/* ================= PRIMERA FILA ================= */}
                     <div className="grid grid-cols-2 gap-16 w-full">
