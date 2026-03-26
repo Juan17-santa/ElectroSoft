@@ -81,7 +81,7 @@ export const ServicesOrders = {
         localStorage.setItem(KEY, JSON.stringify(updatedOrders));
     },
 
-    processToSale(order) {
+    processToSale(order, diasPlazo) {
         const storedOrders = this.get();
         const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
 
@@ -105,7 +105,11 @@ export const ServicesOrders = {
         const saleData = {
             numeroDocumento: order.documento,
             tipoVenta: order.formaPago,
-            fecha: new Date().toISOString().split('T')[0],
+            diasPlazo: order.formaPago === "Credito" ? Number(diasPlazo) : null,
+                fecha: (() => {
+                    const now = new Date();
+                    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                })(),
             estado: order.formaPago === "Contado" ? "Finalizado" : "Vigente",
             productos: order.productos.map(p => ({
                 nombre: p.nombre,

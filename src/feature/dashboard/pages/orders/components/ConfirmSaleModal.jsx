@@ -1,8 +1,14 @@
+import { useState, useEffect } from "react";
 import { X, CheckCircle2, Info, User, FileText, CreditCard, BadgeCheck } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 
 // COMPONENTE PRINCIPAL DE LA MODAL DE CONFIRMACIÓN
 export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) {
+    const [diasPlazo, setDiasPlazo] = useState("");
+
+    useEffect(() => {
+        if (isOpen) setDiasPlazo("");
+    }, [isOpen]);
 
     // VALIDACIÓN DE APERTURA Y EXISTENCIA DE DATOS
     if (!isOpen || !order) return null;
@@ -101,6 +107,26 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
 
                         </div>
 
+                        {order?.formaPago === "Credito" && (
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
+                                    <FileText size={16} />
+                                    <span>Plazo (Crédito) *</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={diasPlazo}
+                                    onChange={(e) => {
+                                        let val = e.target.value.replace(/\D/g, "");
+                                        if (val !== "" && Number(val) > 60) val = "60";
+                                        setDiasPlazo(val);
+                                    }}
+                                    placeholder="Ej: 45"
+                                    className="bg-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 shadow-inner border border-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
+                                />
+                            </div>
+                        )}
+
                         {/* TOTAL */}
                         <div className="bg-gray-50 p-5 rounded-2xl border-2 border-dashed border-gray-200 flex justify-between items-center">
                             <span className="text-gray-500 font-semibold uppercase text-xs tracking-wider">Total a facturar:</span>
@@ -120,8 +146,9 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                             </button>
 
                             <PrimaryButton
-                                onClick={() => onConfirm(order)}
-                                className="flex items-center gap-2"
+                                onClick={() => onConfirm(order, diasPlazo)}
+                                className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={order?.formaPago === "Credito" && (!diasPlazo || Number(diasPlazo) < 0 || Number(diasPlazo) > 60)}
                             >
                                 <CheckCircle2 size={18} />
                                 Confirmar Venta

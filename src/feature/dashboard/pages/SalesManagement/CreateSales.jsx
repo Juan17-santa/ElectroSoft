@@ -25,14 +25,25 @@ export default function CreateSales() {
     const navigate = useNavigate();
     const [alert, setAlert] = useState(null);
 
+    // Lógica de fechas locales (evita desfase UTC de toISOString)
+    const now = new Date();
+    const hoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const tempDate = new Date();
+    tempDate.setDate(tempDate.getDate() - 3);
+    const haceTresDias = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
+
     const [formData, setFormData] = useState({
         numeroDocumento: "",
         tipoVenta: "Contado",
-        fecha: new Date().toISOString().split("T")[0],
+        diasPlazo: "",
+        fecha: (() => {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        })(),
         estado: "Vigente"
     });
 
-    const [tocado, setTocado] = useState({ numeroDocumento: false, fecha: false, tipoVenta: false });
+    const [tocado, setTocado] = useState({ numeroDocumento: false, fecha: false, tipoVenta: false, diasPlazo: false });
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
 
     const [productos, setProductos] = useState([]);
@@ -78,7 +89,17 @@ export default function CreateSales() {
         return { valido: true };
     };
 
+    const validarDiasPlazo = () => {
+        if (formData.tipoVenta === "Contado") return { valido: true };
+        const dias = Number(formData.diasPlazo);
+        if (formData.diasPlazo === "" || isNaN(dias) || dias < 0 || dias > 60) {
+            return { valido: false, mensaje: "Ingrese un valor entre 0 y 60." };
+        }
+        return { valido: true };
+    };
+
     const estadoTipoVenta = tocado.tipoVenta ? validarTipoVenta() : null;
+    const estadoDiasPlazo = tocado.diasPlazo ? validarDiasPlazo() : null;
     const estadoFecha = tocado.fecha ? (Validations.campoRequerido(formData.fecha) ? { valido: true } : { valido: false, mensaje: "La fecha es requerida." }) : null;
 
     const ringClass = (estado) => {
@@ -122,6 +143,10 @@ export default function CreateSales() {
         let { name, value } = e.target;
         // Forzar solo dígitos en campos numéricos
         if (name === "numeroDocumento") value = value.replace(/\D/g, "").slice(0, 10);
+        if (name === "diasPlazo") {
+            value = value.replace(/\D/g, "");
+            if (value !== "" && Number(value) > 60) value = "60";
+        }
         setFormData(prev => ({ ...prev, [name]: value }));
         tocar(name);
     };
@@ -217,13 +242,14 @@ export default function CreateSales() {
 
     const handleForm = (e) => {
         e.preventDefault();
-        setTocado({ numeroDocumento: true, fecha: true, tipoVenta: true });
+        setTocado({ numeroDocumento: true, fecha: true, tipoVenta: true, diasPlazo: true });
 
         const vDoc = validarDocumentoCliente(formData.numeroDocumento);
         const vTipoVenta = validarTipoVenta();
+        const vDiasPlazo = validarDiasPlazo();
         const vFech = Validations.campoRequerido(formData.fecha) ? { valido: true } : { valido: false };
 
-        if (!vDoc.valido || !vFech.valido || !vTipoVenta.valido) return;
+        if (!vDoc.valido || !vFech.valido || !vTipoVenta.valido || !vDiasPlazo.valido) return;
 
         if (productos.length === 0) {
             setProductosError("Debe agregar al menos un producto.");
@@ -238,6 +264,7 @@ export default function CreateSales() {
         try {
             const datosVenta = {
                 ...formData,
+                diasPlazo: formData.tipoVenta === "Credito" ? Number(formData.diasPlazo) : null,
                 cliente: clienteNombre,
                 productos,
                 subtotal,
@@ -340,7 +367,7 @@ export default function CreateSales() {
                     </div>
 
                     {/* FILA 2 */}
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className={`grid gap-6 ${formData.tipoVenta === "Credito" ? "grid-cols-3" : "grid-cols-2"}`}>
                         <Calendar
                             fechaISO={formData.fecha}
                             onFechaChange={(val) => {
@@ -349,7 +376,33 @@ export default function CreateSales() {
                             }}
                             label="Fecha"
                             required={true}
+                            minDate={haceTresDias}
+                            maxDate={hoy}
                         />
+
+                        {formData.tipoVenta === "Credito" && (
+                            <div className="flex flex-col gap-0">
+                                <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Plazo (Crédito) *</span></div>
+                                <input
+                                    type="text"
+                                    name="diasPlazo"
+                                    value={formData.diasPlazo}
+                                    onChange={handleChange}
+                                    onBlur={() => tocar("diasPlazo")}
+                                    placeholder="Ej: 45 (Máx 60)"
+                                    className={`bg-gray-200/90 rounded-xl px-4 py-3 text-sm shadow-inner focus:outline-none focus:ring-2 transition-all duration-300 ${ringClass(estadoDiasPlazo)}`}
+                                />
+                                {tocado.diasPlazo && (
+                                    <div className="mt-1">
+                                        <ValidationMessage
+                                            error={!estadoDiasPlazo?.valido ? estadoDiasPlazo?.mensaje : null}
+                                            success={estadoDiasPlazo?.valido}
+                                            successMessage="Listo"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         <div className="flex flex-col gap-0">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Estado</span></div>
