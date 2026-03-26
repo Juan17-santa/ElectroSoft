@@ -56,10 +56,10 @@ export default function Orders() {
     };
     
     // FUNCION PARA CONFIRMAR LA VENTA Y REDIRIGIR
-    const handleConfirmSale = (order) => {
+    const handleConfirmSale = (order, diasPlazo) => {
         try {
             // EJECUTA LA LÓGICA DEL HOOK (GUARDAR EN VENTAS Y ELIMINAR DE PEDIDOS)
-            processOrderToSale(order);
+            processOrderToSale(order, diasPlazo);
             setIsSaleModalOpen(false);
             
             // MOSTRAR ALERTA DE EXITO

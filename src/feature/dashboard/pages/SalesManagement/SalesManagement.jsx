@@ -21,6 +21,7 @@ import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import CancellationModal from "./components/CancellationModal";
 import { ServicesProducts } from "../products/services/ServicesProducts";
+import { useSalesReport } from "./hooks/useSalesReport";
 
 const formatCOP = (val) => {
     return new Intl.NumberFormat('es-CO', {
@@ -40,6 +41,9 @@ export default function SalesManagement() {
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert] = useState(null);
     const [cancelModalSale, setCancelModalSale] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
+
+    const { exportReport } = useSalesReport(sales, setAlert);
 
     const showAlert = (type, message) => setAlert({ type, message });
 
@@ -120,7 +124,10 @@ export default function SalesManagement() {
         if (saleIndex !== -1) {
              allSales[saleIndex].estado = "Anulado";
              allSales[saleIndex].motivoAnulacion = motivo;
-             allSales[saleIndex].fechaAnulacion = new Date().toISOString().split("T")[0];
+             allSales[saleIndex].fechaAnulacion = (() => {
+                 const now = new Date();
+                 return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+             })();
              localStorage.setItem("sales", JSON.stringify(allSales));
              setSales(allSales.map(sale => {
                  if (!sale.cliente) {
@@ -137,35 +144,7 @@ export default function SalesManagement() {
     };
 
     const handleGenerarReporte = () => {
-        setConfirmData({
-            type: "info",
-            title: "Generar reporte",
-            message: "¿Deseas descargar el reporte de ventas?",
-            onConfirm: () => {
-                const reportTitle = "Gestión de Ventas - Reporte";
-                const columns = ["# Venta", "Cliente", "Fecha", "Tipo", "Total", "Pagado", "Por Pagar", "Estado"];
-                const data = filteredSales.map(sale => [
-                    String(sale.numeroVenta || "").padStart(2, '0'),
-                    sale.cliente || "-",
-                    sale.fecha,
-                    sale.tipoVenta,
-                    formatCOP(sale.total),
-                    formatCOP(sale.montoPagado),
-                    formatCOP(sale.montoPorPagar),
-                    sale.estado
-                ]);
-
-                generateExcelReport({
-                    title: reportTitle,
-                    fileName: "reporte_ventas.xlsx",
-                    columns: columns,
-                    data: data
-                });
-
-                showAlert("success", "Reporte Excel generado correctamente.");
-                setConfirmData(null);
-            }
-        });
+        setShowReportModal(true);
     };
 
     const getEstadoDot = (estado) => {
@@ -305,6 +284,21 @@ export default function SalesManagement() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
+                />
+            )}
+
+            {/* MODAL DE REPORTE CON FILTRO DE FECHAS */}
+            {showReportModal && (
+                <ConfirmModal
+                    type="info"
+                    title="Generar reporte de ventas"
+                    message="Selecciona el rango de fechas para exportar el reporte"
+                    showDateFilter={true}
+                    onCancel={() => setShowReportModal(false)}
+                    onConfirm={({ fechaInicio, fechaFin }) => {
+                        exportReport(fechaInicio, fechaFin);
+                        setShowReportModal(false);
+                    }}
                 />
             )}
 

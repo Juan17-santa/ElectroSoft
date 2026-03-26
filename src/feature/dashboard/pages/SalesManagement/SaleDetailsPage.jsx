@@ -64,6 +64,31 @@ export default function SaleDetailsPage() {
         }
     }, [sale]);
 
+    const calculateDeadline = () => {
+        if (!sale || !sale.fecha || sale.diasPlazo === undefined || sale.diasPlazo === null) return null;
+
+        const creationDate = new Date(sale.fecha + "T00:00:00");
+        const deadlineDate = new Date(creationDate);
+        deadlineDate.setDate(deadlineDate.getDate() + Number(sale.diasPlazo));
+
+        // Obtener hoy en formato YYYY-MM-DD usando la hora local (evitar desfase UTC de toISOString)
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayDate = new Date(todayStr + "T00:00:00");
+
+        const diffTime = deadlineDate.getTime() - todayDate.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+        const deadStr = `${deadlineDate.getFullYear()}-${String(deadlineDate.getMonth() + 1).padStart(2, '0')}-${String(deadlineDate.getDate()).padStart(2, '0')}`;
+
+        return {
+            fechaLimite: deadStr,
+            diasRestantes: diffDays
+        };
+    };
+
+    const deadlineInfo = calculateDeadline();
+
     if (!sale) return null;
 
     /** Lista de productos de la venta */
@@ -281,6 +306,32 @@ export default function SaleDetailsPage() {
                                         <p className="text-xs text-red-500 leading-none mb-1">Fecha Anulación</p>
                                         <p className="font-bold text-red-600 text-[14px]">{sale.fechaAnulacion || "N/A"}</p>
                                     </div>
+                                </>
+                            )}
+                            {sale.tipoVenta === "Credito" && sale.diasPlazo != null && (
+                                <>
+                                    <div className="mt-2">
+                                        <p className="text-xs text-yellow-600 leading-none mb-1">Plazo (Crédito)</p>
+                                        <p className="font-bold text-yellow-700 text-[14px]">{sale.diasPlazo} días</p>
+                                    </div>
+                                    {deadlineInfo && (
+                                        <>
+                                            <div className="mt-2">
+                                                <p className="text-xs text-blue-600 leading-none mb-1">Fecha Límite Pago</p>
+                                                <p className="font-bold text-blue-700 text-[14px]">{deadlineInfo.fechaLimite}</p>
+                                            </div>
+                                            <div className="mt-2">
+                                                <p className="text-xs text-gray-500 leading-none mb-1">Tiempo Restante</p>
+                                                <p className={`font-bold text-[14px] ${deadlineInfo.diasRestantes < 0 ? 'text-red-600' : deadlineInfo.diasRestantes <= 5 ? 'text-orange-500' : 'text-green-600'}`}>
+                                                    {deadlineInfo.diasRestantes < 0 
+                                                        ? `Vencido hace ${Math.abs(deadlineInfo.diasRestantes)} días` 
+                                                        : deadlineInfo.diasRestantes === 0 
+                                                        ? 'Vence hoy' 
+                                                        : `${deadlineInfo.diasRestantes} días restantes`}
+                                                </p>
+                                            </div>
+                                        </>
+                                    )}
                                 </>
                             )}
                         </div>
