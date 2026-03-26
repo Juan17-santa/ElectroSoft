@@ -118,6 +118,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
         setCharForm({ nombre: "", medida: "", valor: "" });
     };
     const eliminarCaracteristica = (id) => setCaracteristicas((prev) => prev.filter((c) => c.id !== id));
+    const toggleVisibilidad = (id) => setCaracteristicas((prev) => prev.map((c) => c.id === id ? { ...c, visible: !c.visible } : c));
 
     // ─── Submit ───────────────────────────────────────────────────────────────
     const handleSubmit = () => {
@@ -340,18 +341,28 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                                         <th className="px-4 py-2 font-semibold text-gray-700">Característica</th>
                                         <th className="px-4 py-2 font-semibold text-gray-700">Medida</th>
                                         <th className="px-4 py-2 font-semibold text-gray-700">Valor</th>
+                                        <th className="px-4 py-2 font-semibold text-gray-700 text-center">Visible</th>
                                         <th className="px-4 py-2 font-semibold text-gray-700 text-center">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {caracteristicas.length === 0 ? (
-                                        <tr><td colSpan={4} className="px-4 py-4 text-center text-gray-400 text-xs">No hay características agregadas.</td></tr>
+                                        <tr><td colSpan={5} className="px-4 py-4 text-center text-gray-400 text-xs">No hay características agregadas.</td></tr>
                                     ) : (
                                         caracteristicas.map((item) => (
                                             <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
                                                 <td className="px-4 py-2 text-gray-700">{item.nombre}</td>
                                                 <td className="px-4 py-2 text-gray-700">{item.medida}</td>
                                                 <td className="px-4 py-2 text-gray-700">{item.valor}</td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <button type="button" onClick={() => toggleVisibilidad(item.id)}
+                                                        className={`p-1.5 rounded-lg flex items-center justify-center transition cursor-pointer ${item.visible ? "bg-yellow-100 hover:bg-yellow-200" : "bg-gray-100 hover:bg-gray-200"}`}
+                                                        title={item.visible ? "Ocultar en detalle" : "Mostrar en detalle"}>
+                                                        <svg className={`w-4 h-4 ${item.visible ? "text-yellow-600" : "text-gray-400"}`} fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </button>
+                                                </td>
                                                 <td className="px-4 py-2 text-center">
                                                     <button type="button" onClick={() => eliminarCaracteristica(item.id)}
                                                         className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer" title="Eliminar">

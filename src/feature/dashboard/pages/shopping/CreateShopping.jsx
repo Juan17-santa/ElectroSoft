@@ -483,7 +483,7 @@ export default function CreateShopping() {
                 <div className="flex justify-end gap-3 mt-auto">
                     <button
                         onClick={() => setConfirmData({
-                            type: "warning",
+                            type: "info",
                             title: "¿Cancelar compra?",
                             message: "Si cancelas ahora perderás los datos ingresados. ¿Estás seguro?",
                             onConfirm: () => navigate("/dashboard/shopping")

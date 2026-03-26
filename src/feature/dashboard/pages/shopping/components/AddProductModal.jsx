@@ -26,6 +26,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
     const [seleccionPrecio,    setSeleccionPrecio]    = useState("wac");
 
     const [tocados, setTocados] = useState({ producto: false, cantidad: false, precio: false, costeProducto: false, precioVenta: false });
+    const [focusedField, setFocusedField] = useState(null);
 
     useEffect(() => {
         const data = ServicesProducts.get().filter((p) => p.estado !== false);
@@ -174,7 +175,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         {/* PRECIO INVENTARIO */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={16} /><span>Precio inventario</span></div>
-                            <input type="number" readOnly value={modalPrecio} placeholder="carga automatica"
+                            <input type="text" readOnly value={modalPrecio ? formatCOP(Number(modalPrecio)) : ""} placeholder="carga automatica"
                                 className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm cursor-not-allowed opacity-75" />
                             <p className="text-xs text-gray-400 -mt-1">Precio actual (referencia)</p>
                         </div>
@@ -182,9 +183,11 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         {/* COSTE COMPRA */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={16} /><span>Coste de compra *</span></div>
-                            <input type="number" min="1" placeholder="precio proveedor" value={modalCosteProducto}
-                                onChange={(e) => { setModalCosteProducto(e.target.value); setTocados((t) => ({ ...t, costeProducto: true })); }}
-                                onBlur={() => setTocados((t) => ({ ...t, costeProducto: true }))}
+                            <input type="text" min="1" placeholder="precio proveedor"
+                                value={focusedField === "costeProducto" ? modalCosteProducto : (modalCosteProducto ? formatCOP(parseCOP(modalCosteProducto)) : "")}
+                                onFocus={() => setFocusedField("costeProducto")}
+                                onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); setModalCosteProducto(raw); setTocados((t) => ({ ...t, costeProducto: true })); }}
+                                onBlur={() => { setFocusedField(null); setTocados((t) => ({ ...t, costeProducto: true })); }}
                                 className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${ring(estadoCosteProducto)}`} />
                             <FieldStatus estado={estadoCosteProducto} />
                         </div>
@@ -192,9 +195,11 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         {/* PRECIO VENTA */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 text-sm font-medium"><DollarSign size={16} className="text-blue-400" /><span className="text-blue-400">Precio de venta *</span></div>
-                            <input type="number" min="0" placeholder="Mayor al coste" value={modalPrecioVenta}
-                                onChange={(e) => { setModalPrecioVenta(e.target.value); setTocados((t) => ({ ...t, precioVenta: true })); }}
-                                onBlur={() => setTocados((t) => ({ ...t, precioVenta: true }))}
+                            <input type="text" min="0" placeholder="Mayor al coste"
+                                value={focusedField === "precioVenta" ? modalPrecioVenta : (modalPrecioVenta ? formatCOP(parseCOP(modalPrecioVenta)) : "")}
+                                onFocus={() => setFocusedField("precioVenta")}
+                                onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); setModalPrecioVenta(raw); setTocados((t) => ({ ...t, precioVenta: true })); }}
+                                onBlur={() => { setFocusedField(null); setTocados((t) => ({ ...t, precioVenta: true })); }}
                                 className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${ring(estadoPrecioVenta)}`} />
                             <FieldStatus estado={estadoPrecioVenta} />
                         </div>
