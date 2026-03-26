@@ -1,4 +1,5 @@
 import { ServicesProviders } from "../services/ServicesProviders";
+import { ServicesShopping } from "../../shopping/services/ServicesShopping";
 import { useState, useEffect } from "react";
 
 // HOOK PERSONALIZADO PARA GESTONAR LA LOGICA DE LA TABLA DE PROVEEDORES
@@ -15,15 +16,38 @@ export default function useProvidersTable({
 
     // AL CARGAR COMPONENTE CARGAR LOS PROVEEDORES
     useEffect(() => {
-        const storedProviders = ServicesProviders.get().sort(
-            (a, b) => b.id - a.id
-        );
-
+        const storedProviders = ServicesProviders.get()
         setProviders(storedProviders);
     }, [])
 
     // FUNCION PARA ELIMINAR UN PROVEEDOR
     const deleteProvider = (id) => {
+
+        const providerToDelete = providers.find(p => p.id === id);
+
+        if (!providerToDelete) {
+            showAlert("error", "Proveedor no encontrado");
+            return;
+        }
+
+        // OBTENER TODAS LAS COMPRAS
+        const compras = ServicesShopping.get();
+
+        // BUSCAR CUALQUIER COMPRA (SIN IMPORTAR ESTADO)
+        const comprasAsociadas = compras.filter(compra =>
+            String(compra.proveedorId) === String(id)
+        );
+
+        // BLOQUEAR SI EXISTE AL MENOS UNA
+        if (comprasAsociadas.length > 0) {
+            showAlert(
+                "error",
+                `No se puede eliminar: Este proveedor tiene ${comprasAsociadas.length} compra(s) asociada(s).`
+            );
+            return;
+        }
+
+        // CONFIRMAR ELIMINACIÓN
         setConfirmData({
             type: "delete",
             title: "Eliminar proveedor",

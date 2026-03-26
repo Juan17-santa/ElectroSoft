@@ -32,11 +32,11 @@ export default function ClientForm({
         <form onSubmit={handleForm} className="flex flex-col flex-1">
             {formError && <Alert type="error" message={formError} onClose={() => setFormError(null)} />}
 
-            <div className="flex flex-col gap-6 mt-6 flex-1">
+            <div className="flex flex-col gap-14 mt-6 flex-1">
                 
                 {/* FILA 1 */}
-                <div className="flex gap-6 justify-center">
-                    <div className="flex flex-col gap-0 w-80">
+                <div className="flex gap-20 justify-center">
+                    <div className="flex flex-col w-96">
                         <CustomSelect
                             label="Tipo de documento *"
                             icon={FileText}
@@ -52,7 +52,7 @@ export default function ClientForm({
                         />
                     </div>
 
-                    <div className="flex flex-col gap-0 w-80">
+                    <div className="flex flex-col w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-1.5 mt-0.5">
                             <FileText size={16} /><span>Documento *</span>
                         </div>
@@ -73,8 +73,8 @@ export default function ClientForm({
                 </div>
 
                 {/* FILA 2 */}
-                <div className="flex gap-6 justify-center">
-                    <div className="flex flex-col gap-0 w-80">
+                <div className="flex gap-20 justify-center">
+                    <div className="flex flex-col w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2">
                             <User size={16} /><span>Nombres *</span>
                         </div>
@@ -93,7 +93,7 @@ export default function ClientForm({
                         />
                     </div>
 
-                    <div className="flex flex-col gap-0 w-80">
+                    <div className="flex flex-col w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2">
                             <User size={16} /><span>Apellidos *</span>
                         </div>
@@ -114,8 +114,8 @@ export default function ClientForm({
                 </div>
 
                 {/* FILA 3 */}
-                <div className="flex gap-6 justify-center">
-                    <div className="flex flex-col gap-0 w-80">
+                <div className="flex gap-20 justify-center">
+                    <div className="flex flex-col w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2">
                             <Mail size={16} /><span>Email *</span>
                         </div>
@@ -139,7 +139,7 @@ export default function ClientForm({
                         )}
                     </div>
 
-                    <div className="flex flex-col gap-0 w-80">
+                    <div className="flex flex-col w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2">
                             <Phone size={16} /><span>Teléfono *</span>
                         </div>

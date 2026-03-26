@@ -17,13 +17,13 @@ export default function UserForm({
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
 
             {/* CONTENEDOR PRINCIPAL */}
-            <div className="flex flex-col items-center gap-12 mt-6 justify-start flex-1 mx-28">
+            <div className="flex flex-col items-center gap-14 mt-10 justify-start flex-1 mx-28">
 
                 {/* ================= PRIMERA FILA ================= */}
                 <div className="flex gap-20">
 
                     {/* TIPO DOCUMENTO */}
-                    <div className="flex flex-col gap-1 w-80">
+                    <div className="flex flex-col w-96">
                         <CustomSelect
                             label="Tipo documento *"
                             icon={IdCard}
@@ -47,7 +47,7 @@ export default function UserForm({
                     </div>
 
                     {/* DOCUMENTO */}
-                    <div className="flex flex-col gap-3 w-80">
+                    <div className="flex flex-col gap-3 w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <FileText size={16} />
                             <span>Documento *</span>
@@ -73,7 +73,7 @@ export default function UserForm({
                 <div className="flex gap-20">
 
                     {/* NOMBRE */}
-                    <div className="flex flex-col gap-3 w-80">
+                    <div className="flex flex-col gap-3 w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <User size={16} />
                             <span>Nombre *</span>
@@ -95,7 +95,7 @@ export default function UserForm({
                     </div>
 
                     {/* EMAIL */}
-                    <div className="flex flex-col gap-3 w-80">
+                    <div className="flex flex-col gap-3 w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <Mail size={16} />
                             <span>Email *</span>
@@ -121,7 +121,7 @@ export default function UserForm({
                 <div className="flex gap-20">
 
                     {/* TELEFONO */}
-                    <div className="flex flex-col gap-3 w-80">
+                    <div className="flex flex-col gap-3 w-96">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <Phone size={16} />
                             <span>Teléfono *</span>
@@ -143,7 +143,7 @@ export default function UserForm({
                     </div>
 
                     {/* ROL */}
-                    <div className="flex flex-col gap-1 w-80">
+                    <div className="flex flex-col gap-1 w-96">
                         <CustomSelect
                             label="Rol *"
                             icon={User}

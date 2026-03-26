@@ -7,7 +7,6 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import AssignQuotaModal from "./components/AssignQuotaModal";
 import { Eye, Pencil, Trash, CreditCard } from "lucide-react";
-import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 
 const ITEMS_PER_PAGE = 6;
@@ -175,7 +174,7 @@ export default function Clients() {
                                             <td className="px-3 py-2 w-20">{client.telefono}</td>
                                             <td className="px-3 py-2 w-24">${client.totalCompras?.toLocaleString("es-CO")}</td>
                                             <td className="px-3 py-2 w-24">
-                                                <div className="flex justify-center gap-1.5">
+                                                <div className="flex justify-end gap-1.5">
                                                     {client.totalCompras > 1000000 && (
                                                         <button
                                                             className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition duration-300 cursor-pointer"

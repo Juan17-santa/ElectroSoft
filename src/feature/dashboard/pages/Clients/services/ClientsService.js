@@ -1,3 +1,6 @@
+import { ServicesDevolutions } from "../../devolutions/services/ServicesDevolutions";
+import { SalesService } from "../../SalesManagement/services/SalesService";
+
 const KEY = "clients";
 
 export const ClientsService = {
@@ -7,8 +10,8 @@ export const ClientsService = {
         const clients = data ? JSON.parse(data) : [];
 
         try {
-            const devolutionsData = localStorage.getItem("devolutions");
-            const devolutions = devolutionsData ? JSON.parse(devolutionsData) : [];
+            const devolutions = ServicesDevolutions.get() || [];
+            const sales = SalesService.get() || [];
 
             return clients.map(client => {
                 // Filtrar ventas de este cliente que no estén Anuladas
