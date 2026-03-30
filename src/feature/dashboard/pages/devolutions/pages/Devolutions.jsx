@@ -2,30 +2,15 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Eye, Pencil, Ban, RotateCcw, Check, X } from "lucide-react";
 import { useDevolutions } from "../hooks/useDevolutions";
+import { useDevolutionsReport } from "../hooks/useDevolutionsReport";
 import { getEstadoColor } from "../helpers/devolutionsHelpers";
 import SearchBar    from "../../../components/ui/Searchbar";
 import Pagination   from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert        from "../../../components/ui/Alert";
-import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 
 const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
-
-const agruparMotivos = (grupo) => {
-    const contador = {};
-
-    grupo.forEach((d) => {
-        if (!d.motivo) return;
-        const m = d.motivo.trim();
-        contador[m] = (contador[m] || 0) + 1;
-    });
-
-    return Object.entries(contador)
-        .sort((a, b) => b[1] - a[1]) // mayor cantidad primero
-        .map(([motivo, cantidad]) => `${motivo}(${cantidad})`)
-        .join(" / ") || "—";
-};
 
 export default function Devolutions() {
     const navigate = useNavigate();
@@ -41,6 +26,9 @@ export default function Devolutions() {
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert]             = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
+
+    const { exportReport } = useDevolutionsReport(devolucionesFiltradas, setAlert);
 
     // Recargar desde localStorage cada vez que se navega a esta página.
     // location.key cambia en cada navegación, incluso si la URL es la misma.
@@ -116,35 +104,7 @@ export default function Devolutions() {
         });
     };
 
-    const handleGenerarReporte = () => {
-        setConfirmData({
-            type: "info",
-            title: "Generar reporte Excel",
-            message: "¿Deseas descargar el reporte de devoluciones en Excel?",
-            onConfirm: () => {
-                generateExcelReport({
-                    title: "Gestión de Devoluciones — Reporte",
-                    fileName: "reporte_devoluciones.xlsx",
-                    columns: ["#", "ID Venta", "Productos devueltos", "Motivos", "Fecha inicio", "Última actualización", "Estado", "Último producto"],
-                    data: gruposPorVenta.map((g, i) => {
-                        const reciente = getMasReciente(g);
-                        return [
-                            String(i + 1).padStart(2, "0"),
-                            g[0].idVenta ?? "—",
-                            String(g.length),
-                            agruparMotivos(g), 
-                            getFechaInicio(g),
-                            getFechaEstado(g),
-                            reciente?.estadoResolucion ?? "—",
-                            reciente?.producto ?? "—",
-                        ];
-                    }),
-                });
-                setAlert({ type: "success", message: "Reporte Excel generado correctamente." });
-                setConfirmData(null);
-            },
-        });
-    };
+    const handleGenerarReporte = () => setShowReportModal(true);
 
     return (
         <>
@@ -323,6 +283,19 @@ export default function Devolutions() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
+                />
+            )}
+            {showReportModal && (
+                <ConfirmModal
+                    type="info"
+                    title="Generar reporte de devoluciones"
+                    message="Selecciona el rango de fechas para exportar el reporte"
+                    showDateFilter={true}
+                    onCancel={() => setShowReportModal(false)}
+                    onConfirm={({ fechaInicio, fechaFin }) => {
+                        exportReport(fechaInicio, fechaFin);
+                        setShowReportModal(false);
+                    }}
                 />
             )}
             {alert && (
