@@ -6,11 +6,14 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
-import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import CancellationModal from "../../components/ui/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
+<<<<<<< HEAD
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
+=======
+import { useShoppingReport } from "../shopping/hooks/useShoppingReport";
+>>>>>>> 6088a83be97b2df2bc91af4a0c79d0614afae83e
 
 const ITEMS_PER_PAGE = 11;
 
@@ -83,11 +86,13 @@ export default function Shopping() {
     const navigate = useNavigate();
     const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion } = useShopping();
     const [currentPage,     setCurrentPage]     = useState(1);
-    const [confirmData,     setConfirmData]      = useState(null);
     const [cancelModalData, setCancelModalData]  = useState(null);
     const [alert,           setAlert]            = useState(null);
+    const [showReportModal, setShowReportModal]  = useState(false);
 
     const showAlert = (type, message) => setAlert({ type, message });
+
+    const { exportReport } = useShoppingReport(comprasFiltradas, setAlert);
 
     // Paginación
     const comprasOrdenadas = [...comprasFiltradas].reverse();
@@ -103,36 +108,7 @@ export default function Shopping() {
         setCurrentPage(1);
     };
 
-    const parseMoney = (value) => {
-        if (!value) return 0;
-        if (typeof value === "number") return value;
-        return Number(String(value).replace(/\$/g, "").replace(/\./g, "").replace(/,/g, "").trim()) || 0;
-    };
-
-    const handleGenerarReporte = () => {
-        setConfirmData({
-            type: "info",
-            title: "Generar reporte",
-            message: "¿Estás seguro de que deseas descargar el reporte de compras?",
-            onConfirm: () => {
-                generateExcelReport({
-                    title:    "Gestión de Compras - Reporte",
-                    fileName: "reporte_compras.xlsx",
-                    columns:  ["ID", "Número de Factura", "Fecha", "Proveedor", "Total", "Estado"],
-                    data:     comprasFiltradas.map((compra, index) => [
-                        String(index + 1).padStart(2, "0"),
-                        compra.numeroFactura,
-                        compra.fechaCompra,
-                        compra.proveedor,
-                        `$${parseMoney(compra.total).toLocaleString("es-CO")}`,
-                        compra.estado,
-                    ]),
-                });
-                showAlert("success", "Reporte Excel generado correctamente.");
-                setConfirmData(null);
-            }
-        });
-    };
+    const handleGenerarReporte = () => setShowReportModal(true);
 
     return (
         <>
@@ -240,14 +216,18 @@ export default function Shopping() {
                 </div>
             </div>
 
-            {/* MODAL DE CONFIRMACION */}
-            {confirmData && (
+            {/* MODAL DE REPORTE CON RANGO DE FECHAS */}
+            {showReportModal && (
                 <ConfirmModal
-                    type={confirmData.type}
-                    title={confirmData.title}
-                    message={confirmData.message}
-                    onConfirm={confirmData.onConfirm}
-                    onCancel={() => setConfirmData(null)}
+                    type="info"
+                    title="Generar reporte de compras"
+                    message="Selecciona el rango de fechas para exportar el reporte"
+                    showDateFilter={true}
+                    onCancel={() => setShowReportModal(false)}
+                    onConfirm={({ fechaInicio, fechaFin }) => {
+                        exportReport(fechaInicio, fechaFin);
+                        setShowReportModal(false);
+                    }}
                 />
             )}
 
