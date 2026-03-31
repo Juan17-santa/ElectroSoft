@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import { ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck, LogOut, ChevronDown } from 'lucide-react';
 import { getAuthUser, logout } from "../../auth/services/authService";
+import { usePermissions } from "../../../hooks/usePermissions";
 
 export const Sidebar = () => {
+    const { hasAccessToScope } = usePermissions();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -21,7 +23,9 @@ export const Sidebar = () => {
         return () => window.removeEventListener("profile-updated", handler);
     }, []);
 
-    const isAdmin = userRole.toLowerCase() === "administrador" || userRole.toLowerCase() === "admin";
+    const hasCompras = hasAccessToScope("Categoria de productos") || hasAccessToScope("Productos") || hasAccessToScope("Proveedores") || hasAccessToScope("Compras");
+    const hasVentas = hasAccessToScope("Clientes") || hasAccessToScope("Pedidos") || hasAccessToScope("Ventas") || hasAccessToScope("Pagos y abonos") || hasAccessToScope("Devoluciones");
+    const hasAdmin = hasAccessToScope("Usuarios") || hasAccessToScope("Roles");
 
     // Submenu para compras
     const [openCompras, setOpenCompras] = useState(false);
@@ -88,146 +92,176 @@ export const Sidebar = () => {
                         </NavLink>
 
                         {/* COMPRAS */}
-                        <button
-                            onClick={() => {
-                                setOpenCompras(!openCompras);
-                                if (!openCompras) setOpenVentas(false);
-                            }}
-                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
-                        >
-                            <div className="flex items-center gap-3">
-                                <ShoppingCart size={18} />
-                                <span>Compras</span>
-                            </div>
+                        {hasCompras && (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        setOpenCompras(!openCompras);
+                                        if (!openCompras) setOpenVentas(false);
+                                    }}
+                                    className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <ShoppingCart size={18} />
+                                        <span>Compras</span>
+                                    </div>
 
-                            <ChevronDown
-                                size={16}
-                                className={`transition-transform ${openCompras ? "rotate-180" : ""}`}
-                            />
-                        </button>
+                                    <ChevronDown
+                                        size={16}
+                                        className={`transition-transform ${openCompras ? "rotate-180" : ""}`}
+                                    />
+                                </button>
 
-                        {/* SUBMENU DE COMPRAS */}
-                        <div className={`
-                            flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
-                            overflow-hidden transition-all duration-300
-                            ${openCompras ? "max-h-60 opacity-100" : "max-h-0 opacity-0"}
-                        `}>
-                            <NavLink
-                                to="/dashboard/productCategory"
-                                className={activeSubLink("/dashboard/productCategory")}
-                            >
-                                Categoria de productos
-                            </NavLink>
-                            <NavLink
-                                to="/dashboard/products"
-                                className={activeSubLink("/dashboard/products")}
-                            >
-                                Productos
-                            </NavLink>
-                            <NavLink
-                                to="/dashboard/providers"
-                                className={activeSubLink("/dashboard/providers")}
-                            >
-                                Proveedores
-                            </NavLink>
-                            <NavLink
-                                to="/dashboard/shopping"
-                                className={activeSubLink("/dashboard/shopping")}
-                            >
-                                Compras
-                            </NavLink>
-                        </div>
+                                {/* SUBMENU DE COMPRAS */}
+                                <div className={`
+                                    flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
+                                    overflow-hidden transition-all duration-300
+                                    ${openCompras ? "max-h-60 opacity-100" : "max-h-0 opacity-0"}
+                                `}>
+                                    {hasAccessToScope("Categoria de productos") && (
+                                        <NavLink
+                                            to="/dashboard/productCategory"
+                                            className={activeSubLink("/dashboard/productCategory")}
+                                        >
+                                            Categoria de productos
+                                        </NavLink>
+                                    )}
+                                    {hasAccessToScope("Productos") && (
+                                        <NavLink
+                                            to="/dashboard/products"
+                                            className={activeSubLink("/dashboard/products")}
+                                        >
+                                            Productos
+                                        </NavLink>
+                                    )}
+                                    {hasAccessToScope("Proveedores") && (
+                                        <NavLink
+                                            to="/dashboard/providers"
+                                            className={activeSubLink("/dashboard/providers")}
+                                        >
+                                            Proveedores
+                                        </NavLink>
+                                    )}
+                                    {hasAccessToScope("Compras") && (
+                                        <NavLink
+                                            to="/dashboard/shopping"
+                                            className={activeSubLink("/dashboard/shopping")}
+                                        >
+                                            Compras
+                                        </NavLink>
+                                    )}
+                                </div>
+                            </>
+                        )}
 
                         {/* VENTAS */}
-                        <button
-                            onClick={() => {
-                                setOpenVentas(!openVentas);
-                                if (!openVentas) setOpenCompras(false);
-                            }}
-                            className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
-                        >
-                            <div className="flex items-center gap-3">
-                                <BadgeDollarSign size={18} />
-                                <span>Ventas</span>
-                            </div>
+                        {hasVentas && (
+                            <>
+                                <button
+                                    onClick={() => {
+                                        setOpenVentas(!openVentas);
+                                        if (!openVentas) setOpenCompras(false);
+                                    }}
+                                    className='flex items-center justify-between w-full px-3 py-2 rounded-lg hover:bg-gray-200 cursor-pointer'
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <BadgeDollarSign size={18} />
+                                        <span>Ventas</span>
+                                    </div>
 
-                            <ChevronDown
-                                size={16}
-                                className={`transition-transform ${openVentas ? "rotate-180" : ""}`}
-                            />
-                        </button>
+                                    <ChevronDown
+                                        size={16}
+                                        className={`transition-transform ${openVentas ? "rotate-180" : ""}`}
+                                    />
+                                </button>
 
-                        {/* SUBMENU DE VENTAS */}
-                        <div className={`
-                            flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
-                            overflow-hidden transition-all duration-300
-                            ${openVentas ? "max-h-80 opacity-100" : "max-h-0 opacity-0"}
-                        `}>
-                            <NavLink
-                                to="/dashboard/clients"
-                                className={activeSubLink("/dashboard/clients")}
-                            >
-                                Clientes
-                            </NavLink>
+                                {/* SUBMENU DE VENTAS */}
+                                <div className={`
+                                    flex flex-col gap-1 ml-6 pl-4 border-l-2 border-yellow-300
+                                    overflow-hidden transition-all duration-300
+                                    ${openVentas ? "max-h-80 opacity-100" : "max-h-0 opacity-0"}
+                                `}>
+                                    {hasAccessToScope("Clientes") && (
+                                        <NavLink
+                                            to="/dashboard/clients"
+                                            className={activeSubLink("/dashboard/clients")}
+                                        >
+                                            Clientes
+                                        </NavLink>
+                                    )}
 
-                            <NavLink
-                                to="/dashboard/orders"
-                                className={activeSubLink("/dashboard/orders")}
-                            >
-                                Pedidos
-                            </NavLink>
+                                    {hasAccessToScope("Pedidos") && (
+                                        <NavLink
+                                            to="/dashboard/orders"
+                                            className={activeSubLink("/dashboard/orders")}
+                                        >
+                                            Pedidos
+                                        </NavLink>
+                                    )}
 
-                            <NavLink
-                                to="/dashboard/sales-management"
-                                className={activeSubLink("/dashboard/sales-management")}
-                            >
-                                Ventas
-                            </NavLink>
+                                    {hasAccessToScope("Ventas") && (
+                                        <NavLink
+                                            to="/dashboard/sales-management"
+                                            className={activeSubLink("/dashboard/sales-management")}
+                                        >
+                                            Ventas
+                                        </NavLink>
+                                    )}
 
-                            <NavLink
-                                to="/dashboard/payments"
-                                className={activeSubLink("/dashboard/payments")}
-                            >
-                                Pagos y abonos
-                            </NavLink>
+                                    {hasAccessToScope("Pagos y abonos") && (
+                                        <NavLink
+                                            to="/dashboard/payments"
+                                            className={activeSubLink("/dashboard/payments")}
+                                        >
+                                            Pagos y abonos
+                                        </NavLink>
+                                    )}
 
-                            <NavLink
-                                to="/dashboard/devolutions"
-                                className={activeSubLink("/dashboard/devolutions")}
-                            >
-                                Devoluciones
-                            </NavLink>
-                        </div>
+                                    {hasAccessToScope("Devoluciones") && (
+                                        <NavLink
+                                            to="/dashboard/devolutions"
+                                            className={activeSubLink("/dashboard/devolutions")}
+                                        >
+                                            Devoluciones
+                                        </NavLink>
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     <div className="h-0.5 bg-yellow-400 mx-4"></div>
 
                     {/* ADMINISTRACION */}
-                    {isAdmin && (
+                    {hasAdmin && (
                         <div className='flex flex-col gap-1 px-3'>
-                            <NavLink
-                                to="/dashboard/users"
-                                className={activeLink("/dashboard/users")}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <UsersRound size={18} />
-                                    <span>Usuarios</span>
-                                </div>
-                            </NavLink>
+                            {hasAccessToScope("Usuarios") && (
+                                <NavLink
+                                    to="/dashboard/users"
+                                    className={activeLink("/dashboard/users")}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <UsersRound size={18} />
+                                        <span>Usuarios</span>
+                                    </div>
+                                </NavLink>
+                            )}
 
-                            <NavLink
-                                to="/dashboard/roles"
-                                className={activeLink("/dashboard/roles")}
-                            >
-                                <div className="flex items-center gap-3">
-                                    <ShieldCheck size={18} />
-                                    <span>Roles</span>
-                                </div>
-                            </NavLink>
+                            {hasAccessToScope("Roles") && (
+                                <NavLink
+                                    to="/dashboard/roles"
+                                    className={activeLink("/dashboard/roles")}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <ShieldCheck size={18} />
+                                        <span>Roles</span>
+                                    </div>
+                                </NavLink>
+                            )}
                         </div>
                     )}
 
-                    {isAdmin && <div className="h-0.5 bg-yellow-400 mx-4"></div>}
+                    {hasAdmin && <div className="h-0.5 bg-yellow-400 mx-4"></div>}
 
                 </div>
 

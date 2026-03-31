@@ -20,6 +20,8 @@ import Alert from "../../components/ui/Alert";
 import CancellationModal from "./components/CancellationModal";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { useSalesReport } from "./hooks/useSalesReport";
+import { usePermissions } from "../../../../hooks/usePermissions";
+import { Restricted } from "../../components/ui/Restricted";
 
 const formatCOP = (val) => {
     return new Intl.NumberFormat('es-CO', {
@@ -32,6 +34,7 @@ const formatCOP = (val) => {
 const ITEMS_PER_PAGE = 8;
 
 export default function SalesManagement() {
+    const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     const [sales, setSales] = useState([]);
     const [search, setSearch] = useState("");
@@ -169,6 +172,7 @@ export default function SalesManagement() {
                     placeholder="Buscar por documento, cliente..."
                     onCreateClick={() => navigate("/dashboard/sales-management/create")}
                     createButtonText="Nueva Venta"
+                    showCreateButton={hasPermission("Ventas", "Crear")}
                     showReportButton={true}
                     onReportClick={handleGenerarReporte}
                 />
@@ -214,46 +218,58 @@ export default function SalesManagement() {
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <div className="flex gap-1.5">
+                                                <div className="flex justify-center flex-nowrap gap-1.5 h-[36px]">
                                                     {/* DEVOLVER */}
-                                                    <button
-                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                                                        onClick={() => handleReturn(sale)}
-                                                        title="Devolver venta"
-                                                        disabled={sale.estado === "Devuelto" || sale.estado === "Anulado"}
-                                                    >
-                                                        <Undo2 size={18} className="text-yellow-600" />
-                                                    </button>
+                                                    <Restricted scope="Ventas" action="Editar">
+                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                            <button
+                                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                onClick={() => handleReturn(sale)}
+                                                                title="Devolver venta"
+                                                                disabled={sale.estado === "Devuelto" || sale.estado === "Anulado"}
+                                                            >
+                                                                <Undo2 size={18} className="text-yellow-600" />
+                                                            </button>
+                                                        </div>
+                                                    </Restricted>
 
                                                     {/* VER DETALLES */}
-                                                    <button
-                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                        onClick={() => handleViewDetails(sale)}
-                                                        title="Ver detalles"
-                                                    >
-                                                        <Eye size={18} className="text-blue-600" />
-                                                    </button>
+                                                    <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                        <button
+                                                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                            onClick={() => handleViewDetails(sale)}
+                                                            title="Ver detalles"
+                                                        >
+                                                            <Eye size={18} className="text-blue-600" />
+                                                        </button>
+                                                    </div>
 
                                                     {/* ANULAR */}
-                                                    <button
-                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                                                        onClick={() => handleAnull(sale)}
-                                                        title="Anular venta"
-                                                        disabled={sale.estado === "Anulado" || sale.estado === "Devuelto"}
-                                                    >
-                                                        <Ban size={18} className="text-red-500" />
-                                                    </button>
+                                                    <Restricted scope="Ventas" action="Eliminar">
+                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                            <button
+                                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                onClick={() => handleAnull(sale)}
+                                                                title="Anular venta"
+                                                                disabled={sale.estado === "Anulado" || sale.estado === "Devuelto"}
+                                                            >
+                                                                <Ban size={18} className="text-red-500" />
+                                                            </button>
+                                                        </div>
+                                                    </Restricted>
 
                                                     {/* CREDITO */}
-                                                    {sale.tipoVenta === "Credito" && (sale.estado === "Vigente" || sale.estado === "Finalizado") && (
-                                                        <button
-                                                            className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                            onClick={() => handleViewCredit(sale)}
-                                                            title="Detalles del crédito"
-                                                        >
-                                                            <Wallet size={17} className="text-yellow-600" />
-                                                        </button>
-                                                    )}
+                                                    <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                        {sale.tipoVenta === "Credito" && (sale.estado === "Vigente" || sale.estado === "Finalizado") && (
+                                                            <button
+                                                                className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                                onClick={() => handleViewCredit(sale)}
+                                                                title="Detalles del crédito"
+                                                            >
+                                                                <Wallet size={17} className="text-yellow-600" />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>

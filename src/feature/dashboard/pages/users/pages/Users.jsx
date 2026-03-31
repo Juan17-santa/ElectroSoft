@@ -8,8 +8,10 @@ import Alert from "../../../components/ui/Alert";
 import UsersTable from "../components/UsersTable";
 import { useUsersTable } from "../hooks/useUsersTable";
 import SearchBar from "../../../components/ui/Searchbar";
+import { usePermissions } from "../../../../../hooks/usePermissions";
 
 export default function Users() {
+    const { hasPermission } = usePermissions();
 
     const navigate = useNavigate();
 
@@ -107,6 +109,7 @@ export default function Users() {
                     placeholder="Buscar usuario ..."
                     onCreateClick={() => navigate("/dashboard/users/create")}
                     createButtonText="Crear usuario"
+                    showCreateButton={hasPermission("Usuarios", "Crear")}
                 />
 
                 <UsersTable

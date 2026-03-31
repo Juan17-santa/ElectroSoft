@@ -1,5 +1,6 @@
 import { Ban, CircleCheck, Eye } from "lucide-react";
 import CancellationInfoTooltip from "../../../components/ui/CancellationInfoTooltip";
+import { Restricted } from "../../../components/ui/Restricted";
 
 // COMPONENTE PARA RENDERIZAR LA TABLA DE PEDIDOS
 export default function OrdersTable({
@@ -108,27 +109,29 @@ export default function OrdersTable({
                                         <div className="flex justify-center gap-2">
 
                                             {/* PROCESAR VENTA (DESHABILITADO SI EL PEDIDO ESTÁ ANULADO) */}
-                                            <button
-                                                onClick={() => onProcess(order)}
-                                                disabled={order.estado === "Anulado"}
-                                                className={`p-2 rounded-lg transition
-                                                    ${order.estado === "Anulado"
-                                                        ? "bg-gray-100 cursor-not-allowed"
-                                                        : "bg-green-100 hover:bg-green-200 cursor-pointer"
-                                                    }`}
-                                                title={
-                                                    order.estado === "Anulado"
-                                                        ? "No disponible (pedido anulado)"
-                                                        : "Procesar venta"
-                                                }
-                                            >
-                                                <CircleCheck
-                                                    size={18}
-                                                    className={order.estado === "Anulado"
-                                                        ? "text-gray-400"
-                                                        : "text-green-600"}
-                                                />
-                                            </button>
+                                            <Restricted scope="Pedidos" action="Editar">
+                                                <button
+                                                    onClick={() => onProcess(order)}
+                                                    disabled={order.estado === "Anulado"}
+                                                    className={`p-2 rounded-lg transition
+                                                        ${order.estado === "Anulado"
+                                                            ? "bg-gray-100 cursor-not-allowed"
+                                                            : "bg-green-100 hover:bg-green-200 cursor-pointer"
+                                                        }`}
+                                                    title={
+                                                        order.estado === "Anulado"
+                                                            ? "No disponible (pedido anulado)"
+                                                            : "Procesar venta"
+                                                    }
+                                                >
+                                                    <CircleCheck
+                                                        size={18}
+                                                        className={order.estado === "Anulado"
+                                                            ? "text-gray-400"
+                                                            : "text-green-600"}
+                                                    />
+                                                </button>
+                                            </Restricted>
 
                                             {/* VER DETALLE */}
                                             <button
@@ -141,13 +144,15 @@ export default function OrdersTable({
 
                                             {/* BOTÓN DE ANULAR O TOOLTIP DE INFO SI YA ESTÁ ANULADO */}
                                             {order.estado !== "Anulado" ? (
-                                                <button
-                                                    onClick={() => onCancel(order)}
-                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                    title="Anular pedido"
-                                                >
-                                                    <Ban size={18} className="text-red-600" />
-                                                </button>
+                                                <Restricted scope="Pedidos" action="Eliminar">
+                                                    <button
+                                                        onClick={() => onCancel(order)}
+                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                        title="Anular pedido"
+                                                    >
+                                                        <Ban size={18} className="text-red-600" />
+                                                    </button>
+                                                </Restricted>
                                             ) : (
                                                 <CancellationInfoTooltip
                                                     cancelInfo={order.cancelInfo}

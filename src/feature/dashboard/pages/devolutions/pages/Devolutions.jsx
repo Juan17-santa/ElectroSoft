@@ -8,6 +8,7 @@ import Pagination   from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert        from "../../../components/ui/Alert";
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
+import { Restricted } from "../../../components/ui/Restricted";
 
 const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
@@ -245,30 +246,32 @@ export default function Devolutions() {
                                                         {/* EDITAR / COMPLETADO / ANULADO */}
                                                         <div className="relative group flex items-center">
 
-                                                            <button
-                                                                onClick={() =>
-                                                                    !bloqueado &&
-                                                                    navigate("/dashboard/sales-management/return", {
-                                                                        state: { idVenta, mode: "editable" },
-                                                                    })
-                                                                }
-                                                                disabled={bloqueado}
-                                                                className={`p-2 rounded-lg transition ${
-                                                                    anulado
-                                                                        ? "bg-red-100 cursor-default"
-                                                                        : bloqueado
-                                                                            ? "bg-green-100 cursor-default"
-                                                                            : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
-                                                                }`}
-                                                            >
-                                                                {anulado ? (
-                                                                    <X size={18} className="text-red-500" />
-                                                                ) : bloqueado ? (
-                                                                    <Check size={18} className="text-green-600" />
-                                                                ) : (
-                                                                    <Pencil size={18} className="text-yellow-600" />
-                                                                )}
-                                                            </button>
+                                                            <Restricted scope="Devoluciones" action="Editar">
+                                                                <button
+                                                                    onClick={() =>
+                                                                        !bloqueado &&
+                                                                        navigate("/dashboard/sales-management/return", {
+                                                                            state: { idVenta, mode: "editable" },
+                                                                        })
+                                                                    }
+                                                                    disabled={bloqueado}
+                                                                    className={`p-2 rounded-lg transition ${
+                                                                        anulado
+                                                                            ? "bg-red-100 cursor-default"
+                                                                            : bloqueado
+                                                                                ? "bg-green-100 cursor-default"
+                                                                                : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
+                                                                    }`}
+                                                                >
+                                                                    {anulado ? (
+                                                                        <X size={18} className="text-red-500" />
+                                                                    ) : bloqueado ? (
+                                                                        <Check size={18} className="text-green-600" />
+                                                                    ) : (
+                                                                        <Pencil size={18} className="text-yellow-600" />
+                                                                    )}
+                                                                </button>
+                                                            </Restricted>
 
                                                             {bloqueado && (
                                                                 <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
@@ -282,18 +285,20 @@ export default function Devolutions() {
                                                         </div>
 
                                                         {/* ANULAR */}
-                                                        <button
-                                                            title="Anular"
-                                                            onClick={() => handleAnularGrupo(grupo)}
-                                                            disabled={anulado}
-                                                            className={`p-2 rounded-lg transition duration-300 ${
-                                                                anulado
-                                                                    ? "bg-gray-100 opacity-40 cursor-not-allowed"
-                                                                    : "bg-red-100 hover:bg-red-200 cursor-pointer"
-                                                            }`}
-                                                        >
-                                                            <Ban size={18} className="text-red-600" />
-                                                        </button>
+                                                        <Restricted scope="Devoluciones" action="Eliminar">
+                                                            <button
+                                                                title="Anular"
+                                                                onClick={() => handleAnularGrupo(grupo)}
+                                                                disabled={anulado}
+                                                                className={`p-2 rounded-lg transition duration-300 ${
+                                                                    anulado
+                                                                        ? "bg-gray-100 opacity-40 cursor-not-allowed"
+                                                                        : "bg-red-100 hover:bg-red-200 cursor-pointer"
+                                                                }`}
+                                                            >
+                                                                <Ban size={18} className="text-red-600" />
+                                                            </button>
+                                                        </Restricted>
 
                                                     </div>
                                                 </td>
