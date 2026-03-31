@@ -107,22 +107,19 @@ export default function CreateShopping() {
     const productosActivos = productos.filter((p) => !p.anulado);
 
     /**
-     * #3: El total de la compra se calcula sobre costeProducto, que es lo que
+     * #3: El subtotal de la compra se calcula sobre costeProducto, que es lo que
      * realmente se le paga al proveedor en esta transacción, no sobre el precio
      * de Inventario (que es el precio de VENTA al cliente).
      */
-    const subtotalSinIVA = productosActivos.reduce(
+    const subtotal = productosActivos.reduce(
         (acc, p) => acc + p.cantidad * p.costeProducto,
         0
     );
-    const iva   = subtotalSinIVA * IVA_RATE;
-    const total = subtotalSinIVA + iva;
+    const iva   = subtotal * IVA_RATE;
+    const total = subtotal; // Total es el subtotal de la tabla (sin IVA)
 
-    // Total proyectado de ventas (para referencia de margen)
-    const totalVenta = productosActivos.reduce(
-        (acc, p) => acc + p.cantidad * p.precioVenta,
-        0
-    );
+    // Total venta = subtotal - IVA (para mostrar como "Subtotal")
+    const totalVenta = subtotal - iva;
 
     // ─── Paginación ───────────────────────────────────────────────────────────
     const totalPages   = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
@@ -459,10 +456,10 @@ export default function CreateShopping() {
                             onPageChange={setCurrentPage}
                         />
                         <div className="flex items-center gap-6 text-sm font-medium text-gray-700">
-                            {/* Total venta = proyección de ingresos al vender el lote */}
+                            {/* Subtotal = subtotal restando el IVA */}
                             <span>
-                                Total venta:
-                                <span className="font-semibold text-blue-500 ml-1">
+                                Subtotal:
+                                <span className="font-semibold ml-1">
                                     {formatCOP(Math.round(totalVenta))}
                                 </span>
                             </span>
@@ -470,7 +467,7 @@ export default function CreateShopping() {
                                 IVA (19%):
                                 <span className="font-semibold ml-1">{formatCOP(Math.round(iva))}</span>
                             </span>
-                            {/* Total = lo que se paga al proveedor (base costeProducto + IVA) */}
+                            {/* Total = subtotal de la tabla sin IVA */}
                             <span>
                                 Total:
                                 <span className="font-bold text-base ml-1">{formatCOP(Math.round(total))}</span>
