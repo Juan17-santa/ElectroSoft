@@ -8,12 +8,9 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import CancellationModal from "../../components/ui/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
-<<<<<<< HEAD
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
-=======
 import { useShoppingReport } from "../shopping/hooks/useShoppingReport";
->>>>>>> 6088a83be97b2df2bc91af4a0c79d0614afae83e
 
 const ITEMS_PER_PAGE = 11;
 

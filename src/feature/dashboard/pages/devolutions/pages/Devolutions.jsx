@@ -8,11 +8,7 @@ import SearchBar    from "../../../components/ui/Searchbar";
 import Pagination   from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert        from "../../../components/ui/Alert";
-<<<<<<< HEAD
-import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 import { Restricted } from "../../../components/ui/Restricted";
-=======
->>>>>>> 6088a83be97b2df2bc91af4a0c79d0614afae83e
 
 const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
