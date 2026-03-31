@@ -1,0 +1,127 @@
+import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
+
+const fmt = (n) => "$" + Number(n || 0).toLocaleString("es-CO");
+
+function calcularMonto(devolucion, venta) {
+    if (!venta) return 0;
+
+    const productoVenta = (venta.productos || []).find(
+        (producto) => producto.nombre === devolucion.producto,
+    );
+
+    if (!productoVenta) return 0;
+
+    return Number(devolucion.cantidad || 0) * Number(productoVenta.precio || 0);
+}
+
+function getFechaRegistro(devolucion) {
+    return devolucion.fechaISO ?? devolucion.fechaEstado ?? devolucion.creadoEn ?? "";
+}
+
+export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
+    const exportReport = (fechaInicio, fechaFin) => {
+        const ventas = (() => {
+            try {
+                return JSON.parse(localStorage.getItem("sales") || "[]");
+            } catch {
+                return [];
+            }
+        })();
+
+        const filtradas = devolucionesFiltradas.filter((devolucion) => {
+            const fecha = devolucion.fechaISO ?? devolucion.fechaEstado ?? "";
+            return fecha >= fechaInicio && fecha <= fechaFin;
+        });
+
+        if (filtradas.length === 0) {
+            setAlert({ type: "error", message: "No hay devoluciones en el rango de fechas seleccionado." });
+            return;
+        }
+
+        const gruposMap = {};
+
+        filtradas.forEach((devolucion) => {
+            const key = String(devolucion.idVenta || "sin-venta");
+            if (!gruposMap[key]) gruposMap[key] = [];
+            gruposMap[key].push(devolucion);
+        });
+
+        const grupos = Object.values(gruposMap).sort((grupoA, grupoB) => {
+            const fechaA = grupoA.reduce((max, devolucion) => {
+                const fecha = getFechaRegistro(devolucion);
+                return fecha > max ? fecha : max;
+            }, "");
+            const fechaB = grupoB.reduce((max, devolucion) => {
+                const fecha = getFechaRegistro(devolucion);
+                return fecha > max ? fecha : max;
+            }, "");
+
+            return fechaB.localeCompare(fechaA);
+        });
+
+        const excelData = [];
+        let contadorGrupo = 0;
+
+        grupos.forEach((grupo) => {
+            const idVenta = grupo[0].idVenta;
+            const venta = ventas.find((item) => String(item.id) === String(idVenta));
+            contadorGrupo += 1;
+
+            const referenciaVenta = venta?.numeroVenta != null
+                ? `Venta #${String(venta.numeroVenta).padStart(2, "0")}`
+                : `Grupo #${String(contadorGrupo).padStart(2, "0")}`;
+
+            excelData.push([
+                "VENTA",
+                referenciaVenta,
+                venta?.cliente || venta?.numeroDocumento || "-",
+                venta?.fecha || "-",
+                "",
+                "",
+                "",
+                "",
+                venta?.estado || "-",
+            ]);
+
+            grupo
+                .slice()
+                .sort((a, b) => getFechaRegistro(b).localeCompare(getFechaRegistro(a)))
+                .forEach((devolucion) => {
+                    excelData.push([
+                        "DEVOLUCION",
+                        "",
+                        devolucion.producto || "-",
+                        devolucion.fechaISO || devolucion.fecha || "-",
+                        String(devolucion.cantidad ?? "-"),
+                        fmt(calcularMonto(devolucion, venta)),
+                        devolucion.motivo || "-",
+                        devolucion.gestion || "-",
+                        devolucion.estadoResolucion || "-",
+                    ]);
+                });
+
+            excelData.push(["", "", "", "", "", "", "", "", ""]);
+        });
+
+        generateExcelReport({
+            title: "REPORTE GENERAL DE GESTION DE DEVOLUCIONES",
+            fileName: `Reporte_Devoluciones_${fechaInicio}_${fechaFin}.xlsx`,
+            columns: [
+                "TIPO",
+                "REFERENCIA",
+                "CLIENTE / PRODUCTO",
+                "FECHA",
+                "CANTIDAD",
+                "VALOR",
+                "MOTIVO",
+                "GESTION",
+                "ESTADO",
+            ],
+            data: excelData,
+        });
+
+        setAlert({ type: "success", message: "Reporte de devoluciones generado correctamente." });
+    };
+
+    return { exportReport };
+}

@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
@@ -9,9 +7,8 @@ import {
 import {
     DollarSign, Package, ShoppingBag, TrendingUp,
     Calendar, ChevronDown, ArrowUpRight, ArrowDownRight,
-    RotateCcw, Users, AlertCircle, FileText,
+    RotateCcw, Users, AlertCircle,
 } from "lucide-react";
-import ConfirmModal from "../../components/ui/ConfirmModal";
 import { getAuthUser } from "../../../auth/services/authService";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -159,7 +156,7 @@ function Dropdown({ label, items, value, onChange, icon: Icon }) {
     const menu = open && rect
         ? createPortal(
             <div ref={menuRef}
-                style={{ position: "fixed", top: rect.bottom + 6, right: window.innerWidth - rect.right, zIndex: 99999, maxHeight: 260, overflowY: "auto", minWidth: 145 }}
+                style={{ position: "fixed", top: rect.bottom + 6, right: window.innerWidth - rect.right, zIndex: 99999, maxHeight: 260, overflowY: "auto", maxWidth: 145 }}
                 className="bg-white border border-gray-100 rounded-xl shadow-2xl py-1">
                 {items.map((it) => (
                     <button key={it.value}
@@ -190,431 +187,9 @@ function Dropdown({ label, items, value, onChange, icon: Icon }) {
 const DONUT_COLORS = ["#FFC107", "#1f2937", "#F59E0B", "#6b7280", "#D97706", "#374151", "#FBBF24", "#4B5563"];
 
 // ══════════════════════════════════════════════════════════════════════════════
-// GENERADOR DE INSIGHTS AUTOMÁTICOS
-// ══════════════════════════════════════════════════════════════════════════════
-function generarInsights(kpis, stats, topProductos, donut) {
-    const insights = [];
-    if (kpis.deltaVentas > 0)
-        insights.push(`Las ventas crecieron ${kpis.deltaVentas.toFixed(1)}% respecto al mes anterior.`);
-    else if (kpis.deltaVentas < 0)
-        insights.push(`Las ventas cayeron ${Math.abs(kpis.deltaVentas).toFixed(1)}% respecto al mes anterior.`);
-    if (kpis.deltaGanancia > 0)
-        insights.push(`La ganancia neta aumentó ${kpis.deltaGanancia.toFixed(1)}% frente al período anterior.`);
-    else if (kpis.deltaGanancia < 0)
-        insights.push(`La ganancia neta disminuyó ${Math.abs(kpis.deltaGanancia).toFixed(1)}% frente al período anterior.`);
-    if (stats.devMes > 10)
-        insights.push(`Se registraron ${stats.devMes} devoluciones — nivel elevado, requiere atención.`);
-    else if (stats.devMes > 0)
-        insights.push(`Se registraron ${stats.devMes} devoluciones en el período.`);
-    if (stats.stockBajo > 0)
-        insights.push(`${stats.stockBajo} producto(s) con stock crítico (≤ 5 unidades). Se recomienda reabastecer.`);
-    if (topProductos.length > 0 && topProductos[0].cantidad > 0) {
-        const totalTop = topProductos.reduce((a, p) => a + p.cantidad, 0);
-        const pct = totalTop > 0 ? ((topProductos[0].cantidad / totalTop) * 100).toFixed(0) : 0;
-        insights.push(`Alta concentración en "${topProductos[0].nombre}" con ${pct}% de las unidades vendidas.`);
-    }
-    if (donut.length === 1)
-        insights.push(`Todas las ventas del período pertenecen a la categoría "${donut[0].name}".`);
-    return insights;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// GENERADOR DE PDF — Reporte ejecutivo del Dashboard (versión BI)
-// Secciones:
-//  0. Portada + Resumen ejecutivo con insights automáticos
-//  1. KPIs financieros del mes
-//  2. Evolución financiera anual (Ventas vs Compras vs Balance)
-//  3. Top 5 productos más vendidos con % de participación
-//  4. Ventas por categoría con impacto
-//  5. Indicadores operacionales con interpretación
-//  6. Conclusión y recomendaciones automáticas
-//  7. Pie de página numerado en cada hoja
-// ══════════════════════════════════════════════════════════════════════════════
-function generarReportePDF({ year, month, kpis, serieVentas, serieCompras, topProductos, donut, stats }) {
-    const doc = new jsPDF();
-    const AMARILLO = [234, 179, 8];
-    const AMARILLO_S = [253, 246, 213];  // amarillo suave para filas alternas
-    const OSCURO = [31, 41, 55];
-    const GRIS_CLARO = [249, 250, 251];
-    const VERDE = [16, 185, 129];
-    const ROJO = [239, 68, 68];
-    const mesNombre = MESES_FULL[month];
-    const hoy = new Date().toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
-    const insights = generarInsights(kpis, stats, topProductos, donut);
-
-    const sectionTitle = (doc, num, title, y) => {
-        doc.setTextColor(...OSCURO);
-        doc.setFontSize(10.5);
-        doc.setFont("helvetica", "bold");
-        // Fondo del título
-        doc.setFillColor(...OSCURO);
-        doc.roundedRect(14, y - 5, 182, 7.5, 1, 1, "F");
-        doc.setTextColor(255, 255, 255);
-        doc.text(`${num}.  ${title}`, 18, y);
-        return y + 10;
-    };
-
-    let y = 0;
-
-    // ── PORTADA ───────────────────────────────────────────────────────────────
-    // Banda superior oscura
-    doc.setFillColor(...OSCURO);
-    doc.rect(0, 0, 210, 42, "F");
-    // Acento amarillo (franja vertical izquierda)
-    doc.setFillColor(...AMARILLO);
-    doc.rect(0, 0, 6, 42, "F");
-
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text("ElectroSoft", 14, 14);
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(180, 180, 180);
-    doc.text("Sistema de Gestión Empresarial  ·  Documento confidencial", 14, 21);
-
-    doc.setFontSize(13);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...AMARILLO);
-    doc.text("REPORTE EJECUTIVO DE INTELIGENCIA DE NEGOCIO", 14, 32);
-
-    doc.setFontSize(8.5);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(200, 200, 200);
-    doc.text(`Período: ${mesNombre} ${year}   ·   Generado: ${hoy}`, 14, 39);
-
-    y = 54;
-
-    // ── RESUMEN EJECUTIVO ────────────────────────────────────────────────────
-    // Caja de resumen
-    doc.setFillColor(...AMARILLO_S);
-    doc.roundedRect(14, y - 4, 182, insights.length * 6 + 12, 2, 2, "F");
-    doc.setDrawColor(...AMARILLO);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(14, y - 4, 182, insights.length * 6 + 12, 2, 2, "S");
-
-    doc.setFontSize(8.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...OSCURO);
-    doc.text("RESUMEN DEL PERÍODO", 19, y + 2);
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(55, 65, 81);
-    if (insights.length === 0) {
-        doc.text("Sin actividad registrada en el período seleccionado.", 19, y + 8);
-        y += 22;
-    } else {
-        insights.forEach((txt, i) => {
-            doc.text(`•  ${txt}`, 19, y + 9 + i * 6);
-        });
-        y += insights.length * 6 + 18;
-    }
-
-    // ── SECCIÓN 1: KPIs ───────────────────────────────────────────────────────
-    y = sectionTitle(doc, 1, `Indicadores Financieros — ${mesNombre} ${year}`, y);
-
-    const kpiBoxes = [
-        { label: "MONTO DE VENTAS", value: formatFull(kpis.ventas), delta: kpis.deltaVentas, sub: "Ingresos del período" },
-        { label: "PRODUCTOS VENDIDOS", value: Number(kpis.prodVend).toLocaleString("es-CO"), delta: kpis.deltaProd, sub: "Unidades despachadas" },
-        { label: "MONTO DE COMPRAS", value: formatFull(kpis.compras), delta: kpis.deltaCompras, sub: "Inversión en inventario" },
-        { label: "GANANCIA NETA", value: formatFull(kpis.ganancia), delta: kpis.deltaGanancia, sub: kpis.ganancia >= 0 ? "Rentabilidad positiva" : "Resultado negativo" },
-    ];
-
-    const BOX_W = 43.5, BOX_H = 26, BOX_GAP = 2;
-    kpiBoxes.forEach((k, i) => {
-        const x = 14 + i * (BOX_W + BOX_GAP);
-        const pos = k.delta >= 0;
-        const isGanancia = i === 3;
-        const ganNeg = isGanancia && kpis.ganancia < 0;
-
-        doc.setFillColor(...GRIS_CLARO);
-        doc.roundedRect(x, y, BOX_W, BOX_H, 2, 2, "F");
-
-        // Franja izquierda de color
-        doc.setFillColor(...(ganNeg ? ROJO : AMARILLO));
-        doc.rect(x, y, 2.5, BOX_H, "F");
-
-        // Label
-        doc.setFontSize(5.8);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(107, 114, 128);
-        doc.text(k.label, x + 5, y + 5.5);
-
-        // Valor
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(...(ganNeg ? ROJO : OSCURO));
-        doc.text(k.value, x + 5, y + 13);
-
-        // Sub
-        doc.setFontSize(5.5);
-        doc.setFont("helvetica", "italic");
-        doc.setTextColor(120, 130, 140);
-        doc.text(k.sub, x + 5, y + 18);
-
-        // Delta
-        doc.setFontSize(6);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(...(pos ? VERDE : ROJO));
-        doc.text(`${pos ? "▲" : "▼"} ${Math.abs(k.delta).toFixed(1)}% vs mes anterior`, x + 5, y + 23.5);
-    });
-    y += BOX_H + 14;
-
-    // ── SECCIÓN 2: Evolución financiera anual unificada ───────────────────────
-    if (y > 185) { doc.addPage(); y = 20; }
-    y = sectionTitle(doc, 2, `Evolución Financiera Anual — ${year}`, y);
-
-    const totalVentasAnio = serieVentas.reduce((a, d) => a + d.total, 0);
-    const totalComprasAnio = serieCompras.reduce((a, d) => a + d.total, 0);
-    const balanceAnio = totalVentasAnio - totalComprasAnio;
-
-    autoTable(doc, {
-        startY: y,
-        head: [["Mes", "Ventas", "Compras", "Balance"]],
-        body: serieVentas.map((v, i) => {
-            const compras = serieCompras[i].total;
-            const balance = v.total - compras;
-            return [
-                v.mes,
-                formatFull(v.total),
-                formatFull(compras),
-                formatFull(balance),
-            ];
-        }),
-        foot: [[
-            "TOTAL ANUAL",
-            formatFull(totalVentasAnio),
-            formatFull(totalComprasAnio),
-            formatFull(balanceAnio),
-        ]],
-        styles: { fontSize: 8, cellPadding: 2.5 },
-        headStyles: { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
-        footStyles: { fillColor: AMARILLO, textColor: OSCURO, fontStyle: "bold" },
-        alternateRowStyles: { fillColor: AMARILLO_S },
-        columnStyles: {
-            0: { fontStyle: "bold", cellWidth: 22 },
-            1: { halign: "right" },
-            2: { halign: "right" },
-            3: { halign: "right", fontStyle: "bold" },
-        },
-        didParseCell: (data) => {
-            if (data.section === "body" && data.column.index === 3) {
-                const raw = serieVentas[data.row.index]?.total - serieCompras[data.row.index]?.total;
-                if (raw < 0) data.cell.styles.textColor = ROJO;
-                else data.cell.styles.textColor = VERDE;
-            }
-        },
-        margin: { left: 14, right: 14 },
-    });
-    y = doc.lastAutoTable.finalY + 12;
-
-    // ── SECCIÓN 3: Top productos con participación ────────────────────────────
-    if (y > 220) { doc.addPage(); y = 20; }
-    y = sectionTitle(doc, 3, `Productos Más Vendidos — ${mesNombre} ${year}`, y);
-
-    if (topProductos.length === 0) {
-        doc.setFontSize(8.5);
-        doc.setFont("helvetica", "italic");
-        doc.setTextColor(150, 150, 150);
-        doc.text("Sin ventas registradas en este período.", 14, y + 6);
-        y += 16;
-    } else {
-        const totalTop = topProductos.reduce((a, p) => a + p.cantidad, 0);
-        autoTable(doc, {
-            startY: y,
-            head: [["#", "Producto", "Uds. Vendidas", "Participación"]],
-            body: topProductos.map((p, i) => [
-                String(i + 1),
-                p.nombre,
-                String(p.cantidad),
-                `${totalTop ? ((p.cantidad / totalTop) * 100).toFixed(1) : 0}%`,
-            ]),
-            foot: [["", "TOTAL", String(totalTop), "100%"]],
-            styles: { fontSize: 8.5, cellPadding: 3 },
-            headStyles: { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
-            footStyles: { fillColor: AMARILLO, textColor: OSCURO, fontStyle: "bold" },
-            alternateRowStyles: { fillColor: AMARILLO_S },
-            columnStyles: { 0: { cellWidth: 10, halign: "center" }, 2: { halign: "center" }, 3: { halign: "center", fontStyle: "bold" } },
-            margin: { left: 14, right: 14 },
-        });
-        y = doc.lastAutoTable.finalY + 12;
-    }
-
-    // ── SECCIÓN 4: Categorías con impacto ────────────────────────────────────
-    if (y > 220) { doc.addPage(); y = 20; }
-    y = sectionTitle(doc, 4, `Ventas por Categoría — ${mesNombre} ${year}`, y);
-
-    if (donut.length === 0) {
-        doc.setFontSize(8.5);
-        doc.setFont("helvetica", "italic");
-        doc.setTextColor(150, 150, 150);
-        doc.text("Sin datos de categorías en este período.", 14, y + 6);
-        y += 16;
-    } else {
-        const donutTotal = donut.reduce((a, d) => a + d.value, 0);
-        autoTable(doc, {
-            startY: y,
-            head: [["Categoría", "Unidades", "% del Total", "Impacto"]],
-            body: donut.map((d, i) => {
-                const pct = donutTotal ? (d.value / donutTotal) * 100 : 0;
-                let impacto = "Baja rotación";
-                if (i === 0) impacto = "Alta rotación";
-                else if (i === 1) impacto = "Rotación media";
-                if (pct >= 30) impacto = "Alta rotación";
-                else if (pct >= 15) impacto = "Rotación media";
-                return [d.name, String(d.value), `${pct.toFixed(1)}%`, impacto];
-            }),
-            styles: { fontSize: 8.5, cellPadding: 3 },
-            headStyles: { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
-            alternateRowStyles: { fillColor: AMARILLO_S },
-            columnStyles: { 1: { halign: "center" }, 2: { halign: "center", fontStyle: "bold" }, 3: { halign: "center" } },
-            margin: { left: 14, right: 14 },
-        });
-        y = doc.lastAutoTable.finalY + 12;
-    }
-
-    // ── SECCIÓN 5: Indicadores operacionales ─────────────────────────────────
-    if (y > 220) { doc.addPage(); y = 20; }
-    y = sectionTitle(doc, 5, "Indicadores Operacionales", y);
-
-    autoTable(doc, {
-        startY: y,
-        head: [["Indicador", "Valor", "Lectura"]],
-        body: [
-            [
-                "Clientes activos en el sistema",
-                String(stats.clientesActivos),
-                stats.clientesActivos < 5 ? "Base de clientes reducida" : "Base operativa activa",
-            ],
-            [
-                `Devoluciones en ${mesNombre}`,
-                String(stats.devMes),
-                stats.devMes > 10 ? "Nivel alto — requiere revisión urgente"
-                    : stats.devMes > 0 ? "Nivel normal — monitorear"
-                        : "Sin devoluciones registradas",
-            ],
-            [
-                "Productos con stock crítico (≤ 5 unidades)",
-                String(stats.stockBajo),
-                stats.stockBajo > 0 ? "⚠ Reabastecer a la brevedad" : "✓ Inventario en nivel normal",
-            ],
-            [
-                "Rentabilidad del período",
-                formatFull(kpis.ganancia),
-                kpis.ganancia >= 0 ? "✓ Período rentable" : "⚠ Período con pérdida neta",
-            ],
-        ],
-        styles: { fontSize: 8.5, cellPadding: 3.5 },
-        headStyles: { fillColor: OSCURO, textColor: [255, 255, 255], fontStyle: "bold" },
-        alternateRowStyles: { fillColor: AMARILLO_S },
-        columnStyles: { 0: { cellWidth: 80 }, 1: { halign: "center", cellWidth: 28 }, 2: { cellWidth: 74 } },
-        didParseCell: (data) => {
-            if (data.section === "body" && data.column.index === 2) {
-                const txt = data.cell.raw;
-                if (typeof txt === "string" && txt.startsWith("⚠"))
-                    data.cell.styles.textColor = ROJO;
-                else if (typeof txt === "string" && txt.startsWith("✓"))
-                    data.cell.styles.textColor = VERDE;
-            }
-        },
-        margin: { left: 14, right: 14 },
-    });
-    y = doc.lastAutoTable.finalY + 14;
-
-    // ── SECCIÓN 6: Conclusión y recomendaciones ───────────────────────────────
-    if (y > 230) { doc.addPage(); y = 20; }
-    y = sectionTitle(doc, 6, "Conclusión y Recomendaciones", y);
-
-    const esRentable = kpis.ganancia >= 0;
-    const creceVentas = kpis.deltaVentas > 0;
-    const hayRiesgo = stats.devMes > 10 || stats.stockBajo > 0;
-    const conclusion = esRentable
-        ? `El período ${mesNombre} ${year} presenta un comportamiento positivo en términos de rentabilidad, con una ganancia neta de ${formatFull(kpis.ganancia)}.`
-        : `El período ${mesNombre} ${year} registra un resultado negativo con una pérdida neta de ${formatFull(Math.abs(kpis.ganancia))}. Se recomienda revisar la estructura de costos.`;
-    const tendencia = creceVentas
-        ? `Las ventas muestran crecimiento frente al mes anterior (+${kpis.deltaVentas.toFixed(1)}%), lo que indica una trayectoria favorable.`
-        : `Las ventas presentan una reducción frente al mes anterior (${kpis.deltaVentas.toFixed(1)}%), lo que requiere atención en la estrategia comercial.`;
-
-    const recomendaciones = [];
-    if (stats.devMes > 10) recomendaciones.push("Analizar las causas raíz de las devoluciones y establecer protocolos de control de calidad.");
-    if (stats.stockBajo > 0) recomendaciones.push(`Gestionar reabastecimiento para los ${stats.stockBajo} producto(s) con stock crítico.`);
-    if (!esRentable) recomendaciones.push("Revisar márgenes y estructura de costos para recuperar rentabilidad.");
-    if (!creceVentas) recomendaciones.push("Fortalecer acciones comerciales para reactivar el crecimiento en ventas.");
-    if (topProductos.length > 0) {
-        const tot = topProductos.reduce((a, p) => a + p.cantidad, 0);
-        const pct = tot ? (topProductos[0].cantidad / tot) * 100 : 0;
-        if (pct > 50) recomendaciones.push(`Diversificar el portafolio de ventas; "${topProductos[0].nombre}" concentra el ${pct.toFixed(0)}% del volumen.`);
-    }
-    if (recomendaciones.length === 0) recomendaciones.push("El período no presenta alertas críticas. Continuar monitoreando los indicadores.");
-
-    // Caja de conclusión
-    const lineH = 5.5;
-    const totalLines = 2 + recomendaciones.length + (hayRiesgo ? 1 : 0);
-    const boxH = totalLines * lineH + 20;
-
-    doc.setFillColor(...GRIS_CLARO);
-    doc.roundedRect(14, y, 182, boxH, 2, 2, "F");
-    doc.setDrawColor(...OSCURO);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(14, y, 182, boxH, 2, 2, "S");
-
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(55, 65, 81);
-
-    const maxW = 175;
-    let ty = y + 7;
-
-    const wrapText = (doc, text, x, ty, maxW, lineH) => {
-        const lines = doc.splitTextToSize(text, maxW);
-        lines.forEach(line => { doc.text(line, x, ty); ty += lineH; });
-        return ty;
-    };
-
-    ty = wrapText(doc, conclusion, 19, ty, maxW, lineH);
-    ty += 2;
-    ty = wrapText(doc, tendencia, 19, ty, maxW, lineH);
-    ty += 4;
-
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...OSCURO);
-    doc.text("Recomendaciones:", 19, ty);
-    ty += lineH;
-
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(55, 65, 81);
-    recomendaciones.forEach((rec) => {
-        ty = wrapText(doc, `•  ${rec}`, 21, ty, maxW - 4, lineH);
-    });
-
-    y = ty + 10;
-
-    // ── PIE DE PÁGINA ─────────────────────────────────────────────────────────
-    const totalPags = doc.getNumberOfPages();
-    for (let pg = 1; pg <= totalPags; pg++) {
-        doc.setPage(pg);
-        doc.setFillColor(...OSCURO);
-        doc.rect(0, 283, 210, 14, "F");
-        doc.setFillColor(...AMARILLO);
-        doc.rect(0, 283, 6, 14, "F");
-        doc.setFontSize(7);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(180, 180, 180);
-        doc.text("ElectroSoft · Reporte ejecutivo de inteligencia de negocio · Confidencial", 14, 291);
-        doc.setTextColor(...AMARILLO);
-        doc.text(`Pág. ${pg} / ${totalPags}`, 196, 291, { align: "right" });
-    }
-
-    doc.save(`reporte-ejecutivo-${mesNombre.toLowerCase()}-${year}.pdf`);
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
 export default function Dashboard() {
     const [year, setYear] = useState(currentYear);
     const [month, setMonth] = useState(currentMonth);
-    const [showConfirm, setShowConfirm] = useState(false);
 
     const [raw, setRaw] = useState({
         sales: [], compras: [], products: [], clients: [], devolutions: [], categories: [],
@@ -702,22 +277,6 @@ export default function Dashboard() {
     const yearItems = [currentYear, currentYear - 1, currentYear - 2].map(y => ({ label: `Año ${y}`, value: y }));
     const monthItems = MESES_FULL.map((m, i) => ({ label: m, value: i }));
 
-    // ─── Handler PDF ─────────────────────────────────────────────────────────
-    const handleConfirmPDF = () => {
-        generarReportePDF({
-            year, month,
-            kpis: {
-                ventas: totalVentas, deltaVentas: delta(totalVentas, prevVentas),
-                prodVend, deltaProd: delta(prodVend, prevProdVend),
-                compras: totalCompras, deltaCompras: delta(totalCompras, prevCompras),
-                ganancia, deltaGanancia: delta(ganancia, prevGanancia),
-            },
-            serieVentas, serieCompras, topProductos, donut,
-            stats: { clientesActivos, devMes, stockBajo },
-        });
-        setShowConfirm(false);
-    };
-
     return (
         <>
             <style>{`
@@ -741,16 +300,6 @@ export default function Dashboard() {
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
-
-                        {/* Botón generar reporte */}
-                        <button
-                            onClick={() => setShowConfirm(true)}
-                            className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg text-xs font-medium text-gray-400 hover:bg-gray-50 transition duration-300 shadow-sm cursor-pointer"
-                        >
-                            <FileText size={14} className="text-gray-500" />
-                            Generar reporte
-                        </button>
-
                         <Dropdown label={`Año ${year}`} items={yearItems} value={year} onChange={setYear} icon={Calendar} />
                         <Dropdown label={MESES_FULL[month]} items={monthItems} value={month} onChange={setMonth} icon={Calendar} />
                     </div>
@@ -922,16 +471,6 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Modal de confirmación */}
-            {showConfirm && (
-                <ConfirmModal
-                    type="info"
-                    title="Generar reporte PDF"
-                    message={`Se exportará un reporte ejecutivo de ${MESES_FULL[month]} ${year} con: resumen de KPIs financieros, evolución mensual de ventas y compras del año, top productos del mes, distribución por categorías e indicadores operacionales. ¿Deseas continuar?`}
-                    onConfirm={handleConfirmPDF}
-                    onCancel={() => setShowConfirm(false)}
-                />
-            )}
         </>
     );
 }
