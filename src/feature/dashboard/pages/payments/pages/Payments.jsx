@@ -64,6 +64,7 @@ export default function Payments() {
                 placeholder="Buscar cliente..."
                 showReportButton={true}
                 onReportClick={() => setShowReportModal(true)}
+                showCreateButton={false} // 👈 ESTA LÍNEA ES LA CLAVE
             />
 
             <div className="flex flex-col gap-3">

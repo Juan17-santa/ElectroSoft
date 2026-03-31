@@ -10,7 +10,11 @@ export default function UpdateSales() {
         id: "",
         numeroDocumento: "",
         tipoVenta: "Contado",
-        fecha: new Date().toISOString().split('T')[0],
+        diasPlazo: "",
+        fecha: (() => {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        })(),
         estado: "Vigente"
     });
 
@@ -26,6 +30,7 @@ export default function UpdateSales() {
                 id: sale.id,
                 numeroDocumento: sale.numeroDocumento,
                 tipoVenta: sale.tipoVenta,
+                diasPlazo: sale.diasPlazo || "",
                 fecha: sale.fecha,
                 estado: sale.estado
             });
@@ -36,7 +41,11 @@ export default function UpdateSales() {
     }, []);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        if (name === "diasPlazo") {
+            value = value.replace(/\D/g, "");
+            if (value !== "" && Number(value) > 60) value = "60";
+        }
         setFormData((prev) => ({
             ...prev,
             [name]: value
@@ -94,6 +103,7 @@ export default function UpdateSales() {
 
             const datosVenta = {
                 ...formData,
+                diasPlazo: formData.tipoVenta === 'Credito' ? Number(formData.diasPlazo) : null,
                 productos,
                 subtotal,
                 iva,
@@ -139,7 +149,7 @@ export default function UpdateSales() {
                 <form onSubmit={handleForm} className="flex flex-col gap-6">
 
                     {/* FILA 1: NUMERO DOCUMENTO Y TIPO VENTA */}
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className={`grid gap-6 ${formData.tipoVenta === "Credito" ? "grid-cols-3" : "grid-cols-2"}`}>
                         {/* NUMERO DOCUMENTO */}
                         <div className="flex flex-col gap-3">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
@@ -172,6 +182,24 @@ export default function UpdateSales() {
                                 <option value="Credito">Crédito</option>
                             </select>
                         </div>
+
+                        {/* DIAS PLAZO */}
+                        {formData.tipoVenta === "Credito" && (
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                                    <FileText size={16} />
+                                    <span>Plazo (Crédito) *</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    name="diasPlazo"
+                                    value={formData.diasPlazo}
+                                    onChange={handleChange}
+                                    placeholder="Ej: 45 (Máx 60)"
+                                    className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     {/* FILA 2: FECHA Y ESTADO */}

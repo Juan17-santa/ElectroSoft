@@ -81,8 +81,8 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage) {
         cargarDatos();
     };
 
-    const processOrderToSale = (order) => {
-        ServicesOrders.processToSale(order);
+    const processOrderToSale = (order, diasPlazo) => {
+        ServicesOrders.processToSale(order, diasPlazo);
         cargarDatos();
     };
 

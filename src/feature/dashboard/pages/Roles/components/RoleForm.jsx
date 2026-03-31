@@ -19,7 +19,6 @@ export default function RoleForm({
     tocado,
     tocar,
     estadoNombre,
-    estadoDescripcion,
     formError,
     setFormError,
     handleChange,
@@ -53,9 +52,9 @@ export default function RoleForm({
             <div className={`grid grid-cols-1 md:grid-cols-2 ${isUpdate ? 'gap-x-12 gap-y-6' : 'gap-6'}`}>
                 {/* FIELDS */}
                 <div className="flex flex-col gap-4">
-                    <div className="flex items-center text-yellow-500 gap-2 font-bold mb-[-12px]">
+                    <div className="flex items-center text-yellow-500 gap-2 font-bold">
                         <Tag size={18} />
-                        <span>Nombre del rol</span>
+                        <span>Nombre del rol *</span>
                     </div>
 
                     <div className="flex flex-col">
@@ -92,7 +91,7 @@ export default function RoleForm({
                                 <Calendar size={18} />
                                 <span>Fecha de creación</span>
                             </div>
-                            <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200 text-gray-700 min-h-[48px]">
+                            <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200 text-gray-700 min-h-12">
                                 {formData.fechaCreacion || formData.fecha || "Automática"}
                             </div>
                         </div>
@@ -105,30 +104,28 @@ export default function RoleForm({
                         <span>Descripción</span>
                     </div>
                     <div className="flex flex-col flex-1">
-                        <div className={`rounded-xl px-4 py-3 flex flex-col shadow-sm transition-all duration-300 h-full flex-1 ${ringClass(estadoDescripcion)} ${!estadoDescripcion || estadoDescripcion.valido ? 'bg-gray-200/50' : ''}`}>
+                        <div className={`rounded-xl px-4 py-3 flex flex-col shadow-sm transition-all duration-300 h-full flex-1 bg-gray-200/50`}>
                             <textarea
                                 name="descripcion"
                                 value={formData.descripcion}
                                 onChange={handleChange}
-                                onBlur={() => tocar("descripcion")}
-                                placeholder="Descripción del rol (mínimo 10 caracteres)"
-                                className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none resize-none min-h-[80px] flex-1"
+                                placeholder="Descripción del rol (opcional)"
+                                className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none resize-none min-h-20 flex-1"
                                 maxLength={200}
                             ></textarea>
                             <span className={`text-[11px] mt-1 self-end ${formData.descripcion.length > 180 ? 'text-red-400' : 'text-gray-400'}`}>
                                 {formData.descripcion.length}/200
                             </span>
                         </div>
-                        <FieldStatus estado={estadoDescripcion} />
                     </div>
                 </div>
             </div>
 
 
             {/* GRID DE PERMISOS */}
-            {isUpdate ? (
-                <h3 className="text-xl font-bold text-gray-800 mt-2">Permisos y <span className="text-yellow-500">privilegios</span></h3>
-            ) : null}
+            <h3 className="text-xl font-bold text-gray-800 mt-2">
+                Permisos y <span className="text-yellow-500">privilegios</span>
+            </h3>
 
             <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${!isUpdate ? 'mt-1' : ''} flex-1`}>
                 {PERMISSION_SCOPES.map((scope) => {

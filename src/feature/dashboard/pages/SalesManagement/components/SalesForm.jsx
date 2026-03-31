@@ -114,6 +114,23 @@ export default function SalesForm({
                         placeholder="Seleccione tipo"
                     />
                 </div>
+
+                {/* Días Plazo Máximo */}
+                {formData.tipoVenta === "Credito" && (
+                    <div className="flex flex-col gap-0 relative">
+                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium mb-1.5 mt-0.5">
+                            <FileText size={16} /><span>Plazo (Crédito) *</span>
+                        </div>
+                        <input
+                            type="text"
+                            name="diasPlazo"
+                            value={formData.diasPlazo || ""}
+                            onChange={handleChange}
+                            placeholder="Ej: 45 (Máx 60)"
+                            className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300"
+                        />
+                    </div>
+                )}
             </div>
 
             <div className="mb-2"></div>

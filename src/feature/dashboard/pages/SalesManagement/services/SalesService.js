@@ -43,7 +43,7 @@ export const SalesService = {
      * - Si tipoVenta = "Contado": estado = "Finalizado", montoPagado = total
      * - Si tipoVenta = "Crédito": montoPagado = 0, montoPorPagar = total
      */
-    create({ numeroDocumento, tipoVenta, fecha, estado, productos }) {
+    create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos }) {
 
         const sales = this.get();
 
@@ -78,6 +78,7 @@ export const SalesService = {
             numeroDocumento,
             cliente,
             tipoVenta,
+            diasPlazo: tipoVenta === "Credito" ? (diasPlazo || null) : null,
             fecha,
             estado: esPagado ? 'Finalizado' : estado,
             productos,

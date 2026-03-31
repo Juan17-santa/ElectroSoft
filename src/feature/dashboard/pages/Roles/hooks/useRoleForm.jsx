@@ -16,7 +16,6 @@ export function useRoleForm({ initialData = null, onSubmit }) {
 
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
     const estadoNombre = tocado.nombre ? Validations.validarNombreRol(formData.nombre) : null;
-    const estadoDescripcion = tocado.descripcion ? Validations.validarDescripcionRol(formData.descripcion) : null;
 
     useEffect(() => {
         if (initialData) {
@@ -74,15 +73,16 @@ export function useRoleForm({ initialData = null, onSubmit }) {
         setFormError(null);
 
         const vNombre = Validations.validarNombreRol(formData.nombre);
-        const vDescripcion = Validations.validarDescripcionRol(formData.descripcion);
 
-        setTocado({ nombre: true, descripcion: true });
+        setTocado({ nombre: true });
 
-        if (!vNombre.valido || !vDescripcion.valido) {
+        if (!vNombre.valido) {
             return;
         }
 
-        const totalPermissions = Object.values(formData.permisos).reduce((acc, curr) => acc + curr.length, 0);
+        const totalPermissions = Object.values(formData.permisos)
+            .reduce((acc, curr) => acc + curr.length, 0);
+
         if (totalPermissions === 0) {
             setFormError("Debe elegir al menos un permiso o privilegio para crear/editar este rol.");
             return;
@@ -96,7 +96,6 @@ export function useRoleForm({ initialData = null, onSubmit }) {
         tocado,
         tocar,
         estadoNombre,
-        estadoDescripcion,
         formError,
         setFormError,
         handleChange,

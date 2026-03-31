@@ -30,14 +30,13 @@ export default function OrdersForm({
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
     const [openProductModal, setOpenProductModal] = useState(false);
 
-    const dateObj = new Date();
-
-    // Fecha de Hoy (Límite máximo)
-    const hoy = dateObj.toISOString().split('T')[0];
+    // Lógica de fechas locales (evita desfase UTC de toISOString)
+    const nowLocal = new Date();
+    const hoy = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
 
     const tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - 3);
-    const haceTresDias = tempDate.toISOString().split('T')[0];
+    const haceTresDias = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
 
     // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA (PESOS COLOMBIANOS)
     const formatCurrency = (value) => {
@@ -76,7 +75,7 @@ export default function OrdersForm({
     return (
         <>
             <form onSubmit={handleSubmit} className="h-full">
-                <div className="flex flex-col items-center gap-12 mt-6 h-full">
+                <div className="flex flex-col gap-12 mt-6 flex-1">
 
                     {/* ================= PRIMERA FILA ================= */}
                     <div className="grid grid-cols-2 gap-16 w-full">

@@ -9,7 +9,7 @@
  * - Devolver (undo) → navega a ReturnSalesPage
  * - Anular (ban) → cambia el estado a "Anulado"
  */
-import { Eye, Undo2, Ban, CreditCard } from "lucide-react";
+import { Eye, Undo2, Ban, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
@@ -17,10 +17,9 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
-import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
-import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import CancellationModal from "./components/CancellationModal";
 import { ServicesProducts } from "../products/services/ServicesProducts";
+import { useSalesReport } from "./hooks/useSalesReport";
 
 const formatCOP = (val) => {
     return new Intl.NumberFormat('es-CO', {
@@ -40,6 +39,9 @@ export default function SalesManagement() {
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert] = useState(null);
     const [cancelModalSale, setCancelModalSale] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
+
+    const { exportReport } = useSalesReport(sales, setAlert);
 
     const showAlert = (type, message) => setAlert({ type, message });
 
@@ -120,7 +122,10 @@ export default function SalesManagement() {
         if (saleIndex !== -1) {
              allSales[saleIndex].estado = "Anulado";
              allSales[saleIndex].motivoAnulacion = motivo;
-             allSales[saleIndex].fechaAnulacion = new Date().toISOString().split("T")[0];
+             allSales[saleIndex].fechaAnulacion = (() => {
+                 const now = new Date();
+                 return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+             })();
              localStorage.setItem("sales", JSON.stringify(allSales));
              setSales(allSales.map(sale => {
                  if (!sale.cliente) {
@@ -137,35 +142,7 @@ export default function SalesManagement() {
     };
 
     const handleGenerarReporte = () => {
-        setConfirmData({
-            type: "info",
-            title: "Generar reporte",
-            message: "¿Deseas descargar el reporte de ventas?",
-            onConfirm: () => {
-                const reportTitle = "Gestión de Ventas - Reporte";
-                const columns = ["# Venta", "Cliente", "Fecha", "Tipo", "Total", "Pagado", "Por Pagar", "Estado"];
-                const data = filteredSales.map(sale => [
-                    String(sale.numeroVenta || "").padStart(2, '0'),
-                    sale.cliente || "-",
-                    sale.fecha,
-                    sale.tipoVenta,
-                    formatCOP(sale.total),
-                    formatCOP(sale.montoPagado),
-                    formatCOP(sale.montoPorPagar),
-                    sale.estado
-                ]);
-
-                generateExcelReport({
-                    title: reportTitle,
-                    fileName: "reporte_ventas.xlsx",
-                    columns: columns,
-                    data: data
-                });
-
-                showAlert("success", "Reporte Excel generado correctamente.");
-                setConfirmData(null);
-            }
-        });
+        setShowReportModal(true);
     };
 
     const getEstadoDot = (estado) => {
@@ -237,7 +214,7 @@ export default function SalesManagement() {
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <div className="flex justify-center gap-1.5">
+                                                <div className="flex gap-1.5">
                                                     {/* DEVOLVER */}
                                                     <button
                                                         className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
@@ -274,7 +251,7 @@ export default function SalesManagement() {
                                                             onClick={() => handleViewCredit(sale)}
                                                             title="Detalles del crédito"
                                                         >
-                                                            <CreditCard size={17} className="text-yellow-600" />
+                                                            <Wallet size={17} className="text-yellow-600" />
                                                         </button>
                                                     )}
                                                 </div>
@@ -305,6 +282,21 @@ export default function SalesManagement() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
+                />
+            )}
+
+            {/* MODAL DE REPORTE CON FILTRO DE FECHAS */}
+            {showReportModal && (
+                <ConfirmModal
+                    type="info"
+                    title="Generar reporte de ventas"
+                    message="Selecciona el rango de fechas para exportar el reporte"
+                    showDateFilter={true}
+                    onCancel={() => setShowReportModal(false)}
+                    onConfirm={({ fechaInicio, fechaFin }) => {
+                        exportReport(fechaInicio, fechaFin);
+                        setShowReportModal(false);
+                    }}
                 />
             )}
 

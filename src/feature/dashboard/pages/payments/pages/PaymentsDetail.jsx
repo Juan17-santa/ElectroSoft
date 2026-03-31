@@ -8,7 +8,7 @@ const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
 export default function PaymentDetail() {
     const navigate = useNavigate();
-    const { id }   = useParams();
+    const { id } = useParams();
     const location = useLocation();
 
     const [venta, setVenta] = useState(location.state?.payment || null);
@@ -27,7 +27,7 @@ export default function PaymentDetail() {
     }
 
     const esPendiente = venta.estado === "Vigente";
-    const isVencida   = venta.estado === "Anulada";
+    const isVencida = venta.estado === "Anulada";
     const estadoLabel = isVencida ? "Vencida" : esPendiente ? "Pendiente" : "Finalizado";
     const montoPagado = (venta.abonos || [])
         .filter(a => !a.anulado)
@@ -46,7 +46,7 @@ export default function PaymentDetail() {
             <div
                 className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
                 style={{
-                    backgroundImage: 'url("/background-shopping-details.png")',
+                    backgroundImage: 'url("/background-details.jpg")',
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     backgroundRepeat: "no-repeat",
@@ -81,11 +81,10 @@ export default function PaymentDetail() {
                                 </h3>
                                 <p className="text-lg font-semibold text-gray-800">{venta.cliente}</p>
                             </div>
-                            <div className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md ${
-                                isVencida   ? "bg-red-100 text-red-700"       :
-                                esPendiente ? "bg-yellow-100 text-yellow-700" :
-                                              "bg-green-100 text-green-700"
-                            }`}>
+                            <div className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md ${isVencida ? "bg-red-100 text-red-700" :
+                                    esPendiente ? "bg-yellow-100 text-yellow-700" :
+                                        "bg-green-100 text-green-700"
+                                }`}>
                                 {estadoLabel}
                             </div>
                         </div>
@@ -133,11 +132,10 @@ export default function PaymentDetail() {
                             </div>
                             <div>
                                 <p className="text-sm text-yellow-400 mb-1">Saldo Pendiente</p>
-                                <p className={`text-base font-semibold ${
-                                    isVencida   ? "text-red-600" :
-                                    esPendiente ? "text-red-500" :
-                                                  "text-green-600"
-                                }`}>
+                                <p className={`text-base font-semibold ${isVencida ? "text-red-600" :
+                                        esPendiente ? "text-red-500" :
+                                            "text-green-600"
+                                    }`}>
                                     ${fmt(venta.montoPorPagar)}
                                 </p>
                             </div>
@@ -170,18 +168,17 @@ export default function PaymentDetail() {
                                         abonosTable.map((row, i) => {
                                             const isInicio = row.tipo === "inicio";
                                             const isAnulado = row.tipo === "anulado";
-                                            const isAzul   = row.tipo === "ultimo";
-                                            const isRojo   = row.tipo === "inicio" && (venta.abonos || []).length > 0;
+                                            const isAzul = row.tipo === "ultimo";
+                                            const isRojo = row.tipo === "inicio" && (venta.abonos || []).length > 0;
 
                                             return (
                                                 <tr
                                                     key={i}
-                                                    className={`border-t border-gray-50 ${
-                                                        isAnulado ? "opacity-50 line-through text-gray-400" :
-                                                        isRojo    ? "text-red-500 font-medium"              :
-                                                        isAzul    ? "text-blue-500 font-medium"             :
+                                                    className={`border-t border-gray-50 ${isAnulado ? "opacity-50 line-through text-gray-400" :
+                                                            isRojo ? "text-red-500 font-medium" :
+                                                                isAzul ? "text-blue-500 font-medium" :
                                                                     "text-gray-600"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <td className="px-5 py-2.5">{row.fecha}</td>
                                                     <td className="px-5 py-2.5 text-gray-400 text-xs">
@@ -190,7 +187,7 @@ export default function PaymentDetail() {
                                                     <td className="px-5 py-2.5">
                                                         {row.abono === 0 ? "0"
                                                             : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
-                                                            : `+${fmt(row.abono)}`}
+                                                                : `+${fmt(row.abono)}`}
                                                     </td>
                                                     <td className="px-5 py-2.5">{fmt(row.saldoPendiente)}</td>
                                                     <td className="px-5 py-2.5">

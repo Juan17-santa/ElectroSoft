@@ -7,12 +7,16 @@ export function useSalesForm({ onSubmit }) {
     const defaultData = {
         numeroDocumento: "",
         tipoVenta: "Contado",
-        fecha: new Date().toISOString().split("T")[0],
+        diasPlazo: "",
+        fecha: (() => {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        })(),
         estado: "Finalizado"
     };
 
     const [formData, setFormData] = useState(defaultData);
-    const [tocado, setTocado] = useState({ numeroDocumento: false, fecha: false, tipoVenta: false });
+    const [tocado, setTocado] = useState({ numeroDocumento: false, fecha: false, tipoVenta: false, diasPlazo: false });
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
 
     const [productos, setProductos] = useState([]);
@@ -128,6 +132,10 @@ export function useSalesForm({ onSubmit }) {
     const handleChange = (e) => {
         let { name, value } = e.target;
         if (name === "numeroDocumento") value = value.replace(/\D/g, "").slice(0, 10);
+        if (name === "diasPlazo") {
+            value = value.replace(/\D/g, "");
+            if (value !== "" && Number(value) > 60) value = "60";
+        }
         setFormData(prev => ({ ...prev, [name]: value }));
         tocar(name);
     };
@@ -148,12 +156,13 @@ export function useSalesForm({ onSubmit }) {
 
     const handleForm = (e) => {
         e.preventDefault();
-        setTocado({ numeroDocumento: true, fecha: true, tipoVenta: true });
+        setTocado({ numeroDocumento: true, fecha: true, tipoVenta: true, diasPlazo: true });
 
         const vDoc = validarDocumentoCliente(formData.numeroDocumento);
         const vFech = Validations.campoRequerido(formData.fecha) ? { valido: true } : { valido: false };
+        const isDiasPlazoValido = formData.tipoVenta === "Contado" || (formData.diasPlazo && Number(formData.diasPlazo) >= 0 && Number(formData.diasPlazo) <= 60);
 
-        if (!vDoc.valido || !vFech.valido || !formData.tipoVenta) return;
+        if (!vDoc.valido || !vFech.valido || !formData.tipoVenta || !isDiasPlazoValido) return;
 
         if (productos.length === 0) {
             setProductosError("Debe agregar al menos un producto.");
@@ -162,6 +171,7 @@ export function useSalesForm({ onSubmit }) {
 
         const datosVenta = {
             ...formData,
+            diasPlazo: formData.tipoVenta === "Credito" ? Number(formData.diasPlazo) : null,
             cliente: clienteNombre,
             productos,
             subtotal,
