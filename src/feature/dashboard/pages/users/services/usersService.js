@@ -5,7 +5,25 @@ export const usersService = {
     // OBTENER TODOS
     get() {
         const data = localStorage.getItem(KEY);
-        return data ? JSON.parse(data) : [];
+        let users = data ? JSON.parse(data) : [];
+
+        // Si el local storage está vacío, creamos el admin global por defecto
+        if (users.length === 0) {
+            const defaultAdmin = {
+                id: 1,
+                nombre: "Administrador Global",
+                email: "admin@gmail.com",
+                password: "admin", // Contraseña por defecto
+                rol: "Administrador",
+                estado: true,
+                documento: "000000000",
+                telefono: "0000000000"
+            };
+            users.push(defaultAdmin);
+            localStorage.setItem(KEY, JSON.stringify(users));
+        }
+
+        return users;
     },
 
     // GUARDAR

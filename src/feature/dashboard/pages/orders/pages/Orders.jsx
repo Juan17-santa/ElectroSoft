@@ -9,8 +9,10 @@ import CancellationModal from "../../../components/ui/CancellationModal";
 import ConfirmSaleModal from "../components/ConfirmSaleModal";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { useOrdersReport } from "../hooks/useOrdersReport";
+import { usePermissions } from "../../../../../hooks/usePermissions";
 
 export default function Orders() {
+    const { hasPermission } = usePermissions();
 
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
@@ -141,6 +143,7 @@ export default function Orders() {
                     onReportClick={() => setShowReportModal(true)}
                     onCreateClick={() => navigate("/dashboard/orders/create")}
                     createButtonText="Crear pedido"
+                    showCreateButton={hasPermission("Pedidos", "Crear")}
                 />
 
                 {/* TABLA */}

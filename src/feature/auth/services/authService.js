@@ -10,7 +10,22 @@ const EMAILJS_TEMPLATE_ID = "template_a23pxva";
 const EMAILJS_PUBLIC_KEY  = "WXWGLAjiTmbUXWdlK";
 
 export function login(email, password) {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+    let users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+
+    // Si el local storage está vacío, creamos el admin global por defecto
+    if (users.length === 0) {
+        const defaultAdmin = {
+            id: 1,
+            nombre: "Administrador Global",
+            email: "admin@gmail.com",
+            password: "admin", // Contraseña por defecto
+            rol: "Administrador",
+            estado: true
+        };
+        users.push(defaultAdmin);
+        localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+
     const user  = users.find((u) => u.email === email);
 
     if (!user || user.password !== password) return { ok: false, message: "Correo o contraseña incorrecto" };

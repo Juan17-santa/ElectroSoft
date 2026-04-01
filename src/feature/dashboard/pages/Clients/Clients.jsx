@@ -8,10 +8,13 @@ import Alert from "../../components/ui/Alert";
 import AssignQuotaModal from "./components/AssignQuotaModal";
 import { Eye, Pencil, Trash, CreditCard } from "lucide-react";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
+import { usePermissions } from "../../../../hooks/usePermissions";
+import { Restricted } from "../../components/ui/Restricted";
 
 const ITEMS_PER_PAGE = 6;
 
 export default function Clients() {
+    const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     const [clients, setClients] = useState([]);
     const [search, setSearch] = useState("");
@@ -134,6 +137,7 @@ export default function Clients() {
                     placeholder="Buscar por nombre, documento..."
                     onCreateClick={() => navigate("/dashboard/clients/create")}
                     createButtonText="Crear cliente"
+                    showCreateButton={hasPermission("Clientes", "Crear")}
                     showReportButton={true}
                     onReportClick={handleGenerarReporte}
                 />
@@ -151,7 +155,7 @@ export default function Clients() {
                                     <th className="px-3 py-2 font-semibold w-32">Email</th>
                                     <th className="px-3 py-2 font-semibold w-20">Teléfono</th>
                                     <th className="px-3 py-2 font-semibold w-24">Compras Anual</th>
-                                    <th className="px-3 py-2 font-semibold text-center w-24">Acciones</th>
+                                    <th className="px-3 py-2 font-semibold text-center w-36">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white text-gray-700 text-sm">
@@ -173,38 +177,52 @@ export default function Clients() {
                                             <td className="px-3 py-2 w-32 truncate">{client.email}</td>
                                             <td className="px-3 py-2 w-20">{client.telefono}</td>
                                             <td className="px-3 py-2 w-24">${client.totalCompras?.toLocaleString("es-CO")}</td>
-                                            <td className="px-3 py-2 w-24">
-                                                <div className="flex justify-end gap-1.5">
-                                                    {client.totalCompras > 1000000 && (
-                                                        <button
-                                                            className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition duration-300 cursor-pointer"
-                                                            onClick={() => handleAsignarCupo(client)}
-                                                            title="Asignar cupo"
-                                                        >
-                                                            <CreditCard size={18} className="text-green-600" />
-                                                        </button>
+                                            <td className="px-3 py-2 w-36">
+                                                <div className="flex justify-center flex-nowrap gap-1.5 h-[36px]">
+                                                    {hasPermission("Clientes", "Editar") && (
+                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                            {client.totalCompras > 1000000 && (
+                                                                <button
+                                                                    className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition duration-300 cursor-pointer"
+                                                                    onClick={() => handleAsignarCupo(client)}
+                                                                    title="Asignar cupo"
+                                                                >
+                                                                    <CreditCard size={18} className="text-green-600" />
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     )}
-                                                    <button
-                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
-                                                        onClick={() => handleViewDetails(client)}
-                                                        title="Ver detalles"
-                                                    >
-                                                        <Eye size={18} className="text-blue-600" />
-                                                    </button>
-                                                    <button
-                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                        onClick={() => handleEditNavigation(client)}
-                                                        title="Editar cliente"
-                                                    >
-                                                        <Pencil size={18} className="text-yellow-600" />
-                                                    </button>
-                                                    <button
-                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                        onClick={() => handleDelete(client)}
-                                                        title="Eliminar cliente"
-                                                    >
-                                                        <Trash size={18} className="text-red-600" />
-                                                    </button>
+                                                    <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                        <button
+                                                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
+                                                            onClick={() => handleViewDetails(client)}
+                                                            title="Ver detalles"
+                                                        >
+                                                            <Eye size={18} className="text-blue-600" />
+                                                        </button>
+                                                    </div>
+                                                    <Restricted scope="Clientes" action="Editar">
+                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                            <button
+                                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                                onClick={() => handleEditNavigation(client)}
+                                                                title="Editar cliente"
+                                                            >
+                                                                <Pencil size={18} className="text-yellow-600" />
+                                                            </button>
+                                                        </div>
+                                                    </Restricted>
+                                                    <Restricted scope="Clientes" action="Eliminar">
+                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                            <button
+                                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                                onClick={() => handleDelete(client)}
+                                                                title="Eliminar cliente"
+                                                            >
+                                                                <Trash size={18} className="text-red-600" />
+                                                            </button>
+                                                        </div>
+                                                    </Restricted>
                                                 </div>
                                             </td>
                                         </tr>

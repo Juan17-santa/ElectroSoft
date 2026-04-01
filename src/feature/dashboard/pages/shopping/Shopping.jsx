@@ -8,6 +8,8 @@ import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import CancellationModal from "../../components/ui/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
+import { usePermissions } from "../../../../hooks/usePermissions";
+import { Restricted } from "../../components/ui/Restricted";
 import { useShoppingReport } from "../shopping/hooks/useShoppingReport";
 
 const ITEMS_PER_PAGE = 11;
@@ -77,6 +79,7 @@ function BanButton({ puedeAnularse, onClick }) {
 }
 
 export default function Shopping() {
+    const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion } = useShopping();
     const [currentPage,     setCurrentPage]     = useState(1);
@@ -121,6 +124,7 @@ export default function Shopping() {
                     placeholder="Buscar por proveedor, número de factura, fecha o estado..."
                     onCreateClick={() => navigate("/dashboard/shopping/create")}
                     createButtonText="Nueva Compra"
+                    showCreateButton={hasPermission("Compras", "Crear")}
                     showReportButton={true}
                     onReportClick={handleGenerarReporte}
                 />
@@ -181,10 +185,12 @@ export default function Shopping() {
                                                         {compra.estado === "Anulada" ? (
                                                             <CancellationInfoTooltip cancelInfo={compra.infoAnulacion} />
                                                         ) : (
-                                                            <BanButton
-                                                                puedeAnularse={validacion.puedeAnularse}
-                                                                onClick={() => setCancelModalData(compra)}
-                                                            />
+                                                            <Restricted scope="Compras" action="Eliminar">
+                                                                <BanButton
+                                                                    puedeAnularse={validacion.puedeAnularse}
+                                                                    onClick={() => setCancelModalData(compra)}
+                                                                />
+                                                            </Restricted>
                                                         )}
                                                     </div>
                                                 </td>

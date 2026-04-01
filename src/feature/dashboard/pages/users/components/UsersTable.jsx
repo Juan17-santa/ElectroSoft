@@ -1,4 +1,5 @@
 import { Trash, Pencil, Eye } from "lucide-react";
+import { Restricted } from "../../../components/ui/Restricted";
 
 export default function UsersTable({
     data,
@@ -95,35 +96,41 @@ export default function UsersTable({
                                             </button>
 
                                             {/* BOTON EDITAR */}
-                                            <button
-                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                onClick={() => onEdit(user)}
-                                            >
-                                                <Pencil size={18} className="text-yellow-600" />
-                                            </button>
+                                            <Restricted scope="Usuarios" action="Editar">
+                                                <button
+                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                    onClick={() => onEdit(user)}
+                                                >
+                                                    <Pencil size={18} className="text-yellow-600" />
+                                                </button>
+                                            </Restricted>
 
                                             {/* TOGGLE ESTADO */}
-                                            <div className="flex justify-center items-center gap-2">
-                                                <div
-                                                    onClick={() => onToggleEstado(user.id)}
-                                                    className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
-                                                        ${user.estado ? "bg-green-500" : "bg-red-500"}`}
-                                                >
+                                            <Restricted scope="Usuarios" action="Editar">
+                                                <div className="flex justify-center items-center gap-2">
                                                     <div
-                                                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
-                                                            ${user.estado ? "translate-x-4" : "translate-x-0"}`}
+                                                        onClick={() => onToggleEstado(user.id)}
+                                                        className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
+                                                            ${user.estado ? "bg-green-500" : "bg-red-500"}`}
                                                     >
+                                                        <div
+                                                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                                                                ${user.estado ? "translate-x-4" : "translate-x-0"}`}
+                                                        >
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </Restricted>
 
                                             {/* BOTON ELIMINAR */}
-                                            <button
-                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                onClick={() => onDelete(user.id)}
-                                            >
-                                                <Trash size={18} className="text-red-600" />
-                                            </button>
+                                            <Restricted scope="Usuarios" action="Eliminar">
+                                                <button
+                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                    onClick={() => onDelete(user.id)}
+                                                >
+                                                    <Trash size={18} className="text-red-600" />
+                                                </button>
+                                            </Restricted>
 
                                         </div>
                                     </td>

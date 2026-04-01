@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/alert";
+import Alert from "../../../components/ui/Alert";
 import ProvidersTable from "../components/ProvidersTable";
 import useProvidersTable from "../hooks/useProvidersTable";
 import SearchBar from "../../../components/ui/Searchbar";
+import { usePermissions } from "../../../../../hooks/usePermissions";
 
 // COMPONENTE PRINCIPAL PARA LA GESTIÓN DE PROVEEDORES
 export default function Providers() {
+    const { hasPermission } = usePermissions();
 
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
@@ -75,6 +77,7 @@ export default function Providers() {
                     placeholder="Buscar proveedores..."
                     onCreateClick={() => navigate("/dashboard/providers/create")}
                     createButtonText="Crear proveedor"
+                    showCreateButton={hasPermission("Proveedores", "Crear")}
                 />
 
                 {/* TABLA */}

@@ -8,10 +8,11 @@ import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 import Searchbar from "../../../components/ui/Searchbar";
 import useProductTable from "../hooks/useProductTable";
-
-
+import { usePermissions } from "../../../../../hooks/usePermissions";
+import { Restricted } from "../../../components/ui/Restricted";
 
 export default function Products() {
+    const { hasPermission } = usePermissions();
 
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
@@ -153,6 +154,7 @@ export default function Products() {
                     placeholder="Buscar por nombre, categoría, precio o stock..."
                     onCreateClick={() => navigate("/dashboard/products/create")}
                     createButtonText="Crear producto"
+                    showCreateButton={hasPermission("Productos", "Crear")}
                     showReportButton={true}
                     onReportClick={handleGenerateReport}
                 />
@@ -225,32 +227,36 @@ export default function Products() {
                                                     </button>
 
                                                     {/* EDITAR */}
-                                                    <button
-                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 cursor-pointer transition"
-                                                        onClick={() => handleEditNavigation(product)}
-                                                    >
-                                                        <Pencil size={18} className="text-yellow-600" />
-                                                    </button>
+                                                    <Restricted scope="Productos" action="Editar">
+                                                        <button
+                                                            className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 cursor-pointer transition"
+                                                            onClick={() => handleEditNavigation(product)}
+                                                        >
+                                                            <Pencil size={18} className="text-yellow-600" />
+                                                        </button>
 
                                                     {/* TOGGLE */}
-                                                    <div
-                                                        onClick={() => handleToggleEstado(product.id)}
-                                                        className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${product.estado ? "bg-green-500" : "bg-red-500"
-                                                            }`}
-                                                    >
                                                         <div
-                                                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
-                                ${product.estado ? "translate-x-4" : "translate-x-0"}`}
-                                                        />
-                                                    </div>
+                                                            onClick={() => handleToggleEstado(product.id)}
+                                                            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${product.estado ? "bg-green-500" : "bg-red-500"
+                                                                }`}
+                                                        >
+                                                            <div
+                                                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                                    ${product.estado ? "translate-x-4" : "translate-x-0"}`}
+                                                            />
+                                                        </div>
+                                                    </Restricted>
 
                                                     {/* ELIMINAR */}
-                                                    <button
-                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 cursor-pointer transition"
-                                                        onClick={() => handleDelete(product.id)}
-                                                    >
-                                                        <Trash size={18} className="text-red-600" />
-                                                    </button>
+                                                    <Restricted scope="Productos" action="Eliminar">
+                                                        <button
+                                                            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 cursor-pointer transition"
+                                                            onClick={() => handleDelete(product.id)}
+                                                        >
+                                                            <Trash size={18} className="text-red-600" />
+                                                        </button>
+                                                    </Restricted>
 
                                                 </div>
                                             </td>
