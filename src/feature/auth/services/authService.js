@@ -18,7 +18,7 @@ export function login(email, password) {
             id: 1,
             nombre: "Administrador Global",
             email: "admin@gmail.com",
-            password: "admin", // Contraseña por defecto
+            password: "123456", // Contraseña por defecto
             rol: "Administrador",
             estado: true
         };

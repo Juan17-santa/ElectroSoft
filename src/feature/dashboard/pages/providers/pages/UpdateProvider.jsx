@@ -56,7 +56,7 @@ export default function UpdateProvider() {
         onSuccess: () => {
             setAlert({
                 type: "success",
-                message: "Proveedor actualizado exitosamente"
+                message: "Proveedor actualizado con éxito."
             });
             setTimeout(() => {
                 navigate("/dashboard/providers");

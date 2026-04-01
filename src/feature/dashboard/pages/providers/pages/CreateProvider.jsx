@@ -28,7 +28,7 @@ export default function CreateProvider() {
         onSuccess: () => {
             setAlert({
                 type: "success",
-                message: "Proveedor creado correctamente"
+                message: "Proveedor registrado con éxito."
             });
             setTimeout(() => {
                 navigate("/dashboard/providers");

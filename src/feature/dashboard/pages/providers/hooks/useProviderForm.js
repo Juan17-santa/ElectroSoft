@@ -87,7 +87,19 @@ export function useProviderForm({
             [name]: value
         }));
 
-        const error = validateField(name, value);
+        let error = validateField(name, value);
+
+        if (name === "documento" && !error) {
+
+            const exists = ServicesProviders.existsByDocumento(
+                value,
+                formData.id
+            );
+
+            if (exists) {
+                error = "Este documento ya se encuentra registrado";
+            }
+        }
 
         setErrors(prev => ({
             ...prev,

@@ -107,7 +107,7 @@ export default function ProductCategory() {
                         loadCategories();
                         showAlert(
                             "success",
-                            `Categoría ${selectedCategory ? "actualizada" : "creada"} con éxito`
+                            `Categoría ${selectedCategory ? "actualizada" : "registrada"} con éxito`
                         );
                     }}
                 />
