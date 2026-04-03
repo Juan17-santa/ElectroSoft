@@ -39,7 +39,7 @@ export default function CreateOrder() {
         onSuccess: () => {
             setAlert({
                 type: "success",
-                message: "Pedido creado correctamente"
+                message: "Pedido registrado con éxito."
             });
             setTimeout(() => {
                 navigate("/dashboard/orders");

@@ -64,7 +64,19 @@ export default function useProductCategoryModal({
         setFormData(prev => ({ ...prev, [name]: value }));
 
         // VALIDAR EL CAMPO EN TIEMPO REAL
-        const error = validateField(name, value);
+        let error = validateField(name, value);
+
+        if (name === "nombre" && !error) {
+
+            const exists = ServiceProductCategory.existsByNombre(
+                value,
+                formData.id
+            );
+
+            if (exists) {
+                error = "Esta categoría ya se encuentra registrada";
+            }
+        }
         setErrors(prev => ({ ...prev, [name]: error }));
     };
 

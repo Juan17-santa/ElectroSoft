@@ -9,6 +9,15 @@ export const ServicesProviders = {
         return providers.sort((a, b) => b.id - a.id);
     },
 
+    // VALIDACION PARA NO CREAR PROVEEDOR CON DOCUMENTO EXISTENTE
+    existsByDocumento(documento, idActual = null) {
+        const providers = this.get();
+
+        return providers.some(p =>
+            p.documento === documento && p.id !== idActual
+        );
+    },
+
     // CREAR UN PROVEEDOR
     create({ tipoDoc, documento, nombreProveedor, nombreContacto, telefonoContacto, categoriasAsociadas }) {
 
