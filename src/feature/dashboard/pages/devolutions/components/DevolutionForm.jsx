@@ -58,6 +58,12 @@ function ring(estado) {
     return estado.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300";
 }
 
+function formatFechaDisplay(fechaISO) {
+    if (!fechaISO || !/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return "—";
+    const [y, m, d] = fechaISO.split("-");
+    return `${d}/${m}/${y}`;
+}
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 /**
@@ -296,7 +302,7 @@ export default function DevolutionForm({
                     <Field icon={CalendarDays} label="Fecha de devolución">
                         <input
                             type="text"
-                            value={form.fecha || "—"}
+                            value={formatFechaDisplay(form.fechaDevolucion)}
                             readOnly
                             className={`${fieldBase("fecha")} cursor-not-allowed opacity-75`}
                         />

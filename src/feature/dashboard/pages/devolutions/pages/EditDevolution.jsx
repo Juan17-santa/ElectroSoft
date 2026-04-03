@@ -124,13 +124,13 @@ function validarObservaciones(val) {
     return { valido: true, mensaje: "" };
 }
 
-function validarFecha(fechaISO, idVenta, ventasList) {
-    if (!fechaISO) return { valido: false, mensaje: "Selecciona la fecha de devolución." };
+function validarFecha(fechaDevolucion, idVenta, ventasList) {
+    if (!fechaDevolucion) return { valido: false, mensaje: "Selecciona la fecha de devolución." };
     const hoy = new Date().toISOString().split("T")[0];
-    if (fechaISO > hoy)
+    if (fechaDevolucion > hoy)
         return { valido: false, mensaje: "La fecha no puede ser futura." };
     const venta = ventasList.find((v) => String(v.id) === String(idVenta));
-    if (venta?.fecha && fechaISO < venta.fecha)
+    if (venta?.fecha && fechaDevolucion < venta.fecha)
         return { valido: false, mensaje: "La fecha no puede ser anterior a la fecha de la venta." };
     return { valido: true, mensaje: "" };
 }
@@ -154,7 +154,7 @@ export default function EditDevolution() {
 
         const found = ServicesDevolutions.getById(id);
         if (found) {
-            setForm({ ...found, fechaISO: found.fechaISO ?? "" });
+            setForm({ ...found, fechaDevolucion: found.fechaDevolucion ?? "" });
             // Cargar productos de la venta para el campo read-only del formulario
             const venta = ventas.find((v) => String(v.id) === String(found.idVenta));
             setProductosList(venta?.productos ?? []);

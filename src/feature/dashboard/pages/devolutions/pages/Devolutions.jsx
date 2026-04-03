@@ -13,6 +13,12 @@ import { Restricted } from "../../../components/ui/Restricted";
 const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 
+function formatFechaDisplay(fechaISO) {
+    if (!fechaISO || !/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return fechaISO || "—";
+    const [y, m, d] = fechaISO.split("-");
+    return `${d}/${m}/${y}`;
+}
+
 export default function Devolutions() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -61,7 +67,7 @@ export default function Devolutions() {
 
     const getFechaInicio = (g) =>
         g.reduce((min, d) => {
-            const f = d.fechaISO ?? d.fecha ?? "";
+            const f = d.fechaDevolucion ?? "";
             return (!min || f < min) ? f : min;
         }, null) ?? "—";
 
@@ -153,7 +159,7 @@ export default function Devolutions() {
                                         const producto   = reciente?.producto         ?? "—";
                                         const colorEstado = getEstadoColor(estado);
                                         const textColor   = colorEstado.split(" ").find((c) => c.startsWith("text-")) ?? "text-gray-500";
-                                        const fechaInicio = getFechaInicio(grupo);
+                                        const fechaInicio = formatFechaDisplay(getFechaInicio(grupo));
                                         const fechaEstado = getFechaEstado(grupo);
                                         const bloqueado   = editBloqueado(grupo);
                                         const anulado     = grupo.every((d) => d.estadoResolucion === "Anulada");

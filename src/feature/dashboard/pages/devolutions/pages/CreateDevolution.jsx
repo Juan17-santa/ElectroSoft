@@ -14,9 +14,6 @@ import {
 // ─── Estado vacío del formulario ──────────────────────────────────────────────
 const EMPTY_FORM = (() => {
     const hoy   = new Date().toISOString().split("T")[0];
-    // Fecha formateada DD/MM/YYYY para mostrar
-    const [a, m, d] = hoy.split("-");
-    const fechaFormateada = `${d}/${m}/${a}`;
     return {
         idVenta:            "",
         motivo:             "",
@@ -29,8 +26,7 @@ const EMPTY_FORM = (() => {
         garantiaProveedor:  null,
         descripcion:        "",
         observaciones:      "",
-        fechaISO:           hoy,
-        fecha:              fechaFormateada,
+        fechaDevolucion:    hoy,
         estadoResolucion:   "CREADA",
     };
 })();
@@ -111,12 +107,12 @@ function validarObservaciones(val) {
     if (!val || !val.trim()) return { valido: false, mensaje: "Las observaciones son obligatorias." };
     return { valido: true, mensaje: "" };
 }
-function validarFecha(fechaISO, idVenta, ventasList) {
-    if (!fechaISO) return { valido: false, mensaje: "Selecciona la fecha de devolución." };
+function validarFecha(fechaDevolucion, idVenta, ventasList) {
+    if (!fechaDevolucion) return { valido: false, mensaje: "Selecciona la fecha de devolución." };
     const hoy = new Date().toISOString().split("T")[0];
-    if (fechaISO > hoy) return { valido: false, mensaje: "La fecha no puede ser futura." };
+    if (fechaDevolucion > hoy) return { valido: false, mensaje: "La fecha no puede ser futura." };
     const venta = ventasList.find((v) => String(v.id) === String(idVenta));
-    if (venta?.fecha && fechaISO < venta.fecha) return { valido: false, mensaje: "La fecha no puede ser anterior a la fecha de la venta." };
+    if (venta?.fecha && fechaDevolucion < venta.fecha) return { valido: false, mensaje: "La fecha no puede ser anterior a la fecha de la venta." };
     return { valido: true, mensaje: "" };
 }
 
