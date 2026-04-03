@@ -1,10 +1,45 @@
 const KEY = "devolutions";
 
+function normalizeDevolution(devolution) {
+    const {
+        fecha,
+        fechaISO,
+        ...rest
+    } = devolution;
+    const fechaDevolucion =
+        rest.fechaDevolucion ??
+        fechaISO ??
+        "";
+
+    return {
+        ...rest,
+        fechaDevolucion,
+        fechaEstado: rest.fechaEstado ?? fechaDevolucion,
+    };
+}
+
 export const ServicesDevolutions = {
 
     get() {
         const data = localStorage.getItem(KEY);
-        return data ? JSON.parse(data) : [];
+        const parsed = data ? JSON.parse(data) : [];
+        const normalized = parsed.map(normalizeDevolution);
+
+        const changed = normalized.some((item, index) => {
+            const original = parsed[index] || {};
+            return (
+                item.fechaDevolucion !== original.fechaDevolucion ||
+                item.fechaEstado !== original.fechaEstado ||
+                "fecha" in original ||
+                "fechaISO" in original
+            );
+        });
+
+        if (changed) {
+            localStorage.setItem(KEY, JSON.stringify(normalized));
+        }
+
+        return normalized;
     },
 
     getById(id) {
@@ -64,16 +99,16 @@ export const ServicesDevolutions = {
             garantiaProveedor:  devolution.garantiaProveedor  ?? false,
             descripcion:        devolution.descripcion        ?? "",
             observaciones:      devolution.observaciones      ?? "",
-            fecha:              devolution.fecha              ?? "",
-            fechaISO:           devolution.fechaISO           ?? hoy,
+            fechaDevolucion:    devolution.fechaDevolucion    ?? devolution.fechaISO ?? hoy,
             fechaEstado:        hoy,
             estadoResolucion:   estadoInicial,
             creadoEn:           ahora,
             actualizadoEn:      ahora,
             historialEstados:   [{ estado: estadoInicial, fecha: ahora }],
         };
-        localStorage.setItem(KEY, JSON.stringify([...all, nueva]));
-        return nueva;
+        const normalized = normalizeDevolution(nueva);
+        localStorage.setItem(KEY, JSON.stringify([...all, normalized]));
+        return normalized;
     },
 
     update(devolucionActualizada) {
@@ -95,16 +130,16 @@ export const ServicesDevolutions = {
                 ];
             }
 
-            return {
+            return normalizeDevolution({
                 ...d,
                 ...devolucionActualizada,
                 historialEstados,
                 fechaEstado:   hoy,
                 actualizadoEn: ahora,
-            };
+            });
         });
         localStorage.setItem(KEY, JSON.stringify(updated));
-        return devolucionActualizada;
+        return normalizeDevolution(devolucionActualizada);
     },
 
     delete(id) {

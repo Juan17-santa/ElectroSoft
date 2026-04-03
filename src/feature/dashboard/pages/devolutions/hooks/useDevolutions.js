@@ -23,7 +23,7 @@ export function useDevolutions() {
             String(d.producto        ?? "").toLowerCase().includes(term) ||
             String(d.responsable     ?? "").toLowerCase().includes(term) ||
             String(d.estadoResolucion ?? "").toLowerCase().includes(term) ||
-            String(d.fecha           ?? "").toLowerCase().includes(term)
+            String(d.fechaDevolucion ?? "").toLowerCase().includes(term)
         );
     });
 

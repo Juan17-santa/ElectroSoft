@@ -15,7 +15,13 @@ function calcularMonto(devolucion, venta) {
 }
 
 function getFechaRegistro(devolucion) {
-    return devolucion.fechaISO ?? devolucion.fechaEstado ?? devolucion.creadoEn ?? "";
+    return devolucion.fechaDevolucion ?? devolucion.fechaEstado ?? devolucion.creadoEn ?? "";
+}
+
+function formatFechaDisplay(fechaISO) {
+    if (!fechaISO || !/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return fechaISO || "-";
+    const [y, m, d] = fechaISO.split("-");
+    return `${d}/${m}/${y}`;
 }
 
 export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
@@ -29,7 +35,7 @@ export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
         })();
 
         const filtradas = devolucionesFiltradas.filter((devolucion) => {
-            const fecha = devolucion.fechaISO ?? devolucion.fechaEstado ?? "";
+            const fecha = devolucion.fechaDevolucion ?? devolucion.fechaEstado ?? "";
             return fecha >= fechaInicio && fecha <= fechaFin;
         });
 
@@ -91,7 +97,7 @@ export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
                         "DEVOLUCION",
                         "",
                         devolucion.producto || "-",
-                        devolucion.fechaISO || devolucion.fecha || "-",
+                        formatFechaDisplay(devolucion.fechaDevolucion),
                         String(devolucion.cantidad ?? "-"),
                         fmt(calcularMonto(devolucion, venta)),
                         devolucion.motivo || "-",
