@@ -59,7 +59,7 @@ export default function useProvidersTable({
                 setProviders(updated);
                 setConfirmData(null);
 
-                showAlert("success", "Proveedor eliminado con éxito");
+                showAlert("success", "El proveedor ha sido eliminado con éxito");
             },
             onCancel: () => setConfirmData(null),
         });

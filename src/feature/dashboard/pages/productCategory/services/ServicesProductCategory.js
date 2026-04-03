@@ -1,5 +1,6 @@
 const KEY = "productCategory";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
+import { ServicesProviders } from "../../providers/services/ServicesProviders";
 
 export const ServiceProductCategory = {
     get() {
@@ -19,6 +20,16 @@ export const ServiceProductCategory = {
         const providers = ServicesProviders.get() || [];
         return providers.some(prov =>
             prov.categoriasAsociadas?.some(catId => Number(catId) === Number(categoriaId))
+        );
+    },
+
+    // VALIDACION PARA NO CREAR/ACTUALIZAR CATEGORIA CON NOMBRE EXISTENTE
+    existsByNombre(nombre, idActual = null) {
+        const categorias = this.get();
+
+        return categorias.some(c =>
+            c.nombre.toLowerCase().trim() === nombre.toLowerCase().trim() &&
+            c.id !== idActual
         );
     },
 

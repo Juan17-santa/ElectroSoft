@@ -70,7 +70,7 @@ export function useOrdersReport(data, setAlert) {
 
         setAlert({
             type: "success",
-            message: "Reporte generado correctamente"
+            message: "Reporte de pedidos descargado con éxito."
         });
     };
 

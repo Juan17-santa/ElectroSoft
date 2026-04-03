@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/alert";
+import Alert from "../../../components/ui/Alert";
 import Pagination from "../../../components/ui/Pagination";
 import SearchBar from "../../../components/ui/Searchbar";
 import ProductCategoryTable from "../components/ProductCategoryTable";
 import useProductCategoryTable from "../hooks/UseProductCategoryTable";
 import ProductCategoryModal from "../components/ProductCategoryModal";
+import { usePermissions } from "../../../../../hooks/usePermissions";
 
 // COMPONENTE PRINCIPAL PARA LA GESTION DE CATEGORIAS DE PRODUCTOS
 export default function ProductCategory() {
+    const { hasPermission } = usePermissions();
 
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
@@ -75,6 +77,7 @@ export default function ProductCategory() {
                     placeholder="Buscar categorias de productos..."
                     onCreateClick={handleOpenCreate}
                     createButtonText="Crear categoria"
+                    showCreateButton={hasPermission("Categoria de productos", "Crear")}
                 />
 
                 {/* TABLA */}
@@ -104,7 +107,7 @@ export default function ProductCategory() {
                         loadCategories();
                         showAlert(
                             "success",
-                            `Categoría ${selectedCategory ? "actualizada" : "creada"} con éxito`
+                            `Categoría ${selectedCategory ? "actualizada" : "registrada"} con éxito`
                         );
                     }}
                 />

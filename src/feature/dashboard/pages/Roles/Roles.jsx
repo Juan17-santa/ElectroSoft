@@ -7,10 +7,13 @@ import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
+import { usePermissions } from "../../../../hooks/usePermissions";
+import { Restricted } from "../../components/ui/Restricted";
 
 const ITEMS_PER_PAGE = 6;
 
 export default function Roles() {
+    const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     const [roles, setRoles] = useState([]);
     const [search, setSearch] = useState("");
@@ -113,6 +116,7 @@ export default function Roles() {
                     placeholder="Buscar rol..."
                     onCreateClick={() => navigate("/dashboard/roles/create")}
                     createButtonText="Nuevo Rol"
+                    showCreateButton={hasPermission("Roles", "Crear")}
                     showReportButton={true}
                 />
 
@@ -170,20 +174,24 @@ export default function Roles() {
                                                     >
                                                         <Eye size={18} className="text-blue-600" />
                                                     </button>
-                                                    <button
-                                                        onClick={() => handleEditNavigation(role)}
-                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                        title="Editar"
-                                                    >
-                                                        <Pencil size={18} className="text-yellow-600" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(role)}
-                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                        title="Eliminar"
-                                                    >
-                                                        <Trash size={18} className="text-red-500" />
-                                                    </button>
+                                                    <Restricted scope="Roles" action="Editar">
+                                                        <button
+                                                            onClick={() => handleEditNavigation(role)}
+                                                            className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                            title="Editar"
+                                                        >
+                                                            <Pencil size={18} className="text-yellow-600" />
+                                                        </button>
+                                                    </Restricted>
+                                                    <Restricted scope="Roles" action="Eliminar">
+                                                        <button
+                                                            onClick={() => handleDelete(role)}
+                                                            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                            title="Eliminar"
+                                                        >
+                                                            <Trash size={18} className="text-red-500" />
+                                                        </button>
+                                                    </Restricted>
                                                 </div>
                                             </td>
                                         </tr>

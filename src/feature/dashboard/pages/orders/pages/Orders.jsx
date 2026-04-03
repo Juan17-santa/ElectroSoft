@@ -9,8 +9,10 @@ import CancellationModal from "../../../components/ui/CancellationModal";
 import ConfirmSaleModal from "../components/ConfirmSaleModal";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { useOrdersReport } from "../hooks/useOrdersReport";
+import { usePermissions } from "../../../../../hooks/usePermissions";
 
 export default function Orders() {
+    const { hasPermission } = usePermissions();
 
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
@@ -65,13 +67,13 @@ export default function Orders() {
             // MOSTRAR ALERTA DE EXITO
             setAlert({
                 type: "success",
-                message: "Venta procesada con éxito. Redirigiendo a facturación..."
+                message: "Venta procesada con éxito. Redirigiendo a ventas..."
             });
             
             // REDIRIGIR TRAS 2 SEGUNDOS PARA VER LA ALERTA
             setTimeout(() => {
                 navigate("/dashboard/sales-management");
-            }, 2000);
+            }, 3000);
             
         } catch (error) {
             setAlert({
@@ -97,17 +99,17 @@ export default function Orders() {
             // MOSTRAR ALERTA DE EXITO
             setAlert({
                 type: "success",
-                message: "El pedido fue anulado y los productos regresaron al stock."
+                message: "Pedido anulado con éxito."
             });
 
             // REDIRIGIR TRAS 2 SEGUNDOS PARA VER LA ALERTA
             setTimeout(() => {
                 setAlert(null);
-            }, 2000);
+            }, 3000);
         } catch (error) {
             setAlert({
                 type: "error",
-                message: "No se pudo anular el pedido correctamente.."
+                message: "No se pudo anular el pedido correctamente."
             });
         }
     };
@@ -141,6 +143,7 @@ export default function Orders() {
                     onReportClick={() => setShowReportModal(true)}
                     onCreateClick={() => navigate("/dashboard/orders/create")}
                     createButtonText="Crear pedido"
+                    showCreateButton={hasPermission("Pedidos", "Crear")}
                 />
 
                 {/* TABLA */}

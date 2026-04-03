@@ -75,6 +75,8 @@ import CreateRoles from "../feature/dashboard/pages/Roles/CreateRoles";
 import UpdateRoles from "../feature/dashboard/pages/Roles/UpdateRoles";
 import RoleDetailsPage from "../feature/dashboard/pages/Roles/RoleDetailsPage";
 
+import { ProtectedRoute } from "./ProtectedRoute";
+
 export default function RoutersApp() {
     return (
         <Routes>
@@ -89,69 +91,69 @@ export default function RoutersApp() {
                 <Route index element={<Dashboard />} />
 
                 {/* CATEGORIA DE PRODUCTOS */}
-                <Route path="productCategory" element={<ProductCategory />} />
+                <Route path="productCategory" element={<ProtectedRoute scope="Categoria de productos" element={<ProductCategory />} />} />
 
                 {/* PRODUCTOS */}
-                <Route path="products" element={<Products />} />
-                <Route path="products/create" element={<CreateProducts />} />
-                <Route path="products/update/:id" element={<EditProducts />} />
-                <Route path="products/details/:id" element={<ProductDetails />} />
+                <Route path="products" element={<ProtectedRoute scope="Productos" element={<Products />} />} />
+                <Route path="products/create" element={<ProtectedRoute scope="Productos" action="Crear" element={<CreateProducts />} />} />
+                <Route path="products/update/:id" element={<ProtectedRoute scope="Productos" action="Editar" element={<EditProducts />} />} />
+                <Route path="products/details/:id" element={<ProtectedRoute scope="Productos" element={<ProductDetails />} />} />
 
                 {/* PROVEEDORES */}
-                <Route path="providers" element={<Providers />} />
-                <Route path="providers/create" element={<CreateProvider />} />
-                <Route path="providers/update" element={<UpdateProvider />} />
-                <Route path="providers/detail" element={<ProviderDetails />} />
+                <Route path="providers" element={<ProtectedRoute scope="Proveedores" element={<Providers />} />} />
+                <Route path="providers/create" element={<ProtectedRoute scope="Proveedores" action="Crear" element={<CreateProvider />} />} />
+                <Route path="providers/update" element={<ProtectedRoute scope="Proveedores" action="Editar" element={<UpdateProvider />} />} />
+                <Route path="providers/detail" element={<ProtectedRoute scope="Proveedores" element={<ProviderDetails />} />} />
 
                 {/* COMPRAS */}
-                <Route path="shopping" element={<Shopping />} />
-                <Route path="shopping/create" element={<CreateShopping />} />
-                <Route path="shopping/details/:id" element={<ShoppingDetails />} />
+                <Route path="shopping" element={<ProtectedRoute scope="Compras" element={<Shopping />} />} />
+                <Route path="shopping/create" element={<ProtectedRoute scope="Compras" action="Crear" element={<CreateShopping />} />} />
+                <Route path="shopping/details/:id" element={<ProtectedRoute scope="Compras" element={<ShoppingDetails />} />} />
 
                 {/* CLIENTES */}
-                <Route path="clients" element={<Clients />} />
-                <Route path="clients/create" element={<CreateClients />} />
-                <Route path="clients/update" element={<UpdateClients />} />
-                <Route path="clients/details" element={<ClientDetailsPage />} />
+                <Route path="clients" element={<ProtectedRoute scope="Clientes" element={<Clients />} />} />
+                <Route path="clients/create" element={<ProtectedRoute scope="Clientes" action="Crear" element={<CreateClients />} />} />
+                <Route path="clients/update" element={<ProtectedRoute scope="Clientes" action="Editar" element={<UpdateClients />} />} />
+                <Route path="clients/details" element={<ProtectedRoute scope="Clientes" element={<ClientDetailsPage />} />} />
 
                 {/* PEDIDOS */}
-                <Route path="orders" element={<Orders />} />
-                <Route path="orders/create" element={<CreateOrder />} />
-                <Route path="orders/detail" element={<OrderDetails />} />
+                <Route path="orders" element={<ProtectedRoute scope="Pedidos" element={<Orders />} />} />
+                <Route path="orders/create" element={<ProtectedRoute scope="Pedidos" action="Crear" element={<CreateOrder />} />} />
+                <Route path="orders/detail" element={<ProtectedRoute scope="Pedidos" element={<OrderDetails />} />} />
 
                 {/* GESTION DE VENTAS */}
-                <Route path="sales-management" element={<SalesManagement />} />
-                <Route path="sales-management/create" element={<CreateSales />} />
-                <Route path="sales-management/update" element={<UpdateSales />} />
-                <Route path="sales-management/credit-details" element={<CreditDetailsModal />} />
-                <Route path="sales-management/return" element={<ReturnSalesPage />} />
-                <Route path="sales-management/details" element={<SaleDetailsPage />} />
+                <Route path="sales-management" element={<ProtectedRoute scope="Ventas" element={<SalesManagement />} />} />
+                <Route path="sales-management/create" element={<ProtectedRoute scope="Ventas" action="Crear" element={<CreateSales />} />} />
+                <Route path="sales-management/update" element={<ProtectedRoute scope="Ventas" action="Editar" element={<UpdateSales />} />} />
+                <Route path="sales-management/credit-details" element={<ProtectedRoute scope="Ventas" element={<CreditDetailsModal />} />} />
+                <Route path="sales-management/return" element={<ProtectedRoute scope="Ventas" element={<ReturnSalesPage />} />} />
+                <Route path="sales-management/details" element={<ProtectedRoute scope="Ventas" element={<SaleDetailsPage />} />} />
 
                 {/* PAGOS Y ABONOS */}
-                <Route path="payments" element={<Payments />} />
-                <Route path="payments/client/:documento" element={<PaymentClientDetail />} />
-                <Route path="payments/detail/:id" element={<PaymentDetail />} />
-                <Route path="payments/create" element={<CreatePayment />} />
-                <Route path="payments/create/:ventaId" element={<CreatePayment />} />
+                <Route path="payments" element={<ProtectedRoute scope="Pagos y abonos" element={<Payments />} />} />
+                <Route path="payments/client/:documento" element={<ProtectedRoute scope="Pagos y abonos" element={<PaymentClientDetail />} />} />
+                <Route path="payments/detail/:id" element={<ProtectedRoute scope="Pagos y abonos" element={<PaymentDetail />} />} />
+                <Route path="payments/create" element={<ProtectedRoute scope="Pagos y abonos" action="Crear" element={<CreatePayment />} />} />
+                <Route path="payments/create/:ventaId" element={<ProtectedRoute scope="Pagos y abonos" action="Crear" element={<CreatePayment />} />} />
 
                 {/* DEVOLUCIONES */}
-                <Route path="devolutions" element={<Devolutions />} />
-                <Route path="devolutions/create" element={<CreateDevolution />} />
-                <Route path="devolutions/edit/:id" element={<EditDevolution />} />
-                <Route path="devolutions/product-details/:id" element={<DevolutionProductDetails />} />
+                <Route path="devolutions" element={<ProtectedRoute scope="Devoluciones" element={<Devolutions />} />} />
+                <Route path="devolutions/create" element={<ProtectedRoute scope="Devoluciones" action="Crear" element={<CreateDevolution />} />} />
+                <Route path="devolutions/edit/:id" element={<ProtectedRoute scope="Devoluciones" action="Editar" element={<EditDevolution />} />} />
+                <Route path="devolutions/product-details/:id" element={<ProtectedRoute scope="Devoluciones" element={<DevolutionProductDetails />} />} />
 
                 {/* Usuarios */}
-                <Route path="users" element={<Users />} />
-                <Route path="users/create" element={<CreateUser />} />
-                <Route path="users/:id" element={<UserDetail />} />
-                <Route path="/dashboard/users/:id/update" element={<UpdateUser />} />
+                <Route path="users" element={<ProtectedRoute scope="Usuarios" element={<Users />} />} />
+                <Route path="users/create" element={<ProtectedRoute scope="Usuarios" action="Crear" element={<CreateUser />} />} />
+                <Route path="users/:id" element={<ProtectedRoute scope="Usuarios" element={<UserDetail />} />} />
+                <Route path="/dashboard/users/:id/update" element={<ProtectedRoute scope="Usuarios" action="Editar" element={<UpdateUser />} />} />
                 <Route path="editprofile" element={<EditProfile />} />
 
                 {/* ROLES */}
-                <Route path="roles" element={<Roles />} />
-                <Route path="roles/create" element={<CreateRoles />} />
-                <Route path="roles/update" element={<UpdateRoles />} />
-                <Route path="roles/details" element={<RoleDetailsPage />} />
+                <Route path="roles" element={<ProtectedRoute scope="Roles" element={<Roles />} />} />
+                <Route path="roles/create" element={<ProtectedRoute scope="Roles" action="Crear" element={<CreateRoles />} />} />
+                <Route path="roles/update" element={<ProtectedRoute scope="Roles" action="Editar" element={<UpdateRoles />} />} />
+                <Route path="roles/details" element={<ProtectedRoute scope="Roles" element={<RoleDetailsPage />} />} />
 
             </Route>
 
