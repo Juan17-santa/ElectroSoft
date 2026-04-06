@@ -9,27 +9,27 @@ import { notFoundMiddleware, errorMiddleware } from "./src/middlewares/errorMidd
 const app = express();
 const port = Number(process.env.PORT || 4000);
 const allowedOrigins = (process.env.CLIENT_ORIGIN || "http://localhost:5173,http://localhost:3000")
-    .split(",")
-    .map((origin) => origin.trim())
-    .filter(Boolean);
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 app.use(
-    cors({
-        origin(origin, callback) {
-            if (!origin || allowedOrigins.includes(origin)) {
-                return callback(null, true);
-            }
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
-            return callback(new Error(`Origen no permitido por CORS: ${origin}`));
-        },
-        credentials: true,
-    }),
+      return callback(new Error(`Origen no permitido por CORS: ${origin}`));
+    },
+    credentials: true,
+  }),
 );
 app.use(express.json({ limit: "2mb" }));
 app.use(morgan("dev"));
 
 app.get("/api/health", (_req, res) => {
-    res.json({ ok: true, service: "electrosoft-backend" });
+  res.json({ ok: true, service: "electrosoft-backend" });
 });
 
 app.use("/api", apiRoutes);
@@ -37,13 +37,13 @@ app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 
 async function bootstrap() {
-    await connectDatabase();
-    app.listen(port, () => {
-        console.log(`ElectroSoft backend listening on http://localhost:${port}`);
-    });
+  await connectDatabase();
+  app.listen(port, () => {
+    console.log(`ElectroSoft backend listening on http://localhost:${port}`);
+  });
 }
 
 bootstrap().catch((error) => {
-    console.error("No fue posible iniciar el backend:", error);
-    process.exit(1);
+  console.error("No fue posible iniciar el backend:", error);
+  process.exit(1);
 });
