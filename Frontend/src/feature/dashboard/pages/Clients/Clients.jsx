@@ -154,7 +154,7 @@ export default function Clients() {
                                     <th className="px-3 py-2 font-semibold w-32">Nombre</th>
                                     <th className="px-3 py-2 font-semibold w-32">Email</th>
                                     <th className="px-3 py-2 font-semibold w-20">Teléfono</th>
-                                    <th className="px-3 py-2 font-semibold w-24">Compras Anual</th>
+                                    <th className="px-3 py-2 font-semibold w-24">Total Compras</th>
                                     <th className="px-3 py-2 font-semibold text-center w-36">Acciones</th>
                                 </tr>
                             </thead>

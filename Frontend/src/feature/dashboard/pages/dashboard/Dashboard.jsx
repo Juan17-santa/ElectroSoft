@@ -58,7 +58,7 @@ function useCountUp(target, ms = 900) {
 }
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
-function KpiCard({ icon: Icon, label, value, delta, color, isMoney = true, delay = 0 }) {
+function KpiCard({ icon: Icon, label, value, delta = 0, color, isMoney = true, delay = 0, showDelta = true }) {
     const animated = useCountUp(value);
     const positive = delta >= 0;
     const displayed = isMoney ? formatFull(animated) : animated.toLocaleString("es-CO");
@@ -79,14 +79,16 @@ function KpiCard({ icon: Icon, label, value, delta, color, isMoney = true, delay
                     <Icon size={20} style={{ color }} strokeWidth={2} />
                 </div>
             </div>
-            <div className="flex items-center gap-2 pl-2">
-                <span className={`flex items-center gap-0.5 text-[11px] font-semibold px-2 py-0.5 rounded-full
-                    ${positive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
-                    {positive ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-                    {Math.abs(delta).toFixed(1)}%
-                </span>
-                <span className="text-[11px] text-gray-400">vs mes anterior</span>
-            </div>
+            {showDelta && (
+                <div className="flex items-center gap-2 pl-2">
+                    <span className={`flex items-center gap-0.5 text-[11px] font-semibold px-2 py-0.5 rounded-full
+            ${positive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
+                        {positive ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                        {Math.abs(delta).toFixed(1)}%
+                    </span>
+                    <span className="text-[11px] text-gray-400">vs mes anterior</span>
+                </div>
+            )}
         </div>
     );
 }
@@ -444,28 +446,36 @@ export default function Dashboard() {
                         </Card>
                     </div>
 
-                    <div className="flex flex-col gap-4"
+                    <div className="grid grid-cols-1 gap-4"
                         style={{ animation: "kpiFadeUp .6s ease both", animationDelay: "540ms" }}>
-                        {[
-                            { icon: Users, color: "#3b82f6", bg: "#eff6ff", val: clientesActivos, label: "Clientes activos", warn: false },
-                            { icon: RotateCcw, color: "#f59e0b", bg: "#fffbeb", val: devMes, label: "Devoluciones este mes", warn: false },
-                            {
-                                icon: Package, color: stockBajo > 0 ? "#ef4444" : "#9ca3af",
-                                bg: stockBajo > 0 ? "#fef2f2" : "#f9fafb",
-                                val: stockBajo, label: "Stock bajo (≤5 uds)", warn: stockBajo > 0
-                            },
-                        ].map(({ icon: Icon, color, bg, val, label, warn }, i) => (
-                            <div key={i} className={`rounded-2xl p-4 shadow-sm border flex flex-col gap-2 flex-1
-                                ${warn ? "border-red-100 bg-red-50" : "border-gray-100 bg-white"}`}>
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: bg }}>
-                                    <Icon size={18} style={{ color }} strokeWidth={2} />
-                                </div>
-                                <p className={`text-2xl font-bold ${warn ? "text-red-600" : "text-gray-800"}`}>
-                                    {val.toLocaleString("es-CO")}
-                                </p>
-                                <p className="text-[11px] text-gray-400 leading-tight">{label}</p>
-                            </div>
-                        ))}
+
+                        <KpiCard
+                            icon={Users}
+                            label="Clientes activos"
+                            value={clientesActivos}
+                            color="#3b82f6"
+                            isMoney={false}
+                            showDelta={false}
+                        />
+
+                        <KpiCard
+                            icon={RotateCcw}
+                            label="Devoluciones este mes"
+                            value={devMes}
+                            color="#f59e0b"
+                            isMoney={false}
+                            showDelta={false}
+                        />
+
+                        <KpiCard
+                            icon={Package}
+                            label="Stock bajo (≤5 uds)"
+                            value={stockBajo}
+                            color={stockBajo > 0 ? "#ef4444" : "#9ca3af"}
+                            isMoney={false}
+                            showDelta={false}
+                        />
+
                     </div>
 
                 </div>
