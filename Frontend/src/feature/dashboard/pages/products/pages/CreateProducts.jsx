@@ -49,6 +49,12 @@ export default function CreateProducts() {
                 navigate("/dashboard/products");
             }, 2000);
         },
+        onError: (message) => {
+            setAlert({
+                type: "error",
+                message
+            });
+        },
         caracteristicas
     });
 

@@ -28,6 +28,7 @@ import { ServicesProducts } from "../services/ServicesProducts";
 // HOOK PERSONALIZADO PARA MANEJAR EL FORMULARIO DE CREACION DE PRODUCTOS
 export default function useProductForm({
     onSuccess,
+    onError,
     caracteristicas = []
 }) {
 
@@ -168,6 +169,23 @@ export default function useProductForm({
         e.preventDefault();
 
         if (!validateForm()) return;
+
+        // VALIDAR QUE NO EXISTA UN PRODUCTO EXACTAMENTE IGUAL
+        const productosExistentes = ServicesProducts.get();
+        const duplicado = productosExistentes.some(prod =>
+            prod.nombre?.toLowerCase().trim() === formData.nombre.toLowerCase().trim() &&
+            Number(prod.categoriaId) === Number(formData.categoriaId) &&
+            Number(prod.precio) === Number(formData.precio) &&
+            Number(prod.stock) === Number(formData.stock) &&
+            prod.tipoStock === formData.tipoStock &&
+            prod.serial?.toLowerCase().trim() === formData.serial.toLowerCase().trim() &&
+            prod.garantia === formData.garantia
+        );
+
+        if (duplicado) {
+            onError("Ya existe un producto con los mismos datos. Verifique los campos e intente de nuevo.");
+            return;
+        }
 
         ServicesProducts.create({
             ...formData,
