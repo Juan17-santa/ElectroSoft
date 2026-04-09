@@ -80,7 +80,9 @@ export default function ProductDetails() {
 
                                 <div>
                                     <p className="text-sm text-yellow-400 mb-1">Stock</p>
-                                    <p className="text-sm font-semibold text-gray-800">{product.stock}</p>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {product.stock} {product.tipoStock === "metros" ? "MTRS" : "UND"}
+                                    </p>
                                 </div>
 
                                 <div>

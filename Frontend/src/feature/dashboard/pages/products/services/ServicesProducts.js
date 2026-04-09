@@ -25,6 +25,7 @@ export const ServicesProducts = {
             categoriaId: producto.categoriaId || "",
             precio: Number(producto.precio) || 0,
             stock: Number(producto.stock) || 0,
+            tipoStock: producto.tipoStock || "unidad",
             serial: producto.serial || "",
             garantia: producto.garantia || "",
             caracteristicas: producto.caracteristicas || [],

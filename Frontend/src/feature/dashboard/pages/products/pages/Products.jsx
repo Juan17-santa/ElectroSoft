@@ -200,7 +200,12 @@ export default function Products() {
                                             </td>
 
                                             <td className="px-4 py-2">
-                                                {product.stock}
+                                                <div className="flex flex-col">
+                                                    <span>{product.stock}</span>
+                                                    <span className="text-xs text-gray-400">
+                                                        {product.tipoStock === "metros" ? "MTRS" : "UND"}
+                                                    </span>
+                                                </div>
                                             </td>
 
                                             <td className="px-4 py-2">
