@@ -40,6 +40,7 @@ export default function useProductEditForm({
         categoriaId: "",
         precio: "",
         stock: "",
+        tipoStock: "",
         serial: "",
         garantia: "",
         ...initialData
@@ -56,6 +57,7 @@ export default function useProductEditForm({
             categoriaId: initialData.categoriaId || "",
             precio: initialData.precio || "",
             stock: initialData.stock || "",
+            tipoStock: initialData.tipoStock || "",
             serial: initialData.serial || "",
             garantia: initialData.garantia || "",
             ...initialData
@@ -121,6 +123,14 @@ export default function useProductEditForm({
                     error = "El serial debe tener mínimo 2 caracteres";
                 } else if (strValue.length > 50) {
                     error = "El serial no puede exceder 50 caracteres";
+                }
+                break;
+
+            case "tipoStock":
+                if (!strValue) {
+                    error = "Debe seleccionar un tipo de stock";
+                } else if (!["unidad", "metros"].includes(strValue)) {
+                    error = "Tipo de stock no válido";
                 }
                 break;
 
@@ -193,6 +203,7 @@ export default function useProductEditForm({
             categoriaId: Number(formData.categoriaId),
             precio: Number(formData.precio),
             stock: Number(formData.stock),
+            tipoStock: formData.tipoStock,
             serial: formData.serial,
             garantia: formData.garantia,
             caracteristicas

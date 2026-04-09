@@ -37,6 +37,7 @@ export default function useProductForm({
         categoriaId: "",
         precio: "",
         stock: "",
+        tipoStock: "",
         serial: "",
         garantia: ""
     });
@@ -106,6 +107,14 @@ export default function useProductForm({
                 }
                 break;
 
+            case "tipoStock":
+                if (!strValue) {
+                    error = "Debe seleccionar un tipo de stock";
+                } else if (!["unidad", "metros"].includes(strValue)) {
+                    error = "Tipo de stock no válido";
+                }
+                break;
+
             case "garantia":
                 if (!strValue) {
                     error = "Debe seleccionar una garantía";
@@ -165,6 +174,7 @@ export default function useProductForm({
             categoriaId: Number(formData.categoriaId),
             precio: Number(formData.precio),
             stock: Number(formData.stock),
+            tipoStock: formData.tipoStock,
             caracteristicas
         });
 

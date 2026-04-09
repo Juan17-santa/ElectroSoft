@@ -1,4 +1,4 @@
-import { Package, Tag, DollarSign, Boxes, Hash, ShieldCheck, X, Trash, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { Package, Tag, DollarSign, Boxes, Hash, ShieldCheck, X, Trash, ChevronLeft, ChevronRight, ChevronDown, Ruler } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ServicesProducts } from "../services/ServicesProducts";
@@ -191,6 +191,30 @@ export default function EditProducts() {
                             error={errors.stock}
                             success={formData.stock}
                             successMessage="Stock valido"
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <label className="flex items-center gap-2 text-yellow-500 font-medium">
+                            <Ruler size={16} /> Tipo de Stock *
+                        </label>
+                        <CustomSelect
+                            value={formData.tipoStock}
+                            onChange={(value) =>
+                                handleChange({
+                                    target: { name: "tipoStock", value }
+                                })
+                            }
+                            options={[
+                                { value: "unidad", label: "Unidad" },
+                                { value: "metros", label: "Metros" },
+                            ]}
+                            placeholder="Seleccione tipo de stock"
+                        />
+                        <ValidationMessage
+                            error={errors.tipoStock}
+                            success={formData.tipoStock}
+                            successMessage="Tipo de stock valido"
                         />
                     </div>
 
