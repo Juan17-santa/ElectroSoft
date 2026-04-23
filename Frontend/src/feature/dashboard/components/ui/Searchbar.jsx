@@ -22,7 +22,7 @@ export default function SearchBar({
     showCreateButton = true,
 }) {
     return (
-        <div className="flex justify-between gap-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             {/* BUSCADOR */}
             <div className="flex items-center gap-3 border border-gray-300 rounded-xl px-4 py-2 flex-1">
                 <Search size={20} className="text-gray-400" />
@@ -49,11 +49,11 @@ export default function SearchBar({
             {/* BOTON CREAR (Opcional) */}
             {showCreateButton && (
                 <div
-                    className="flex items-center bg-linear-to-r from-white to-yellow-300 px-4 py-2 rounded-lg font-medium cursor-pointer gap-2 hover:shadow-lg transition duration-500"
+                    className="w-full md:w-auto flex items-center justify-center bg-linear-to-r from-white to-yellow-300 px-4 py-2 rounded-lg font-medium cursor-pointer gap-2 hover:shadow-lg transition duration-500"
                     onClick={onCreateClick}
                 >
                     <Plus />
-                    <button type="button" className="cursor-pointer whitespace-nowrap">
+                    <button type="button" className="cursor-pointer whitespace-nowrap text-center">
                         {createButtonText}
                     </button>
                 </div>
