@@ -35,7 +35,7 @@ export default function ProductCategoryModal({
             />
 
             {/* CARD */}
-            <div className="fixed inset-0 flex items-center justify-center z-50">
+            <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
                 <div
                     className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 border border-gray-200"
                     onClick={(e) => e.stopPropagation()}
@@ -44,7 +44,7 @@ export default function ProductCategoryModal({
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-lg font-semibold">
-                                {isEdit ? "Editar" : "Crear"} categoría
+                                {isEdit ? "Editar" : "Nueva"} categoría
                             </p>
                             <p className="text-xs text-gray-500">
                                 {isEdit ? "Modifique los campos de la categoría" : "Complete los campos para la nueva categoría"}
@@ -110,7 +110,7 @@ export default function ProductCategoryModal({
                                 type="submit"
                                 disabled={Object.values(errors).some(error => error)}
                             >
-                                {isEdit ? "Actualizar categoría" : "Crear categoría"}
+                                {isEdit ? "Guardar cambios" : "Crear categoría"}
                             </PrimaryButton>
                         </div>
                     </form>
