@@ -9,6 +9,7 @@ import useProductForm from "../hooks/useProductForm";
 import { ServicesCharacteristics } from "../services/ServicesCharacteristics";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
+import PrimaryButton from "../../../components/ui/PrimaryButton";
 
 export default function CreateProducts() {
     const navigate = useNavigate();
@@ -29,10 +30,8 @@ export default function CreateProducts() {
     const itemsPerPage = 3;
     const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-    // ESTADO PARA LA ALERTA DE EXITO O ERROR
     const [alert, setAlert] = useState(null);
 
-    // USAR EL HOOK PERSONALIZADO PARA EL FORMULARIO
     const {
         formData,
         errors,
@@ -61,7 +60,6 @@ export default function CreateProducts() {
     useEffect(() => {
         const data = ServiceProductCategory.get();
         setCategorias(data);
-        // cargar opciones de caracteristicas y medidas
         setCharacteristicOptions(ServicesCharacteristics.getCharacteristics());
         setMeasureOptions(ServicesCharacteristics.getMeasures());
     }, []);
@@ -72,14 +70,11 @@ export default function CreateProducts() {
             ...modalForm,
             [name]: value
         });
-
-        // Validar en tiempo real
         validateCharacteristicField(name, value);
     };
 
     const validateCharacteristicField = (name, value) => {
         let error = "";
-
         if (name === "nombre") {
             if (!value || !value.trim()) {
                 error = "La característica es obligatoria";
@@ -109,7 +104,6 @@ export default function CreateProducts() {
                 error = "";
             }
         }
-
         setCharacteristicErrors(prev => ({
             ...prev,
             [name]: error
@@ -151,11 +145,8 @@ export default function CreateProducts() {
     };
 
     const agregarCaracteristica = () => {
-        // Validar todos los campos
         let hasErrors = false;
         const newErrors = {};
-
-        // Validar nombre
         if (!modalForm.nombre || !modalForm.nombre.trim()) {
             newErrors.nombre = "La característica es obligatoria";
             hasErrors = true;
@@ -172,14 +163,10 @@ export default function CreateProducts() {
             newErrors.nombre = "Esta característica ya existe";
             hasErrors = true;
         }
-
-        // Validar medida (opcional pero debe ser válida si está rellenada)
         if (modalForm.medida && !/^[a-zA-Z0-9\s\-áéíóúÁÉÍÓÚñÑ]+$/.test(modalForm.medida)) {
             newErrors.medida = "Caracteres inválidos en medida";
             hasErrors = true;
         }
-
-        // Validar valor
         if (!modalForm.valor || !modalForm.valor.trim()) {
             newErrors.valor = "El valor es obligatorio";
             hasErrors = true;
@@ -187,15 +174,11 @@ export default function CreateProducts() {
             newErrors.valor = "Caracteres inválidos en valor";
             hasErrors = true;
         }
-
-        // Si hay errores, mostrarlos y no agregar
         if (hasErrors) {
             setCharacteristicErrors(newErrors);
             setAlert({ type: "error", message: "Corrija los errores antes de continuar" });
             return;
         }
-
-        // Agregar la característica a la lista
         const nuevo = {
             id: Date.now(),
             nombre: modalForm.nombre.trim(),
@@ -204,11 +187,8 @@ export default function CreateProducts() {
             visible: true
         };
         setCaracteristicas([...caracteristicas, nuevo]);
-
-        // Limpiar campos y errores
         setModalForm({ nombre: "", medida: "", valor: "" });
         setCharacteristicErrors({});
-
         setTimeout(() => {
             setAlert({
                 type: "success",
@@ -246,18 +226,17 @@ export default function CreateProducts() {
         submitForm(e);
     };
 
-    // Paginación de características
     const totalPages = Math.ceil(caracteristicas.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const displayedCaracteristicas = caracteristicas.slice(startIndex, endIndex);
 
     return (
-        <div className="w-full h-full bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border overflow-y-auto">
+        <div className="w-full h-full bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border overflow-y-auto">
 
             <div className="flex justify-between items-start">
                 <p className="text-xl font-semibold">
-                    Crear nuevo <span className="text-yellow-400">producto</span>
+                    Nuevo producto
                 </p>
 
                 <button
@@ -269,7 +248,7 @@ export default function CreateProducts() {
             </div>
 
             <form onSubmit={handleSubmit}>
-                <div className="grid grid-cols-3 gap-12 mt-6 px-20">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12 mt-6 px-4 md:px-20">
 
                     <div className="flex flex-col gap-3">
                         <label className="flex items-center gap-2 text-yellow-500 font-medium">
@@ -424,10 +403,10 @@ export default function CreateProducts() {
                     </div>
 
                     {/* CAMPOS DE CARACTERÍSTICAS */}
-                    <div className="col-span-3 border-2 border-yellow-300 rounded-xl p-6 bg-linear-to-b from-yellow-50 to-transparent">
+                    <div className="md:col-span-3 border-2 border-yellow-300 rounded-xl p-6 bg-linear-to-b from-yellow-50 to-transparent">
                         <p className="text-sm font-semibold text-yellow-600 mb-4">Agregar Características</p>
 
-                        <div className="grid grid-cols-3 gap-6 mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div className="flex flex-col gap-2">
                                 <label className="flex items-center gap-2 text-yellow-500 font-medium text-sm">
                                     <Package size={16} /> Característica *
@@ -555,8 +534,8 @@ export default function CreateProducts() {
                 </div>
 
                 {/* TABLA DE CARACTERÍSTICAS */}
-                <div className="px-20 mt-6">
-                    <div className="bg-white rounded-xl shadow overflow-hidden">
+                <div className="px-4 md:px-20 mt-6 overflow-x-auto">
+                    <div className="bg-white rounded-xl shadow min-w-150 md:min-w-full">
                         <table className="w-full">
                             <thead className="bg-gray-100 border-b-2 border-yellow-300">
                                 <tr className="text-left">
@@ -568,7 +547,7 @@ export default function CreateProducts() {
                             </thead>
                             <tbody>
                                 {displayedCaracteristicas.map(item => (
-                                    <tr key={item.id} className="border-b hover:bg-gray-50 transition">
+                                    <tr key={item.id} className="border-b border-gray-300 hover:bg-gray-50 transition">
                                         <td className="px-4 py-3 text-gray-700">{item.nombre}</td>
                                         <td className="px-4 py-3 text-gray-700">{item.medida}</td>
                                         <td className="px-4 py-3 text-gray-700">{item.valor}</td>
@@ -626,22 +605,22 @@ export default function CreateProducts() {
                         </div>
                     )}
 
-                    <div className="flex justify-end mt-8 gap-4">
-                        <button
-                            type="button"
-                            onClick={() => navigate("/dashboard/products")}
-                            className="px-6 py-2.5 rounded-lg font-medium transition shadow-md border-2 border-gray-300 hover:bg-gray-200"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={Object.values(errors).some(error => error)}
-                            className="bg-linear-to-r from-white to-yellow-300 px-8 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Registrar
-                        </button>
-                    </div>
+                </div>
+                <div className="flex justify-end mt-8 mb-2 gap-4 px-4 md:px-20">
+                    <button
+                        type="button"
+                        onClick={() => navigate("/dashboard/products")}
+                        className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition duration-300 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
+                    >
+                        <span>✕</span>
+                        Cancelar
+                    </button>
+                    <PrimaryButton
+                        type="submit"
+                        disabled={Object.values(errors).some(error => error)}
+                    >
+                        Crear Producto
+                    </PrimaryButton>
                 </div>
             </form>
 

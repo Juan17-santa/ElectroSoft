@@ -56,7 +56,7 @@ export default function ProductDetails() {
                         <h2 className="text-xl font-semibold">Ver información de producto</h2>
                     </div>
 
-                    <div className="bg-gray-50 rounded-2xl p-6 shadow-md max-w-3xl w-full mx-auto">
+                    <div className="bg-gray-50 rounded-2xl p-4 md:p-6 shadow-md max-w-3xl w-full mx-auto">
 
                         <div className="flex flex-col gap-6">
 
@@ -67,7 +67,7 @@ export default function ProductDetails() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 <div>
                                     <p className="text-sm text-yellow-400 mb-1">Nombre</p>
                                     <p className="text-sm font-semibold text-gray-800">{product.nombre}</p>
@@ -101,10 +101,10 @@ export default function ProductDetails() {
                                 </div>
                             </div>
 
-                            <div>
+                            <div >
                                 <p className="text-sm text-yellow-400 mb-1">Características</p>
                                 {product.caracteristicas && product.caracteristicas.filter(c => c.visible !== false).length > 0 ? (
-                                    <div className="bg-white rounded-lg shadow-sm p-3">
+                                    <div className="bg-white rounded-xl shadow pt-3 overflow-x-auto">
                                         <table className="w-full text-sm">
                                             <thead>
                                                 <tr className="text-left text-gray-500">
@@ -115,7 +115,7 @@ export default function ProductDetails() {
                                             </thead>
                                             <tbody>
                                                 {product.caracteristicas.filter(c => c.visible !== false).map(c => (
-                                                    <tr key={c.id} className="border-t">
+                                                    <tr key={c.id} className="border-t border-gray-300">
                                                         <td className="px-3 py-2">{c.nombre}</td>
                                                         <td className="px-3 py-2">{c.medida}</td>
                                                         <td className="px-3 py-2">{c.valor}</td>

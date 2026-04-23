@@ -9,6 +9,7 @@ import CategorySelect from "../../../components/ui/CategorySelect";
 import useProductEditForm from "../hooks/useProductEditForm";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
+import PrimaryButton from "../../../components/ui/PrimaryButton";
 
 export default function EditProducts() {
 
@@ -22,12 +23,10 @@ export default function EditProducts() {
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const itemsPerPage = 3;
 
-    // ESTADO PARA LA ALERTA DE EXITO O ERROR
     const [alert, setAlert] = useState(null);
 
     const initialProduct = location.state?.productToEdit || ServicesProducts.getById(Number(id));
 
-    // USAR EL HOOK PERSONALIZADO PARA EL FORMULARIO
     const {
         formData,
         errors,
@@ -91,17 +90,16 @@ export default function EditProducts() {
         submitForm(e);
     };
 
-    // Paginación de características
     const totalPages = Math.ceil(caracteristicas.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const displayedCaracteristicas = caracteristicas.slice(startIndex, endIndex);
 
     return (
-        <div className="w-full h-full bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border overflow-y-auto">
+        <div className="w-full h-full bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border overflow-y-auto">
 
             <div className="flex justify-between items-start">
-                <p className="text-xl font-semibold">Editar <span className="text-yellow-400">producto</span></p>
+                <p className="text-xl font-semibold">Editar producto</p>
 
                 <button
                     type="button"
@@ -113,7 +111,7 @@ export default function EditProducts() {
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-                <div className="grid grid-cols-2 gap-10 mt-6 px-20">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12 mt-6 px-4 md:px-20">
 
                     <div className="flex flex-col gap-3">
                         <label className="flex items-center gap-2 text-yellow-500 font-medium">
@@ -265,11 +263,11 @@ export default function EditProducts() {
                 </div>
 
                 {/* TABLA DE CARACTERÍSTICAS */}
-                <div className="px-20 mt-6">
+                <div className="px-4 md:px-20 mt-6 overflow-x-auto">
                     <h3 className="text-lg font-semibold mb-4">Características del producto</h3>
 
                     {/* TABLA */}
-                    <div className="bg-white rounded-xl shadow overflow-hidden">
+                    <div className="bg-white rounded-xl shadow min-w-150 md:min-w-full">
                         <table className="w-full">
                             <thead className="bg-gray-100 border-b-2 border-yellow-300">
                                 <tr className="text-left">
@@ -282,7 +280,7 @@ export default function EditProducts() {
                             <tbody>
                                 {displayedCaracteristicas.length > 0 ? (
                                     displayedCaracteristicas.map(item => (
-                                        <tr key={item.id} className="border-b hover:bg-gray-50 transition">
+                                        <tr key={item.id} className="border-b border-gray-300 hover:bg-gray-50 transition">
                                             <td className="px-4 py-3 text-gray-700">{item.nombre}</td>
                                             <td className="px-4 py-3 text-gray-700">{item.medida}</td>
                                             <td className="px-4 py-3 text-gray-700">{item.valor}</td>
@@ -347,21 +345,21 @@ export default function EditProducts() {
                 </div>
 
                 {/* BOTONES */}
-                <div className="px-20 flex justify-end gap-4 mb-6">
+                <div className="flex justify-end gap-4 px-4 md:px-20">
                     <button
                         type="button"
                         onClick={() => navigate("/dashboard/products")}
-                        className="px-6 py-2.5 rounded-lg font-medium transition shadow-md border-2 border-gray-300 hover:bg-gray-200"
+                        className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition duration-300 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                     >
+                        <span>✕</span>
                         Cancelar
                     </button>
-                    <button
+                    <PrimaryButton
                         type="submit"
                         disabled={Object.values(errors).some(error => error)}
-                        className="bg-linear-to-r from-white to-yellow-300 px-6 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Guardar
-                    </button>
+                        Guardar cambios
+                    </PrimaryButton>
                 </div>
             </form>
 
