@@ -52,7 +52,7 @@ export const Navbar = ({ setIsOpen }) => {
             )}
 
             <header className="bg-white border-b-2 border-yellow-300 shadow-[0_2px_6px_rgba(234,179,8,0.15)]">
-                <div className="flex items-center justify-between px-6 py-1">
+                <div className="flex items-center justify-between px-3 py-2 md:px-6 md:py-1">
 
                     <div className="flex items-center gap-2">
                         <button
@@ -61,10 +61,12 @@ export const Navbar = ({ setIsOpen }) => {
                         >
                             <Menu size={28} />
                         </button>
-                        <Lightbulb size={35} className="text-yellow-400" />
-                        <span className="text-3xl font-semibold">
-                            Electro<span className="text-yellow-500">Soft</span>
-                        </span>
+                        <div className="hidden md:flex items-center gap-2">
+                            <Lightbulb size={35} className="text-yellow-400" />
+                            <span className="text-3xl font-semibold">
+                                Electro<span className="text-yellow-500">Soft</span>
+                            </span>
+                        </div>
                     </div>
 
                     <div className="relative">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, NavLink, useNavigate } from 'react-router-dom';
-import { ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck, LogOut, ChevronDown, X } from 'lucide-react';
+import { ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck, LogOut, ChevronDown, X, Lightbulb } from 'lucide-react';
 import { getAuthUser, logout } from "../../auth/services/authService";
 import { usePermissions } from "../../../hooks/usePermissions";
 import Alert from "./ui/alert";
@@ -106,9 +106,12 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
             md:translate-x-0`}>
 
                 <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 md:hidden">
-                    <span className="text-xl font-semibold">
-                        Electro<span className="text-yellow-500">Soft</span>
-                    </span>
+                    <div className="flex gap-1">
+                        <Lightbulb size={25} className="text-yellow-400" />
+                        <span className="text-xl font-semibold">
+                            Electro<span className="text-yellow-500">Soft</span>
+                        </span>
+                    </div>
                     <button
                         onClick={handleNavigate}
                         className="p-2 rounded-lg hover:bg-gray-200 transition cursor-pointer"
