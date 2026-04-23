@@ -1,4 +1,4 @@
-import { Trash, Pencil, Plus, Search, FileText, Eye, Package } from "lucide-react";
+import { Trash, Pencil, Plus, Search, FileText, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ServicesProducts } from "../services/ServicesProducts";
@@ -10,6 +10,7 @@ import Searchbar from "../../../components/ui/Searchbar";
 import useProductTable from "../hooks/useProductTable";
 import { usePermissions } from "../../../../../hooks/usePermissions";
 import { Restricted } from "../../../components/ui/Restricted";
+import Pagination from "../../../components/ui/Pagination";
 
 export default function Products() {
     const { hasPermission } = usePermissions();
@@ -135,12 +136,13 @@ export default function Products() {
         });
     };
 
+    console.log(totalPages)
+
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
 
                 <p className="text-xl font-semibold flex items-center gap-2">
-                    <Package size={22} className="text-yellow-500" />
                     Control de productos
                 </p>
 
@@ -151,9 +153,9 @@ export default function Products() {
                         setSearch(e.target.value);
                         setPresentPage(1);
                     }}
-                    placeholder="Buscar por nombre, categoría, precio o stock..."
+                    placeholder="Buscar productos..."
                     onCreateClick={() => navigate("/dashboard/products/create")}
-                    createButtonText="Crear producto"
+                    createButtonText="Nuevo producto"
                     showCreateButton={hasPermission("Productos", "Crear")}
                     showReportButton={true}
                     onReportClick={handleGenerateReport}
@@ -161,9 +163,9 @@ export default function Products() {
 
                 {/* TABLA */}
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-                    <div className="bg-gray-100 rounded-2xl overflow-hidden">
+                    <div className="bg-gray-100 rounded-2xl overflow-x-auto">
 
-                        <table className="w-full text-sm table-fixed">
+                        <table className="min-w-250 w-full text-sm table-fixed">
 
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
@@ -240,7 +242,7 @@ export default function Products() {
                                                             <Pencil size={18} className="text-yellow-600" />
                                                         </button>
 
-                                                    {/* TOGGLE */}
+                                                        {/* TOGGLE */}
                                                         <div
                                                             onClick={() => handleToggleEstado(product.id)}
                                                             className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${product.estado ? "bg-green-500" : "bg-red-500"
@@ -270,7 +272,7 @@ export default function Products() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="7" className="text-center py-6 text-gray-400">
+                                        <td colSpan="7" className="text-center py-4 text-gray-400">
                                             No se encontraron productos
                                         </td>
                                     </tr>
@@ -283,38 +285,15 @@ export default function Products() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-auto">
-                    <div className="flex items-center gap-3 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow-xl">
-
-                        {/* Flecha izquierda */}
-                        <button
-                            onClick={prevPage}
-                            className="p-2 rounded-lg hover:bg-gray-300 transition"
-                        >
-                            ←
-                        </button>
-
-                        {/* Números de página */}
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                            <button
-                                key={page}
-                                onClick={() => setPresentPage(page)}
-                                className={`px-3 py-1 rounded-md transition ${presentPage === page ? "bg-yellow-400 text-black font-medium shadow-sm" : "bg-gray-300"}`}
-                            >
-                                {page}
-                            </button>
-                        ))}
-
-                        {/* Flecha derecha */}
-                        <button
-                            onClick={nextPage}
-                            className="p-2 rounded-lg hover:bg-gray-300 transition"
-                        >
-                            →
-                        </button>
-
+                {filteredProducts.length > 0 && (
+                    <div className="flex justify-end mt-auto pt-4">
+                        <Pagination
+                            currentPage={presentPage}
+                            totalPages={totalPages || 1}
+                            onPageChange={(page) => setPresentPage(page)}
+                        />
                     </div>
-                </div>
+                )}
             </div>
 
             {/* MODAL DE CONFIRMACION */}
