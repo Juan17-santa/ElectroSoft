@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAuthUser, logout } from "../../auth/services/authService";
 import Alert from "./ui/alert";
+import { Menu } from "lucide-react";
 
-export const Navbar = () => {
-    const [open,  setOpen]  = useState(false);
-    const [user,  setUser]  = useState(null);
+export const Navbar = ({ setIsOpen }) => {
+    const [open, setOpen] = useState(false);
+    const [user, setUser] = useState(null);
     const [alert, setAlert] = useState(null);
     const navigate = useNavigate();
 
@@ -16,7 +17,6 @@ export const Navbar = () => {
         if (authUser) setUser(authUser);
     }, []);
 
-    // ✅ Escucha cuando el perfil se actualiza y recarga el usuario
     useEffect(() => {
         const handler = () => {
             const authUser = getAuthUser();
@@ -26,10 +26,10 @@ export const Navbar = () => {
         return () => window.removeEventListener("profile-updated", handler);
     }, []);
 
-    const nombre    = user?.fullName  || user?.nombre || "Usuario";
-    const email     = user?.email     || "";
-    const rol       = user?.role      || user?.rol    || "Sin rol";
-    const avatar    = user?.avatar    || null;
+    const nombre = user?.fullName || user?.nombre || "Usuario";
+    const email = user?.email || "";
+    const rol = user?.role || user?.rol || "Sin rol";
+    const avatar = user?.avatar || null;
     const ultimoAcc = user?.ultimoAcceso || null;
 
     const handleLogout = () => {
@@ -55,6 +55,12 @@ export const Navbar = () => {
                 <div className="flex items-center justify-between px-6 py-1">
 
                     <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsOpen(true)}
+                            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+                        >
+                            <Menu size={28} />
+                        </button>
                         <Lightbulb size={35} className="text-yellow-400" />
                         <span className="text-3xl font-semibold">
                             Electro<span className="text-yellow-500">Soft</span>
