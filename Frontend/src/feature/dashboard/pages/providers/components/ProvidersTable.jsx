@@ -14,14 +14,14 @@ export default function ProvidersTable({
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
             <div className="bg-gray-100 rounded-2xl border-none overflow-hidden">
 
-                <table className="w-full text-sm table-fixed">
+                <table className="w-full text-sm">
 
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
                             <th className="px-3 py-2 font-semibold w-12">ID</th>
                             <th className="px-3 py-2 font-semibold w-28">Documento</th>
                             <th className="px-3 py-2 font-semibold w-56">Nombre proveedor</th>
-                            <th className="px-3 py-2 font-semibold">Nombre contacto</th>
+                            <th className="px-3 py-2 font-semibold w-48">Nombre contacto</th>
                             <th className="px-3 py-2 font-semibold w-32">Telefono contacto</th>
                             <th className="px-3 py-2 font-semibold w-28">Estado</th>
                             <th className="px-3 py-2 font-semibold w-48 text-center">Acciones</th>

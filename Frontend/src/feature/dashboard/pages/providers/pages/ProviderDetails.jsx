@@ -1,23 +1,16 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Info, X } from "lucide-react";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
-import { useLocation } from "react-router-dom";
 
-// COMPONENTE QUE MUESTRA LOS DETALLES DE UN PROVEEDOR
 export default function ProviderDetails() {
 
-    // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
+    const location = useLocation();
 
-    // ESTADO PARA EL PROVEEDOR A MOSTRAR
     const [provider, setProvider] = useState(null);
-
-    // ESTADO PARA OBTENER LAS CATEGORIAS Y MOSTRAR LOS NOMBRES EN LUGAR DE LOS IDS
     const [categories, setCategories] = useState([]);
 
-    // ESTADO PARA RECIBIR EL PROVEEDOR A MOSTRAR DESDE EL INDEX
-    const location = useLocation();
     const providerDetail = location.state?.provider;
 
     useEffect(() => {
@@ -29,10 +22,9 @@ export default function ProviderDetails() {
         setCategories(allCategories);
     }, [providerDetail]);
 
-    // SI NO HAY PROVEEDOR SE MUESTRA UN MENSAJE
     if (!provider) {
         return (
-            <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
+            <div className="bg-gray-100 p-4 md:p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
                 <p className="text-gray-500 text-sm">
                     No hay información para mostrar.
                 </p>
@@ -40,16 +32,15 @@ export default function ProviderDetails() {
         );
     }
 
-    // FUNCIÓN PARA VOLVER A LA LISTA DE PROVEEDORES
     const handleBack = () => {
         navigate("/dashboard/providers");
     };
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner h-full">
+        <div className="bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner h-full">
 
             <div
-                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
+                className="relative bg-white rounded-3xl p-4 md:p-8 shadow-lg overflow-hidden h-full"
                 style={{
                     backgroundImage: 'url("/background-details.jpg")',
                     backgroundSize: "cover",
@@ -61,21 +52,26 @@ export default function ProviderDetails() {
 
                 <div className="relative z-10 flex flex-col gap-6">
 
+                    {/* HEADER */}
                     <div className="flex items-center gap-2">
                         <Info size={22} />
-                        <h2 className="text-xl font-semibold">
+                        <h2 className="text-lg md:text-xl font-semibold">
                             Ver Información del proveedor
                         </h2>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-8 shadow-xl max-w-3xl w-full mx-auto">
+                    {/* CARD */}
+                    <div className="bg-white rounded-2xl p-4 md:p-8 shadow-xl w-full max-w-3xl mx-auto">
 
                         <div className="flex flex-col">
-                            <div className="flex justify-between">
-                                <h3 className="text-sm font-bold uppercase text-gray-500 py-2">
+
+                            {/* INFO GENERAL */}
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                <h3 className="text-sm font-bold uppercase text-gray-500">
                                     Información General
                                 </h3>
-                                <div className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md
+
+                                <div className={`px-3 md:px-5 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-semibold shadow-md w-fit
                                     ${provider.estado
                                         ? "bg-green-100 text-green-700"
                                         : "bg-red-100 text-red-700"
@@ -84,42 +80,50 @@ export default function ProviderDetails() {
                                     {provider.estado ? "Activo" : "Inactivo"}
                                 </div>
                             </div>
-                            <div className="flex flex-wrap gap-10">
-                                <div className="min-w-72">
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8 mt-4">
+                                <div className="w-full">
                                     <p className="text-sm text-yellow-400 mb-1">Documento</p>
-                                    <p className="text-sm font-semibold text-gray-800">
+                                    <p className="text-sm font-semibold text-gray-800 wrap-break-words">
                                         {provider.tipoDoc} - {provider.documento}
                                     </p>
                                 </div>
-                                <div>
+
+                                <div className="w-full">
                                     <p className="text-sm text-yellow-400 mb-1">Nombre Proveedor</p>
-                                    <p className="text-sm font-semibold text-gray-800">
+                                    <p className="text-sm font-semibold text-gray-800 wrap-break-words">
                                         {provider.nombreProveedor}
                                     </p>
                                 </div>
-
                             </div>
-                            <h3 className="text-sm font-bold uppercase text-gray-500 mt-6 py-2">
+
+                            {/* CONTACTO */}
+                            <h3 className="text-sm font-bold uppercase text-gray-500 mt-6">
                                 Información De Contacto
                             </h3>
-                            <div className="flex flex-wrap gap-10">
-                                <div className="min-w-80">
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8 mt-2">
+                                <div className="w-full">
                                     <p className="text-sm text-yellow-400 mb-1">Nombre Contacto</p>
-                                    <p className="text-sm font-semibold text-gray-800">
+                                    <p className="text-sm font-semibold text-gray-800 wrap-break-words">
                                         {provider.nombreContacto}
                                     </p>
                                 </div>
-                                <div>
-                                    <p className="text-sm text-yellow-400 mb-1">telefono Contacto</p>
-                                    <p className="text-sm font-semibold text-gray-800">
+
+                                <div className="w-full">
+                                    <p className="text-sm text-yellow-400 mb-1">Teléfono Contacto</p>
+                                    <p className="text-sm font-semibold text-gray-800 wrap-break-words">
                                         {provider.telefonoContacto}
                                     </p>
                                 </div>
                             </div>
-                            <h3 className="text-sm font-bold uppercase text-gray-500 mt-6 py-2">
-                                Categorias asociadas
+
+                            {/* CATEGORÍAS */}
+                            <h3 className="text-sm font-bold uppercase text-gray-500 mt-6">
+                                Categorías asociadas
                             </h3>
-                            <div className="flex flex-wrap gap-3">
+
+                            <div className="flex flex-wrap gap-2 mt-2">
                                 {provider.categoriasAsociadas?.length > 0 ? (
                                     provider.categoriasAsociadas.map((catId, index) => {
                                         const category = categories.find(c => c.id === catId);
@@ -127,7 +131,7 @@ export default function ProviderDetails() {
                                         return (
                                             <span
                                                 key={index}
-                                                className="px-4 py-1.5 rounded-full bg-yellow-200 text-sm font-medium"
+                                                className="px-3 py-1.5 rounded-full bg-yellow-200 text-xs md:text-sm font-medium"
                                             >
                                                 {category ? category.nombre : "Categoría no encontrada"}
                                             </span>
@@ -139,21 +143,23 @@ export default function ProviderDetails() {
                                     </p>
                                 )}
                             </div>
+
                         </div>
                     </div>
 
                 </div>
             </div>
-            <div className="flex justify-end">
+
+            {/* BOTÓN */}
+            <div className="flex justify-center sm:justify-end">
                 <button
                     onClick={handleBack}
-                    className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
+                    className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition px-6 py-2 rounded-xl text-sm font-medium shadow flex items-center gap-2"
                 >
-                    <X size={18} className="inline-block mr-2" />
+                    <X size={18} />
                     Volver
                 </button>
             </div>
-
 
         </div>
     );

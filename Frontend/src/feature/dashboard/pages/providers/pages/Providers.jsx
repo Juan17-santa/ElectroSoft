@@ -8,49 +8,31 @@ import useProvidersTable from "../hooks/useProvidersTable";
 import SearchBar from "../../../components/ui/Searchbar";
 import { usePermissions } from "../../../../../hooks/usePermissions";
 
-// COMPONENTE PRINCIPAL PARA LA GESTIÓN DE PROVEEDORES
 export default function Providers() {
     const { hasPermission } = usePermissions();
-
-    // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
 
-    // ESTADO PARA EL TEXTO DEL BUSCADOR
     const [searchTerm, setSearchTerm] = useState("");
-
-    // ESTADO PARA EL MODAL DE CONFIRMACION
     const [confirmData, setConfirmData] = useState(null);
-
-    // ESTADO PARA LA ALERTA DE EXITO O ERROR
     const [alert, setAlert] = useState(null);
 
-    // FUNCION PARA MOSTRAR ALERTA
+    const [presentPage, setPresentPage] = useState(1);
+    const recordsPerPage = 6;
+
+    const categorias = JSON.parse(localStorage.getItem("productCategory")) || [];
+
     const showAlert = (type, message) => {
         setAlert({ type, message });
     };
 
-    // FUNCION PAGINADOR
-    const [presentPage, setPresentPage] = useState(1);
-    const recordsPerPage = 6;
-
-    // FUNCION PARA OBTENER CATEGORIAS PARA LA TABLA
-    const categorias = JSON.parse(localStorage.getItem("productCategory")) || [];
-
-    // FUNCION PARA PREPARAR LA VISTA DE DETALLES
     const handleDetailsNavigation = (provider) => {
-        navigate("/dashboard/providers/detail", {
-            state: { provider },
-        });
+        navigate("/dashboard/providers/detail", { state: { provider } });
     };
 
-    // FUNCIÓN PARA PREPARAR LA EDICIÓN
     const handleEditNavigation = (provider) => {
-        navigate("/dashboard/providers/update", {
-            state: { provider }
-        });
+        navigate("/dashboard/providers/update", { state: { provider } });
     };
 
-    // USO DEL HOOK PERSONALIZADO QUE MANEJA LA LÓGICA DE LA TABLA
     const {
         data,
         totalPages,
@@ -66,31 +48,39 @@ export default function Providers() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
-                {/* TITULO */}
-                <p className="text-xl font-semibold">Control de proveedores</p>
+            <div className="bg-gray-100 p-4 sm:p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
 
-                {/* BUSCADOR Y BOTON CREAR */}
+                <p className="text-lg sm:text-xl font-semibold">
+                    Control de proveedores
+                </p>
+
                 <SearchBar
                     searchTerm={searchTerm}
-                    onSearchChange={(e) => setSearchTerm(e.target.value)}
+                    onSearchChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setPresentPage(1);
+                    }}
                     placeholder="Buscar proveedores..."
                     onCreateClick={() => navigate("/dashboard/providers/create")}
-                    createButtonText="Crear proveedor"
+                    createButtonText="Nuevo proveedor"
                     showCreateButton={hasPermission("Proveedores", "Crear")}
                 />
 
-                {/* TABLA */}
-                <ProvidersTable
-                    data={data}
-                    categorias={categorias}
-                    onDetails={handleDetailsNavigation}
-                    onEdit={handleEditNavigation}
-                    onDelete={deleteProvider}
-                    onToggleEstado={toggleEstado}
-                />
+                {/* TABLA RESPONSIVE */}
+                <div className="w-full overflow-x-auto">
+                    <div className="min-w-max">
+                        <ProvidersTable
+                            data={data}
+                            categorias={categorias}
+                            onDetails={handleDetailsNavigation}
+                            onEdit={handleEditNavigation}
+                            onDelete={deleteProvider}
+                            onToggleEstado={toggleEstado}
+                        />
+                    </div>
+                </div>
 
-                {/* PAGINACION */}
+                {/* PAGINADOR */}
                 <div className="flex justify-end mt-auto pt-4">
                     <Pagination
                         currentPage={presentPage}
@@ -99,7 +89,8 @@ export default function Providers() {
                     />
                 </div>
             </div>
-            {/* MODAL DE CONFIRMACION */}
+
+            {/* MODAL */}
             {confirmData && (
                 <ConfirmModal
                     type={confirmData.type}
@@ -109,7 +100,8 @@ export default function Providers() {
                     onCancel={() => setConfirmData(null)}
                 />
             )}
-            {/* ALERTA DE EXITO O ERROR */}
+
+            {/* ALERTA */}
             {alert && (
                 <Alert
                     type={alert.type}
@@ -118,5 +110,5 @@ export default function Providers() {
                 />
             )}
         </>
-    )
+    );
 }
