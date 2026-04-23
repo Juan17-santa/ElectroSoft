@@ -1,18 +1,22 @@
+import { useState } from "react";
 import { Navbar } from "./components/navbar"
 import { Sidebar } from "./components/sidebar"
 import { Outlet } from "react-router-dom"
 
 export default function Layout() {
+
+    const [isOpen, setIsOpen] = useState(false);
+
     return (
         <div className="h-screen flex flex-col overflow-hidden">
 
             {/* Navbar arriba */}
-            <Navbar />
+            <Navbar setIsOpen={setIsOpen} />
 
             {/* Sidebar + Contenido */}
             <div className="flex flex-1 overflow-hidden">
 
-                <Sidebar />
+                <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
                 <div className="flex-1 p-3 overflow-auto flex flex-col">
                     <Outlet />
