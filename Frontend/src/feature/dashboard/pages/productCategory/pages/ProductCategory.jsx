@@ -76,7 +76,7 @@ export default function ProductCategory() {
                     onSearchChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Buscar categorias de productos..."
                     onCreateClick={handleOpenCreate}
-                    createButtonText="Crear categoria"
+                    createButtonText="Nueva categoria"
                     showCreateButton={hasPermission("Categoria de productos", "Crear")}
                 />
 

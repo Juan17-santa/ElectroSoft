@@ -10,9 +10,9 @@ export default function ProductCategoryTable({
 }) {
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-            <div className="bg-gray-100 rounded-2xl border-none overflow-hidden">
+            <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
 
-                <table className="w-full text-sm table-fixed">
+                <table className="min-w-175 w-full text-sm table-fixed">
 
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
