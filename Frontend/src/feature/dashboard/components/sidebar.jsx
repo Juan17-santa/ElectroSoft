@@ -101,7 +101,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                     onClose={() => setAlert(null)}
                 />
             )}
-            <aside className={`fixed md:relative top-0 left-0 h-screen md:h-full flex flex-col z-50 bg-white w-64 border-r-2 border-yellow-300 shadow-[2px_0_6px_rgba(234,179,8,0.15)] transform transition-transform duration-300 ease-in-out
+            <aside className={`fixed md:relative top-0 left-0 h-screen md:h-full flex flex-col z-40 bg-white w-64 border-r-2 border-yellow-300 shadow-[2px_0_6px_rgba(234,179,8,0.15)] transform transition-transform duration-300 ease-in-out
             ${isOpen ? "translate-x-0" : "-translate-x-full"}
             md:translate-x-0`}>
 
