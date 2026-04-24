@@ -112,7 +112,7 @@ export default function Shopping() {
 
                 {/* TITULO */}
                 <p className="text-xl font-semibold flex items-center gap-2">
-                    Gestión de Compras
+                    Control de Compras
                 </p>
 
                 {/* BUSCADOR, REPORTE Y BOTON CREAR */}
