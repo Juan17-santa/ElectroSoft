@@ -128,15 +128,15 @@ export default function Clients() {
         <>
             <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
                 {/* TITULO */}
-                <p className="text-xl font-semibold">Gestión de clientes</p>
+                <p className="text-xl font-semibold">Control de clientes</p>
 
                 {/* BUSCADOR */}
                 <Searchbar
                     searchTerm={search}
                     onSearchChange={handleSearch}
-                    placeholder="Buscar por nombre, documento..."
+                    placeholder="Buscar clientes..."
                     onCreateClick={() => navigate("/dashboard/clients/create")}
-                    createButtonText="Crear cliente"
+                    createButtonText="Nuevo cliente"
                     showCreateButton={hasPermission("Clientes", "Crear")}
                     showReportButton={true}
                     onReportClick={handleGenerarReporte}
@@ -144,8 +144,8 @@ export default function Clients() {
 
                 {/* TABLA */}
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-                    <div className="bg-gray-100 rounded-2xl border-none overflow-hidden">
-                        <table className="w-full text-sm table-fixed">
+                    <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
+                        <table className="min-w-240 w-full text-sm table-fixed">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
                                     <th className="px-3 py-2 font-semibold w-8">ID</th>
@@ -161,7 +161,7 @@ export default function Clients() {
                             <tbody className="bg-white text-gray-700 text-sm">
                                 {paginatedClients.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
+                                        <td colSpan={8} className="px-4 py-4 text-center text-gray-400">
                                             No hay clientes registrados.
                                         </td>
                                     </tr>
@@ -178,9 +178,9 @@ export default function Clients() {
                                             <td className="px-3 py-2 w-20">{client.telefono}</td>
                                             <td className="px-3 py-2 w-24">${client.totalCompras?.toLocaleString("es-CO")}</td>
                                             <td className="px-3 py-2 w-36">
-                                                <div className="flex justify-center flex-nowrap gap-1.5 h-[36px]">
+                                                <div className="flex justify-center flex-nowrap gap-1.5 h-9">
                                                     {hasPermission("Clientes", "Editar") && (
-                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             {client.totalCompras > 1000000 && (
                                                                 <button
                                                                     className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition duration-300 cursor-pointer"
@@ -192,7 +192,7 @@ export default function Clients() {
                                                             )}
                                                         </div>
                                                     )}
-                                                    <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                    <div className="flex-none flex items-center justify-center w-9 h-9">
                                                         <button
                                                             className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
                                                             onClick={() => handleViewDetails(client)}
@@ -202,7 +202,7 @@ export default function Clients() {
                                                         </button>
                                                     </div>
                                                     <Restricted scope="Clientes" action="Editar">
-                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             <button
                                                                 className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
                                                                 onClick={() => handleEditNavigation(client)}
@@ -213,7 +213,7 @@ export default function Clients() {
                                                         </div>
                                                     </Restricted>
                                                     <Restricted scope="Clientes" action="Eliminar">
-                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             <button
                                                                 className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
                                                                 onClick={() => handleDelete(client)}
@@ -234,13 +234,15 @@ export default function Clients() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-auto">
-                    <Pagination
-                        currentPage={pageActual}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
-                </div>
+                {paginatedClients.length > 0 && (
+                    <div className="flex justify-end mt-auto">
+                        <Pagination
+                            currentPage={pageActual}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* MODAL DE CONFIRMACION */}

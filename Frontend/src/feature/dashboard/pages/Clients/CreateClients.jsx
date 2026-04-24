@@ -27,11 +27,11 @@ export default function CreateClients() {
 
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 h-full shadow-inner overflow-y-auto">
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-xl font-semibold mb-4">Crear nuevo <span className="text-yellow-400">cliente</span></p>
+                        <p className="text-xl font-semibold mb-4">Nuevo cliente</p>
                         <p className="text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
                 </div>
@@ -41,7 +41,7 @@ export default function CreateClients() {
                     formError={formError}
                     setFormError={setFormError}
                     onCancel={() => navigate("/dashboard/clients")}
-                    buttonText="Registrar cliente"
+                    buttonText="Crear cliente"
                 />
             </div>
 
