@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Info, X } from "lucide-react";
+import PrimaryButton from "../../../components/ui/PrimaryButton";
 
 export default function UserDetail() {
     const navigate = useNavigate();
@@ -24,96 +25,108 @@ export default function UserDetail() {
         );
     }
 
-    const handleBack = () => {
-        navigate("/dashboard/users");
-    };
-
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
 
             <div
                 className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
-                style={{ backgroundImage: 'url("/background-details.jpg")', backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+                style={{
+                    backgroundImage: 'url("/background-details.jpg")',
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "no-repeat"
+                }}
             >
-                <div className="absolute inset-0 bg-white/20 rounded-3xl h-full"></div>
+                <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
 
                 <div className="relative z-10 flex flex-col gap-6">
 
-                    {/* Título */}
+                    {/* TÍTULO */}
                     <div className="flex items-center gap-2">
                         <Info size={22} />
                         <h2 className="text-xl font-semibold">
-                            Ver Información del Usuario
+                            Ver información del usuario
                         </h2>
                     </div>
 
-                    {/* Card */}
-                    <div className="bg-white rounded-2xl p-16 shadow-xl max-w-4xl w-full mx-auto min-h-112.5">
+                    {/* CARD */}
+                    <div className="bg-gray-50 rounded-2xl p-4 md:p-6 shadow-md max-w-3xl w-full mx-auto">
 
-                        {/* Estado */}
-                        <div className="flex justify-between">
-                            <h3 className="text-sm font-bold uppercase text-gray-500 py-2">
-                                Información General
-                            </h3>
-                            
-                            <div
-                                className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md
-                                ${user.estado
+                        <div className="flex flex-col gap-6">
+
+                            {/* ESTADO */}
+                            <div className="flex justify-between items-start">
+                                <h3 className="text-sm font-bold uppercase text-gray-500 py-2">
+                                    Información general
+                                </h3>
+                                <div
+                                    className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md
+                                    ${user.estado
                                         ? "bg-green-100 text-green-700"
                                         : "bg-red-100 text-red-700"
                                     }`}
-                            >
-
-                                {user.estado ? "Activo" : "Inactivo"}
-                            </div>
-                        </div>
-
-                        {/* Datos */}
-                        <div className="flex flex-col gap-5">
-
-                            <div className="min-w-72">
-                                <p className="text-sm text-yellow-400 mb-1">Nombre</p>
-                                <p className="text-m font-semibold text-gray-800">
-                                    {user.nombre}
-                                </p>
+                                >
+                                    {user.estado ? "Activo" : "Inactivo"}
+                                </div>
                             </div>
 
-                            <div className="min-w-72">
-                                <p className="text-sm text-yellow-400 mb-1">Email</p>
-                                <p className="text-m font-semibold text-gray-800">
-                                    {user.email}
-                                </p>
-                            </div>
+                            {/* DATOS EN GRID */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
 
-                            <div className="min-w-72">
-                                <p className="text-sm text-yellow-400 mb-1">Teléfono</p>
-                                <p className="text-m font-semibold text-gray-800">
-                                    {user.telefono || "No registrado"}
-                                </p>
-                            </div>
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Nombre</p>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {user.nombre || "No registrado"}
+                                    </p>
+                                </div>
 
-                            <div className="min-w-72">
-                                <p className="text-sm text-yellow-400 mb-1">Rol</p>
-                                <p className="text-m font-semibold text-gray-800">
-                                    {user.rol || "Sin rol asignado"}
-                                </p>
-                            </div>
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Email</p>
+                                    <p className="text-sm font-semibold text-gray-800 break-all">
+                                        {user.email || "No registrado"}
+                                    </p>
+                                </div>
 
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Teléfono</p>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {user.telefono || "No registrado"}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Tipo documento</p>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {user.tipoDoc || "No registrado"}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Documento</p>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {user.documento || "No registrado"}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Rol</p>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {user.rol || "Sin rol asignado"}
+                                    </p>
+                                </div>
+
+                            </div>
                         </div>
                     </div>
-
                 </div>
             </div>
 
-            {/* Botón */}
+            {/* BOTÓN VOLVER */}
             <div className="flex justify-end">
-                <button
-                    onClick={handleBack}
-                    className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
-                >
+                <PrimaryButton type="button" onClick={() => navigate("/dashboard/users")}>
                     <X size={18} className="inline-block mr-2" />
                     Volver
-                </button>
+                </PrimaryButton>
             </div>
 
         </div>

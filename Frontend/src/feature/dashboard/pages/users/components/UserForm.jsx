@@ -13,163 +13,154 @@ export default function UserForm({
     roles = []
 }) {
 
+    const inputClasses = (field) =>
+        `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${
+            errors[field] ? "focus:ring-red-500" : "focus:ring-yellow-400"
+        }`;
+
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-min gap-10">
 
-            {/* CONTENEDOR PRINCIPAL */}
-            <div className="flex flex-col items-center gap-14 mt-10 justify-start flex-1 mx-28">
+            {/* GRID RESPONSIVE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 mt-6 px-4 md:px-20">
 
-                {/* ================= PRIMERA FILA ================= */}
-                <div className="flex gap-20">
-
-                    {/* TIPO DOCUMENTO */}
-                    <div className="flex flex-col w-96">
-                        <CustomSelect
-                            label="Tipo documento *"
-                            icon={IdCard}
-                            value={formData.tipoDoc}
-                            onChange={(value) =>
-                                handleChange({ target: { name: "tipoDoc", value } })
-                            }
-                            options={[
-                                { value: "CC", label: "C.C" },
-                                { value: "CE", label: "C.E" },
-                                { value: "NIT", label: "NIT" },
-                                { value: "Pasaporte", label: "Pasaporte" },
-                            ]}
-                            placeholder="Seleccione un tipo"
-                        />
-                        <ValidationMessage
-                            error={errors.tipoDoc}
-                            success={formData.tipoDoc}
-                            successMessage="Tipo de documento válido"
-                        />
-                    </div>
-
-                    {/* DOCUMENTO */}
-                    <div className="flex flex-col gap-3 w-96">
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <FileText size={16} />
-                            <span>Documento *</span>
-                        </div>
-                        <input
-                            type="text"
-                            name="documento"
-                            value={formData.documento}
-                            onChange={handleChange}
-                            placeholder="Ingrese el documento"
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        />
-                        <ValidationMessage
-                            error={errors.documento}
-                            success={formData.documento}
-                            successMessage="Documento válido"
-                        />
-                    </div>
+                {/* TIPO DOCUMENTO */}
+                <div className="flex flex-col gap-1 w-full">
+                    <CustomSelect
+                        label="Tipo documento *"
+                        icon={IdCard}
+                        value={formData.tipoDoc}
+                        onChange={(value) =>
+                            handleChange({ target: { name: "tipoDoc", value } })
+                        }
+                        options={[
+                            { value: "CC", label: "C.C" },
+                            { value: "CE", label: "C.E" },
+                            { value: "NIT", label: "NIT" },
+                            { value: "Pasaporte", label: "Pasaporte" },
+                        ]}
+                        placeholder="Seleccione un tipo"
+                        width="w-full"
+                    />
+                    <ValidationMessage
+                        error={errors.tipoDoc}
+                        success={formData.tipoDoc}
+                        successMessage="Tipo de documento válido"
+                    />
                 </div>
 
-                {/* ================= SEGUNDA FILA ================= */}
-                <div className="flex gap-20">
-
-                    {/* NOMBRE */}
-                    <div className="flex flex-col gap-3 w-96">
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <User size={16} />
-                            <span>Nombre *</span>
-                        </div>
-                        <input
-                            type="text"
-                            name="nombre"
-                            value={formData.nombre}
-                            onChange={handleChange}
-                            placeholder="Ingrese el nombre"
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.nombre ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        />
-                        <ValidationMessage
-                            error={errors.nombre}
-                            success={formData.nombre}
-                            successMessage="Nombre válido"
-                        />
+                {/* DOCUMENTO */}
+                <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                        <FileText size={16} />
+                        <span>Documento *</span>
                     </div>
-
-                    {/* EMAIL */}
-                    <div className="flex flex-col gap-3 w-96">
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <Mail size={16} />
-                            <span>Email *</span>
-                        </div>
-                        <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            placeholder="Ingrese el email"
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.email ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        />
-                        <ValidationMessage
-                            error={errors.email}
-                            success={formData.email}
-                            successMessage="Email válido"
-                        />
-                    </div>
+                    <input
+                        type="text"
+                        name="documento"
+                        value={formData.documento}
+                        onChange={handleChange}
+                        placeholder="Ingrese el documento"
+                        className={inputClasses("documento")}
+                    />
+                    <ValidationMessage
+                        error={errors.documento}
+                        success={formData.documento}
+                        successMessage="Documento válido"
+                    />
                 </div>
 
-                {/* ================= TERCERA FILA ================= */}
-                <div className="flex gap-20">
-
-                    {/* TELEFONO */}
-                    <div className="flex flex-col gap-3 w-96">
-                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <Phone size={16} />
-                            <span>Teléfono *</span>
-                        </div>
-                        <input
-                            type="text"
-                            name="telefono"
-                            value={formData.telefono}
-                            onChange={handleChange}
-                            placeholder="Ingrese el teléfono"
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2
-                            ${errors.telefono ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                        />
-                        <ValidationMessage
-                            error={errors.telefono}
-                            success={formData.telefono}
-                            successMessage="Teléfono válido"
-                        />
+                {/* NOMBRE */}
+                <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                        <User size={16} />
+                        <span>Nombre *</span>
                     </div>
+                    <input
+                        type="text"
+                        name="nombre"
+                        value={formData.nombre}
+                        onChange={handleChange}
+                        placeholder="Ingrese el nombre"
+                        className={inputClasses("nombre")}
+                    />
+                    <ValidationMessage
+                        error={errors.nombre}
+                        success={formData.nombre}
+                        successMessage="Nombre válido"
+                    />
+                </div>
 
-                    {/* ROL */}
-                    <div className="flex flex-col gap-1 w-96">
-                        <CustomSelect
-                            label="Rol *"
-                            icon={User}
-                            value={formData.rol}
-                            onChange={(value) =>
-                                handleChange({ target: { name: "rol", value } })
-                            }
-                            options={roles.map((r) => ({ value: r.nombre, label: r.nombre }))}
-                            placeholder="Seleccione un rol"
-                        />
-                        <ValidationMessage
-                            error={errors.rol}
-                            success={formData.rol}
-                            successMessage="Rol válido"
-                        />
+                {/* EMAIL */}
+                <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                        <Mail size={16} />
+                        <span>Email *</span>
                     </div>
+                    <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="Ingrese el email"
+                        className={inputClasses("email")}
+                    />
+                    <ValidationMessage
+                        error={errors.email}
+                        success={formData.email}
+                        successMessage="Email válido"
+                    />
+                </div>
+
+                {/* TELEFONO */}
+                <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                        <Phone size={16} />
+                        <span>Teléfono *</span>
+                    </div>
+                    <input
+                        type="text"
+                        name="telefono"
+                        value={formData.telefono}
+                        onChange={handleChange}
+                        placeholder="Ingrese el teléfono"
+                        className={inputClasses("telefono")}
+                    />
+                    <ValidationMessage
+                        error={errors.telefono}
+                        success={formData.telefono}
+                        successMessage="Teléfono válido"
+                    />
+                </div>
+
+                {/* ROL */}
+                <div className="flex flex-col gap-1 w-full">
+                    <CustomSelect
+                        label="Rol *"
+                        icon={User}
+                        value={formData.rol}
+                        onChange={(value) =>
+                            handleChange({ target: { name: "rol", value } })
+                        }
+                        options={roles.map((r) => ({ value: r.nombre, label: r.nombre }))}
+                        placeholder="Seleccione un rol"
+                        width="w-full"
+                    />
+                    <ValidationMessage
+                        error={errors.rol}
+                        success={formData.rol}
+                        successMessage="Rol válido"
+                    />
                 </div>
 
             </div>
 
-            {/* ================= BOTONES ================= */}
-            <div className="flex justify-end mt-auto gap-4">
+            {/* BOTONES */}
+            <div className="flex justify-end mt-auto gap-4 px-4 md:px-20">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-5 py-2 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer"
+                    className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition duration-300 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                 >
                     <X size={16} />
                     Cancelar

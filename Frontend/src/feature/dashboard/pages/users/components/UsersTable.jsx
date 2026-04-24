@@ -11,80 +11,79 @@ export default function UsersTable({
     return (
 
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-            <div className="bg-gray-100 rounded-2xl border-none overflow-hidden">
+            <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
+                <table className="min-w-230 w-full text-sm table-fixed">
 
-                <table className="w-full text-sm table-fixed">
+                    <thead className="bg-gray-200">
+                        <tr className="text-left border-b border-gray-300">
+                            <th className="px-3 py-2 font-semibold w-12">ID</th>
+                            <th className="px-3 py-2 font-semibold w-28">Documento</th>
+                            <th className="px-3 py-2 font-semibold w-44">Nombre</th>
+                            <th className="px-3 py-2 font-semibold w-44">Email</th>
+                            <th className="px-3 py-2 font-semibold w-32">Teléfono</th>
+                            <th className="px-3 py-2 font-semibold w-22">Rol</th>
+                            <th className="px-3 py-2 font-semibold w-28">Estado</th>
+                            <th className="px-3 py-2 font-semibold w-40">Acciones</th>
+                        </tr>
+                    </thead>
 
-    <thead className="bg-gray-200">
-        <tr className="text-left border-b border-gray-300">
-            <th className="px-3 py-2 font-semibold w-12">ID</th>
-            <th className="px-3 py-2 font-semibold w-28">Documento</th>
-            <th className="px-3 py-2 font-semibold w-44">Nombre</th>
-            <th className="px-3 py-2 font-semibold w-44">Email</th>
-            <th className="px-3 py-2 font-semibold w-32">Teléfono</th>
-            <th className="px-3 py-2 font-semibold w-22">Rol</th>
-            <th className="px-3 py-2 font-semibold w-28">Estado</th>
-            <th className="px-3 py-2 font-semibold w-40">Acciones</th>
-        </tr>
-    </thead>
+                    <tbody className="bg-white text-gray-700">
+                        {data.length === 0 ? (
+                            <tr>
+                                <td colSpan="8" className="text-center py-4 text-gray-500">
+                                    No se encontraron usuarios.
+                                </td>
+                            </tr>
+                        ) : (
+                            data.map((user, index) => (
+                                <tr key={user.id} className="border-b border-gray-300">
 
-    <tbody className="bg-white text-gray-700">
-        {data.length === 0 ? (
-            <tr>
-                <td colSpan="8" className="text-center py-4 text-gray-500">
-                    No se encontraron usuarios.
-                </td>
-            </tr>
-        ) : (
-            data.map((user, index) => (
-                <tr key={user.id} className="border-b border-gray-300">
+                                    {/* ID */}
+                                    <td className="px-3 py-2">
+                                        {index + 1}
+                                    </td>
 
-                    {/* ID */}
-                    <td className="px-3 py-2">
-                        {index + 1}
-                    </td>
+                                    {/* DOCUMENTO */}
+                                    <td className="px-3 py-2 truncate">
+                                        {user.tipoDoc || "-"}<br />
+                                        {user.documento || "-"}
+                                    </td>
 
-                    {/* DOCUMENTO */}
-                    <td className="px-3 py-2 truncate">
-                        {user.tipoDoc || "-"}<br />
-                        {user.documento || "-"}
-                    </td>
+                                    {/* NOMBRE */}
+                                    <td className="px-3 py-2 truncate">
+                                        {user.nombre || "-"}
+                                    </td>
 
-                    {/* NOMBRE */}
-                    <td className="px-3 py-2 truncate">
-                        {user.nombre || "-"}
-                    </td>
+                                    {/* EMAIL */}
+                                    <td className="px-3 py-2 truncate">
+                                        {user.email || "-"}
+                                    </td>
 
-                    {/* EMAIL */}
-                    <td className="px-3 py-2 truncate">
-                        {user.email || "-"}
-                    </td>
+                                    {/* TELEFONO */}
+                                    <td className="px-3 py-2 truncate">
+                                        {user.telefono || "-"}
+                                    </td>
 
-                    {/* TELEFONO */}
-                    <td className="px-3 py-2 truncate">
-                        {user.telefono || "-"}
-                    </td>
+                                    {/* ROL */}
+                                    <td className="px-3 py-2">
+                                        {user.rol || "-"}
+                                    </td>
 
-                    {/* ROL */}
-                    <td className="px-3 py-2">
-                        {user.rol || "-"}
-                    </td>
-
-                    {/* ESTADO */}
-                    <td className="px-3 py-2">
-                        <div className="flex items-center gap-2">
-                            <span
-                                className={`w-2.5 h-2.5 rounded-full 
+                                    {/* ESTADO */}
+                                    <td className="px-3 py-2">
+                                        <div className="flex items-center gap-2">
+                                            <span
+                                                className={`w-2.5 h-2.5 rounded-full 
                                 ${user.estado ? "bg-green-500" : "bg-red-500"}`}
-                            ></span>
-                            <span>
-                                {user.estado ? "Activo" : "Inactivo"}
-                            </span>
-                        </div>
-                    </td>
+                                            ></span>
+                                            <span>
+                                                {user.estado ? "Activo" : "Inactivo"}
+                                            </span>
+                                        </div>
+                                    </td>
 
-                    {/* ACCIONES */}
-                    <td className="px-1 py-1">
+                                    {/* ACCIONES */}
+                                    <td className="px-1 py-1">
                                         <div className="flex justify-center gap-2">
 
                                             {/* BOTON DE VER DETALLE */}
@@ -135,12 +134,12 @@ export default function UsersTable({
                                         </div>
                                     </td>
 
-                </tr>
-            ))
-        )}
-    </tbody>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
 
-</table>
+                </table>
             </div>
         </div>
     );
