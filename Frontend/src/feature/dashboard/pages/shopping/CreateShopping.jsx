@@ -1,4 +1,4 @@
-import { Plus, Ban, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Ban, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
@@ -251,9 +251,18 @@ export default function CreateShopping() {
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner relative overflow-y-auto">
 
                 {/* TITULO */}
-                <p className="text-xl font-semibold">
-                    Nueva Compra
-                </p>
+                <div className="flex justify-between">
+                    <p className="text-xl font-semibold">
+                        Nueva Compra
+                    </p>
+
+                    <button
+                        onClick={() => navigate("/dashboard/shopping")}
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
 
                 {/* LÍNEA DIVISORA */}
                 <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent"></div>
