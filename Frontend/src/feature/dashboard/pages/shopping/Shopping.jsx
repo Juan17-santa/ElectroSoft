@@ -16,7 +16,7 @@ const ITEMS_PER_PAGE = 11;
 
 // ─── Botón anular con tooltip informativo cuando no se puede anular ───────────
 function BanButton({ puedeAnularse, onClick }) {
-    const [showTooltip,    setShowTooltip]    = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
     const buttonRef = useRef(null);
 
@@ -24,7 +24,7 @@ function BanButton({ puedeAnularse, onClick }) {
         if (!puedeAnularse && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
             setTooltipPosition({
-                top:  rect.top  - 20,
+                top: rect.top - 20,
                 left: rect.left - 270,
             });
             setShowTooltip(true);
@@ -40,11 +40,10 @@ function BanButton({ puedeAnularse, onClick }) {
             <button
                 ref={buttonRef}
                 onClick={puedeAnularse ? onClick : undefined}
-                className={`p-2 rounded-lg transition duration-300 ${
-                    puedeAnularse
+                className={`p-2 rounded-lg transition duration-300 ${puedeAnularse
                         ? "bg-red-100 hover:bg-red-200 cursor-pointer"
                         : "bg-red-100 opacity-40 cursor-not-allowed"
-                }`}
+                    }`}
             >
                 <Ban size={18} className="text-red-600" />
             </button>
@@ -53,7 +52,7 @@ function BanButton({ puedeAnularse, onClick }) {
                 <div
                     className="fixed z-50 bg-gray-50 text-gray-400 rounded-xl shadow-2xl p-4 w-64 border border-gray-400"
                     style={{
-                        top:  `${tooltipPosition.top}px`,
+                        top: `${tooltipPosition.top}px`,
                         left: `${tooltipPosition.left}px`,
                     }}
                 >
@@ -67,7 +66,7 @@ function BanButton({ puedeAnularse, onClick }) {
                             <p className="text-xs tracking-wide text-gray-500 font-semibold">
                                 Motivo
                             </p>
-                            <p className="text-xs text-gray-400 mt-1 leading-relaxed break-words">
+                            <p className="text-xs text-gray-400 mt-1 leading-relaxed wrap-break-word">
                                 La compra ha superado el plazo de 48 horas y no se puede anular.
                             </p>
                         </div>
@@ -82,10 +81,10 @@ export default function Shopping() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion } = useShopping();
-    const [currentPage,     setCurrentPage]     = useState(1);
-    const [cancelModalData, setCancelModalData]  = useState(null);
-    const [alert,           setAlert]            = useState(null);
-    const [showReportModal, setShowReportModal]  = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [cancelModalData, setCancelModalData] = useState(null);
+    const [alert, setAlert] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     const showAlert = (type, message) => setAlert({ type, message });
 
@@ -93,9 +92,9 @@ export default function Shopping() {
 
     // Paginación
     const comprasOrdenadas = [...comprasFiltradas].reverse();
-    const totalPages       = Math.max(1, Math.ceil(comprasOrdenadas.length / ITEMS_PER_PAGE));
-    const paginaActual     = Math.min(currentPage, totalPages);
-    const comprasPagina    = comprasOrdenadas.slice(
+    const totalPages = Math.max(1, Math.ceil(comprasOrdenadas.length / ITEMS_PER_PAGE));
+    const paginaActual = Math.min(currentPage, totalPages);
+    const comprasPagina = comprasOrdenadas.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
         paginaActual * ITEMS_PER_PAGE
     );
@@ -109,11 +108,10 @@ export default function Shopping() {
 
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
 
                 {/* TITULO */}
                 <p className="text-xl font-semibold flex items-center gap-2">
-                    <ShoppingCart size={22} className="text-yellow-500" />
                     Gestión de Compras
                 </p>
 
@@ -121,7 +119,7 @@ export default function Shopping() {
                 <Searchbar
                     searchTerm={searchTerm}
                     onSearchChange={handleSearch}
-                    placeholder="Buscar por proveedor, número de factura, fecha o estado..."
+                    placeholder="Buscar compras..."
                     onCreateClick={() => navigate("/dashboard/shopping/create")}
                     createButtonText="Nueva Compra"
                     showCreateButton={hasPermission("Compras", "Crear")}
@@ -131,7 +129,7 @@ export default function Shopping() {
 
                 {/* TABLA */}
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-                    <div className="bg-gray-100 rounded-2xl border-none overflow-hidden">
+                    <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
@@ -148,7 +146,7 @@ export default function Shopping() {
                             <tbody className="bg-white text-gray-700">
                                 {comprasPagina.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                                        <td colSpan={7} className="px-4 py-4 text-center text-gray-400">
                                             No hay compras registradas.
                                         </td>
                                     </tr>
@@ -165,11 +163,10 @@ export default function Shopping() {
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.proveedor}</td>
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.total}</td>
                                                 <td className="px-4 py-1 border-b border-gray-300">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                        compra.estado === "Activo"
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${compra.estado === "Activo"
                                                             ? "bg-green-100 text-green-700"
                                                             : "bg-red-100 text-red-600"
-                                                    }`}>
+                                                        }`}>
                                                         {compra.estado}
                                                     </span>
                                                 </td>
@@ -204,13 +201,16 @@ export default function Shopping() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-auto">
-                    <Pagination
-                        currentPage={paginaActual}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
-                </div>
+                {/* PAGINADOR */}
+                {comprasFiltradas.length > 0 && (
+                    <div className="flex justify-end mt-auto">
+                        <Pagination
+                            currentPage={paginaActual}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* MODAL DE REPORTE CON RANGO DE FECHAS */}
@@ -233,8 +233,8 @@ export default function Shopping() {
                 <CancellationModal
                     title="Anular Compra"
                     infoData={[
-                        { label: "Factura",   value: cancelModalData?.numeroFactura ?? "" },
-                        { label: "Proveedor", value: cancelModalData?.proveedor     ?? "" },
+                        { label: "Factura", value: cancelModalData?.numeroFactura ?? "" },
+                        { label: "Proveedor", value: cancelModalData?.proveedor ?? "" },
                     ]}
                     placeholder="Describe el motivo de la anulación..."
                     minLength={20}

@@ -13,6 +13,7 @@ import { ServicesProviders } from "../providers/services/ServicesProviders";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
+import CustomSelect from "../../components/ui/CustomSelect";
 
 const ITEMS_PER_PAGE = 4;
 
@@ -45,9 +46,8 @@ function FieldStatus({ estado }) {
     if (estado === null) return null;
     return (
         <div
-            className={`flex items-center gap-1 text-xs mt-1 transition-all duration-300 ${
-                estado.valido ? "text-green-500 opacity-100" : "text-red-500 opacity-100"
-            }`}
+            className={`flex items-center gap-1 text-xs mt-1 transition-all duration-300 ${estado.valido ? "text-green-500 opacity-100" : "text-red-500 opacity-100"
+                }`}
             style={{ minHeight: "16px" }}
         >
             {estado.valido
@@ -63,23 +63,23 @@ export default function CreateShopping() {
     const navigate = useNavigate();
     const { guardarCompra } = useShopping();
 
-    const [showModal,               setShowModal]               = useState(false);
-    const [showCreateProductModal,  setShowCreateProductModal]  = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [showCreateProductModal, setShowCreateProductModal] = useState(false);
     const [showCreateProviderModal, setShowCreateProviderModal] = useState(false);
-    const [currentPage,             setCurrentPage]             = useState(1);
-    const [proveedoresList,         setProveedoresList]         = useState([]);
-    const [confirmData,             setConfirmData]             = useState(null);
-    const [alertData,               setAlertData]               = useState(null);
-    const [navegarACompras,         setNavegarACompras]         = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [proveedoresList, setProveedoresList] = useState([]);
+    const [confirmData, setConfirmData] = useState(null);
+    const [alertData, setAlertData] = useState(null);
+    const [navegarACompras, setNavegarACompras] = useState(false);
 
     // Formulario superior
-    const [proveedorId,             setProveedorId]             = useState("");
-    const [proveedor,               setProveedor]               = useState("");
-    const [fechaISO,                setFechaISO]                = useState("");
-    const [numeroFactura,           setNumeroFactura]           = useState("");
-    const [proveedorTocado,         setProveedorTocado]         = useState(false);
-    const [fechaTocada,             setFechaTocada]             = useState(false);
-    const [numeroFacturaTocado,     setNumeroFacturaTocado]     = useState(false);
+    const [proveedorId, setProveedorId] = useState("");
+    const [proveedor, setProveedor] = useState("");
+    const [fechaISO, setFechaISO] = useState("");
+    const [numeroFactura, setNumeroFactura] = useState("");
+    const [proveedorTocado, setProveedorTocado] = useState(false);
+    const [fechaTocada, setFechaTocada] = useState(false);
+    const [numeroFacturaTocado, setNumeroFacturaTocado] = useState(false);
 
     // Productos en tabla
     const [productos, setProductos] = useState([]);
@@ -99,8 +99,8 @@ export default function CreateShopping() {
     }, [navegarACompras, navigate]);
 
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
-    const estadoProveedor     = proveedorTocado     ? validarProveedor(proveedorId)       : null;
-    const estadoFecha         = fechaTocada         ? validarFecha(fechaISO)              : null;
+    const estadoProveedor = proveedorTocado ? validarProveedor(proveedorId) : null;
+    const estadoFecha = fechaTocada ? validarFecha(fechaISO) : null;
     const estadoNumeroFactura = numeroFacturaTocado ? validarNumeroFactura(numeroFactura) : null;
 
     // ─── Cálculos ─────────────────────────────────────────────────────────────
@@ -115,14 +115,14 @@ export default function CreateShopping() {
         (acc, p) => acc + p.cantidad * p.costeProducto,
         0
     );
-    const iva   = subtotal * IVA_RATE;
+    const iva = subtotal * IVA_RATE;
     const total = subtotal; // Total es el subtotal de la tabla (sin IVA)
 
     // Total venta = subtotal - IVA (para mostrar como "Subtotal")
     const totalVenta = subtotal - iva;
 
     // ─── Paginación ───────────────────────────────────────────────────────────
-    const totalPages   = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
+    const totalPages = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
     const productosPagina = productos.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
@@ -207,8 +207,8 @@ export default function CreateShopping() {
         setNumeroFacturaTocado(true);
         setConfirmData(null);
 
-        const vProv    = validarProveedor(proveedorId);
-        const vFech    = validarFecha(fechaISO);
+        const vProv = validarProveedor(proveedorId);
+        const vFech = validarFecha(fechaISO);
         const vNumFact = validarNumeroFactura(numeroFactura);
 
         if (!vProv.valido || !vFech.valido || !vNumFact.valido) return;
@@ -228,7 +228,7 @@ export default function CreateShopping() {
             ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal, sobreescribirConSugerido }) => ({
                 id, nombre, cantidad, precio,
                 costeProducto: costeProducto || precio,
-                precioVenta:   precioVenta   || precio,
+                precioVenta: precioVenta || precio,
                 subtotal,
                 sobreescribirConSugerido: !!sobreescribirConSugerido,
             })
@@ -248,62 +248,51 @@ export default function CreateShopping() {
 
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner relative">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner relative overflow-y-auto">
 
                 {/* TITULO */}
                 <p className="text-xl font-semibold">
-                    <Plus size={20} className="inline mr-2 text-yellow-400" />
                     Nueva Compra
                 </p>
 
                 {/* LÍNEA DIVISORA */}
-                <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-transparent"></div>
+                <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent"></div>
 
                 {/* CAMPOS SUPERIORES */}
                 <div className="flex flex-wrap gap-6 items-start">
 
-                    {/* PROVEEDOR — #7: el value del select es el ID del proveedor */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                            <Truck size={20} />
-                            <span>Proveedor *</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="flex flex-col">
-                                <select
+                    {/* --- SECCIÓN PROVEEDOR --- */}
+                    <div className="flex flex-col w-full md:w-64">
+                        <div className="flex items-start gap-2">
+                            <div className="flex-1 w-full">
+                                <CustomSelect
+                                    label="Proveedor *"
+                                    icon={Truck}
+                                    options={proveedoresList.map(p => ({
+                                        value: String(p.id),
+                                        label: p.nombreProveedor
+                                    }))}
                                     value={proveedorId}
-                                    onChange={(e) => handleSelectProveedor(e.target.value)}
-                                    onBlur={() => setProveedorTocado(true)}
-                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-52 cursor-pointer transition-all duration-300
-                                        ${estadoProveedor === null
-                                            ? "focus:ring-gray-400 text-gray-500"
-                                            : estadoProveedor.valido
-                                                ? "focus:ring-green-400 ring-1 ring-green-300 text-gray-700"
-                                                : "focus:ring-red-400 ring-1 ring-red-300 text-gray-500"
-                                        }`}
-                                >
-                                    <option value="">— No seleccionado —</option>
-                                    {proveedoresList.map((p) => (
-                                        <option key={p.id} value={p.id}>
-                                            {p.nombreProveedor}
-                                        </option>
-                                    ))}
-                                </select>
-                                <FieldStatus estado={estadoProveedor} />
+                                    onChange={(val) => handleSelectProveedor(val)}
+                                    placeholder="— No seleccionado —"
+                                />
                             </div>
                             <button
                                 type="button"
                                 onClick={() => setShowCreateProviderModal(true)}
-                                className="bg-yellow-400 hover:bg-yellow-500 transition duration-300 p-3 rounded-xl shadow-md cursor-pointer self-start"
+                                className="bg-yellow-400 hover:bg-yellow-500 transition duration-300 p-3 rounded-xl shadow-md cursor-pointer mt-7"
                                 title="Crear nuevo proveedor"
                             >
                                 <Plus size={18} className="text-white" />
                             </button>
                         </div>
+                        <div className="mt-2">
+                            <FieldStatus estado={estadoProveedor} />
+                        </div>
                     </div>
 
                     {/* FECHA FACTURA */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full md:w-56">
                         <Calendar
                             fechaISO={fechaISO}
                             onFechaChange={(iso) => {
@@ -317,7 +306,7 @@ export default function CreateShopping() {
                     </div>
 
                     {/* NÚMERO FACTURA */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2 w-full md:w-56">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <ScanBarcode size={20} />
                             <span>Número Factura *</span>
@@ -333,7 +322,7 @@ export default function CreateShopping() {
                                 }}
                                 onBlur={() => setNumeroFacturaTocado(true)}
                                 placeholder="Ej: 12345"
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-52 transition-all duration-300
+                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300
                                     ${estadoNumeroFactura === null
                                         ? "focus:ring-gray-400 text-gray-500"
                                         : estadoNumeroFactura.valido
@@ -350,13 +339,14 @@ export default function CreateShopping() {
                 {/* SECCIÓN PRODUCTOS */}
                 <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4">
 
-                    {/* ENCABEZADO */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex md:flex-row md:justify-between flex-col gap-4">
+
                         <div className="flex items-center gap-2 text-yellow-400 font-semibold text-base">
                             <Boxes size={20} />
                             <span>Productos</span>
                         </div>
-                        <div className="flex gap-3">
+
+                        <div className="flex gap-3 justify-end">
                             <button
                                 onClick={() => setShowCreateProductModal(true)}
                                 className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 transition duration-300 px-4 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
@@ -375,7 +365,7 @@ export default function CreateShopping() {
                     </div>
 
                     {/* TABLA */}
-                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                    <div className="overflow-x-auto rounded-xl border border-gray-200">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-100">
                                 <tr className="text-left border-b border-gray-200">
@@ -391,7 +381,7 @@ export default function CreateShopping() {
                             <tbody className="bg-white text-gray-700">
                                 {productosPagina.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                                        <td colSpan={7} className="px-4 py-5 text-center text-gray-400">
                                             Añade productos a la compra.
                                         </td>
                                     </tr>
@@ -418,7 +408,6 @@ export default function CreateShopping() {
                                             <td className="px-4 py-2 border-b border-gray-200 text-center text-blue-500 font-medium">
                                                 {formatCOP(producto.precioVenta)}
                                             </td>
-                                            {/* Subtotal = cantidad × costeProducto (#3) */}
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">
                                                 {formatCOP(producto.subtotal)}
                                             </td>
@@ -449,14 +438,15 @@ export default function CreateShopping() {
                     </div>
 
                     {/* PAGINADOR Y TOTALES */}
-                    <div className="flex items-center justify-between mt-2">
-                        <Pagination
-                            currentPage={paginaActual}
-                            totalPages={totalPages}
-                            onPageChange={setCurrentPage}
-                        />
-                        <div className="flex items-center gap-6 text-sm font-medium text-gray-700">
-                            {/* Subtotal = subtotal restando el IVA */}
+                    <div className={`flex items-center mt-2 ${productosPagina.length > 0 ? 'justify-between' : 'justify-end'}`}>
+                        {productosPagina.length > 0 && (
+                            <Pagination
+                                currentPage={paginaActual}
+                                totalPages={totalPages}
+                                onPageChange={setCurrentPage}
+                            />
+                        )}
+                        <div className="flex flex-col items-end sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm font-medium text-gray-700">
                             <span>
                                 Subtotal:
                                 <span className="font-semibold ml-1">
@@ -467,7 +457,6 @@ export default function CreateShopping() {
                                 IVA (19%):
                                 <span className="font-semibold ml-1">{formatCOP(Math.round(iva))}</span>
                             </span>
-                            {/* Total = subtotal de la tabla sin IVA */}
                             <span>
                                 Total:
                                 <span className="font-bold text-base ml-1">{formatCOP(Math.round(total))}</span>
@@ -491,7 +480,6 @@ export default function CreateShopping() {
                         Cancelar
                     </button>
                     <PrimaryButton
-                        icon={Plus}
                         onClick={handleCrearCompra}
                     >
                         Crear Compra
@@ -511,7 +499,7 @@ export default function CreateShopping() {
                 {showCreateProductModal && (
                     <CreateProductModal
                         onClose={() => setShowCreateProductModal(false)}
-                        onSuccess={() => {}}
+                        onSuccess={() => { }}
                     />
                 )}
 
@@ -542,9 +530,7 @@ export default function CreateShopping() {
                         onClose={() => setAlertData(null)}
                     />
                 )}
-
             </div>
-
         </>
     );
 }
