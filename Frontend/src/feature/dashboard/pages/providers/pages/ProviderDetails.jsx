@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Info, X } from "lucide-react";
+import { ArrowLeft, Info, X } from "lucide-react";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 
 export default function ProviderDetails() {
@@ -37,7 +37,7 @@ export default function ProviderDetails() {
     };
 
     return (
-        <div className="bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner h-full">
+        <div className="bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner h-full overflow-y-auto">
 
             <div
                 className="relative bg-white rounded-3xl p-4 md:p-8 shadow-lg overflow-hidden h-full"
@@ -53,11 +53,20 @@ export default function ProviderDetails() {
                 <div className="relative z-10 flex flex-col gap-6">
 
                     {/* HEADER */}
-                    <div className="flex items-center gap-2">
-                        <Info size={22} />
-                        <h2 className="text-lg md:text-xl font-semibold">
-                            Ver Información del proveedor
-                        </h2>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Info size={22} />
+                            <h2 className="text-md md:text-xl font-semibold">
+                                Ver Información del proveedor
+                            </h2>
+                        </div>
+                        <button
+                            onClick={handleBack}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
+                        >
+                            <ArrowLeft size={16} />
+                            Volver
+                        </button>
                     </div>
 
                     {/* CARD */}
@@ -143,24 +152,10 @@ export default function ProviderDetails() {
                                     </p>
                                 )}
                             </div>
-
                         </div>
                     </div>
-
                 </div>
             </div>
-
-            {/* BOTÓN */}
-            <div className="flex justify-center sm:justify-end">
-                <button
-                    onClick={handleBack}
-                    className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition px-6 py-2 rounded-xl text-sm font-medium shadow flex items-center gap-2"
-                >
-                    <X size={18} />
-                    Volver
-                </button>
-            </div>
-
         </div>
     );
 }
