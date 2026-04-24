@@ -68,7 +68,7 @@ export default function ClientDetailsPage() {
                 <div className="relative z-10 flex flex-col gap-6 h-full">
 
                     {/* CONTENEDOR PRINCIPAL */}
-                    <div className="relative bg-white/80 rounded-3xl p-6 shadow-lg flex-1 flex flex-col gap-6">
+                    <div className="p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner relative overflow-y-auto">
 
                         {/* TÍTULO */}
                         <div className="flex items-center justify-between">
@@ -89,14 +89,14 @@ export default function ClientDetailsPage() {
 
                             {/* NOMBRE DESTACADO */}
                             <div className="border-b border-gray-200 pb-4 mb-6">
-                                <h3 className="text-2xl font-bold text-gray-800">
+                                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 break-all">
                                     {client.nombres} {client.apellidos}
                                 </h3>
                                 <p className="text-gray-500 mt-1 text-sm">{client.email}</p>
                             </div>
 
                             {/* GRID DE DATOS */}
-                            <div className="flex items-start justify-between gap-4 flex-wrap">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 <div>
                                     <p className="text-sm text-yellow-400 mb-1">Tipo de documento</p>
                                     <p className="text-sm font-semibold text-gray-800">{client.tipoDocumento}</p>

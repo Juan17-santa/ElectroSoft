@@ -7,7 +7,7 @@ export function useClientForm({ initialData = null, onSubmit }) {
         nombres: "", apellidos: "", email: "",
         telefono: "", totalCompras: 0, estado: true
     };
-    
+
     const [formData, setFormData] = useState(defaultData);
 
     const [tocado, setTocado] = useState({
@@ -16,7 +16,17 @@ export function useClientForm({ initialData = null, onSubmit }) {
     });
 
     useEffect(() => {
-        if (initialData) setFormData(initialData);
+        if (initialData) {
+            setFormData(initialData);
+            setTocado({
+                tipoDocumento: true,
+                documento: true,
+                nombres: true,
+                apellidos: true,
+                email: true,
+                telefono: true
+            });
+        }
     }, [initialData]);
 
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
@@ -31,7 +41,6 @@ export function useClientForm({ initialData = null, onSubmit }) {
             telefono: Validations.validarTelefono(formData.telefono).valido ? null : Validations.validarTelefono(formData.telefono).mensaje
         };
     };
-
     const currentValidation = validate();
 
     const errors = {

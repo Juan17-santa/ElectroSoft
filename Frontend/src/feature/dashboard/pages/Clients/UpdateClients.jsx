@@ -38,7 +38,7 @@ export default function UpdateClients() {
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-xl font-semibold mb-4">Editar <span className="text-yellow-400">cliente</span></p>
+                        <p className="text-xl font-semibold mb-4">Editar cliente</p>
                         <p className="text-sm text-gray-600">Actualice los campos requeridos del formulario</p>
                     </div>
                 </div>
@@ -52,7 +52,7 @@ export default function UpdateClients() {
                             localStorage.removeItem("clientToEdit");
                             navigate("/dashboard/clients");
                         }}
-                        buttonText="Actualizar cliente"
+                        buttonText="Guardar cambios"
                     />
                 ) : (
                     <div className="text-gray-500">Cargando datos del cliente...</div>
