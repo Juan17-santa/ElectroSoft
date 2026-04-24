@@ -67,7 +67,7 @@ export default function UpdateUser() {
                     handleChange={handleChange}
                     handleSubmit={handleSubmit}
                     onCancel={() => navigate("/dashboard/users")}
-                    buttonText="Actualizar usuario"
+                    buttonText="Guardar cambios"
                 />
             </div>
 

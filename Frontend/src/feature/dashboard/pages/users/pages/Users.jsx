@@ -101,14 +101,14 @@ export default function Users() {
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
 
-                <p className="text-xl font-semibold">Gestión de usuarios</p>
+                <p className="text-xl font-semibold">Control de usuarios</p>
 
                 <SearchBar
                     searchTerm={search}
                     onSearchChange={(e) => setSearch(e.target.value)}
                     placeholder="Buscar usuario ..."
                     onCreateClick={() => navigate("/dashboard/users/create")}
-                    createButtonText="Crear usuario"
+                    createButtonText="Nuevo usuario"
                     showCreateButton={hasPermission("Usuarios", "Crear")}
                 />
 

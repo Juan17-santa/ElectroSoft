@@ -46,7 +46,7 @@ export default function CreateUser() {
 
                 <div className="flex justify-between">
                     <div>
-                        <p className="text-xl font-semibold">Crear usuario</p>
+                        <p className="text-xl font-semibold">Nuevo usuario</p>
                         <p className="text-sm text-gray-600">
                             Complete todos los campos
                         </p>
