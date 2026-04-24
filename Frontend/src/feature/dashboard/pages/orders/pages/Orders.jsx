@@ -142,7 +142,7 @@ export default function Orders() {
                     showReportButton={true}
                     onReportClick={() => setShowReportModal(true)}
                     onCreateClick={() => navigate("/dashboard/orders/create")}
-                    createButtonText="Crear pedido"
+                    createButtonText="Nuevo pedido"
                     showCreateButton={hasPermission("Pedidos", "Crear")}
                 />
 
