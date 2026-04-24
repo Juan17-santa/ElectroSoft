@@ -3,7 +3,6 @@ import { useProviderForm } from "../hooks/useProviderForm";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import Alert from "../../../components/ui/Alert";
-import ConfirmModal from "../../../components/ui/ConfirmModal";
 import ProviderForm from "../components/ProvidersForm";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 
@@ -11,7 +10,6 @@ export default function CreateProvider() {
     const navigate = useNavigate();
 
     const [alert, setAlert] = useState(null);
-    const [showExitModal, setShowExitModal] = useState(false);
 
     const {
         formData,
@@ -39,7 +37,7 @@ export default function CreateProvider() {
 
     return (
         <>
-            <div className="bg-gray-100 p-4 sm:p-6 md:p-8 rounded-2xl flex flex-col gap-6 shadow-inner h-full">
+            <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 shadow-inner h-full overflow-y-auto">
 
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
@@ -54,7 +52,7 @@ export default function CreateProvider() {
 
                     {/* BOTÓN X */}
                     <button
-                        onClick={() => setShowExitModal(true)}
+                        onClick={() => navigate("/dashboard/providers")}
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
                     >
                         <X size={20} />
@@ -69,21 +67,10 @@ export default function CreateProvider() {
                     handleChange={handleChange}
                     setCategoriasAsociadas={setCategoriasAsociadas}
                     handleSubmit={handleSubmit}
-                    onCancel={() => setShowExitModal(true)}
+                    onCancel={() => navigate("/dashboard/providers")}
                     buttonText="Crear proveedor"
                 />
             </div>
-
-            {/* MODAL DE SALIDA */}
-            {showExitModal && (
-                <ConfirmModal
-                    type="info"
-                    title="Salir"
-                    message="Si sales, la información ingresada se perderá."
-                    onConfirm={() => navigate("/dashboard/providers")}
-                    onCancel={() => setShowExitModal(false)}
-                />
-            )}
 
             {/* ALERTA */}
             {alert && (

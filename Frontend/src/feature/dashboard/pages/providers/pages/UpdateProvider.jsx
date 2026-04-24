@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-// import { X } from "lucide-react";
+import { X } from "lucide-react";
 import Alert from "../../../components/ui/Alert";
 import ProviderForm from "../components/ProvidersForm";
 import { useProviderForm } from "../hooks/useProviderForm";
@@ -66,7 +66,7 @@ export default function UpdateProvider() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner h-full">
+            <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 shadow-inner h-full overflow-y-auto">
 
                 {/* HEADER DE LA PÁGINA */}
                 <div className="flex justify-between items-start">
@@ -78,12 +78,12 @@ export default function UpdateProvider() {
                             Complete todos los campos del formulario
                         </p>
                     </div>
-                    {/* <button
+                    <button
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
                         onClick={() => navigate("/dashboard/providers")}
                     >
                         <X size={20} />
-                    </button> */}
+                    </button>
                 </div>
 
                 {/* FORMULARIO */}
@@ -95,7 +95,7 @@ export default function UpdateProvider() {
                     setCategoriasAsociadas={setCategoriasAsociadas}
                     handleSubmit={handleSubmit}
                     onCancel={() => navigate("/dashboard/providers")}
-                    buttonText="Actualizar proveedor"
+                    buttonText="Guardar cambios"
                 />
 
                 {/* ALERTA */}

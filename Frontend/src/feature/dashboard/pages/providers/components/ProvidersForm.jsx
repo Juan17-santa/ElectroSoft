@@ -3,7 +3,7 @@ import { IdCard, FileText, User, X } from "lucide-react";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import { useState } from "react";
-import ConfirmModal from "../../../components/ui/ConfirmModal";
+import { useNavigate } from "react-router-dom";
 
 export default function ProviderForm({
     formData,
@@ -15,32 +15,32 @@ export default function ProviderForm({
     onCancel,
     setCategoriasAsociadas
 }) {
+    const navigate = useNavigate();
+
     const categoriasOptions = categorias.map(cat => ({
         value: cat.id,
         label: cat.nombre
     }));
 
-    const [showCancelModal, setShowCancelModal] = useState(false);
     const isEdit = buttonText.toLowerCase().includes("actualizar");
+
+    // Estilos reutilizables para inputs
+    const inputClasses = `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`;
 
     return (
         <>
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-min gap-10">
 
-                {/* GRID RESPONSIVE */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mt-4 sm:mt-6 px-2 sm:px-4 md:px-10 xl:px-20">
+                {/* GRID RESPONSIVE: 1 columna en móvil, 2 en md */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 mt-6 px-4 md:px-20">
 
                     {/* TIPO DOCUMENTO */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1 w-full">
                         <CustomSelect
                             label="Tipo de documento *"
                             icon={IdCard}
                             value={formData.tipoDoc}
-                            onChange={(value) =>
-                                handleChange({
-                                    target: { name: "tipoDoc", value }
-                                })
-                            }
+                            onChange={(value) => handleChange({ target: { name: "tipoDoc", value } })}
                             options={[
                                 { value: "CC", label: "C.C" },
                                 { value: "CE", label: "C.E" },
@@ -48,42 +48,45 @@ export default function ProviderForm({
                                 { value: "Pasaporte", label: "Pasaporte" },
                             ]}
                             placeholder="Seleccione un tipo de documento"
+                            width="w-full"
                         />
-                        <ValidationMessage error={errors.tipoDoc} success={formData.tipoDoc} />
+                        <ValidationMessage error={errors.tipoDoc} success={formData.tipoDoc} successMessage="Tipo de documento valido" />
                     </div>
 
                     {/* DOCUMENTO */}
-                    <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
-                            <FileText size={16} /> Documento *
-                        </label>
+                    <div className="flex flex-col gap-1 w-full">
+                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                            <FileText size={16} /> <span>Documento *</span>
+                        </div>
                         <input
                             type="text"
                             name="documento"
                             value={formData.documento}
                             onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-md border-2 ${errors.documento ? "border-red-500" : "border-transparent"}`}
+                            placeholder="Ingrese su documento"
+                            className={inputClasses}
                         />
-                        <ValidationMessage error={errors.documento} success={formData.documento} />
+                        <ValidationMessage error={errors.documento} success={formData.documento} successMessage="Documento valido" />
                     </div>
 
-                    {/* NOMBRE */}
-                    <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
-                            <User size={16} /> Nombre Proveedor *
-                        </label>
+                    {/* NOMBRE PROVEEDOR */}
+                    <div className="flex flex-col gap-1 w-full">
+                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                            <User size={16} /> <span>Nombre Proveedor *</span>
+                        </div>
                         <input
                             type="text"
                             name="nombreProveedor"
                             value={formData.nombreProveedor}
                             onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-md border-2 ${errors.nombreProveedor ? "border-red-500" : "border-transparent"}`}
+                            placeholder="Ingrese el nombre del proveedor"
+                            className={inputClasses}
                         />
-                        <ValidationMessage error={errors.nombreProveedor} success={formData.nombreProveedor} />
+                        <ValidationMessage error={errors.nombreProveedor} success={formData.nombreProveedor} successMessage="Nombre de proveedor valido" />
                     </div>
 
                     {/* CATEGORÍAS */}
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1 w-full">
                         <CustomSelect
                             label="Categorías Asociadas"
                             icon={User}
@@ -92,82 +95,60 @@ export default function ProviderForm({
                             onChange={setCategoriasAsociadas}
                             multiple
                             placeholder="Seleccionar categorías"
+                            width="w-full"
                         />
                     </div>
 
-                    {/* CONTACTO */}
-                    <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
-                            <User size={16} /> Nombre Contacto *
-                        </label>
+                    {/* NOMBRE CONTACTO */}
+                    <div className="flex flex-col gap-1 w-full">
+                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                            <User size={16} /> <span>Nombre Contacto *</span>
+                        </div>
                         <input
                             type="text"
                             name="nombreContacto"
                             value={formData.nombreContacto}
                             onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-md border-2 ${errors.nombreContacto ? "border-red-500" : "border-transparent"}`}
+                            placeholder="Ingrese el nombre de contacto"
+                            className={inputClasses}
                         />
-                        <ValidationMessage error={errors.nombreContacto} success={formData.nombreContacto} />
+                        <ValidationMessage error={errors.nombreContacto} success={formData.nombreContacto} successMessage="Nombre de contacto valido" />
                     </div>
 
                     {/* TELÉFONO */}
-                    <div className="flex flex-col gap-2">
-                        <label className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
-                            <User size={16} /> Teléfono *
-                        </label>
+                    <div className="flex flex-col gap-1 w-full">
+                        <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                            <User size={16} /> <span>Telefono Contacto *</span>
+                        </div>
                         <input
                             type="text"
                             name="telefonoContacto"
                             value={formData.telefonoContacto}
                             onChange={handleChange}
-                            className={`bg-gray-200 rounded-xl px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base shadow-md border-2 ${errors.telefonoContacto ? "border-red-500" : "border-transparent"}`}
+                            placeholder="Ingrese el telefono"
+                            className={inputClasses}
                         />
-                        <ValidationMessage error={errors.telefonoContacto} success={formData.telefonoContacto} />
+                        <ValidationMessage error={errors.telefonoContacto} success={formData.telefonoContacto} successMessage="Telefono valido" />
                     </div>
-
                 </div>
 
-                {/* BOTONES */}
-                <div className="
-    flex justify-end gap-3 mt-8 px-4 md:px-20
-    md:fixed md:bottom-16 md:right-6 md:z-50 md:mt-0
-">
-
+                <div className="flex justify-end mt-auto gap-4 px-4 md:px-20">
                     <button
                         type="button"
-                        onClick={() => setShowCancelModal(true)}
-                        className="px-5 py-2 text-sm rounded-lg shadow-md font-medium flex items-center justify-center gap-2 cursor-pointer bg-gray-200 hover:bg-gray-300 transition"
+                        onClick={() => navigate("/dashboard/providers")}
+                        className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition duration-300 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                     >
-                        <X size={16} />
+                        <span>✕</span>
                         Cancelar
                     </button>
-
-                    <button
+                    <PrimaryButton
                         type="submit"
                         disabled={Object.values(errors).some(error => error)}
-                        className="
-        px-5 py-2 text-sm rounded-lg shadow-md font-medium 
-        bg-linear-to-r from-white to-yellow-300 
-        flex items-center justify-center gap-2 
-        hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition
-    "
                     >
-                        {isEdit ? "Guardar cambios" : "Crear proveedor"}
-                    </button>
-
+                        {buttonText}
+                    </PrimaryButton>
                 </div>
             </form>
-
-            {/* MODAL */}
-            {showCancelModal && (
-                <ConfirmModal
-                    type="info"
-                    title={isEdit ? "Cancelar edición" : "Cancelar creación"}
-                    message="Se perderán los datos ingresados"
-                    onConfirm={onCancel}
-                    onCancel={() => setShowCancelModal(false)}
-                />
-            )}
         </>
     );
 }
