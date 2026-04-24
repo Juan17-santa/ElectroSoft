@@ -136,8 +136,8 @@ export default function OrderDetails() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner min-h-full">
-                <div className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden flex-1"
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner min-h-full overflow-y-auto">
+                <div className="relative bg-white rounded-3xl p-8 shadow-lg flex-1"
                     style={{
                         backgroundImage: "url(/background-details.jpg)",
                         backgroundSize: "cover",
@@ -150,7 +150,7 @@ export default function OrderDetails() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Info size={22} className="text-gray-700" />
-                                <h2 className="text-xl font-semibold text-gray-800">Detalle del Pedido #{order.id}</h2>
+                                <h2 className="text-base sm:text-xl font-semibold text-gray-800 break-all">Detalle del Pedido #{order.id}</h2>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
@@ -196,7 +196,7 @@ export default function OrderDetails() {
                             </div>
 
                             {/* COLUMNA DERECHA: TABLA Y TU PAGINADOR */}
-                            <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                            <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                                 <div className="p-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <Package size={18} className="text-yellow-500" />
@@ -211,8 +211,8 @@ export default function OrderDetails() {
                                     />
                                 </div>
 
-                                <div className="overflow-auto min-h-72">
-                                    <table className="w-full text-left text-sm">
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-96 w-full text-left text-sm">
                                         <thead className="text-gray-500 sticky top-0 bg-white border-b border-gray-100">
                                             <tr>
                                                 <th className="px-4 py-3 font-semibold">Producto</th>
@@ -236,7 +236,7 @@ export default function OrderDetails() {
 
                                 {/* TOTALES */}
                                 <div className="bg-gray-50 border-t border-gray-200 p-4 mt-auto">
-                                    <div className="flex justify-end items-center gap-10 text-sm">
+                                    <div className="flex flex-wrap justify-end items-center gap-4 md:gap-10 text-sm">
                                         <div className="flex gap-2">
                                             <span className="text-gray-500 uppercase">Subtotal:</span>
                                             <span className="text-gray-800 font-semibold">{formatCurrency(order.subtotal)}</span>

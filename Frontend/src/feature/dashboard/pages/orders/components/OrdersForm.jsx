@@ -78,7 +78,7 @@ export default function OrdersForm({
                 <div className="flex flex-col gap-12 mt-6 flex-1">
 
                     {/* ================= PRIMERA FILA ================= */}
-                    <div className="grid grid-cols-2 gap-16 w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 w-full">
 
                         {/* DOCUMENTO */}
                         <div className="flex flex-col gap-3 w-full">
@@ -131,7 +131,7 @@ export default function OrdersForm({
                     </div>
 
                     {/* ================= SEGUNDA FILA ================= */}
-                    <div className="grid grid-cols-3 gap-16 w-full">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-16 w-full">
 
                         {/* FECHA PEDIDO */}
                         <div className="flex flex-col gap-3 w-full">
@@ -148,7 +148,7 @@ export default function OrdersForm({
                                 label="Fecha pedido"
                                 required
                                 // readOnly (Bloquear futuro y pasado, solo HOY)
-                                minDate={haceTresDias} 
+                                minDate={haceTresDias}
                                 maxDate={hoy}
                             />
                         </div>
@@ -214,7 +214,7 @@ export default function OrdersForm({
                         </div>
 
                         {/* TABLA */}
-                        <div className="overflow-hidden rounded-xl border border-gray-200">
+                        <div className="overflow-x-auto rounded-xl border border-gray-200">
                             <table className="w-full text-sm">
                                 <thead className="bg-gray-100">
                                     <tr className="text-left border-b border-gray-200">
@@ -265,7 +265,7 @@ export default function OrdersForm({
                         />
 
                         {/* ================= TOTALES ================= */}
-                        <div className="w-full flex px-6 py-3 justify-between items-center">
+                        <div className="w-full flex flex-col md:flex-row px-2 md:px-6 py-3 justify-between items-start md:items-center gap-4">
                             <div>
                                 {/* PAGINADOR PARA LOS PRODUCTOS */}
                                 {(formData?.productos?.length || 0) > itemsPerPage && (
@@ -279,7 +279,7 @@ export default function OrdersForm({
                                 )}
 
                             </div>
-                            <div className="flex gap-6">
+                            <div className="flex flex-wrap gap-4 md:gap-6">
                                 <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formatCurrency(formData.subtotal)}</span></span>
                                 <span className="text-gray-600 text-sm">IVA (19%): <span className="font-bold text-blue-600">{formatCurrency(formData.iva)}</span></span>
                                 <span className="text-gray-600 text-sm">Total: <span className="font-bold text-green-600">{formatCurrency(formData.total)}</span></span>
