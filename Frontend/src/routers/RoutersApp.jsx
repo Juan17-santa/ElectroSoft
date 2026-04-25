@@ -19,6 +19,7 @@ import Products from "../feature/dashboard/pages/products/pages/Products";
 import CreateProducts from "../feature/dashboard/pages/products/pages/CreateProducts";
 import EditProducts from "../feature/dashboard/pages/products/pages/EditProducts";
 import ProductDetails from "../feature/dashboard/pages/products/pages/ProductDetails";
+
 // PROVEEDORES
 import Providers from "../feature/dashboard/pages/providers/pages/Providers";
 import CreateProvider from "../feature/dashboard/pages/providers/pages/CreateProvider";
@@ -45,7 +46,6 @@ import OrderDetails from "../feature/dashboard/pages/orders/pages/OrderDetails"
 // VENTAS
 import SalesManagement from "../feature/dashboard/pages/SalesManagement/SalesManagement";
 import CreateSales from "../feature/dashboard/pages/SalesManagement/CreateSales";
-import UpdateSales from "../feature/dashboard/pages/SalesManagement/UpdateSales";
 import CreditDetailsModal from "../feature/dashboard/pages/SalesManagement/CreditDetailsModal";
 import ReturnSalesPage from "../feature/dashboard/pages/SalesManagement/ReturnSalesPage";
 import SaleDetailsPage from "../feature/dashboard/pages/SalesManagement/SaleDetailsPage";
@@ -124,7 +124,6 @@ export default function RoutersApp() {
                 {/* GESTION DE VENTAS */}
                 <Route path="sales-management" element={<ProtectedRoute scope="Ventas" element={<SalesManagement />} />} />
                 <Route path="sales-management/create" element={<ProtectedRoute scope="Ventas" action="Crear" element={<CreateSales />} />} />
-                <Route path="sales-management/update" element={<ProtectedRoute scope="Ventas" action="Editar" element={<UpdateSales />} />} />
                 <Route path="sales-management/credit-details" element={<ProtectedRoute scope="Ventas" element={<CreditDetailsModal />} />} />
                 <Route path="sales-management/return" element={<ProtectedRoute scope="Ventas" element={<ReturnSalesPage />} />} />
                 <Route path="sales-management/details" element={<ProtectedRoute scope="Ventas" element={<SaleDetailsPage />} />} />
