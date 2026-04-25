@@ -6,7 +6,6 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
-import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
 
@@ -75,45 +74,17 @@ export default function Roles() {
         navigate("/dashboard/roles/details");
     };
 
-    const handleGenerarReporte = () => {
-        setConfirmData({
-            type: "info",
-            title: "Generar reporte",
-            message: "¿Deseas descargar el reporte de roles?",
-            onConfirm: () => {
-                const reportTitle = "Gestión de Roles - Reporte";
-                const columns = ["ID", "Nombre", "Descripción", "Estado"];
-                const data = filteredRoles.map((r, i) => [
-                    String(i + 1).padStart(2, "0"),
-                    r.nombre,
-                    r.descripcion,
-                    r.estado ? "Activo" : "Inactivo"
-                ]);
-
-                generateExcelReport({
-                    title: reportTitle,
-                    fileName: "reporte_roles.xlsx",
-                    columns: columns,
-                    data: data
-                });
-
-                showAlert("success", "Reporte Excel generado correctamente.");
-                setConfirmData(null);
-            }
-        });
-    };
-
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
                 {/* TITULO */}
-                <p className="text-xl font-semibold">Gestión de roles</p>
+                <p className="text-xl font-semibold">Control de roles</p>
 
                 {/* BUSCADOR */}
                 <Searchbar
                     searchTerm={search}
                     onSearchChange={handleSearch}
-                    placeholder="Buscar rol..."
+                    placeholder="Buscar roles..."
                     onCreateClick={() => navigate("/dashboard/roles/create")}
                     createButtonText="Nuevo Rol"
                     showCreateButton={hasPermission("Roles", "Crear")}
@@ -122,7 +93,7 @@ export default function Roles() {
 
                 {/* TABLA */}
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-                    <div className="bg-white rounded-2xl border-none overflow-hidden">
+                    <div className="bg-white rounded-2xl border-none overflow-y-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
@@ -136,7 +107,7 @@ export default function Roles() {
                             <tbody className="bg-white text-gray-700">
                                 {paginatedRoles.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
+                                        <td colSpan={5} className="px-4 py-4 text-center text-gray-400">
                                             No hay roles registrados.
                                         </td>
                                     </tr>
@@ -152,7 +123,7 @@ export default function Roles() {
                                                     <span className="text-gray-400 italic">Sin descripción</span>
                                                 ) : (
                                                     <span
-                                                        className="text-gray-500 block truncate max-w-[220px]"
+                                                        className="text-gray-500 block truncate max-w-55"
                                                         title={role.descripcion}
                                                     >
                                                         {role.descripcion}
@@ -203,13 +174,15 @@ export default function Roles() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-auto">
-                    <Pagination
-                        currentPage={pageActual}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
-                </div>
+                {paginatedRoles.length > 0 && (
+                    <div className="flex justify-end mt-auto">
+                        <Pagination
+                            currentPage={pageActual}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* MODAL DE CONFIRMACION */}

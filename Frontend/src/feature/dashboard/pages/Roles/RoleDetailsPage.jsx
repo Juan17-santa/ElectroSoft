@@ -24,7 +24,7 @@ export default function RoleDetailsPage() {
 
     return (
         <>
-            <div className="bg-gray-50 p-4 rounded-2xl flex flex-col gap-4 h-full shadow-inner">
+            <div className="bg-gray-100 p-4 rounded-2xl flex flex-col gap-4 h-full shadow-inner">
 
                 {/* CONTENEDOR PRINCIPAL CON IMAGEN DE FONDO */}
                 <div
@@ -45,7 +45,7 @@ export default function RoleDetailsPage() {
                         <div className="flex items-center gap-2">
                             <Info size={22} className="text-gray-800" />
                             <h2 className="text-xl font-semibold text-gray-800">
-                                Ver detalles del <span className="text-yellow-500">rol</span>
+                                Ver información del rol
                             </h2>
                         </div>
 
@@ -70,7 +70,7 @@ export default function RoleDetailsPage() {
                                         <span>Descripción</span>
                                     </div>
                                     <div className="bg-white rounded-lg px-4 py-2 text-gray-600 shadow-sm border border-gray-200 text-sm truncate" title={roleData.descripcion}>
-                                        {roleData.descripcion}
+                                        {roleData.descripcion || "Sin descripción"}
                                     </div>
                                 </div>
 
@@ -123,7 +123,7 @@ export default function RoleDetailsPage() {
                     <button
                         type="button"
                         onClick={() => navigate("/dashboard/roles")}
-                        className="px-5 py-2.5 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer hover:shadow-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+                        className="px-5 py-2.5 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer hover:shadow-lg bg-gray-200 hover:bg-gray-200 text-gray-700 transition"
                     >
                         <X size={16} />
                         Volver a la lista

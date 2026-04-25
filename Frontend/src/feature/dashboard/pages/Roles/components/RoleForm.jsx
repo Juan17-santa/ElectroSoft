@@ -1,4 +1,4 @@
-import { Tag, FileText, Check, AlertCircle, CheckCircle2, X, Activity, Calendar } from "lucide-react";
+import { Tag, FileText, Check, AlertCircle, CheckCircle2, Activity, Calendar } from "lucide-react";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { PERMISSION_SCOPES } from "../services/RolesService";
@@ -16,7 +16,6 @@ function FieldStatus({ estado }) {
 
 export default function RoleForm({
     formData,
-    tocado,
     tocar,
     estadoNombre,
     formError,
@@ -58,7 +57,7 @@ export default function RoleForm({
                     </div>
 
                     <div className="flex flex-col">
-                        <div className={`rounded-xl px-4 py-3 flex items-center justify-between shadow-sm transition-all duration-300 ${ringClass(estadoNombre)} ${!estadoNombre || estadoNombre.valido ? 'bg-gray-200/50' : ''}`}>
+                        <div className={`rounded-xl px-4 py-3 flex items-center justify-between shadow-md transition-all duration-300 ${ringClass(estadoNombre)} ${!estadoNombre || estadoNombre.valido ? 'bg-gray-200' : ''}`}>
                             <input
                                 type="text"
                                 name="nombre"
@@ -72,8 +71,8 @@ export default function RoleForm({
                         <FieldStatus estado={estadoNombre} />
                     </div>
 
-                    <div className="flex gap-4">
-                        <div className="w-1/2">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="w-full md:w-1/2">
                             <div className="flex items-center text-yellow-500 gap-2 font-bold mb-2">
                                 <Activity size={18} />
                                 <span>Estado</span>
@@ -86,7 +85,7 @@ export default function RoleForm({
                             />
                         </div>
 
-                        <div className="w-1/2 flex flex-col justify-end">
+                        <div className="w-full md:w-1/2 flex flex-col justify-end">
                             <div className="flex items-center text-yellow-500 gap-2 font-bold mb-2">
                                 <Calendar size={18} />
                                 <span>Fecha de creación</span>
@@ -172,9 +171,9 @@ export default function RoleForm({
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-5 py-2.5 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer hover:shadow-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+                    className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition duration-300 px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
                 >
-                    <X size={16} />
+                    <span>✕</span>
                     Cancelar
                 </button>
 
