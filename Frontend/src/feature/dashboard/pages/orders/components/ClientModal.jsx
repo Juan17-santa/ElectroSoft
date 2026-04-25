@@ -51,7 +51,7 @@ export default function ClientModal({ onClose, onSave }) {
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-lg font-semibold">
-                                Crear <span className="text-yellow-400">cliente</span>
+                                Nuevo cliente
                             </p>
                             <p className="text-xs text-gray-500">
                                 Complete la información del cliente
@@ -67,10 +67,10 @@ export default function ClientModal({ onClose, onSave }) {
                     </div>
 
                     {/* FORMULARIO */}
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4 md:gap-6">
 
                         {/* ================= FILA 1 ================= */}
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
 
                             {/* TIPO DOCUMENTO */}
                             <div className="flex flex-col gap-2">
@@ -125,7 +125,7 @@ export default function ClientModal({ onClose, onSave }) {
                         </div>
 
                         {/* ================= FILA 2 ================= */}
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
 
                             {/* NOMBRES */}
                             <div className="flex flex-col gap-2">
@@ -175,7 +175,7 @@ export default function ClientModal({ onClose, onSave }) {
                         </div>
 
                         {/* ================= FILA 3 ================= */}
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
 
                             {/* EMAIL */}
                             <div className="flex flex-col gap-2">
@@ -188,7 +188,7 @@ export default function ClientModal({ onClose, onSave }) {
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    placeholder="correo@ejemplo.com"
+                                    placeholder="Ingrese su email"
                                     className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
                                     ${errors.email ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                                 />
@@ -211,7 +211,7 @@ export default function ClientModal({ onClose, onSave }) {
                                     name="telefono"
                                     value={formData.telefono}
                                     onChange={handleChange}
-                                    placeholder="3001234567"
+                                    placeholder="Digite su telefono"
                                     className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
                                     ${errors.telefono ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                                 />
@@ -239,7 +239,7 @@ export default function ClientModal({ onClose, onSave }) {
                                 type="submit"
                                 disabled={Object.values(errors).some(error => error)}
                             >
-                                Guardar cliente
+                                Crear cliente
                             </PrimaryButton>
                         </div>
 

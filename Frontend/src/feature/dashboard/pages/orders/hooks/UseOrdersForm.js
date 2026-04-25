@@ -223,6 +223,20 @@ export function useOrdersForm({ onSuccess }) {
         setErrors(prev => ({ ...prev, productos: "" }));
     };
 
+    // FUNCION PARA QUE CAMBIEN LOS VALORES SUBTOTAL, IVA Y TOTAL AL ELIMINAR UN PRODUCTO DE LA TABLA
+    useEffect(() => {
+        const total = formData.productos.reduce((acc, p) => acc + p.subtotal, 0);
+        const iva = total * 0.19;
+        const subtotal = total - iva;
+
+        setFormData(prev => ({
+            ...prev,
+            subtotal,
+            iva,
+            total
+        }));
+    }, [formData.productos]);
+
     // VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
 

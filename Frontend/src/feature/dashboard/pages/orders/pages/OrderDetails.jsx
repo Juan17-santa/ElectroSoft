@@ -147,10 +147,10 @@ export default function OrderDetails() {
 
                     <div className="relative z-10 flex flex-col gap-6">
                         {/* ENCABEZADO */}
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col md:flex-row gap-3 justify-between">
                             <div className="flex items-center gap-2">
                                 <Info size={22} className="text-gray-700" />
-                                <h2 className="text-base sm:text-xl font-semibold text-gray-800 break-all">Detalle del Pedido #{order.id}</h2>
+                                <h2 className="text-base sm:text-xl font-semibold text-gray-800 break-all">Ver información del Pedido #{order.id}</h2>
                             </div>
                             <div className="flex items-center gap-3">
                                 <button
@@ -235,8 +235,8 @@ export default function OrderDetails() {
                                 </div>
 
                                 {/* TOTALES */}
-                                <div className="bg-gray-50 border-t border-gray-200 p-4 mt-auto">
-                                    <div className="flex flex-wrap justify-end items-center gap-4 md:gap-10 text-sm">
+                                <div className="bg-gray-50 border-t border-gray-200 p-4 mt-auto pt-10 md:pt-4">
+                                    <div className="flex flex-wrap justify-end items-center gap-4 md:gap-10 text-xs md:text-sm">
                                         <div className="flex gap-2">
                                             <span className="text-gray-500 uppercase">Subtotal:</span>
                                             <span className="text-gray-800 font-semibold">{formatCurrency(order.subtotal)}</span>

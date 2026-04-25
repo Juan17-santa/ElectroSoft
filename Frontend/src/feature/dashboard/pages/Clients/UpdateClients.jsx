@@ -34,17 +34,23 @@ export default function UpdateClients() {
 
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner overflow-auto">
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="text-xl font-semibold mb-4">Editar cliente</p>
                         <p className="text-sm text-gray-600">Actualice los campos requeridos del formulario</p>
                     </div>
+                    <button
+                        onClick={() => navigate("/dashboard/clients")}
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 {initialData ? (
-                    <ClientForm 
+                    <ClientForm
                         {...formHook}
                         formError={formError}
                         setFormError={setFormError}

@@ -115,7 +115,8 @@ export default function OrdersForm({
                                     type="text"
                                     value={formData.clienteNombre || ""}
                                     disabled
-                                    className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md w-full"
+                                    className="bg-gray-200/70 rounded-xl px-4 py-3 text-sm shadow-md w-full text-gray-500"
+                                    placeholder="Se llena automaticamente"
                                 />
 
                                 {/* BOTON + PARA CREAR CLIENTE */}
@@ -197,16 +198,17 @@ export default function OrdersForm({
                     <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-full">
 
                         {/* ENCABEZADO */}
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex flex-col md:flex-row items-start justify-between mb-3 gap-4">
                             <div className="flex items-center gap-2 text-yellow-400 font-semibold text-base">
                                 <Boxes size={20} />
                                 <span>Productos</span>
                             </div>
-                            <div className="flex gap-3">
+                            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
                                 <PrimaryButton
                                     type="button"
                                     icon={Plus}
                                     onClick={() => setOpenProductModal(true)}
+                                    className="w-full md:w-auto justify-center"
                                 >
                                     Añadir producto
                                 </PrimaryButton>
@@ -222,7 +224,7 @@ export default function OrdersForm({
                                         <th className="px-4 py-2 font-semibold text-center w-24">Cantidad</th>
                                         <th className="px-4 py-2 font-semibold text-center w-28">Precio Unit</th>
                                         <th className="px-4 py-2 font-semibold text-center w-32">Subtotal</th>
-                                        <th className="px-4 py-2 font-semibold text-center w-16">Acciones</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-16"></th>
                                     </tr>
                                 </thead>
                                 <tbody>

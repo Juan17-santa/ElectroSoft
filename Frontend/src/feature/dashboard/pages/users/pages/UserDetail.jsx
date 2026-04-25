@@ -71,7 +71,7 @@ export default function UserDetail() {
                             </div>
 
                             {/* DATOS EN GRID */}
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
                                 <div>
                                     <p className="text-sm text-yellow-400 mb-1">Nombre</p>

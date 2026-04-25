@@ -111,7 +111,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
                                     <FileText size={16} />
-                                    <span>Plazo (Crédito) *</span>
+                                    <span>Plazo días (Crédito) *</span>
                                 </div>
                                 <input
                                     type="text"
