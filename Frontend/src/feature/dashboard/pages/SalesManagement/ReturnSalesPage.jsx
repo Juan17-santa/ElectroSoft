@@ -1,40 +1,17 @@
-/**
- * ReturnSalesPage.jsx — "Devolución de venta"
- *
- * Recibe `mode` en location.state para determinar qué acciones mostrar:
- *
- *   "from-sales"  → viene de SalesManagement "devolver venta"
- *                   Productos: botón ↩ por producto no devuelto
- *                   Devueltos: Eye + Pencil + Trash
- *                   Footer: "Cancelar" + "Registrar devolución"
- *
- *   "view-only"   → viene de Devolutions "Ver detalle"
- *                   Productos: sin acciones
- *                   Devueltos: solo Eye
- *                   Footer: "Volver a devoluciones"
- *
- *   "editable"    → viene de Devolutions "Editar"
- *                   Productos: sin acciones
- *                   Devueltos: Eye + Pencil (si no bloqueado)
- *                   Footer: "Volver a devoluciones"
- *
- * El `mode` se propaga en CADA navigate hacia sub-páginas para que al
- * volver el contexto (botón del footer) se mantenga intacto.
- */
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, Pencil, Trash2, Undo2, X, FileText, History } from "lucide-react";
+import { Eye, Pencil, Trash2, Undo2, X, FileText, History, ArrowLeft } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
-import Alert             from "../../components/ui/Alert";
-import ConfirmModal      from "../../components/ui/ConfirmModal";
+import Alert from "../../components/ui/Alert";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import StatusHistoryModal from "../devolutions/components/StatusHistoryModal";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
-const DEV_PER_PAGE  = 5;
+const DEV_PER_PAGE = 5;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 
 
@@ -42,26 +19,26 @@ export default function ReturnSalesPage() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [sale, setSale]                           = useState(null);
+    const [sale, setSale] = useState(null);
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
-    const [alertMsg, setAlertMsg]                   = useState(null);
-    const [confirmData, setConfirmData]             = useState(null);
-    const [prodPage, setProdPage]                   = useState(1);
-    const [devPage, setDevPage]                     = useState(1);
-    const [historyDev, setHistoryDev]               = useState(null); // 1.6: devolución cuyo historial se muestra
+    const [alertMsg, setAlertMsg] = useState(null);
+    const [confirmData, setConfirmData] = useState(null);
+    const [prodPage, setProdPage] = useState(1);
+    const [devPage, setDevPage] = useState(1);
+    const [historyDev, setHistoryDev] = useState(null);
 
     // ─── Modo ─────────────────────────────────────────────────────────────────
-    const mode       = location.state?.mode ?? "from-sales";
+    const mode = location.state?.mode ?? "from-sales";
     const isFromSales = mode === "from-sales";
-    const isViewOnly  = mode === "view-only";
-    const isEditable  = mode === "editable";
+    const isViewOnly = mode === "view-only";
+    const isEditable = mode === "editable";
 
     // ─── Cargar venta ─────────────────────────────────────────────────────────
     useEffect(() => {
         const idVentaState = location.state?.idVenta;
         if (idVentaState) {
             const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
-            const found  = ventas.find((v) => String(v.id) === String(idVentaState));
+            const found = ventas.find((v) => String(v.id) === String(idVentaState));
             setSale(found ?? null);
         } else {
             const data = localStorage.getItem("saleToReturn");
@@ -78,9 +55,8 @@ export default function ReturnSalesPage() {
 
     if (!sale) return null;
 
-    const productos    = sale.productos || [];
+    const productos = sale.productos || [];
 
-    // 1.5: Mapa con cantidad ya devuelta activa por producto
     const cantidadDevueltaPor = (nombreProd) =>
         devolucionesVenta
             .filter((d) => d.estadoResolucion !== "Anulada" && d.producto === nombreProd)
@@ -90,14 +66,12 @@ export default function ReturnSalesPage() {
 
     // ─── Paginación ───────────────────────────────────────────────────────────
     const totalProdPages = Math.max(1, Math.ceil(productos.length / PROD_PER_PAGE));
-    const prodActual     = Math.min(prodPage, totalProdPages);
+    const prodActual = Math.min(prodPage, totalProdPages);
     const paginatedProds = productos.slice((prodActual - 1) * PROD_PER_PAGE, prodActual * PROD_PER_PAGE);
 
     const totalDevPages = Math.max(1, Math.ceil(devolucionesVenta.length / DEV_PER_PAGE));
-    const devActual     = Math.min(devPage, totalDevPages);
+    const devActual = Math.min(devPage, totalDevPages);
     const paginatedDevs = devolucionesVenta.slice((devActual - 1) * DEV_PER_PAGE, devActual * DEV_PER_PAGE);
-
-    // ─── Handlers ────────────────────────────────────────────────────────────
 
     // Pasa productoNombre para que CreateDevolution lo pre-cargue como read-only
     const handleDevolver = (producto) => {
@@ -210,7 +184,7 @@ export default function ReturnSalesPage() {
             <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-5 w-full h-full shadow-inner overflow-y-auto">
 
                 {/* Header */}
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col md:flex-row gap-4 justify-between">
                     <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                         Devolución de venta
                         {isYaDevuelto && (
@@ -219,7 +193,7 @@ export default function ReturnSalesPage() {
                             </span>
                         )}
                     </h2>
-                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={handleGenerarPDF}
                             className="flex items-center gap-2 text-sm text-gray-600 bg-white border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50 transition cursor-pointer shadow-sm"
@@ -228,8 +202,12 @@ export default function ReturnSalesPage() {
                             <FileText size={15} />
                             Generar reporte
                         </button>
-                        <button onClick={handleVolver} className="p-2 hover:bg-gray-200 rounded-lg transition cursor-pointer" title="Cerrar">
-                            <X size={20} />
+                        <button
+                            onClick={handleVolver}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
+                        >
+                            <ArrowLeft size={16} />
+                            Volver
                         </button>
                     </div>
                 </div>
@@ -237,7 +215,7 @@ export default function ReturnSalesPage() {
                 {/* Información venta */}
                 <div>
                     <p className="font-semibold text-gray-800 mb-2">Información venta</p>
-                    <div className="bg-white rounded-xl border-l-4 border-yellow-400 px-5 py-4 flex flex-wrap items-center gap-8 shadow-sm">
+                    <div className="bg-white rounded-xl border-l-4 border-yellow-400 px-5 py-4 grid grid-cols-1 md:grid-cols-5 items-center gap-8 shadow-sm">
                         <div><p className="text-xs text-gray-400">ID venta</p><p className="font-semibold text-gray-800">{sale.numeroDocumento ?? sale.id}</p></div>
                         <div><p className="text-xs text-gray-400">Fecha creación</p><p className="font-semibold text-gray-800">{sale.fecha ?? "—"}</p></div>
                         <div><p className="text-xs text-gray-400">IVA</p><p className="font-bold text-gray-800">{formatCOP(sale.iva)}</p></div>
@@ -249,7 +227,7 @@ export default function ReturnSalesPage() {
                 {/* Productos de la venta */}
                 <div>
                     <p className="font-semibold text-gray-800 mb-2">Productos de la venta</p>
-                    <div className="rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+                    <div className="rounded-xl overflow-x-auto border border-gray-200 bg-white shadow-sm">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200 text-left">
@@ -263,8 +241,8 @@ export default function ReturnSalesPage() {
                             </thead>
                             <tbody>
                                 {paginatedProds.map((prod, i) => {
-                                    const devuelto    = cantidadDevueltaPor(prod.nombre);
-                                    const restante    = prod.cantidad - devuelto;
+                                    const devuelto = cantidadDevueltaPor(prod.nombre);
+                                    const restante = prod.cantidad - devuelto;
                                     const totalDevuelto = devuelto >= prod.cantidad;
                                     return (
                                         <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
@@ -310,7 +288,7 @@ export default function ReturnSalesPage() {
                         Productos devueltos
                         <span className="ml-2 text-xs font-normal text-gray-400">({devolucionesVenta.length})</span>
                     </p>
-                    <div className="rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+                    <div className="rounded-xl overflow-x-auto border border-gray-200 bg-white shadow-sm">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200 text-left">
@@ -391,11 +369,12 @@ export default function ReturnSalesPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-between items-center pt-4 border-t border-gray-200 mt-auto">
+                <div className="flex justify-end gap-4 items-center pt-4 border-t border-gray-200 mt-auto">
                     <button
                         onClick={handleVolver}
-                        className="px-5 py-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-xl text-sm font-medium shadow cursor-pointer transition"
-                    >
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-xl text-sm font-medium shadow cursor-pointer transition"
+                    > 
+                        <X size={16} />
                         {isFromSales ? "Cancelar" : "Volver a devoluciones"}
                     </button>
 

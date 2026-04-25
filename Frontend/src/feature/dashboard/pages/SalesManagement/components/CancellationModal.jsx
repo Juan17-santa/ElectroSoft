@@ -49,7 +49,7 @@ export default function CancellationModal({ saleId, onConfirm, onCancel }) {
                     </button>
                     <button
                         onClick={handleConfirm}
-                        className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-md cursor-pointer transition font-medium text-sm cursor-pointer"
+                        className="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-md cursor-pointer transition font-medium text-sm"
                     >
                         Confirmar
                     </button>
