@@ -4,6 +4,7 @@ import { RolesService } from "./services/RolesService";
 import { useRoleForm } from "./hooks/useRoleForm";
 import RoleForm from "./components/RoleForm";
 import Alert from "../../components/ui/Alert";
+import { X } from "lucide-react";
 
 export default function UpdateRoles() {
     const navigate = useNavigate();
@@ -26,11 +27,11 @@ export default function UpdateRoles() {
                     nombre: formData.nombre,
                     descripcion: formData.descripcion,
                     estado: formData.estado,
-                    fechaCreacion: formData.fechaCreacion, // Keep the same creation date
+                    fechaCreacion: formData.fechaCreacion,
                     permisos: formData.permisos
                 });
 
-                setAlert({ type: "success", message: "Rol actualizado correctamente!" });
+                setAlert({ type: "success", message: "Rol actualizado correctamente" });
                 localStorage.removeItem("roleToEdit");
                 setTimeout(() => navigate("/dashboard/roles"), 1500);
             } catch (error) {
@@ -42,11 +43,17 @@ export default function UpdateRoles() {
 
     return (
         <>
-            <div className="bg-gray-50 p-8 rounded-3xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4">
-                <div className="mb-0">
+            <div className="bg-gray-100 p-8 rounded-2xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4">
+                <div className="flex justify-between mb-0">
                     <h1 className="text-2xl font-bold text-gray-800">
-                        Editar <span className="text-yellow-500">rol</span>
+                        Editar rol
                     </h1>
+                    <button
+                        onClick={() => navigate("/dashboard/roles")}
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 flex-1 flex flex-col">
