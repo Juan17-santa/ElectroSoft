@@ -1,14 +1,3 @@
-/**
- * SalesManagement.jsx
- *
- * Página principal de gestión de ventas.
- * Muestra una tabla con todas las ventas registradas, permite buscar,
- * paginar, generar reportes PDF y ejecutar acciones por venta:
- * - Ver detalles (ojo) → navega a SaleDetailsPage
- * - Ver crédito (tarjeta) → navega a CreditDetailsPage (solo créditos vigentes)
- * - Devolver (undo) → navega a ReturnSalesPage
- * - Anular (ban) → cambia el estado a "Anulado"
- */
 import { Eye, Undo2, Ban, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -79,7 +68,6 @@ export default function SalesManagement() {
                 }
                 return sale;
             });
-            // Ordenar por ID descendente (más recientes primero)
             const sortedSales = salesConCliente.sort((a, b) => b.id - a.id);
             setSales(sortedSales);
         } catch (error) {
@@ -161,15 +149,15 @@ export default function SalesManagement() {
 
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
                 {/* TITULO */}
-                <p className="text-xl font-semibold">Gestión de Ventas</p>
+                <p className="text-xl font-semibold">Control de Ventas</p>
 
                 {/* BUSCADOR */}
                 <Searchbar
                     searchTerm={search}
                     onSearchChange={handleSearch}
-                    placeholder="Buscar por documento, cliente..."
+                    placeholder="Buscar ventas..."
                     onCreateClick={() => navigate("/dashboard/sales-management/create")}
                     createButtonText="Nueva Venta"
                     showCreateButton={hasPermission("Ventas", "Crear")}
@@ -179,11 +167,11 @@ export default function SalesManagement() {
 
                 {/* TABLA */}
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-                    <div className="bg-white rounded-2xl border-none overflow-hidden">
+                    <div className="bg-white rounded-2xl border-none overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
-                                    <th className="px-3 py-3 font-semibold"># venta</th>
+                                    <th className="px-3 py-3 font-semibold">ID</th>
                                     <th className="px-3 py-3 font-semibold">Cliente</th>
                                     <th className="px-3 py-3 font-semibold">Fecha</th>
                                     <th className="px-3 py-3 font-semibold">Tipo de venta</th>
@@ -197,14 +185,14 @@ export default function SalesManagement() {
                             <tbody className="bg-white text-gray-700">
                                 {paginatedSales.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="px-4 py-6 text-center text-gray-400">
+                                        <td colSpan={9} className="px-4 py-4 text-center text-gray-400">
                                             No hay ventas registradas.
                                         </td>
                                     </tr>
                                 ) : (
                                     paginatedSales.map((sale) => (
                                         <tr key={sale.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                            <td className="px-3 py-3 font-medium">#{String(sale.numeroVenta || "").padStart(2, '0') || '-'}</td>
+                                            <td className="px-3 py-3 font-medium">{String(sale.numeroVenta || "").padStart(2, '0') || '-'}</td>
                                             <td className="px-3 py-3">{sale.cliente || "-"}</td>
                                             <td className="px-3 py-3">{sale.fecha}</td>
                                             <td className="px-3 py-3">{sale.tipoVenta}</td>
@@ -218,10 +206,10 @@ export default function SalesManagement() {
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
-                                                <div className="flex justify-center flex-nowrap gap-1.5 h-[36px]">
+                                                <div className="flex justify-center flex-nowrap gap-1.5 h-9">
                                                     {/* DEVOLVER */}
                                                     <Restricted scope="Ventas" action="Editar">
-                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             <button
                                                                 className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                                                                 onClick={() => handleReturn(sale)}
@@ -234,7 +222,7 @@ export default function SalesManagement() {
                                                     </Restricted>
 
                                                     {/* VER DETALLES */}
-                                                    <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                    <div className="flex-none flex items-center justify-center w-9 h-9">
                                                         <button
                                                             className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
                                                             onClick={() => handleViewDetails(sale)}
@@ -246,7 +234,7 @@ export default function SalesManagement() {
 
                                                     {/* ANULAR */}
                                                     <Restricted scope="Ventas" action="Eliminar">
-                                                        <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             <button
                                                                 className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                                                                 onClick={() => handleAnull(sale)}
@@ -259,7 +247,7 @@ export default function SalesManagement() {
                                                     </Restricted>
 
                                                     {/* CREDITO */}
-                                                    <div className="flex-none flex items-center justify-center w-[36px] h-[36px]">
+                                                    <div className="flex-none flex items-center justify-center w-9 h-9">
                                                         {sale.tipoVenta === "Credito" && (sale.estado === "Vigente" || sale.estado === "Finalizado") && (
                                                             <button
                                                                 className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"

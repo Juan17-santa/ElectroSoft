@@ -1,20 +1,3 @@
-/**
- * SalesService.js
- * 
- * Servicio de datos para la gestión de ventas.
- * Todas las operaciones se realizan contra localStorage con la clave "sales".
- * 
- * Métodos disponibles:
- * - get()                   → Obtener todas las ventas
- * - getById(id)             → Obtener una venta por ID
- * - create({...})           → Crear nueva venta (calcula subtotal, IVA, total)
- * - update(venta)           → Actualizar una venta existente
- * - delete(id)              → Eliminar una venta
- * - addPayment(id, monto)   → Agregar abono a venta crédito
- * - removePayment(id, idx)  → Eliminar un abono específico
- * - anullSale(id)           → Anular venta (estado → "Anulado")
- * - returnSale(id)          → Devolver venta (estado → "Devuelto")
- */
 const KEY = "sales";
 
 export const SalesService = {
@@ -43,14 +26,9 @@ export const SalesService = {
      * - Si tipoVenta = "Contado": estado = "Finalizado", montoPagado = total
      * - Si tipoVenta = "Crédito": montoPagado = 0, montoPorPagar = total
      */
-    create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos }) {
+    create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos, subtotal, iva, total }) {
 
         const sales = this.get();
-
-        // Cálculo de montos
-        const subtotal = productos.reduce((sum, p) => sum + (p.precio * p.cantidad), 0);
-        const iva = subtotal * 0.19;
-        const total = subtotal + iva;
 
         // Número de venta auto-incremental
         const numeroVenta = sales.length > 0
@@ -110,30 +88,6 @@ export const SalesService = {
         }
 
         return nuevaVenta;
-    },
-
-    /** Actualiza una venta existente (reemplaza por ID) */
-    update(ventaActualizada) {
-
-        const sales = this.get();
-
-        const nuevasVentas = sales.map(sale => sale.id === ventaActualizada.id ? ventaActualizada : sale);
-
-        localStorage.setItem(KEY, JSON.stringify(nuevasVentas));
-
-        return nuevasVentas;
-    },
-
-    /** Elimina una venta por ID */
-    delete(id) {
-
-        const data = JSON.parse(localStorage.getItem(KEY)) || [];
-
-        const newData = data.filter(sale => sale.id !== id);
-
-        localStorage.setItem(KEY, JSON.stringify(newData));
-
-        return newData;
     },
 
     /**
@@ -215,21 +169,6 @@ export const SalesService = {
         return nuevasVentas;
     },
 
-    /** Alterna el estado de una venta entre "Vigente" y "Finalizado" */
-    toggleEstado(id) {
-
-        const sales = this.get();
-
-        const nuevasVentas = sales.map(sale =>
-            sale.id === id
-                ? { ...sale, estado: sale.estado === "Vigente" ? "Finalizado" : "Vigente" }
-                : sale
-        );
-
-        localStorage.setItem(KEY, JSON.stringify(nuevasVentas));
-
-        return nuevasVentas;
-    },
 
     /** Anula una venta — cambia el estado a "Anulado" y devuelve stock */
     anullSale(id) {
