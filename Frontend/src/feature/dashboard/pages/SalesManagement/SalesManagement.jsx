@@ -269,13 +269,15 @@ export default function SalesManagement() {
                 </div>
 
                 {/* PAGINADOR */}
-                <div className="flex justify-end mt-auto pt-4">
-                    <Pagination
-                        currentPage={pageActual}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
-                </div>
+                {paginatedSales.length > 0 && (
+                    <div className="flex justify-end mt-auto pt-4">
+                        <Pagination
+                            currentPage={pageActual}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* MODAL DE CONFIRMACION */}
