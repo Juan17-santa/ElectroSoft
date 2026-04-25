@@ -243,7 +243,7 @@ export default function AddProductModal({
                 {/* ── ZONA SELECCIÓN ─────────────────────────────────────── */}
                 <div className="px-7 py-5"
                     style={{ borderBottom: "1px solid #f3f4f6", backgroundColor: "#fafafa" }}>
-                    <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 130px 110px" }}>
+                    <div className="grid gap-4 grid-cols-1 md:grid-cols-[1fr_130px_110px]">
 
                         {/* Buscador / combo */}
                         <div className="flex flex-col gap-1.5" ref={dropdownRef}>
@@ -283,18 +283,17 @@ export default function AddProductModal({
                                         }}>
 
                                         {/* Cabecera columnas */}
-                                        <div className="grid px-4 py-2"
+                                        <div
+                                            className="grid px-4 py-2 grid-cols-[1fr_80px_70px] md:grid-cols-[1fr_80px_70px_90px]"
                                             style={{
-                                                gridTemplateColumns: "1fr 80px 70px",
-                                                backgroundColor: "#fffbeb", borderBottom: "1px solid #fde68a"
-                                            }}>
-                                            {["Nombre producto", "Precio", "Stock"].map((h, i) => (
-                                                <p key={i} className="text-xs font-semibold text-yellow-600"
-                                                    style={{
-                                                        textTransform: "uppercase", letterSpacing: "0.05em",
-                                                        textAlign: i > 0 ? "right" : "left"
-                                                    }}>{h}</p>
-                                            ))}
+                                                backgroundColor: "#fffbeb",
+                                                borderBottom: "1px solid #fde68a"
+                                            }}
+                                        >
+                                            <p className="text-xs font-semibold text-yellow-600">Nombre producto</p>
+                                            <p className="text-xs font-semibold text-yellow-600 text-right">Precio</p>
+                                            <p className="text-xs font-semibold text-yellow-600 text-right">Stock</p>
+                                            <p className="text-xs font-semibold text-yellow-600 text-right hidden md:block">Tipo stock</p>
                                         </div>
 
                                         {/* Filas paginadas */}
@@ -306,31 +305,52 @@ export default function AddProductModal({
                                                 return (
                                                     <button key={p.id} type="button"
                                                         onClick={() => handleSelectProduct(p)}
-                                                        className={`w-full grid px-4 py-3 text-left btn-row-product ${isSelected ? "bg-yellow-50" : ""}`}
-                                                        style={{ gridTemplateColumns: "1fr 80px 70px", borderBottom: "1px solid #f9fafb" }}>
-                                                        <div className="flex items-center gap-2 overflow-hidden">
-                                                            <span className="text-sm font-medium text-gray-700 truncate">{p.nombre}</span>
+                                                        className={`w-full grid px-4 py-3 text-left btn-row-product grid-cols-[1fr_80px_70px] md:grid-cols-[1fr_80px_70px_90px] ${isSelected ? "bg-yellow-50" : ""}`}
+                                                        style={{ borderBottom: "1px solid #f9fafb" }}>
+                                                        <div className="flex md:items-center flex-col md:flex-row md:gap-2 overflow-hidden">
+                                                            <span className="text-sm font-medium text-gray-700 truncate">
+                                                                {p.nombre}
+                                                            </span>
+
                                                             {inQueue && (
-                                                                <span className="shrink-0 font-semibold px-1.5 py-0.5 rounded"
-                                                                    style={{ backgroundColor: "#fef9c3", color: "#a16207", fontSize: "10px" }}>
+                                                                <span
+                                                                    className="shrink-0 font-semibold px-1.5 py-0.5 rounded w-fit mt-1"
+                                                                    style={{
+                                                                        backgroundColor: "#fef9c3",
+                                                                        color: "#a16207",
+                                                                        fontSize: "10px"
+                                                                    }}
+                                                                >
                                                                     En lista
                                                                 </span>
                                                             )}
                                                         </div>
+
                                                         <p className="text-xs font-medium text-gray-500 text-right tabular-nums self-center">
                                                             {fmt(p.precio)}
                                                         </p>
+
                                                         <div className="flex justify-end items-center">
-                                                            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg"
+                                                            <span
+                                                                className="text-xs font-semibold px-2 py-0.5 rounded-lg"
                                                                 style={{
                                                                     backgroundColor: stock > 20 ? "#f0fdf4" : stock > 0 ? "#fffbeb" : "#fef2f2",
                                                                     color: stock > 20 ? "#16a34a" : stock > 0 ? "#ca8a04" : "#dc2626",
-                                                                }}>{stock}</span>
+                                                                }}
+                                                            >
+                                                                {stock}
+                                                            </span>
                                                         </div>
+
+                                                        <p className="text-xs text-gray-400 text-right hidden md:block">
+                                                            {p.tipoStock || "—"}
+                                                        </p>
                                                     </button>
                                                 );
                                             }) : (
-                                                <div className="py-8 text-center text-sm text-gray-400 italic">Sin resultados</div>
+                                                <div className="py-8 text-center text-sm text-gray-400 italic">
+                                                    Sin resultados
+                                                </div>
                                             )}
                                         </div>
 
@@ -377,7 +397,7 @@ export default function AddProductModal({
                             <ValidationMessage error={productError} />
                             <ValidationMessage
                                 success={!!selectedProduct && !productError}
-                                successMessage={`Producto válido · Stock: ${getRealStock(selectedProduct)}`}
+                                successMessage={`Producto válido · Stock: ${getRealStock(selectedProduct)} · Tipo stock: ${selectedProduct?.tipoStock || "N/A"}`}
                             />
                         </div>
 
@@ -439,84 +459,88 @@ export default function AddProductModal({
                 {/* ── TABLA ──────────────────────────────────────────────── */}
                 <div className="flex flex-col flex-1 overflow-hidden">
 
-                    {/* Cabecera */}
-                    <div className="grid px-7 py-3"
-                        style={{
-                            gridTemplateColumns: "1fr 90px 130px 130px 48px",
-                            backgroundColor: "#f9fafb", borderBottom: "1px solid #f3f4f6"
-                        }}>
-                        {["Producto", "Cant.", "Precio unit.", "Subtotal", ""].map((h, i) => (
-                            <p key={i} className="text-xs font-semibold text-gray-400"
-                                style={{
-                                    textTransform: "uppercase", letterSpacing: "0.05em",
-                                    textAlign: i === 0 ? "left" : "right"
-                                }}>{h}</p>
-                        ))}
-                    </div>
+                    <div className="overflow-x-auto">
 
-                    {/* Filas */}
-                    <div className="overflow-y-auto flex-1" style={{ minHeight: "150px", maxHeight: "240px" }}>
-                        {queue.length > 0 ? queue.map((item, index) => (
-                            <div key={item.id}
-                                className="grid px-7 py-3.5 items-center transition-colors btn-row-queue"
+                        <div className="min-w-150">
+
+                            <div
+                                className="grid px-7 py-3"
                                 style={{
                                     gridTemplateColumns: "1fr 90px 130px 130px 48px",
-                                    borderBottom: "1px solid #f9fafb", animation: "rowIn 0.18s ease-out"
-                                }}>
-
-                                <div className="flex items-center gap-2.5 overflow-hidden">
-                                    <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-lg text-xs font-bold"
-                                        style={{ backgroundColor: "#fef9c3", color: "#a16207" }}>
-                                        {index + 1}
-                                    </span>
-                                    <p className="text-sm font-medium text-gray-700 truncate">{item.nombre}</p>
-                                </div>
-
-                                <div className="flex justify-end">
-                                    <span className="text-sm font-semibold tabular-nums px-3 py-0.5 rounded-lg"
-                                        style={{ backgroundColor: "#fef9c3", color: "#a16207" }}>
-                                        {item.cantidad}
-                                    </span>
-                                </div>
-
-                                <p className="text-sm text-gray-400 text-right tabular-nums">{fmt(item.precio)}</p>
-                                <p className="text-sm font-semibold text-gray-700 text-right tabular-nums">{fmt(item.precio * item.cantidad)}</p>
-
-                                <div className="flex justify-end">
-                                    <button type="button" onClick={() => handleRemoveFromQueue(item.id)}
-                                        className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors text-gray-300 btn-row-delete">
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
+                                    backgroundColor: "#f9fafb",
+                                    borderBottom: "1px solid #f3f4f6"
+                                }}
+                            >
+                                {["Producto", "Cant.", "Precio unit.", "Subtotal", ""].map((h, i) => (
+                                    <p
+                                        key={i}
+                                        className="text-xs font-semibold text-gray-400"
+                                        style={{
+                                            textTransform: "uppercase",
+                                            letterSpacing: "0.05em",
+                                            textAlign: i === 0 ? "left" : "right"
+                                        }}
+                                    >
+                                        {h}
+                                    </p>
+                                ))}
                             </div>
-                        )) : (
-                            <div className="flex flex-col items-center justify-center h-full py-14 gap-3">
-                                <div className="flex items-center justify-center w-12 h-12 rounded-2xl"
-                                    style={{ backgroundColor: "#f9fafb", border: "1.5px dashed #d1d5db" }}>
-                                    <Package size={20} className="text-gray-300" />
-                                </div>
-                                <p className="text-sm text-gray-400">Añade productos</p>
-                            </div>
-                        )}
-                    </div>
 
-                    {/* Totales */}
-                    {queue.length > 0 && (
-                        <div className="grid px-7 py-3.5 items-center"
-                            style={{
-                                gridTemplateColumns: "1fr 90px 130px 130px 48px",
-                                borderTop: "2px solid #fde68a", backgroundColor: "#fffbeb"
-                            }}>
-                            <p className="text-xs font-semibold text-yellow-600"
-                                style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                Total · {queue.length} {queue.length === 1 ? "referencia" : "referencias"}
-                            </p>
-                            <p className="text-sm font-bold text-yellow-700 text-right tabular-nums">{totalItems}</p>
-                            <div />
-                            <p className="text-sm font-bold text-yellow-700 text-right tabular-nums">{fmt(totalValue)}</p>
-                            <div />
+                            <div className="overflow-y-auto" style={{ maxHeight: "240px" }}>
+                                {queue.length > 0 ? queue.map((item, index) => (
+
+                                    <div
+                                        key={item.id}
+                                        className="grid px-7 py-3.5 items-center"
+                                        style={{
+                                            gridTemplateColumns: "1fr 90px 130px 130px 48px",
+                                            borderBottom: "1px solid #f9fafb"
+                                        }}
+                                    >
+
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                            <span className="shrink-0 w-6 h-6 flex items-center justify-center text-xs font-bold rounded-lg"
+                                                style={{ backgroundColor: "#fef9c3", color: "#a16207" }}>
+                                                {index + 1}
+                                            </span>
+
+                                            <p className="text-sm font-medium text-gray-700 truncate">
+                                                {item.nombre}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex justify-end">
+                                            <span className="text-sm font-semibold px-3 py-0.5 rounded-lg"
+                                                style={{ backgroundColor: "#fef9c3", color: "#a16207" }}>
+                                                {item.cantidad}
+                                            </span>
+                                        </div>
+
+                                        <p className="text-sm text-gray-400 text-right">
+                                            {fmt(item.precio)}
+                                        </p>
+
+                                        <p className="text-sm font-semibold text-gray-700 text-right">
+                                            {fmt(item.precio * item.cantidad)}
+                                        </p>
+
+                                        <div className="flex justify-end">
+                                            <button onClick={() => handleRemoveFromQueue(item.id)}>
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+
+                                    </div>
+
+                                )) : (
+                                    <div className="py-10 text-center text-gray-400">
+                                        Añade productos
+                                    </div>
+                                )}
+                            </div>
+
                         </div>
-                    )}
+                    </div>
                 </div>
 
                 {/* ── FOOTER ─────────────────────────────────────────────── */}
