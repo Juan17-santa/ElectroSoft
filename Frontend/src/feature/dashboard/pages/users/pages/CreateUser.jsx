@@ -42,17 +42,23 @@ export default function CreateUser() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
 
-                <div className="flex justify-between">
+                <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-xl font-semibold">Nuevo usuario</p>
-                        <p className="text-sm text-gray-600">
-                            Complete todos los campos
+                        <p className="text-lg sm:text-xl font-semibold mb-1">
+                            Nuevo usuario
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                            Complete todos los campos del formulario
                         </p>
                     </div>
 
-                    <button onClick={() => navigate("/dashboard/users")}>
+                    {/* BOTÓN X */}
+                    <button
+                        onClick={() => navigate("/dashboard/users")}
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
+                    >
                         <X size={20} />
                     </button>
                 </div>

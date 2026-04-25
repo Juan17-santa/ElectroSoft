@@ -34,6 +34,12 @@ export default function CreateClients() {
                         <p className="text-xl font-semibold mb-4">Nuevo cliente</p>
                         <p className="text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
+                    <button
+                        onClick={() => navigate("/dashboard/clients")}
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <ClientForm 
