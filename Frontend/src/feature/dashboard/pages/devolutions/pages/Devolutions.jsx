@@ -4,10 +4,10 @@ import { Eye, Pencil, Ban, RotateCcw, Check, X } from "lucide-react";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { useDevolutionsReport } from "../hooks/useDevolutionsReport";
 import { getEstadoColor } from "../helpers/devolutionsHelpers";
-import SearchBar    from "../../../components/ui/Searchbar";
-import Pagination   from "../../../components/ui/Pagination";
+import SearchBar from "../../../components/ui/Searchbar";
+import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert        from "../../../components/ui/Alert";
+import Alert from "../../../components/ui/Alert";
 import { Restricted } from "../../../components/ui/Restricted";
 
 const ITEMS_PER_PAGE = 8;
@@ -32,7 +32,7 @@ export default function Devolutions() {
 
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert]             = useState(null);
+    const [alert, setAlert] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
 
     const { exportReport } = useDevolutionsReport(devolucionesFiltradas, setAlert);
@@ -56,9 +56,9 @@ export default function Devolutions() {
         );
     }, [devolucionesFiltradas]);
 
-    const totalPages   = Math.max(1, Math.ceil(gruposPorVenta.length / ITEMS_PER_PAGE));
+    const totalPages = Math.max(1, Math.ceil(gruposPorVenta.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
-    const itemsPagina  = gruposPorVenta.slice(
+    const itemsPagina = gruposPorVenta.slice(
         (paginaActual - 1) * ITEMS_PER_PAGE,
         paginaActual * ITEMS_PER_PAGE
     );
@@ -118,22 +118,21 @@ export default function Devolutions() {
             <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
 
                 <p className="text-xl font-semibold flex items-center gap-2">
-                    <RotateCcw size={22} className="text-yellow-500" />
-                    Gestión De Devoluciones
+                    Control de devoluciones
                 </p>
 
                 <SearchBar
                     searchTerm={searchTerm}
                     onSearchChange={handleSearch}
-                    placeholder="Buscar por ID venta, motivo, responsable..."
+                    placeholder="Buscar devoluciones..."
                     showCreateButton={false}
                     showReportButton={true}
                     onReportClick={handleGenerarReporte}
                 />
 
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-                    <div className="bg-gray-100 rounded-2xl overflow-hidden">
-                        <table className="w-full text-sm">
+                    <div className="bg-gray-100 rounded-2xl overflow-auto">
+                        <table className="min-w-250 w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
                                     <th className="px-3 py-2 font-semibold">#</th>
@@ -147,22 +146,22 @@ export default function Devolutions() {
                             <tbody className="bg-white text-gray-700">
                                 {itemsPagina.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                                        <td colSpan={6} className="px-4 py-4 text-center text-gray-400">
                                             No hay devoluciones registradas.
                                         </td>
                                     </tr>
                                 ) : (
                                     itemsPagina.map((grupo, index) => {
-                                        const idVenta    = grupo[0].idVenta;
-                                        const reciente   = getMasReciente(grupo);
-                                        const estado     = reciente?.estadoResolucion ?? "—";
-                                        const producto   = reciente?.producto         ?? "—";
+                                        const idVenta = grupo[0].idVenta;
+                                        const reciente = getMasReciente(grupo);
+                                        const estado = reciente?.estadoResolucion ?? "—";
+                                        const producto = reciente?.producto ?? "—";
                                         const colorEstado = getEstadoColor(estado);
-                                        const textColor   = colorEstado.split(" ").find((c) => c.startsWith("text-")) ?? "text-gray-500";
+                                        const textColor = colorEstado.split(" ").find((c) => c.startsWith("text-")) ?? "text-gray-500";
                                         const fechaInicio = formatFechaDisplay(getFechaInicio(grupo));
                                         const fechaEstado = getFechaEstado(grupo);
-                                        const bloqueado   = editBloqueado(grupo);
-                                        const anulado     = grupo.every((d) => d.estadoResolucion === "Anulada");
+                                        const bloqueado = editBloqueado(grupo);
+                                        const anulado = grupo.every((d) => d.estadoResolucion === "Anulada");
 
                                         return (
                                             <tr key={idVenta} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
@@ -190,7 +189,7 @@ export default function Devolutions() {
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorEstado}`}>
                                                         {estado}
                                                     </span>
-                                                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[140px]" title={producto}>
+                                                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-35" title={producto}>
                                                         {producto}
                                                     </p>
                                                 </td>
@@ -221,13 +220,12 @@ export default function Devolutions() {
                                                                         })
                                                                     }
                                                                     disabled={bloqueado}
-                                                                    className={`p-2 rounded-lg transition ${
-                                                                        anulado
+                                                                    className={`p-2 rounded-lg transition ${anulado
                                                                             ? "bg-red-100 cursor-default"
                                                                             : bloqueado
                                                                                 ? "bg-green-100 cursor-default"
                                                                                 : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
-                                                                    }`}
+                                                                        }`}
                                                                 >
                                                                     {anulado ? (
                                                                         <X size={18} className="text-red-500" />
@@ -256,11 +254,10 @@ export default function Devolutions() {
                                                                 title="Anular"
                                                                 onClick={() => handleAnularGrupo(grupo)}
                                                                 disabled={anulado}
-                                                                className={`p-2 rounded-lg transition duration-300 ${
-                                                                    anulado
+                                                                className={`p-2 rounded-lg transition duration-300 ${anulado
                                                                         ? "bg-gray-100 opacity-40 cursor-not-allowed"
                                                                         : "bg-red-100 hover:bg-red-200 cursor-pointer"
-                                                                }`}
+                                                                    }`}
                                                             >
                                                                 <Ban size={18} className="text-red-600" />
                                                             </button>
@@ -277,13 +274,15 @@ export default function Devolutions() {
                     </div>
                 </div>
 
-                <div className="flex justify-end mt-auto">
-                    <Pagination
-                        currentPage={paginaActual}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                    />
-                </div>
+                {itemsPagina.length > 0 && (
+                    <div className="flex justify-end mt-auto">
+                        <Pagination
+                            currentPage={paginaActual}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
+                    </div>
+                )}
 
             </div>
 

@@ -311,7 +311,7 @@ export default function EditDevolution() {
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 title="Editar Devolución"
-                submitText="Guardar"
+                submitText="Guardar Cambios"
                 productosList={productosList}
                 ventasList={ventasList}
                 estadoCampo={estadoCampo}
