@@ -247,7 +247,7 @@ export default function CreateDevolution() {
 
     const handleCancel = () => {
         setConfirmData({
-            type: "warning",
+            type: "info",
             title: "¿Cancelar?",
             message: "Si cancelas ahora perderás los datos ingresados. ¿Estás seguro?",
             onConfirm: () => {
@@ -275,8 +275,8 @@ export default function CreateDevolution() {
                 onChange={handleChange}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
-                title="Crear nueva Devolución"
-                submitText="Guardar"
+                title="Nueva Devolución"
+                submitText="Crear devolución"
                 productosList={productosList}
                 ventasList={ventasList}
                 estadoCampo={estadoCampo}

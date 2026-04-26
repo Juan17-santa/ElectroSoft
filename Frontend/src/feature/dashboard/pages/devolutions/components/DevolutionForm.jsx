@@ -119,19 +119,18 @@ export default function DevolutionForm({
     `;
 
     return (
-        <div className="bg-gray-50 p-6 rounded-2xl flex flex-col h-full gap-6 shadow-inner">
+        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col h-full gap-6 shadow-inner overflow-auto">
 
             {/* TÍTULO */}
             <div>
                 <p className="text-xl font-semibold flex items-center gap-2">
-                    <Plus size={20} className="text-yellow-400" />
                     {title}
                 </p>
-                <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-transparent mt-3" />
+                <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent mt-3" />
             </div>
 
             {/* ── FILA 1: Producto · Motivo · Submotivo ────────────────────────── */}
-            <div className="grid grid-cols-3 gap-x-8 px-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 px-10 gap-y-6">
 
                 {/* PRODUCTO — primero */}
                 <Field icon={Box} label="Producto *">
@@ -200,7 +199,7 @@ export default function DevolutionForm({
             </div>
 
             {/* ── FILA 2: Cantidad · Condición · Gestión · Responsable ────────── */}
-            <div className="grid grid-cols-4 gap-x-8 px-10">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 px-10 gap-y-6">
 
                 {/* CANTIDAD */}
                 <Field icon={Boxes} label="Cantidad *">
@@ -278,7 +277,7 @@ export default function DevolutionForm({
             </div>
 
             {/* ── FILA 3: Estado resolución | [Fecha · Garantía] ─────────────── */}
-            <div className="grid grid-cols-2 gap-x-10 px-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 px-10">
 
                 <Field icon={Tag} label="Estado resolución">
                     <select
@@ -296,7 +295,7 @@ export default function DevolutionForm({
                     <FieldStatus estado={estadoCampo("estadoResolucion")} />
                 </Field>
 
-                <div className="grid grid-cols-2 gap-x-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
 
                     {/* FECHA — siempre automática, no editable */}
                     <Field icon={CalendarDays} label="Fecha de devolución">
@@ -334,7 +333,7 @@ export default function DevolutionForm({
             </div>
 
             {/* ── FILA 4: Observaciones · Descripción ────────────────────────── */}
-            <div className="grid grid-cols-2 gap-x-10 px-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 px-10 gap-y-6">
 
                 <Field icon={ClipboardList} label="Observaciones *">
                     <textarea
