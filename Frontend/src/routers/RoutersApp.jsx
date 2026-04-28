@@ -8,7 +8,7 @@ import ResetPassword from "../feature/auth/pages/ResetPassword";
 
 // DASHBOARD
 import Layout from "../feature/dashboard/layout";
-import Dashboard from "../feature/dashboard/pages/dashboard/Dashboard";
+import Dashboard from "../feature/dashboard/pages/dashboard/pages/Dashboard";
 
 // ========= COMPRAS =========
 // CATEGORIA DE PRODUCTOS
