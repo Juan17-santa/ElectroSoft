@@ -55,13 +55,13 @@ export default function PaymentForm({
 
     return (
         <form onSubmit={handleSubmit}>
-            <div className="flex flex-col items-center gap-12 mt-6 h-full">
+            <div className="flex flex-col gap-8 mt-6 h-full">
 
                 {/* ===== PRIMERA FILA: Documento + Cliente ===== */}
-                <div className="flex gap-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 px-4 md:px-16">
 
                     {/* DOCUMENTO */}
-                    <div className="flex flex-col gap-3 w-80">
+                    <div className="flex flex-col gap-3 w-full">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <FileText size={16} />
                             <span>Documento *</span>
@@ -85,7 +85,7 @@ export default function PaymentForm({
                     </div>
 
                     {/* CLIENTE (auto) */}
-                    <div className="flex flex-col gap-3 w-80">
+                    <div className="flex flex-col gap-3 w-full">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                             <CircleUser size={16} />
                             <span>Cliente</span>
@@ -102,7 +102,7 @@ export default function PaymentForm({
 
                 {/* ===== AVISO VENTA VENCIDA ===== */}
                 {isVencida && (
-                    <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-5 py-3 w-full max-w-3xl">
+                    <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-5 py-3 mx-4 md:mx-16">
                         <AlertTriangle size={20} className="text-red-500 shrink-0" />
                         <div>
                             <p className="text-red-600 font-semibold text-sm">
@@ -117,10 +117,10 @@ export default function PaymentForm({
                 )}
 
                 {/* ===== SEGUNDA FILA: Venta + Método + Monto ===== */}
-                <div className="flex gap-16">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 px-4 md:px-16">
 
                     {/* NÚMERO DE VENTA */}
-                    <div className="flex flex-col gap-3 w-52">
+                    <div className="flex flex-col gap-3 w-full">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <FileText size={16} />
                             <span>Número de venta *</span>
@@ -163,7 +163,7 @@ export default function PaymentForm({
                     </div>
 
                     {/* MÉTODO DE PAGO */}
-                    <div className="flex flex-col gap-2 w-52">
+                    <div className="flex flex-col gap-2 w-full">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <CreditCard size={20} />
                             <span>Método de pago *</span>
@@ -213,7 +213,7 @@ export default function PaymentForm({
                     </div>
 
                     {/* MONTO */}
-                    <div className="flex flex-col gap-3 w-52">
+                    <div className="flex flex-col gap-3 w-full">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <DollarSign size={16} />
                             <span>
@@ -249,7 +249,7 @@ export default function PaymentForm({
                 </div>
 
                 {/* ===== TABLA HISTORIAL DE ABONOS ===== */}
-                <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-3xl">
+                <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4">
                     <div className="flex items-center gap-2 text-yellow-400 font-semibold text-base mb-1">
                         <FileText size={18} />
                         <span>Historial de abonos</span>
@@ -264,7 +264,7 @@ export default function PaymentForm({
                         )}
                     </div>
 
-                    <div className="overflow-hidden rounded-xl border border-gray-200">
+                    <div className="overflow-x-auto rounded-xl border border-gray-200">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-100">
                                 <tr className="text-left border-b border-gray-200">
@@ -313,7 +313,7 @@ export default function PaymentForm({
                 </div>
 
                 {/* ===== BOTONES ===== */}
-                <div className="flex justify-end w-full gap-6 mt-auto">
+                <div className="flex justify-end w-full gap-4 mt-auto px-4 md:px-16">
                     <button
                         type="button"
                         onClick={onCancel}

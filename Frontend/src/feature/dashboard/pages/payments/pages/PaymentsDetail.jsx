@@ -34,17 +34,17 @@ export default function PaymentDetail() {
         .reduce((acc, a) => acc + Number(a.monto), 0);
     const abonosTable = paymentsService.buildAbonosTable(venta);
 
-    // ✅ Handler anular último abono
+    // Handler anular último abono
     const handleAnularAbono = () => {
         const resultado = paymentsService.anularUltimoAbono(venta.id);
         if (resultado) setVenta(resultado);
     };
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
 
             <div
-                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
+                className="relative bg-white rounded-3xl p-4 md:p-8 shadow-lg"
                 style={{
                     backgroundImage: 'url("/background-details.jpg")',
                     backgroundSize: "cover",
@@ -67,11 +67,11 @@ export default function PaymentDetail() {
                             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-yellow-300 hover:bg-yellow-50 text-sm font-medium text-yellow-600 shadow-sm transition cursor-pointer"
                         >
                             <FileDown size={16} />
-                            Descargar detalle
+                            <span className="hidden sm:inline">Descargar detalle</span>
                         </button>
                     </div>
 
-                    <div className="bg-white rounded-2xl p-8 shadow-xl max-w-4xl w-full mx-auto">
+                    <div className="bg-white rounded-2xl p-4 md:p-8 shadow-xl max-w-4xl w-full mx-auto">
 
                         {/* Header: nombre + estado */}
                         <div className="flex justify-between items-start mb-6">
@@ -82,8 +82,8 @@ export default function PaymentDetail() {
                                 <p className="text-lg font-semibold text-gray-800">{venta.cliente}</p>
                             </div>
                             <div className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md ${isVencida ? "bg-red-100 text-red-700" :
-                                    esPendiente ? "bg-yellow-100 text-yellow-700" :
-                                        "bg-green-100 text-green-700"
+                                esPendiente ? "bg-yellow-100 text-yellow-700" :
+                                    "bg-green-100 text-green-700"
                                 }`}>
                                 {estadoLabel}
                             </div>
@@ -105,7 +105,7 @@ export default function PaymentDetail() {
                         )}
 
                         {/* Datos del crédito */}
-                        <div className="grid grid-cols-2 gap-5 mb-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 mb-8">
                             <div>
                                 <p className="text-sm text-yellow-400 mb-1">Número de venta</p>
                                 <p className="text-base font-semibold text-gray-800">
@@ -133,8 +133,8 @@ export default function PaymentDetail() {
                             <div>
                                 <p className="text-sm text-yellow-400 mb-1">Saldo Pendiente</p>
                                 <p className={`text-base font-semibold ${isVencida ? "text-red-600" :
-                                        esPendiente ? "text-red-500" :
-                                            "text-green-600"
+                                    esPendiente ? "text-red-500" :
+                                        "text-green-600"
                                     }`}>
                                     ${fmt(venta.montoPorPagar)}
                                 </p>
@@ -146,8 +146,8 @@ export default function PaymentDetail() {
                             Historial de Abonos
                         </h3>
 
-                        <div className="rounded-xl overflow-hidden border border-gray-100">
-                            <table className="w-full text-sm">
+                        <div className="rounded-xl overflow-x-auto border border-gray-100">
+                            <table className="min-w-xl w-full text-sm">
                                 <thead>
                                     <tr className="bg-gray-50">
                                         <th className="text-left px-5 py-3 font-semibold text-gray-500">Fecha</th>
@@ -175,9 +175,9 @@ export default function PaymentDetail() {
                                                 <tr
                                                     key={i}
                                                     className={`border-t border-gray-50 ${isAnulado ? "opacity-50 line-through text-gray-400" :
-                                                            isRojo ? "text-red-500 font-medium" :
-                                                                isAzul ? "text-blue-500 font-medium" :
-                                                                    "text-gray-600"
+                                                        isRojo ? "text-red-500 font-medium" :
+                                                            isAzul ? "text-blue-500 font-medium" :
+                                                                "text-gray-600"
                                                         }`}
                                                 >
                                                     <td className="px-5 py-2.5">{row.fecha}</td>

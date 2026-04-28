@@ -52,10 +52,10 @@ export default function Payments() {
     );
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
 
             <p className="text-xl font-semibold">
-                Gestión de <span className="text-yellow-500">créditos y abonos</span>
+                Control de créditos y abonos
             </p>
 
             <SearchBar
@@ -64,7 +64,7 @@ export default function Payments() {
                 placeholder="Buscar cliente..."
                 showReportButton={true}
                 onReportClick={() => setShowReportModal(true)}
-                showCreateButton={false} // 👈 ESTA LÍNEA ES LA CLAVE
+                showCreateButton={false} // ESTA LÍNEA ES LA CLAVE
             />
 
             <div className="flex flex-col gap-3">
