@@ -3,12 +3,12 @@ import { useState } from "react";
 import Alert from "../../../components/ui/Alert";
 import PaymentForm from "../components/PaymentForm";
 import { usePaymentForm } from "../hooks/usePaymentForm";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 
 export default function CreatePayment() {
-    const navigate  = useNavigate();
+    const navigate = useNavigate();
     const { ventaId } = useParams();
-    const location  = useLocation();
+    const location = useLocation();
     const documento = location.state?.documento || null;
     const [alert, setAlert] = useState(null);
 
@@ -34,17 +34,26 @@ export default function CreatePayment() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner h-full">
-                <div className="flex items-center gap-3">
+            <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 h-full shadow-inner overflow-y-auto">
+                <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-2 rounded-xl hover:bg-gray-200 transition cursor-pointer"
+                        >
+                            <ArrowLeft size={18} />
+                        </button>
+                        <div>
+                            <p className="text-xl font-semibold">Crear nuevo <span className="text-yellow-400">abono</span></p>
+                            <p className="text-sm text-gray-600">Complete todos los campos del formulario</p>
+                        </div>
+                    </div>
                     <button
                         onClick={() => navigate(-1)}
-                        className="p-2 rounded-xl hover:bg-gray-200 transition cursor-pointer"
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
                     >
-                        <ArrowLeft size={18} />
+                        <X size={20} />
                     </button>
-                    <p className="text-xl font-semibold">
-                        Crear nuevo <span className="text-yellow-500">Abono</span>
-                    </p>
                 </div>
 
                 <PaymentForm
