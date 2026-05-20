@@ -71,40 +71,33 @@ export function useShopping() {
             if (productoActual) {
                 const stockAnterior = productoActual.stock;
                 const stockNuevo = stockAnterior + producto.cantidad;
-
-                // WAC = (stockAnterior × precioActual + cantidadNueva × precioVenta) / stockNuevo
-                // Redondeado hacia arriba a la centena: 1922 → 2000 | 1270 → 1300 | 2050 → 2100
                 const precioActual = productoActual.precio ?? 0;
-                const precioVenta  = Number(producto.precioVenta);
+                const precioVenta = Number(producto.precioVenta);
+                const usarPrecioSugerido = !!(producto.usarPrecioSugerido ?? producto.sobreescribirConSugerido);
 
                 const wacExacto = stockAnterior > 0
                     ? (stockAnterior * precioActual + producto.cantidad * precioVenta) / stockNuevo
                     : precioVenta;
                 const costoPromedioNuevo = Math.ceil(wacExacto / 100) * 100;
+                const precioNuevo = usarPrecioSugerido ? precioVenta : costoPromedioNuevo;
 
-                // precio se actualiza con el WAC redondeado → cambio visible en Products
-                // y en todo el sistema. costoPromedio guarda el mismo valor para auditoría.
-                // Si el usuario confirma el modal de precio de venta en CreateShopping,
-                // ese paso sobreescribirá precio con precioVenta después de este llamado.
                 ServicesProducts.update({
                     ...productoActual,
                     stock:         stockNuevo,
-                    precio:        costoPromedioNuevo, // WAC → visible en Products y todo el sistema
-                    costoPromedio: costoPromedioNuevo, // ídem, guardado para auditoría
+                    precio:        precioNuevo,
+                    costoPromedio: costoPromedioNuevo,
                 });
 
                 movimientos.push({
                     productoId: producto.id,
                     productoNombre: producto.nombre,
-
                     cantidad: producto.cantidad,
                     cantidadAnterior: stockAnterior,
                     cantidadNueva: stockNuevo,
-
-                    precioVentaUnitario:   precioVenta,
-                    precioAnterior:        precioActual,
-                    costoPromedioNuevo:    costoPromedioNuevo,
-
+                    precioVentaUnitario: precioVenta,
+                    precioAnterior: precioActual,
+                    costoPromedioNuevo,
+                    precioAplicado: precioNuevo,
                     tipo: "ENTRADA",
                     fecha: fechaCreacion,
                 });
@@ -223,7 +216,6 @@ export function useShopping() {
 
                 const stockCalculado = producto.stock - mov.cantidad;
 
-                // #14: Detectar y advertir sobre stock que sería negativo
                 if (stockCalculado < 0) {
                     advertencias.push(
                         `"${mov.productoNombre}": el stock actual (${producto.stock}) es menor ` +

@@ -10,7 +10,6 @@ import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import { ServicesProviders } from "../providers/services/ServicesProviders";
-import { ServicesProducts } from "../products/services/ServicesProducts";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 import CustomSelect from "../../components/ui/CustomSelect";
@@ -185,14 +184,6 @@ export default function CreateShopping() {
             productos: productosParaGuardar,
         });
 
-        // Aplicar override de precio para productos donde el usuario eligió "sugerido"
-        productosParaGuardar.forEach((p) => {
-            if (p.sobreescribirConSugerido) {
-                const actual = ServicesProducts.getById(p.id);
-                if (actual) ServicesProducts.update({ ...actual, precio: p.precioVenta });
-            }
-        });
-
         setAlertData({
             type: "success",
             message: `Compra registrada exitosamente. Número de factura: ${numeroFactura}`,
@@ -225,12 +216,13 @@ export default function CreateShopping() {
         }
 
         const productosParaGuardar = productosActuales.map(
-            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal, sobreescribirConSugerido }) => ({
+            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal, sobreescribirConSugerido, usarPrecioSugerido }) => ({
                 id, nombre, cantidad, precio,
                 costeProducto: costeProducto || precio,
                 precioVenta: precioVenta || precio,
                 subtotal,
-                sobreescribirConSugerido: !!sobreescribirConSugerido,
+                sobreescribirConSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
+                usarPrecioSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
             })
         );
 
