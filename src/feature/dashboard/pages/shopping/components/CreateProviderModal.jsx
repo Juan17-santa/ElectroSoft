@@ -3,8 +3,8 @@ import {
     X, IdCard, FileText, User, Phone,
     AlertCircle, CheckCircle2, Truck, Tag, ChevronDown,
 } from "lucide-react";
-import { ServicesProviders } from "../../providers/services/ServicesProviders";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
+import { ServicesShopping } from "../services/ServicesShopping";
 
 // ─── Indicador de validación ───────────────────────────────────────────────────
 function FieldStatus({ estado }) {
@@ -41,9 +41,12 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
     const [telefonoContacto,   setTelefonoContacto]   = useState("");
     const [categoriasAsociadas, setCategoriasAsociadas] = useState([]);
     const [open,               setOpen]               = useState(false);
+    const [saving,             setSaving]             = useState(false);
+    const [apiError,           setApiError]           = useState("");
 
     // ─── Datos auxiliares ──────────────────────────────────────────────────────
     const [categoriasList,       setCategoriasList]       = useState([]);
+    const [documentTypes,        setDocumentTypes]        = useState([]);
     const [documentosExistentes, setDocumentosExistentes] = useState([]);
     const [nombresExistentes,    setNombresExistentes]    = useState([]);
 
@@ -58,11 +61,25 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
 
     // ─── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
-        const cats = JSON.parse(localStorage.getItem("productCategory") || "[]");
-        setCategoriasList(cats);
-        const proveedores = ServicesProviders.get();
-        setDocumentosExistentes(proveedores.map((p) => p.documento.trim().toLowerCase()));
-        setNombresExistentes(proveedores.map((p) => p.nombreProveedor.trim().toLowerCase()));
+        let mounted = true;
+        Promise.all([
+            ServicesShopping.fetchCategories(),
+            ServicesShopping.fetchProviders(),
+            ServicesShopping.fetchDocumentTypes(),
+        ])
+            .then(([categories, providers, docs]) => {
+                if (!mounted) return;
+                setCategoriasList(categories.filter((category) => category.estado));
+                setDocumentTypes(docs);
+                setDocumentosExistentes(providers.map((p) => p.documento.trim().toLowerCase()));
+                setNombresExistentes(providers.map((p) => p.nombreProveedor.trim().toLowerCase()));
+            })
+            .catch((err) => {
+                if (mounted) setApiError(err.message || "No se pudieron cargar los catalogos.");
+            });
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     // ─── Cerrar dropdown al clickear afuera ────────────────────────────────────
@@ -145,7 +162,7 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
     const estadoTelefono  = tocados.telefonoContacto ? validarTelefono(telefonoContacto)       : null;
 
     // ─── Submit ───────────────────────────────────────────────────────────────
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         setTocados({
             tipoDoc: true, documento: true, nombreProveedor: true,
             nombreContacto: true, telefonoContacto: true,
@@ -160,17 +177,25 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
 
         if (!ok) return;
 
-        const nuevoProveedor = ServicesProviders.create({
-            tipoDoc,
-            documento:        documento.trim(),
-            nombreProveedor:  nombreProveedor.trim(),
-            nombreContacto:   nombreContacto.trim(),
-            telefonoContacto: telefonoContacto.trim(),
-            categoriasAsociadas,
-        });
+        setSaving(true);
+        setApiError("");
+        try {
+            const nuevoProveedor = await ServicesShopping.createProvider({
+                tipoDoc,
+                documento: documento.trim(),
+                nombreProveedor: nombreProveedor.trim(),
+                nombreContacto: nombreContacto.trim(),
+                telefonoContacto: telefonoContacto.trim(),
+                categoriasAsociadas,
+            });
 
-        if (onSuccess) onSuccess(nuevoProveedor);
-        onClose();
+            if (onSuccess) onSuccess(nuevoProveedor);
+            onClose();
+        } catch (err) {
+            setApiError(err.message || "No se pudo crear el proveedor.");
+        } finally {
+            setSaving(false);
+        }
     };
 
     // ─── Render ───────────────────────────────────────────────────────────────
@@ -220,10 +245,11 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 cursor-pointer ${ring(estadoTipoDoc)}`}
                         >
                             <option value="">— Seleccionar —</option>
-                            <option value="NIT">NIT</option>
-                            <option value="CC">C.C</option>
-                            <option value="CE">C.E</option>
-                            <option value="Pasaporte">Pasaporte</option>
+                            {documentTypes.map((doc) => (
+                                <option key={doc.id} value={doc.id}>
+                                    {doc.abbreviation || doc.nombre}
+                                </option>
+                            ))}
                         </select>
                         <FieldStatus estado={estadoTipoDoc} />
                     </div>
@@ -345,6 +371,8 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
 
                 </div>
 
+                {apiError && <p className="text-xs text-red-500 mt-3">{apiError}</p>}
+
                 {/* BOTONES */}
                 <div className="flex justify-end gap-3 mt-6">
                     <button
@@ -354,8 +382,8 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                     >
                         Cancelar
                     </button>
-                    <PrimaryButton type="button" onClick={handleSubmit}>
-                        Crear proveedor
+                    <PrimaryButton type="button" onClick={handleSubmit} disabled={saving}>
+                        {saving ? "Creando..." : "Crear proveedor"}
                     </PrimaryButton>
                 </div>
 

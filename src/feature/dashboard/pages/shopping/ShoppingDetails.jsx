@@ -1,5 +1,5 @@
 import { Info } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { formatCOP } from "../shopping/helpers/shoppingHelpers";
 import { ServicesShopping } from "../shopping/services/ServicesShopping";
@@ -11,14 +11,42 @@ export default function ShoppingDetails() {
     const navigate = useNavigate();
     const { id } = useParams();
     const [currentPage, setCurrentPage] = useState(1);
+    const [compra, setCompra] = useState(() => ServicesShopping.getById(id));
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
     // #6: Lectura a través de la capa de servicio, no directo a localStorage
-    const compra = ServicesShopping.getById(id);
+    useEffect(() => {
+        let mounted = true;
+        setLoading(true);
+        setError("");
+        ServicesShopping.fetchById(id)
+            .then((data) => {
+                if (mounted) setCompra(data);
+            })
+            .catch((err) => {
+                if (mounted) setError(err.message || "No se pudo cargar la compra.");
+            })
+            .finally(() => {
+                if (mounted) setLoading(false);
+            });
+        return () => {
+            mounted = false;
+        };
+    }, [id]);
+
+    if (loading && !compra) {
+        return (
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner items-center justify-center">
+                <p className="text-gray-500 text-sm">Cargando compra...</p>
+            </div>
+        );
+    }
 
     if (!compra) {
         return (
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner items-center justify-center">
-                <p className="text-gray-500 text-sm">No se encontró la compra solicitada.</p>
+                <p className="text-gray-500 text-sm">{error || "No se encontro la compra solicitada."}</p>
                 <button
                     onClick={() => navigate("/dashboard/shopping")}
                     className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"

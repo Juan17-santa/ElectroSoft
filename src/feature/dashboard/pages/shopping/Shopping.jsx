@@ -80,7 +80,7 @@ function BanButton({ puedeAnularse, onClick }) {
 export default function Shopping() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
-    const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion } = useShopping();
+    const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion, loading, error, clearError } = useShopping();
     const [currentPage, setCurrentPage] = useState(1);
     const [cancelModalData, setCancelModalData] = useState(null);
     const [alert, setAlert] = useState(null);
@@ -91,7 +91,7 @@ export default function Shopping() {
     const { exportReport } = useShoppingReport(comprasFiltradas, setAlert);
 
     // Paginación
-    const comprasOrdenadas = [...comprasFiltradas].reverse();
+    const comprasOrdenadas = [...comprasFiltradas];
     const totalPages = Math.max(1, Math.ceil(comprasOrdenadas.length / ITEMS_PER_PAGE));
     const paginaActual = Math.min(currentPage, totalPages);
     const comprasPagina = comprasOrdenadas.slice(
@@ -144,7 +144,13 @@ export default function Shopping() {
                             </thead>
 
                             <tbody className="bg-white text-gray-700">
-                                {comprasPagina.length === 0 ? (
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={7} className="px-4 py-4 text-center text-gray-400">
+                                            Cargando compras...
+                                        </td>
+                                    </tr>
+                                ) : comprasPagina.length === 0 ? (
                                     <tr>
                                         <td colSpan={7} className="px-4 py-4 text-center text-gray-400">
                                             No hay compras registradas.
@@ -238,18 +244,14 @@ export default function Shopping() {
                     ]}
                     placeholder="Describe el motivo de la anulación..."
                     minLength={20}
-                    onConfirm={(infoAnulacion) => {
-                        // #14: handleAnular devuelve advertencias si el stock quedó truncado
-                        const { advertencias } = handleAnular(cancelModalData.id, infoAnulacion);
-                        setCancelModalData(null);
-
-                        if (advertencias.length > 0) {
-                            showAlert(
-                                "warning",
-                                `Compra anulada. Advertencia de inventario: ${advertencias[0]}`
-                            );
-                        } else {
+                    onConfirm={async () => {
+                        try {
+                            await handleAnular(cancelModalData.id);
+                            setCancelModalData(null);
                             showAlert("success", "La compra fue anulada correctamente.");
+                        } catch (err) {
+                            setCancelModalData(null);
+                            showAlert("error", err.message || "No se pudo anular la compra.");
                         }
                     }}
                     onCancel={() => setCancelModalData(null)}
@@ -257,11 +259,14 @@ export default function Shopping() {
             )}
 
             {/* ALERTA */}
-            {alert && (
+            {(alert || error) && (
                 <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
+                    type={alert?.type || "error"}
+                    message={alert?.message || error}
+                    onClose={() => {
+                        setAlert(null);
+                        clearError();
+                    }}
                 />
             )}
         </>

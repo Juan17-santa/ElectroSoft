@@ -5,11 +5,10 @@ import {
     Plus, Trash, Tag, ChevronDown
 } from "lucide-react";
 import { parseCOP } from "../helpers/shoppingHelpers";
-import { ServicesProducts } from "../../products/services/ServicesProducts";
-import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 import { ServicesCharacteristics } from "../../products/services/ServicesCharacteristics";
 import CategorySelect from "../../../components/ui/CategorySelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
+import { ServicesShopping } from "../services/ServicesShopping";
 
 // ─── Indicador de validación ───────────────────────────────────────────────────
 function FieldStatus({ estado }) {
@@ -40,6 +39,8 @@ export default function CreateProductModal({ onClose, onSuccess }) {
     const [serial,            setSerial]            = useState("");
     const [garantia,          setGarantia]          = useState("");
     const [nombresExistentes, setNombresExistentes] = useState([]);
+    const [saving,            setSaving]            = useState(false);
+    const [apiError,          setApiError]          = useState("");
 
     // ─── Características ───────────────────────────────────────────────────────
     const [caracteristicas,       setCaracteristicas]       = useState([]);
@@ -57,11 +58,26 @@ export default function CreateProductModal({ onClose, onSuccess }) {
 
     // ─── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
-        setCategoriasList(ServiceProductCategory.get());
+        let mounted = true;
+        ServicesShopping.fetchCategories()
+            .then((categories) => {
+                if (mounted) setCategoriasList(categories.filter((category) => category.estado));
+            })
+            .catch((err) => {
+                if (mounted) setApiError(err.message || "No se pudieron cargar las categorias.");
+            });
         setCharacteristicOptions(ServicesCharacteristics.getCharacteristics());
         setMeasureOptions(ServicesCharacteristics.getMeasures());
-        const productos = ServicesProducts.get();
-        setNombresExistentes(productos.map((p) => p.nombre.trim().toLowerCase()));
+        ServicesShopping.fetchProducts()
+            .then((productos) => {
+                if (mounted) setNombresExistentes(productos.map((p) => p.nombre.trim().toLowerCase()));
+            })
+            .catch(() => {
+                if (mounted) setNombresExistentes([]);
+            });
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     // ─── Validaciones ─────────────────────────────────────────────────────────
@@ -121,21 +137,30 @@ export default function CreateProductModal({ onClose, onSuccess }) {
     const toggleVisibilidad = (id) => setCaracteristicas((prev) => prev.map((c) => c.id === id ? { ...c, visible: !c.visible } : c));
 
     // ─── Submit ───────────────────────────────────────────────────────────────
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         setTocados({ nombre: true, categoriaId: true, precio: true, stock: true, serial: true, garantia: true });
         const ok = validarNombre(nombre).valido && validarCategoria(categoriaId).valido && validarPrecio(precio).valido && validarStock(stock).valido && validarSerial(serial).valido && validarGarantia(garantia).valido;
         if (!ok) return;
-        const nuevoProducto = ServicesProducts.create({
-            nombre:      nombre.trim(),
-            categoriaId: Number(categoriaId),
-            precio:      parseCOP(precio),
-            stock:       parseInt(stock),
-            serial:      serial.trim(),
-            garantia,
-            caracteristicas,
-        });
-        if (onSuccess) onSuccess(nuevoProducto);
-        onClose();
+        setSaving(true);
+        setApiError("");
+        try {
+            const nuevoProducto = await ServicesShopping.createProduct({
+                nombre: nombre.trim(),
+                categoriaId,
+                precio: parseCOP(precio),
+                stock: parseInt(stock),
+                tipoStock: "unidad",
+                serial: serial.trim(),
+                garantia,
+                caracteristicas,
+            });
+            if (onSuccess) onSuccess(nuevoProducto);
+            onClose();
+        } catch (err) {
+            setApiError(err.message || "No se pudo crear el producto.");
+        } finally {
+            setSaving(false);
+        }
     };
 
     // ─── Render ───────────────────────────────────────────────────────────────
@@ -233,6 +258,8 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                         </div>
 
                     </div>
+
+                    {apiError && <p className="text-xs text-red-500 mt-3">{apiError}</p>}
 
                     {/* SECCIÓN CARACTERÍSTICAS */}
                     <div className="mt-6 border-2 border-yellow-300 rounded-xl p-5 bg-gradient-to-b from-yellow-50 to-transparent">
@@ -380,7 +407,9 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                     {/* BOTONES */}
                     <div className="flex justify-between mt-6">
                         <button onClick={onClose} className="bg-gray-200 hover:bg-gray-300 transition px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer">Cancelar</button>
-                        <PrimaryButton onClick={handleSubmit}>Crear Producto</PrimaryButton>
+                        <PrimaryButton onClick={handleSubmit} disabled={saving}>
+                            {saving ? "Creando..." : "Crear Producto"}
+                        </PrimaryButton>
                     </div>
 
                 </div>
