@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { X, Box, Boxes, DollarSign, Plus, AlertCircle, CheckCircle2, TrendingUp, Tag, Info } from "lucide-react";
 import { formatCOP, parseCOP } from "../helpers/shoppingHelpers";
-import { ServicesProducts } from "../../products/services/ServicesProducts";
 import CreateProductModal from "./CreateProductModal";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
+import { ServicesShopping } from "../services/ServicesShopping";
 
 function FieldStatus({ estado }) {
     if (estado === null) return null;
@@ -16,6 +16,8 @@ function FieldStatus({ estado }) {
 
 export default function AddProductModal({ onClose, onAnadir, productosYaAgregados = [] }) {
     const [productosList, setProductosList] = useState([]);
+    const [loadingProducts, setLoadingProducts] = useState(false);
+    const [productsError, setProductsError] = useState("");
     const [showCreateProductModal, setShowCreateProductModal] = useState(false);
 
     const [modalProducto,      setModalProducto]      = useState("");
@@ -29,8 +31,25 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
     const [focusedField, setFocusedField] = useState(null);
 
     useEffect(() => {
-        const data = ServicesProducts.get().filter((p) => p.estado !== false);
-        setProductosList(data);
+        let mounted = true;
+        setLoadingProducts(true);
+        setProductsError("");
+        ServicesShopping.fetchProducts()
+            .then((data) => {
+                if (mounted) setProductosList(data.filter((p) => p.estado !== false));
+            })
+            .catch((err) => {
+                if (mounted) {
+                    setProductosList([]);
+                    setProductsError(err.message || "No se pudieron cargar los productos.");
+                }
+            })
+            .finally(() => {
+                if (mounted) setLoadingProducts(false);
+            });
+        return () => {
+            mounted = false;
+        };
     }, [showCreateProductModal]);
 
     const productoSeleccionado = productosList.find((p) => String(p.id) === String(modalProducto));
@@ -44,8 +63,12 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
         const precioAct   = productoSeleccionado.precio ?? 0;
         const stockNuevo  = stockAnt + cantidad;
         if (precioVenta <= 0 || cantidad <= 0) return null;
-        const wac = stockAnt > 0 ? (stockAnt * precioAct + cantidad * precioVenta) / stockNuevo : precioVenta;
-        return Math.ceil(wac / 100) * 100;
+        return ServicesShopping.calculateWac({
+            stockAnterior: stockAnt,
+            precioAnterior: precioAct,
+            cantidad,
+            precioVenta,
+        });
     }, [productoSeleccionado, modalPrecioVenta, modalCantidad]);
 
     const mostrarSeleccionPrecio = wacCalculado !== null && wacCalculado !== parseCOP(modalPrecioVenta);
@@ -141,7 +164,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                             <div className="flex items-center gap-2">
                                 <select value={modalProducto} onChange={(e) => handleSelectProducto(e.target.value)} onBlur={() => setTocados((t) => ({ ...t, producto: true }))}
                                     className={`flex-1 bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all cursor-pointer ${estadoProducto === null ? "focus:ring-gray-400 text-gray-500" : estadoProducto.valido ? "ring-1 ring-green-300 text-gray-700" : "ring-1 ring-red-300 text-gray-500"}`}>
-                                    <option value="">Elige un producto...</option>
+                                    <option value="">{loadingProducts ? "Cargando productos..." : "Elige un producto..."}</option>
                                     {productosList.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                                 </select>
                                 <button type="button" onClick={() => setShowCreateProductModal(true)} className="bg-yellow-400 hover:bg-yellow-500 transition p-3 rounded-xl shadow-md cursor-pointer flex-shrink-0">
@@ -149,6 +172,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                                 </button>
                             </div>
                             <FieldStatus estado={estadoProducto} />
+                            {productsError && <p className="text-xs text-red-500">{productsError}</p>}
                         </div>
 
                         {/* CANTIDAD */}
@@ -257,8 +281,9 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                 <CreateProductModal
                     onClose={() => setShowCreateProductModal(false)}
                     onSuccess={(nuevoProducto) => {
-                        const data = ServicesProducts.get().filter((p) => p.estado !== false);
-                        setProductosList(data);
+                        ServicesShopping.fetchProducts().then((data) => {
+                            setProductosList(data.filter((p) => p.estado !== false));
+                        });
                         setModalProducto(String(nuevoProducto.id));
                         setModalPrecio(String(nuevoProducto.precio));
                         setModalCosteProducto(String(nuevoProducto.precio));

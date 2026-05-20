@@ -2,18 +2,17 @@ import { Plus, Ban, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2, X } fr
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
-import { formatCOP, IVA_RATE, numeroFacturaYaExiste } from "../shopping/helpers/shoppingHelpers";
+import { formatCOP, IVA_RATE } from "../shopping/helpers/shoppingHelpers";
 import AddProductModal from "../shopping/components/AddProductModal";
 import CreateProductModal from "../shopping/components/CreateProductModal";
 import CreateProviderModal from "../shopping/components/CreateProviderModal";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
-import { ServicesProviders } from "../providers/services/ServicesProviders";
-import { ServicesProducts } from "../products/services/ServicesProducts";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 import CustomSelect from "../../components/ui/CustomSelect";
+import { ServicesShopping } from "../shopping/services/ServicesShopping";
 
 const ITEMS_PER_PAGE = 4;
 
@@ -34,10 +33,13 @@ function validarFecha(fecha) {
     return { valido: true, mensaje: "" };
 }
 
-function validarNumeroFactura(valor) {
+function validarNumeroFactura(valor, compras = []) {
     if (!valor || valor === "") return { valido: false, mensaje: "Debes ingresar un número de factura." };
     if (!/^\d+$/.test(valor)) return { valido: false, mensaje: "Solo se permiten números." };
-    if (numeroFacturaYaExiste(valor)) return { valido: false, mensaje: "Este número de factura ya está en uso." };
+    const existe = compras
+        .filter((compra) => compra.estado !== "Anulada")
+        .some((compra) => String(compra.numeroFactura) === String(valor));
+    if (existe) return { valido: false, mensaje: "Este numero de factura ya esta en uso." };
     return { valido: true, mensaje: "" };
 }
 
@@ -61,7 +63,7 @@ function FieldStatus({ estado }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CreateShopping() {
     const navigate = useNavigate();
-    const { guardarCompra } = useShopping();
+    const { guardarCompra, compras, saving } = useShopping();
 
     const [showModal, setShowModal] = useState(false);
     const [showCreateProductModal, setShowCreateProductModal] = useState(false);
@@ -71,6 +73,7 @@ export default function CreateShopping() {
     const [confirmData, setConfirmData] = useState(null);
     const [alertData, setAlertData] = useState(null);
     const [navegarACompras, setNavegarACompras] = useState(false);
+    const [catalogLoading, setCatalogLoading] = useState(false);
 
     // Formulario superior
     const [proveedorId, setProveedorId] = useState("");
@@ -85,8 +88,27 @@ export default function CreateShopping() {
     const [productos, setProductos] = useState([]);
 
     useEffect(() => {
-        const data = ServicesProviders.get().filter((p) => p.estado !== false);
-        setProveedoresList(data);
+        let mounted = true;
+        setCatalogLoading(true);
+        ServicesShopping.fetchProviders()
+            .then((data) => {
+                if (mounted) setProveedoresList(data.filter((p) => p.estado !== false));
+            })
+            .catch((err) => {
+                if (mounted) {
+                    setProveedoresList([]);
+                    setAlertData({
+                        type: "error",
+                        message: err.message || "No se pudieron cargar los proveedores.",
+                    });
+                }
+            })
+            .finally(() => {
+                if (mounted) setCatalogLoading(false);
+            });
+        return () => {
+            mounted = false;
+        };
     }, []);
 
     // Navegación reactiva: se dispara cuando finalizarCompra marca navegarACompras=true.
@@ -101,7 +123,7 @@ export default function CreateShopping() {
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
     const estadoProveedor = proveedorTocado ? validarProveedor(proveedorId) : null;
     const estadoFecha = fechaTocada ? validarFecha(fechaISO) : null;
-    const estadoNumeroFactura = numeroFacturaTocado ? validarNumeroFactura(numeroFactura) : null;
+    const estadoNumeroFactura = numeroFacturaTocado ? validarNumeroFactura(numeroFactura, compras) : null;
 
     // ─── Cálculos ─────────────────────────────────────────────────────────────
     const productosActivos = productos.filter((p) => !p.anulado);
@@ -175,30 +197,29 @@ export default function CreateShopping() {
         setProductos(updated);
     };
 
-    const finalizarCompra = (productosParaGuardar) => {
-        guardarCompra({
-            numeroFactura,
-            fechaFactura: formatearFecha(fechaISO),
-            proveedor,
-            proveedorId,
-            total,
-            productos: productosParaGuardar,
-        });
+    const finalizarCompra = async (productosParaGuardar) => {
+        try {
+            await guardarCompra({
+                numeroFactura,
+                fechaFactura: formatearFecha(fechaISO),
+                proveedor,
+                proveedorId,
+                total,
+                productos: productosParaGuardar,
+            });
 
-        // Aplicar override de precio para productos donde el usuario eligió "sugerido"
-        productosParaGuardar.forEach((p) => {
-            if (p.sobreescribirConSugerido) {
-                const actual = ServicesProducts.getById(p.id);
-                if (actual) ServicesProducts.update({ ...actual, precio: p.precioVenta });
-            }
-        });
-
-        setAlertData({
-            type: "success",
-            message: `Compra registrada exitosamente. Número de factura: ${numeroFactura}`,
-        });
-        setNumeroFacturaTocado(false);
-        setNavegarACompras(true);
+            setAlertData({
+                type: "success",
+                message: `Compra registrada exitosamente. Numero de factura: ${numeroFactura}`,
+            });
+            setNumeroFacturaTocado(false);
+            setNavegarACompras(true);
+        } catch (err) {
+            setAlertData({
+                type: "error",
+                message: err.message || "No se pudo registrar la compra.",
+            });
+        }
     };
 
     const handleCrearCompra = () => {
@@ -209,7 +230,7 @@ export default function CreateShopping() {
 
         const vProv = validarProveedor(proveedorId);
         const vFech = validarFecha(fechaISO);
-        const vNumFact = validarNumeroFactura(numeroFactura);
+        const vNumFact = validarNumeroFactura(numeroFactura, compras);
 
         if (!vProv.valido || !vFech.valido || !vNumFact.valido) return;
 
@@ -225,12 +246,13 @@ export default function CreateShopping() {
         }
 
         const productosParaGuardar = productosActuales.map(
-            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal, sobreescribirConSugerido }) => ({
+            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal, sobreescribirConSugerido, usarPrecioSugerido }) => ({
                 id, nombre, cantidad, precio,
                 costeProducto: costeProducto || precio,
                 precioVenta: precioVenta || precio,
                 subtotal,
-                sobreescribirConSugerido: !!sobreescribirConSugerido,
+                sobreescribirConSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
+                usarPrecioSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
             })
         );
 
@@ -239,9 +261,9 @@ export default function CreateShopping() {
             type: "info",
             title: "Confirmar compra",
             message: `¿Confirmar la compra de ${productosActuales.length} producto(s) por un total de ${formatCOP(Math.round(total))}?`,
-            onConfirm: () => {
+            onConfirm: async () => {
                 setConfirmData(null);
-                finalizarCompra(productosParaGuardar);
+                await finalizarCompra(productosParaGuardar);
             },
         });
     };
@@ -268,6 +290,10 @@ export default function CreateShopping() {
                 <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent"></div>
 
                 {/* CAMPOS SUPERIORES */}
+                {catalogLoading && (
+                    <p className="text-sm text-gray-500">Cargando proveedores...</p>
+                )}
+
                 <div className="flex flex-wrap gap-6 items-start">
 
                     {/* --- SECCIÓN PROVEEDOR --- */}
@@ -490,8 +516,9 @@ export default function CreateShopping() {
                     </button>
                     <PrimaryButton
                         onClick={handleCrearCompra}
+                        disabled={saving}
                     >
-                        Crear Compra
+                        {saving ? "Creando..." : "Crear Compra"}
                     </PrimaryButton>
                 </div>
 
