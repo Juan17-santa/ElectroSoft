@@ -84,8 +84,10 @@ export default function ProductCategory() {
                 <ProductCategoryTable
                     data={data}
                     onEdit={handleOpenEdit}
-                    onDelete={deleteCategory}
                     onToggleEstado={toggleEstado}
+                    onDelete={deleteCategory}
+                    currentPage={presentPage}       // <- Asegúrate de pasarle tu estado actual de la página
+                    recordsPerPage={recordsPerPage} // <- Asegúrate de pasarle cuántos registros renderizas
                 />
 
                 {/* PAGINACION */}
