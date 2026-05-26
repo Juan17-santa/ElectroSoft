@@ -1,7 +1,3 @@
-const SHOPPING_KEY = "compras";
-const PRODUCTS_KEY = "products";
-const PROVIDERS_KEY = "providers";
-
 const API_BASE_URL = (
     import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_API_BASE_URL ||
@@ -10,16 +6,6 @@ const API_BASE_URL = (
 
 const formatCOP = (value) => "$" + Number(value || 0).toLocaleString("es-CO");
 const roundToNextHundred = (value) => Math.ceil(Number(value || 0) / 100) * 100;
-
-function readStorage(key) {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : [];
-}
-
-function saveStorage(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
-    return data;
-}
 
 function getMessageFromResponse(payload, fallback) {
     return payload?.error || payload?.message || fallback;
@@ -140,8 +126,8 @@ function normalizeDocumentType(documentType = {}) {
 }
 
 function normalizeShopping(shopping = {}, catalogs = {}) {
-    const products = catalogs.products || readStorage(PRODUCTS_KEY).map(normalizeProduct);
-    const providers = catalogs.providers || readStorage(PROVIDERS_KEY).map(normalizeProvider);
+    const products = catalogs.products || [];
+    const providers = catalogs.providers || [];
 
     // El backend devuelve providerId (inglés), pero el frontend trabaja con proveedorId (español)
     const proveedorId = String(
@@ -234,48 +220,14 @@ export const ServicesShopping = {
         return API_BASE_URL;
     },
 
-    get() {
-        return readStorage(SHOPPING_KEY);
-    },
-
-    getById(id) {
-        return this.get().find((shopping) => String(shopping.id) === String(id)) || null;
-    },
-
-    saveAll(compras) {
-        return saveStorage(SHOPPING_KEY, compras);
-    },
-
-    create(nuevaCompra) {
-        const compras = this.get();
-        const updated = [...compras, nuevaCompra];
-        this.saveAll(updated);
-        return nuevaCompra;
-    },
-
-    update(compraActualizada) {
-        const compras = this.get();
-        const updated = compras.map((shopping) =>
-            String(shopping.id) === String(compraActualizada.id)
-                ? { ...shopping, ...compraActualizada }
-                : shopping
-        );
-        this.saveAll(updated);
-        return compraActualizada;
-    },
-
     async fetchProducts() {
         const payload = await request("/products");
-        const products = (payload?.data || []).map(normalizeProduct);
-        saveStorage(PRODUCTS_KEY, products);
-        return products;
+        return (payload?.data || []).map(normalizeProduct);
     },
 
     async fetchProviders() {
         const payload = await request("/providers");
-        const providers = (payload?.data || []).map(normalizeProvider);
-        saveStorage(PROVIDERS_KEY, providers);
-        return providers;
+        return (payload?.data || []).map(normalizeProvider);
     },
 
     async fetchCategories() {
@@ -299,17 +251,13 @@ export const ServicesShopping = {
     async fetchAll() {
         const catalogs = await this.fetchCatalogs();
         const payload = await request("/shopping");
-        const compras = (payload?.data || []).map((shopping) => normalizeShopping(shopping, catalogs));
-        this.saveAll(compras);
-        return compras;
+        return (payload?.data || []).map((shopping) => normalizeShopping(shopping, catalogs));
     },
 
     async fetchById(id) {
         const catalogs = await this.fetchCatalogs();
         const payload = await request(`/shopping/${id}`);
-        const compra = normalizeShopping(payload?.data, catalogs);
-        this.update(compra);
-        return compra;
+        return normalizeShopping(payload?.data, catalogs);
     },
 
     async createRemote(compra) {
@@ -318,10 +266,7 @@ export const ServicesShopping = {
             body: JSON.stringify(toShoppingPayload(compra)),
         });
         const catalogs = await this.fetchCatalogs();
-        await this.fetchProducts();
-        const compraNormalizada = normalizeShopping(payload?.data, catalogs);
-        this.create(compraNormalizada);
-        return compraNormalizada;
+        return normalizeShopping(payload?.data, catalogs);
     },
 
     async createProduct(producto) {
@@ -343,9 +288,7 @@ export const ServicesShopping = {
                 })),
             }),
         });
-        const product = normalizeProduct(payload?.data);
-        await this.fetchProducts();
-        return product;
+        return normalizeProduct(payload?.data);
     },
 
     async createProvider(provider) {
@@ -360,18 +303,13 @@ export const ServicesShopping = {
                 categoriesAssociated: provider.categoriasAsociadas || [],
             }),
         });
-        const createdProvider = normalizeProvider(payload?.data);
-        await this.fetchProviders();
-        return createdProvider;
+        return normalizeProvider(payload?.data);
     },
 
     async cancelRemote(id) {
         const payload = await request(`/shopping/${id}/cancel`, { method: "PATCH" });
         const catalogs = await this.fetchCatalogs();
-        await this.fetchProducts();
-        const compraNormalizada = normalizeShopping(payload?.data, catalogs);
-        this.update(compraNormalizada);
-        return compraNormalizada;
+        return normalizeShopping(payload?.data, catalogs);
     },
 
     async getCancellationStatus(id) {
@@ -380,6 +318,21 @@ export const ServicesShopping = {
             puedeAnularse: payload?.puedeAnularse === true,
             razon: payload?.razon || "",
         };
+    },
+
+    /**
+     * Verifica si un número de factura ya existe consultando la API.
+     * Retorna true si ya existe en una compra activa, false si está libre.
+     */
+    async invoiceNumberExists(numeroFactura) {
+        try {
+            const compras = await this.fetchAll();
+            return compras
+                .filter((c) => c.estado !== "Anulada")
+                .some((c) => String(c.numeroFactura) === String(numeroFactura));
+        } catch {
+            return false;
+        }
     },
 
     calculateWac({ stockAnterior, precioAnterior, cantidad, precioVenta }) {

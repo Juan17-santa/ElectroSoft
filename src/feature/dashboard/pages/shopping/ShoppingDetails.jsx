@@ -11,11 +11,10 @@ export default function ShoppingDetails() {
     const navigate = useNavigate();
     const { id } = useParams();
     const [currentPage, setCurrentPage] = useState(1);
-    const [compra, setCompra] = useState(() => ServicesShopping.getById(id));
-    const [loading, setLoading] = useState(false);
+    const [compra, setCompra] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // #6: Lectura a través de la capa de servicio, no directo a localStorage
     useEffect(() => {
         let mounted = true;
         setLoading(true);
