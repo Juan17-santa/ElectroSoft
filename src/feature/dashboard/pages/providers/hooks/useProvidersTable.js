@@ -1,8 +1,6 @@
 import { ServicesProviders } from "../services/ServicesProviders";
-import { ServicesShopping } from "../../shopping/services/ServicesShopping";
 import { useState, useEffect } from "react";
 
-// HOOK PERSONALIZADO PARA GESTONAR LA LOGICA DE LA TABLA DE PROVEEDORES
 export default function useProvidersTable({
     setConfirmData,
     showAlert,
@@ -11,55 +9,53 @@ export default function useProvidersTable({
     recordsPerPage
 }) {
 
-    // ESTADO PARA OBTENER LOS PROVEEDORES
     const [providers, setProviders] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    // AL CARGAR COMPONENTE CARGAR LOS PROVEEDORES
+    // FUNCION ASÍNCRONA PARA CARGAR LOS PROVEEDORES DESDE EL BACKEND
+    const loadProviders = async () => {
+        setLoading(true);
+        try {
+            const data = await ServicesProviders.get();
+            setProviders(data);
+        } catch (error) {
+            showAlert("error", "No se pudieron cargar los proveedores");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const storedProviders = ServicesProviders.get()
-        setProviders(storedProviders);
+        loadProviders();
     }, [])
 
     // FUNCION PARA ELIMINAR UN PROVEEDOR
     const deleteProvider = (id) => {
-
-        const providerToDelete = providers.find(p => p.id === id);
+        const providerToDelete = providers.find(p => p._id === id);
 
         if (!providerToDelete) {
             showAlert("error", "Proveedor no encontrado");
             return;
         }
 
-        // OBTENER TODAS LAS COMPRAS
-        const compras = ServicesShopping.get();
-
-        // BUSCAR CUALQUIER COMPRA (SIN IMPORTAR ESTADO)
-        const comprasAsociadas = compras.filter(compra =>
-            String(compra.proveedorId) === String(id)
-        );
-
-        // BLOQUEAR SI EXISTE AL MENOS UNA
-        if (comprasAsociadas.length > 0) {
-            showAlert(
-                "error",
-                `No se puede eliminar: Este proveedor tiene ${comprasAsociadas.length} compra(s) asociada(s).`
-            );
-            return;
-        }
-
-        // CONFIRMAR ELIMINACIÓN
         setConfirmData({
             type: "delete",
             title: "Eliminar proveedor",
-            message:
-                "¿Seguro que deseas eliminar este proveedor? Esta acción no se puede deshacer.",
-            onConfirm: () => {
-                const updated = ServicesProviders.delete(id);
+            message: `¿Seguro que deseas eliminar el proveedor "${providerToDelete.providerName}"? Esta acción no se puede deshacer.`,
+            onConfirm: async () => {
+                try {
+                    // El backend se encarga de validar restricciones de compras
+                    await ServicesProviders.delete(id);
 
-                setProviders(updated);
-                setConfirmData(null);
-
-                showAlert("success", "El proveedor ha sido eliminado con éxito");
+                    // Si todo sale bien, recargamos la lista desde el servidor
+                    await loadProviders();
+                    setConfirmData(null);
+                    showAlert("success", "Proveedor eliminado con éxito");
+                } catch (error) {
+                    setConfirmData(null);
+                    // Aquí capturamos el mensaje exacto que configuraste en tu backend
+                    showAlert("error", error.message || "No se pudo eliminar el proveedor");
+                }
             },
             onCancel: () => setConfirmData(null),
         });
@@ -70,35 +66,62 @@ export default function useProvidersTable({
         setConfirmData({
             type: "warning",
             title: "Cambiar estado del proveedor",
-            message:
-                "¿Seguro que deseas cambiar el estado de este proveedor?",
-            onConfirm: () => {
-                const updated = ServicesProviders.toggleEstado(id);
-
-                setProviders(updated);
-                setConfirmData(null);
-
-                showAlert(
-                    "success",
-                    "Estado del proveedor actualizado con éxito"
-                );
+            message: "¿Seguro que deseas cambiar el estado de este proveedor?",
+            onConfirm: async () => {
+                try {
+                    await ServicesProviders.toggleStatus(id);
+                    await loadProviders();
+                    setConfirmData(null);
+                    showAlert("success", "Estado del proveedor actualizado con éxito");
+                } catch (error) {
+                    setConfirmData(null);
+                    showAlert("error", "No se pudo cambiar el estado");
+                }
             },
             onCancel: () => setConfirmData(null),
         });
     };
 
-    // FILTRADO DEL BUSCADOR
+    // FILTRADO DEL BUSCADOR OPTIMIZADO (INCLUYE CATEGORÍAS Y CORRIGE BUGS)
     const filteredProviders = providers.filter(pro => {
-        const query = searchTerm.toLowerCase();
-        const telefono = pro.telefonoContacto ? String(pro.telefonoContacto) : "";
+        const query = searchTerm.trim().toLowerCase();
+        if (!query) return true; // Si no hay búsqueda, pasan todos
 
+        // 1. Convertir teléfonos y documentos a String seguro (Evita errores con números puros)
+        const phone = pro.contactPhone ? String(pro.contactPhone) : "";
+        const documentStr = pro.document ? String(pro.document).toLowerCase() : "";
+
+        // 2. Extraer abreviatura y nombre del tipo de documento de forma segura
+        const docTypeAbbreviation = pro.documentType?.abbreviation ? String(pro.documentType.abbreviation).toLowerCase() : "";
+        const docTypeName = pro.documentType?.name ? String(pro.documentType.name).toLowerCase() : "";
+
+        // 3. BUSCADOR EN CATEGORÍAS ASOCIADAS (Recorre el array buscando coincidencia en el nombre)
+        const matchesCategory = pro.categoriesAssociated?.some(cat => {
+            // Soporta si viene populado como objeto { name: '...' } o { nombre: '...' }
+            const catName = cat.name || cat.nombre || "";
+            return String(catName).toLowerCase().includes(query);
+        }) || false;
+
+        // 4. Validaciones exactas y parciales para los estados
+        let matchesStatus = false;
+        if (query === "activo") {
+            matchesStatus = pro.status === true;
+        } else if (query === "inactivo") {
+            matchesStatus = pro.status === false;
+        } else {
+            matchesStatus = (pro.status ? "activo" : "inactivo").includes(query);
+        }
+
+        // 5. Retorno con todas las condiciones unificadas
         return (
-            pro.nombreProveedor?.toLowerCase().includes(query) ||
-            pro.tipoDoc?.toLowerCase().includes(query) ||
-            pro.documento?.toLowerCase().includes(query) ||
-            pro.nombreContacto?.toLowerCase().includes(query) ||
-            telefono.includes(query) ||
-            (pro.estado ? "activo" : "inactivo").includes(query)
+            pro.providerName?.toLowerCase().includes(query) ||
+            documentStr.includes(query) ||
+            docTypeAbbreviation.includes(query) || // 👈 Busca por "CC", "NIT", etc.
+            docTypeName.includes(query) ||         // 👈 Busca por "Cédula", "Nit", por si algo.
+            pro.contactName?.toLowerCase().includes(query) ||
+            phone.includes(query) ||
+            matchesCategory ||                     // 👈 Filtra por el nombre de las categorías
+            matchesStatus
         );
     });
 
@@ -114,5 +137,6 @@ export default function useProvidersTable({
         totalPages,
         deleteProvider,
         toggleEstado,
+        loadProviders
     };
 }

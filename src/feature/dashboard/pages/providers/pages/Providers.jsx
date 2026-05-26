@@ -26,11 +26,11 @@ export default function Providers() {
     };
 
     const handleDetailsNavigation = (provider) => {
-        navigate("/dashboard/providers/detail", { state: { provider } });
+        navigate(`/dashboard/providers/detail/${provider._id}`);
     };
 
     const handleEditNavigation = (provider) => {
-        navigate("/dashboard/providers/update", { state: { provider } });
+        navigate(`/dashboard/providers/update/${provider._id}`);
     };
 
     const {
