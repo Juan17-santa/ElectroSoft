@@ -1,15 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useProviderForm } from "../hooks/useProviderForm";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import Alert from "../../../components/ui/Alert";
 import ProviderForm from "../components/ProvidersForm";
-import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
+import { ServicesProviders } from "../services/ServicesProviders";
 
 export default function CreateProvider() {
     const navigate = useNavigate();
 
     const [alert, setAlert] = useState(null);
+
+    // Estados locales para guardar los datos que vienen asíncronos de la API
+    const [documentTypes, setDocumentTypes] = useState([]);
+    const [categoriasActivas, setCategoriasActivas] = useState([]);
+
+    // Disparamos la carga de datos de la base de datos al montar el componente
+    useEffect(() => {
+        const loadFormData = async () => {
+            try {
+                // 1. Usamos tu método getDocumentTypes()
+                const docsData = await ServicesProviders.getDocumentTypes();
+                setDocumentTypes(docsData);
+
+                // 2. Usamos tu método getCategories() 
+                const catsData = await ServicesProviders.getCategories();
+                // Filtramos las categorías activas (validando por las llaves de tu backend en inglés/español)
+                const activeCats = catsData.filter(cat => cat.status === true || cat.estado === true);
+                setCategoriasActivas(activeCats);
+
+            } catch (error) {
+                console.error("Error al cargar datos iniciales del backend:", error);
+            }
+        };
+
+        loadFormData();
+    }, []);
 
     const {
         formData,
@@ -30,10 +56,6 @@ export default function CreateProvider() {
             }, 2000);
         }
     });
-
-    const categoriasActivas = ServiceProductCategory
-        .get()
-        .filter(cat => cat.estado === true);
 
     return (
         <>
@@ -63,7 +85,8 @@ export default function CreateProvider() {
                 <ProviderForm
                     formData={formData}
                     errors={errors}
-                    categorias={categoriasActivas}
+                    categorias={categoriasActivas}    // 👈 Mandamos las categorías filtradas desde tu servicio
+                    documentTypes={documentTypes}    // 👈 Mandamos los tipos de documento desde tu servicio
                     handleChange={handleChange}
                     setCategoriasAsociadas={setCategoriasAsociadas}
                     handleSubmit={handleSubmit}

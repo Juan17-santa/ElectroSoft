@@ -102,8 +102,8 @@ export default function RoutersApp() {
                 {/* PROVEEDORES */}
                 <Route path="providers" element={<ProtectedRoute scope="Proveedores" element={<Providers />} />} />
                 <Route path="providers/create" element={<ProtectedRoute scope="Proveedores" action="Crear" element={<CreateProvider />} />} />
-                <Route path="providers/update" element={<ProtectedRoute scope="Proveedores" action="Editar" element={<UpdateProvider />} />} />
-                <Route path="providers/detail" element={<ProtectedRoute scope="Proveedores" element={<ProviderDetails />} />} />
+                <Route path="providers/update/:id" element={<ProtectedRoute scope="Proveedores" action="Editar" element={<UpdateProvider />} />} />
+                <Route path="providers/detail/:id" element={<ProtectedRoute scope="Proveedores" element={<ProviderDetails />} />} />
 
                 {/* COMPRAS */}
                 <Route path="shopping" element={<ProtectedRoute scope="Compras" element={<Shopping />} />} />
