@@ -23,4 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 Nota - proyect.md
+pnpm-lock.yaml
+pnpm-workspace.yaml
 CASOS_DE_PRUEBA_DEVOLUTIONS.html

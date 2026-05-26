@@ -84,7 +84,9 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
             setModalPrecio(String(found?.precio ?? ""));
             setModalCantidad(String(yaExiste.cantidad));
             setModalCosteProducto(String(yaExiste.costeProducto));
-            setModalPrecioVenta(String(yaExiste.precioVenta));
+            // Al re-editar, mostrar el precio original ingresado (no el WAC aplicado),
+            // ya que el modal necesita el valor real para recalcular el WAC correctamente.
+            setModalPrecioVenta(String(yaExiste.precioVentaOriginal ?? yaExiste.precioVenta));
             setTocados({ producto: true, cantidad: true, precio: true, costeProducto: true, precioVenta: true });
         } else if (found) {
             setModalPrecio(String(found.precio));
@@ -121,13 +123,22 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
         if (!validarProducto(modalProducto).valido || !validarCantidad(modalCantidad).valido || !validarPrecio(modalPrecio).valido || !validarCosteProducto(modalCosteProducto).valido || !validarPrecioVenta(modalPrecioVenta).valido) return;
         const found         = productosList.find((p) => String(p.id) === String(modalProducto));
         const sobreescribirConSugerido = mostrarSeleccionPrecio && seleccionPrecio === "sugerido";
+        const precioVentaOriginal = parseCOP(modalPrecioVenta);
+
+        // Si el usuario eligió WAC, el precio que se aplicará al inventario es el WAC;
+        // si eligió sugerido (o no había selección), es el precio que ingresó manualmente.
+        const precioVentaAplicado = mostrarSeleccionPrecio && seleccionPrecio === "wac"
+            ? wacCalculado
+            : precioVentaOriginal;
+
         onAnadir({
             id:                    found?.id ?? Date.now(),
             nombre:                found?.nombre ?? modalProducto,
             cantidad:              parseInt(modalCantidad),
             precio:                parseCOP(modalPrecio),
             costeProducto:         parseCOP(modalCosteProducto),
-            precioVenta:           parseCOP(modalPrecioVenta),
+            precioVenta:           precioVentaAplicado,
+            precioVentaOriginal,   // Se envía al backend como salePrice (necesario para la fórmula WAC)
             subtotal:              parseInt(modalCantidad) * parseCOP(modalCosteProducto),
             sobreescribirConSugerido,
             esActualizacion:       !!productoYaAgregado,
