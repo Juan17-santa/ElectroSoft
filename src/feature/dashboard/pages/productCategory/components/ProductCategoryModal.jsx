@@ -11,7 +11,7 @@ export default function ProductCategoryModal({
 }) {
 
     // DETERMINAR SI EL MODAL ES PARA EDITAR O PARA CREAR
-    const isEdit = Boolean(categoryData && categoryData.id);
+    const isEdit = Boolean(categoryData && categoryData._id);
 
     // USO DEL HOOK PERSONALIZADO PARA MANEJAR EL FORMULARIO
     const {
@@ -62,16 +62,16 @@ export default function ProductCategoryModal({
                                 <span>Nombre de categoría *</span>
                             </div>
                             <input
-                                name="nombre"
-                                value={formData.nombre}
+                                name="name"
+                                value={formData.name}
                                 onChange={handleChange}
                                 placeholder="Ingrese el nombre de la categoria"
                                 className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
-                                ${errors.nombre ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
+                                ${errors.name ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                             />
                             <ValidationMessage
-                                error={errors.nombre}
-                                success={formData.nombre}
+                                error={errors.name}
+                                success={formData.name}
                                 successMessage={"Nombre valido"}
                             />
                         </div>
@@ -83,13 +83,12 @@ export default function ProductCategoryModal({
                                 <span>Descripción</span>
                             </div>
                             <textarea
-                                name="descripcion"
-                                value={formData.descripcion}
+                                name="description"
+                                value={formData.description}
                                 onChange={handleChange}
                                 placeholder="Breve descripción de los productos en esta categoría"
                                 rows="3"
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
-                                ${errors.descripcion ? "focus:ring-red-500" : "focus:ring-yellow-400"} resize-none`}
+                                className={"bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"}
                             />
                         </div>
 

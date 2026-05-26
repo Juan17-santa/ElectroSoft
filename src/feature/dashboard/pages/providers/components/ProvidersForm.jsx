@@ -1,56 +1,53 @@
 import PrimaryButton from "../../../components/ui/PrimaryButton";
-import { IdCard, FileText, User, X } from "lucide-react";
+import { IdCard, FileText, User } from "lucide-react";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function ProviderForm({
     formData,
     errors,
     categorias,
+    documentTypes = [],
     handleChange,
     handleSubmit,
     buttonText,
-    onCancel,
     setCategoriasAsociadas
 }) {
     const navigate = useNavigate();
 
     const categoriasOptions = categorias.map(cat => ({
-        value: cat.id,
-        label: cat.nombre
+        value: cat._id,
+        label: cat.name
     }));
 
-    const isEdit = buttonText.toLowerCase().includes("actualizar");
+    const documentTypeOptions = documentTypes.map(doc => ({
+        value: doc._id,
+        label: `${doc.name} (${doc.abbreviation})`
+    }));
 
-    // Estilos reutilizables para inputs
-    const inputClasses = `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`;
+    // Estilos reutilizables para inputs (actualizado con la validación en inglés)
+    const inputClasses = `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${errors.document ? "focus:ring-red-500" : "focus:ring-yellow-400"}`;
 
     return (
         <>
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-min gap-10">
 
-                {/* GRID RESPONSIVE: 1 columna en móvil, 2 en md */}
+                {/* GRID RESPONSIVE */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 mt-6 px-4 md:px-20">
 
-                    {/* TIPO DOCUMENTO */}
+                    {/* TIPO DOCUMENTO REAL */}
                     <div className="flex flex-col gap-1 w-full">
                         <CustomSelect
                             label="Tipo de documento *"
                             icon={IdCard}
-                            value={formData.tipoDoc}
-                            onChange={(value) => handleChange({ target: { name: "tipoDoc", value } })}
-                            options={[
-                                { value: "CC", label: "C.C" },
-                                { value: "CE", label: "C.E" },
-                                { value: "NIT", label: "NIT" },
-                                { value: "Pasaporte", label: "Pasaporte" },
-                            ]}
+                            value={formData.documentType}
+                            onChange={(value) => handleChange({ target: { name: "documentType", value } })}
+                            options={documentTypeOptions}
                             placeholder="Seleccione un tipo de documento"
                             width="w-full"
                         />
-                        <ValidationMessage error={errors.tipoDoc} success={formData.tipoDoc} successMessage="Tipo de documento valido" />
+                        <ValidationMessage error={errors.documentType} success={formData.documentType} successMessage="Tipo de documento válido" />
                     </div>
 
                     {/* DOCUMENTO */}
@@ -60,13 +57,13 @@ export default function ProviderForm({
                         </div>
                         <input
                             type="text"
-                            name="documento"
-                            value={formData.documento}
+                            name="document"
+                            value={formData.document}
                             onChange={handleChange}
                             placeholder="Ingrese su documento"
                             className={inputClasses}
                         />
-                        <ValidationMessage error={errors.documento} success={formData.documento} successMessage="Documento valido" />
+                        <ValidationMessage error={errors.document} success={formData.document} successMessage="Documento válido" />
                     </div>
 
                     {/* NOMBRE PROVEEDOR */}
@@ -76,13 +73,13 @@ export default function ProviderForm({
                         </div>
                         <input
                             type="text"
-                            name="nombreProveedor"
-                            value={formData.nombreProveedor}
+                            name="providerName"
+                            value={formData.providerName}
                             onChange={handleChange}
                             placeholder="Ingrese el nombre del proveedor"
                             className={inputClasses}
                         />
-                        <ValidationMessage error={errors.nombreProveedor} success={formData.nombreProveedor} successMessage="Nombre de proveedor valido" />
+                        <ValidationMessage error={errors.providerName} success={formData.providerName} successMessage="Nombre de proveedor válido" />
                     </div>
 
                     {/* CATEGORÍAS */}
@@ -91,7 +88,7 @@ export default function ProviderForm({
                             label="Categorías Asociadas"
                             icon={User}
                             options={categoriasOptions}
-                            value={formData.categoriasAsociadas}
+                            value={formData.categoriesAssociated}
                             onChange={setCategoriasAsociadas}
                             multiple
                             placeholder="Seleccionar categorías"
@@ -106,32 +103,33 @@ export default function ProviderForm({
                         </div>
                         <input
                             type="text"
-                            name="nombreContacto"
-                            value={formData.nombreContacto}
+                            name="contactName"
+                            value={formData.contactName}
                             onChange={handleChange}
                             placeholder="Ingrese el nombre de contacto"
                             className={inputClasses}
                         />
-                        <ValidationMessage error={errors.nombreContacto} success={formData.nombreContacto} successMessage="Nombre de contacto valido" />
+                        <ValidationMessage error={errors.contactName} success={formData.contactName} successMessage="Nombre de contacto válido" />
                     </div>
 
                     {/* TELÉFONO */}
                     <div className="flex flex-col gap-1 w-full">
                         <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
-                            <User size={16} /> <span>Telefono Contacto *</span>
+                            <User size={16} /> <span>Teléfono Contacto *</span>
                         </div>
                         <input
                             type="text"
-                            name="telefonoContacto"
-                            value={formData.telefonoContacto}
+                            name="contactPhone"
+                            value={formData.contactPhone}
                             onChange={handleChange}
-                            placeholder="Ingrese el telefono"
+                            placeholder="Ingrese el teléfono"
                             className={inputClasses}
                         />
-                        <ValidationMessage error={errors.telefonoContacto} success={formData.telefonoContacto} successMessage="Telefono valido" />
+                        <ValidationMessage error={errors.contactPhone} success={formData.contactPhone} successMessage="Teléfono válido" />
                     </div>
                 </div>
 
+                {/* BOTONES */}
                 <div className="flex justify-end mt-auto gap-4 px-4 md:px-20">
                     <button
                         type="button"

@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { ServiceProductCategory } from "../services/ServicesProductCategory";
-import { ServicesProducts } from "../../products/services/ServicesProducts";
-import { ServicesProviders } from "../../providers/services/ServicesProviders";
 
-// HOOK PERSONALIZADO PARA GESTIONAR LA LOGICA DE LA TABLA DE CATEGORIAS 
 export default function useProductCategoryTable({
     setConfirmData,
     showAlert,
@@ -11,60 +8,53 @@ export default function useProductCategoryTable({
     currentPage,
     recordsPerPage
 }) {
-
-    // ESTADO PARA OBTENER LAS CATEGORIAS DE PRODUCTOS
     const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    // FUNCION PARA CARGAR LAS CATEGORIAS 
-    const loadCategories = () => {
-        const storedCategories = ServiceProductCategory.get();
-        setCategories(storedCategories);
+    // FUNCION ASÍNCRONA PARA CARGAR LAS CATEGORIAS DESDE EL BACKEND
+    const loadCategories = async () => {
+        setLoading(true);
+        try {
+            const data = await ServiceProductCategory.get();
+            setCategories(data);
+        } catch (error) {
+            showAlert("error", "No se pudieron cargar las categorías");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // AL CARGAR EL COMPONENTE CARGAR LAS CATEGORIAS
     useEffect(() => {
         loadCategories();
     }, []);
 
     // FUNCION PARA ELIMINAR UNA CATEGORIA DE PRODUCTO
     const deleteCategory = (id) => {
-        const categoryToDelete = categories.find(cat => cat.id === id);
+        const categoryToDelete = categories.find(cat => cat._id === id);
 
         if (!categoryToDelete) {
             showAlert("error", "Categoría no encontrada");
             return;
         }
 
-        // VERIFICAR PRODUCTOS Y PROVEEDORES
-        const productosAsociados = ServicesProducts.get().filter(
-            p => Number(p.categoriaId) === Number(id)
-        );
-
-        const proveedoresAsociados = ServicesProviders.get().some(prov =>
-            prov.categoriasAsociadas?.some(catId => String(catId) === String(id))
-        );
-
-        // SI HAY PRODUCTOS O PROVEEDORES ASOCIADOS BLOQUEA LA ACCION DE ELIMINAR
-        if (productosAsociados.length > 0 || proveedoresAsociados === true) {
-            let mensaje = "No se puede eliminar: Esta categoría tiene ";
-            if (productosAsociados.length > 0) mensaje += "productos";
-            if (productosAsociados.length > 0 && proveedoresAsociados) mensaje += " y ";
-            if (proveedoresAsociados) mensaje += "proveedores";
-            mensaje += " asociados.";
-
-            showAlert("error", mensaje);
-            return;
-        }
-
         setConfirmData({
             type: "delete",
             title: "Eliminar categoría",
-            message: "¿Seguro que deseas eliminar esta categoria? Esta acción no se puede deshacer.",
-            onConfirm: () => {
-                const updated = ServiceProductCategory.delete(id);
-                setCategories(updated);
-                setConfirmData(null);
-                showAlert("success", "Categoría eliminada con éxito");
+            message: `¿Seguro que deseas eliminar la categoría "${categoryToDelete.name}"? Esta acción no se puede deshacer.`,
+            onConfirm: async () => {
+                try {
+                    // El backend se encarga de validar restricciones de productos/proveedores
+                    await ServiceProductCategory.delete(id);
+
+                    // Si todo sale bien, recargamos la lista desde el servidor
+                    await loadCategories();
+                    setConfirmData(null);
+                    showAlert("success", "Categoría eliminada con éxito");
+                } catch (error) {
+                    setConfirmData(null);
+                    // Aquí capturamos el mensaje exacto que configuraste en tu backend
+                    showAlert("error", error.message || "No se pudo eliminar la categoría");
+                }
             },
             onCancel: () => setConfirmData(null),
         });
@@ -76,29 +66,28 @@ export default function useProductCategoryTable({
             type: "warning",
             title: "Cambiar estado de la categoria",
             message: "¿Seguro que deseas cambiar el estado de esta categoria?",
-            onConfirm: () => {
-                const updated = ServiceProductCategory.toggleEstado(id);
-
-                setCategories(updated);
-                setConfirmData(null);
-
-                showAlert(
-                    "success",
-                    "Estado de la categoria actualizada con exito"
-                );
+            onConfirm: async () => {
+                try {
+                    await ServiceProductCategory.toggleEstado(id);
+                    await loadCategories();
+                    setConfirmData(null);
+                    showAlert("success", "Estado de la categoría actualizado con éxito");
+                } catch (error) {
+                    setConfirmData(null);
+                    showAlert("error", "No se pudo cambiar el estado");
+                }
             },
             onCancel: () => setConfirmData(null),
         });
     };
 
-    // FILTRAR LAS CATEGORIAS
+    // FILTRAR LAS CATEGORIAS USANDO LOS CAMPOS EN INGLÉS
     const filteredCategories = categories.filter(cat => {
         const query = searchTerm.toLowerCase();
-
         return (
-            cat.nombre?.toLowerCase().includes(query) ||
-            cat.descripcion?.toLowerCase().includes(query) ||
-            (cat.estado ? "activo" : "inactivo").includes(query)
+            cat.name?.toLowerCase().includes(query) ||
+            cat.description?.toLowerCase().includes(query) ||
+            (cat.status ? "activo" : "inactivo").includes(query)
         );
     });
 
@@ -108,7 +97,6 @@ export default function useProductCategoryTable({
     const firstIndex = lastIndex - recordsPerPage;
     const currentRecords = filteredCategories.slice(firstIndex, lastIndex);
 
-    // RETORNAMOS LAS FUNCIONES PARA USAR EN LA TABLA
     return {
         data: currentRecords,
         totalPages,

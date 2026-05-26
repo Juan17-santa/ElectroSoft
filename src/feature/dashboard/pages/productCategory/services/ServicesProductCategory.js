@@ -1,84 +1,91 @@
-const KEY = "productCategory";
-import { ServicesProducts } from "../../products/services/ServicesProducts";
-import { ServicesProviders } from "../../providers/services/ServicesProviders";
+const API_URL = "http://localhost:4000/api/productCategory";
 
 export const ServiceProductCategory = {
-    get() {
-        const data = localStorage.getItem(KEY);
-        const categories = data ? JSON.parse(data) : [];
-        return categories.sort((a, b) => b.id - a.id);
-    },
-
-    // VALIDACION PARA NO ELIMINAR CATEGORIA CON PRODUCTOS ASOCIADOS
-    hasAssociatedProducts(categoriaId) {
-        const products = ServicesProducts.get() || [];
-        return products.some(prod => Number(prod.categoriaId) === Number(categoriaId));
-    },
-
-    // VALIDACION PARA NO ELIMINAR CATEGORIA CON PROVEEDORES ASOCIADOS
-    hasAssociatedProviders(categoriaId) {
-        const providers = ServicesProviders.get() || [];
-        return providers.some(prov =>
-            prov.categoriasAsociadas?.some(catId => Number(catId) === Number(categoriaId))
-        );
-    },
-
-    // VALIDACION PARA NO CREAR/ACTUALIZAR CATEGORIA CON NOMBRE EXISTENTE
-    existsByNombre(nombre, idActual = null) {
-        const categorias = this.get();
-
-        return categorias.some(c =>
-            c.nombre.toLowerCase().trim() === nombre.toLowerCase().trim() &&
-            c.id !== idActual
-        );
-    },
-
-    create({ nombre, descripcion }) {
-        const categorias = this.get();
-        const nuevaCategoria = {
-            id: Date.now(),
-            nombre,
-            descripcion,
-            estado: true
-        };
-        const nuevasCategorias = [...categorias, nuevaCategoria];
-        localStorage.setItem(KEY, JSON.stringify(nuevasCategorias));
-
-        return this.get();
-    },
-
-    update(categoriaActualizada) {
-        const categorias = this.get();
-        const nuevasCategorias = categorias.map(cat =>
-            Number(cat.id) === Number(categoriaActualizada.id) ? categoriaActualizada : cat
-        );
-        localStorage.setItem(KEY, JSON.stringify(nuevasCategorias));
-        return this.get();
-    },
-
-    delete(id) {
-        if (this.hasAssociatedProducts(id)) {
-            throw new Error("RESTRICCION_PRODUCTOS");
+    async get() {
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error("Error al obtener las categorías");
+            const resJson = await response.json();
+            return resJson.data;
+        } catch (error) {
+            console.error("Error en get:", error);
+            throw error;
         }
+    },
 
-        if (this.hasAssociatedProviders(id)) {
-            throw new Error("RESTRICCION_PROVEEDORES");
+    async create({ name, description }) {
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, description })
+            });
+
+            const resJson = await response.json();
+            if (!response.ok) {
+                // Lanza el mensaje del backend: "Esta categoría ya se encuentra registrada"
+                throw new Error(resJson.error || "Error al crear la categoría");
+            }
+            return resJson.data;
+        } catch (error) {
+            console.error("Error en create:", error);
+            throw error;
         }
-
-        const data = this.get();
-        const newData = data.filter(cat => Number(cat.id) !== Number(id));
-        localStorage.setItem(KEY, JSON.stringify(newData));
-        return this.get();
     },
 
-    toggleEstado(id) {
-        const categorias = this.get();
-        const nuevasCategorias = categorias.map(cat =>
-            Number(cat.id) === Number(id)
-                ? { ...cat, estado: !cat.estado }
-                : cat
-        );
-        localStorage.setItem(KEY, JSON.stringify(nuevasCategorias));
-        return this.get();
+    async update(id, { name, description, status }) {
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, description, status })
+            });
+
+            const resJson = await response.json();
+            if (!response.ok) {
+                throw new Error(resJson.error || "Error al actualizar la categoría");
+            }
+            return resJson.data;
+        } catch (error) {
+            console.error("Error en update:", error);
+            throw error;
+        }
     },
-}
+
+    async toggleEstado(id) {
+        try {
+            const response = await fetch(`${API_URL}/${id}/status`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" }
+                // Si tu backend no necesita body porque el controlador hace el toggle internamente, 
+                // puedes quitar la línea de abajo. Si tu controlador espera el valor actual o el nuevo,
+                // puedes pasar un objeto vacío o el valor correspondiente.
+            });
+
+            const resJson = await response.json();
+            if (!response.ok) {
+                throw new Error(resJson.error || "Error al cambiar el estado");
+            }
+            return resJson.data;
+        } catch (error) {
+            console.error("Error en toggleEstado:", error);
+            throw error;
+        }
+    },
+
+    async delete(id) {
+        try {
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: "DELETE"
+            });
+            const resJson = await response.json();
+            if (!response.ok) {
+                throw new Error(resJson.error || "Error al eliminar la categoría");
+            }
+            return resJson.data;
+        } catch (error) {
+            console.error("Error en delete:", error);
+            throw error;
+        }
+    }
+};

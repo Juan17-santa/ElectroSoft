@@ -9,12 +9,11 @@ export default function useProductCategoryModal({
     onClose,
     mode
 }) {
-
     // ESTADO INICIAL LIMPIO
     const defaultState = {
-        nombre: "",
-        descripcion: "",
-        estado: true
+        name: "",
+        description: "",
+        status: true
     };
 
     // ESTADO PARA LOS DATOS DEL FORMULARIO
@@ -23,17 +22,15 @@ export default function useProductCategoryModal({
     // ESTADO PARA LOS ERRORES DE VALIDACION
     const [errors, setErrors] = useState({});
 
-    // SINCRONIZA LOS DATOS DEL FORMULARIO CUANDO CAMBIA
-    // ESTO PERMITE CARGAR LOS DATOS AL EDITAR UNA CATEGORIA
     useEffect(() => {
         if (initialData && mode === "update") {
-            // SI ES EDICION SE CARGAN LOS DATOS
             setFormData({
-                ...defaultState,
-                ...initialData,
+                name: initialData.name || "",
+                description: initialData.description || "",
+                status: initialData.status !== undefined ? initialData.status : true,
+                _id: initialData._id
             });
         } else {
-            // SI ES CREACION SE RESETEA EL FORMULARIO PARA QUE QUEDE LIMPIO
             setFormData(defaultState);
         }
         setErrors({});
@@ -43,7 +40,7 @@ export default function useProductCategoryModal({
     const validateField = (name, value) => {
         let error = "";
         switch (name) {
-            case "nombre":
+            case "name": // Cambiado a "name"
                 if (!value.trim()) {
                     error = "El nombre es obligatorio";
                 } else if (!Validations.soloLetras(value)) {
@@ -63,51 +60,37 @@ export default function useProductCategoryModal({
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
 
-        // VALIDAR EL CAMPO EN TIEMPO REAL
         let error = validateField(name, value);
-
-        if (name === "nombre" && !error) {
-
-            const exists = ServiceProductCategory.existsByNombre(
-                value,
-                formData.id
-            );
-
-            if (exists) {
-                error = "Esta categoría ya se encuentra registrada";
-            }
-        }
         setErrors(prev => ({ ...prev, [name]: error }));
     };
 
     // FUNCION PARA VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
         let newErrors = {};
-        const errorNombre = validateField("nombre", formData.nombre);
-        if (errorNombre) newErrors.nombre = errorNombre;
+        const errorNombre = validateField("name", formData.name);
+        if (errorNombre) newErrors.name = errorNombre;
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     // FUNCION PARA MANEJAR EL ENVIO DEL FOMULARIO
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         if (e) e.preventDefault();
 
         if (!validateForm()) return;
 
         try {
             if (mode === "create") {
-                ServiceProductCategory.create(formData);
+                await ServiceProductCategory.create(formData);
             } else if (mode === "update") {
-                ServiceProductCategory.update(formData);
+                await ServiceProductCategory.update(formData._id, formData);
             }
 
-            // SI TODO SALE BIEN SE EJECUTAN LAS ACCIONES Y SE CIERRA LA MODAL
             if (onSuccess) onSuccess();
             if (onClose) onClose();
-
         } catch (error) {
+            setErrors(prev => ({ ...prev, name: error.message }));
             console.error("Error al procesar la categoría:", error);
         }
     };
