@@ -12,18 +12,38 @@ const parseMoney = (value) => {
     ) || 0;
 };
 
+/**
+ * Convierte un purchaseDate del backend (DD/MM/YYYY o YYYY-MM-DD) a un objeto Date.
+ * Retorna null si no se puede parsear.
+ */
+function parsePurchaseDate(dateStr) {
+    if (!dateStr || typeof dateStr !== "string") return null;
+
+    // Formato YYYY-MM-DD (del backend)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        const [year, month, day] = dateStr.split("-").map(Number);
+        return new Date(year, month - 1, day);
+    }
+
+    // Formato DD/MM/YYYY
+    const partes = dateStr.split("/");
+    if (partes.length === 3) {
+        const [day, month, year] = partes.map(Number);
+        const date = new Date(year, month - 1, day);
+        if (!Number.isNaN(date.getTime())) return date;
+    }
+
+    return null;
+}
+
 export function useShoppingReport(comprasFiltradas, setAlert) {
 
     const exportReport = (fechaInicio, fechaFin) => {
 
         // ─── FILTRO POR FECHA ────────────────────────────────
         const filtradas = comprasFiltradas.filter((compra) => {
-            if (!compra.fechaCompra) return false;
-
-            const partes = compra.fechaCompra.split("/");
-            if (partes.length !== 3) return false;
-
-            const fecha = new Date(`${partes[2]}-${partes[1]}-${partes[0]}T00:00:00`);
+            const fecha = parsePurchaseDate(compra.fechaCompra);
+            if (!fecha) return false;
 
             return (
                 fecha >= new Date(fechaInicio + "T00:00:00") &&

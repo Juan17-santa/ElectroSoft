@@ -142,16 +142,27 @@ function normalizeDocumentType(documentType = {}) {
 function normalizeShopping(shopping = {}, catalogs = {}) {
     const products = catalogs.products || readStorage(PRODUCTS_KEY).map(normalizeProduct);
     const providers = catalogs.providers || readStorage(PROVIDERS_KEY).map(normalizeProvider);
-    const proveedorId = String(shopping.proveedorId?._id ?? shopping.proveedorId ?? shopping.providerId ?? "");
+
+    // El backend devuelve providerId (inglés), pero el frontend trabaja con proveedorId (español)
+    const proveedorId = String(
+        shopping.providerId?._id ?? shopping.providerId
+        ?? shopping.proveedorId?._id ?? shopping.proveedorId ?? ""
+    );
     const provider = providers.find((item) => String(item.id) === proveedorId);
     const totalNumber = Number(shopping.total ?? 0);
 
-    const productos = (shopping.productos || []).map((item) => {
-        const productId = String(item.productoId?._id ?? item.productoId ?? item.id ?? "");
+    // El backend devuelve products[] (inglés), pero el frontend trabaja con productos[] (español)
+    const rawProducts = shopping.products || shopping.productos || [];
+
+    const productos = rawProducts.map((item) => {
+        const productId = String(
+            item.productId?._id ?? item.productId
+            ?? item.productoId?._id ?? item.productoId ?? item.id ?? ""
+        );
         const product = products.find((stored) => String(stored.id) === productId);
-        const precioCompra = Number(item.precioCompra ?? item.costeProducto ?? 0);
-        const precioVenta = Number(item.precioVenta ?? product?.precio ?? 0);
-        const cantidad = Number(item.cantidad ?? 0);
+        const precioCompra = Number(item.purchasePrice ?? item.precioCompra ?? item.costeProducto ?? 0);
+        const precioVenta = Number(item.salePrice ?? item.precioVenta ?? product?.precio ?? 0);
+        const cantidad = Number(item.quantity ?? item.cantidad ?? 0);
 
         return {
             ...item,
@@ -164,17 +175,24 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
             precioCompra,
             precioVenta,
             subtotal: cantidad * precioCompra,
-            usarPrecioSugerido: item.usarPrecioSugerido === true,
-            sobreescribirConSugerido: item.usarPrecioSugerido === true,
+            usarPrecioSugerido: item.useSuggestedPrice === true || item.usarPrecioSugerido === true,
+            sobreescribirConSugerido: item.useSuggestedPrice === true || item.usarPrecioSugerido === true,
         };
     });
+
+    // El backend devuelve invoiceNumber (inglés), purchaseDate, createdAt, cancelledAt
+    // El frontend trabaja internamente con numeroFactura, fechaCompra, fechaCreacion, anuladaEn
+    const invoiceNumber = shopping.invoiceNumber ?? shopping.numeroFactura ?? "";
+    const purchaseDate = shopping.purchaseDate ?? shopping.fechaCompra ?? "";
+    const createdAt = shopping.createdAt ?? shopping.fechaCreacion ?? new Date(0).toISOString();
+    const cancelledAt = shopping.cancelledAt ?? shopping.anuladaEn ?? null;
 
     return {
         ...shopping,
         id: getId(shopping),
         _id: shopping._id ?? getId(shopping),
-        numeroFactura: String(shopping.numeroFactura ?? ""),
-        fechaCompra: shopping.fechaCompra ?? "",
+        numeroFactura: String(invoiceNumber),
+        fechaCompra: purchaseDate,
         proveedorId,
         proveedor: shopping.proveedor ?? provider?.nombreProveedor ?? "Proveedor no encontrado",
         iva: formatCOP(Math.round(totalNumber * 0.19)),
@@ -183,11 +201,11 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
         estado: normalizeEstado(shopping.estado),
         estadoBackend: normalizeBackendEstado(shopping.estado),
         productos,
-        fechaCreacion: shopping.fechaCreacion ?? shopping.createdAt ?? new Date(0).toISOString(),
-        anuladaEn: shopping.anuladaEn ?? null,
+        fechaCreacion: createdAt,
+        anuladaEn: cancelledAt,
         infoAnulacion: shopping.infoAnulacion ?? (
-            shopping.anuladaEn
-                ? { motivo: "Anulada desde backend", fechaAnulacion: shopping.anuladaEn }
+            cancelledAt
+                ? { motivo: "Anulada desde backend", fechaAnulacion: cancelledAt }
                 : null
         ),
         impactApplied: shopping.impactApplied === true,
@@ -196,15 +214,17 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
 
 function toShoppingPayload({ numeroFactura, fechaFactura, proveedorId, productos }) {
     return {
-        numeroFactura: String(numeroFactura || "").trim(),
-        fechaCompra: fechaFactura,
-        proveedorId,
-        productos: productos.map((product) => ({
-            productoId: product.productoId ?? product.id,
-            cantidad: Number(product.cantidad),
-            precioCompra: Number(product.precioCompra ?? product.costeProducto),
-            precioVenta: Number(product.precioVenta),
-            usarPrecioSugerido: product.usarPrecioSugerido === true || product.sobreescribirConSugerido === true,
+        invoiceNumber: String(numeroFactura || "").trim(),
+        purchaseDate: fechaFactura,
+        providerId: proveedorId,
+        products: productos.map((product) => ({
+            productId: product.productoId ?? product.id,
+            quantity: Number(product.cantidad),
+            purchasePrice: Number(product.precioCompra ?? product.costeProducto),
+            // salePrice siempre debe ser el precio original ingresado por el usuario,
+            // ya que el Backend lo usa en la fórmula de costo promedio ponderado (WAC).
+            salePrice: Number(product.precioVentaOriginal ?? product.precioVenta),
+            useSuggestedPrice: product.usarPrecioSugerido === true || product.sobreescribirConSugerido === true,
         })),
     };
 }
@@ -297,8 +317,9 @@ export const ServicesShopping = {
             method: "POST",
             body: JSON.stringify(toShoppingPayload(compra)),
         });
+        const catalogs = await this.fetchCatalogs();
         await this.fetchProducts();
-        const compraNormalizada = normalizeShopping(payload?.data);
+        const compraNormalizada = normalizeShopping(payload?.data, catalogs);
         this.create(compraNormalizada);
         return compraNormalizada;
     },
@@ -346,8 +367,9 @@ export const ServicesShopping = {
 
     async cancelRemote(id) {
         const payload = await request(`/shopping/${id}/cancel`, { method: "PATCH" });
+        const catalogs = await this.fetchCatalogs();
         await this.fetchProducts();
-        const compraNormalizada = normalizeShopping(payload?.data);
+        const compraNormalizada = normalizeShopping(payload?.data, catalogs);
         this.update(compraNormalizada);
         return compraNormalizada;
     },

@@ -246,10 +246,11 @@ export default function CreateShopping() {
         }
 
         const productosParaGuardar = productosActuales.map(
-            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, subtotal, sobreescribirConSugerido, usarPrecioSugerido }) => ({
+            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, precioVentaOriginal, subtotal, sobreescribirConSugerido, usarPrecioSugerido }) => ({
                 id, nombre, cantidad, precio,
                 costeProducto: costeProducto || precio,
                 precioVenta: precioVenta || precio,
+                precioVentaOriginal: precioVentaOriginal || precioVenta || precio,
                 subtotal,
                 sobreescribirConSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
                 usarPrecioSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
