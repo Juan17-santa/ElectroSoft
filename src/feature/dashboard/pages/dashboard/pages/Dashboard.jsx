@@ -20,14 +20,26 @@ export default function Dashboard() {
     });
 
     useEffect(() => {
-        setRaw({
-            sales: JSON.parse(localStorage.getItem("sales") || "[]"),
-            compras: JSON.parse(localStorage.getItem("compras") || "[]"),
-            products: JSON.parse(localStorage.getItem("products") || "[]"),
-            clients: JSON.parse(localStorage.getItem("clients") || "[]"),
-            devolutions: JSON.parse(localStorage.getItem("devolutions") || "[]"),
-            categories: JSON.parse(localStorage.getItem("productCategory") || "[]"),
-        });
+        let mounted = true;
+        const loadData = async () => {
+            let compras = [];
+            try {
+                compras = await ServicesShopping.fetchAll();
+            } catch {
+                compras = [];
+            }
+            if (!mounted) return;
+            setRaw({
+                sales: JSON.parse(localStorage.getItem("sales") || "[]"),
+                compras,
+                products: JSON.parse(localStorage.getItem("products") || "[]"),
+                clients: JSON.parse(localStorage.getItem("clients") || "[]"),
+                devolutions: JSON.parse(localStorage.getItem("devolutions") || "[]"),
+                categories: JSON.parse(localStorage.getItem("productCategory") || "[]"),
+            });
+        };
+        loadData();
+        return () => { mounted = false; };
     }, []);
 
     const [nombre, setNombre] = useState("Usuario");

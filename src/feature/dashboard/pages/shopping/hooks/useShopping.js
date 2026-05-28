@@ -19,9 +19,9 @@ function getRemainingHours(fechaCreacion) {
 }
 
 export function useShopping() {
-    const [compras, setCompras] = useState(() => ServicesShopping.get());
+    const [compras, setCompras] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [canceling, setCanceling] = useState(false);
     const [error, setError] = useState("");
@@ -37,7 +37,7 @@ export function useShopping() {
         } catch (err) {
             const message = err.message || "No se pudieron cargar las compras.";
             setError(message);
-            return ServicesShopping.get();
+            return [];
         } finally {
             setLoading(false);
         }
