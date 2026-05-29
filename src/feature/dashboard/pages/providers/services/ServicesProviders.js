@@ -8,7 +8,7 @@ export const ServicesProviders = {
             const response = await fetch(API_URL);
             const resJson = await response.json();
             if (!response.ok) throw new Error(resJson.error || "Error al obtener proveedores");
-            return resJson.data || resJson; // Retorna la data del backend
+            return resJson.data || resJson;
         } catch (error) {
             console.error("Error en el servicio getProviders:", error);
             throw error;

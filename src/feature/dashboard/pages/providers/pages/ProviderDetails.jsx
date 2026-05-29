@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Info } from "lucide-react";
-import { ServicesProviders } from "../services/ServicesProviders"; // Usamos el servicio de proveedores
+import { ServicesProviders } from "../services/ServicesProviders";
 
 export default function ProviderDetails() {
     const { id } = useParams();
@@ -35,7 +35,6 @@ export default function ProviderDetails() {
         navigate("/dashboard/providers");
     };
 
-    // 1. SKELETON DE CARGA (Para evitar la pantalla blanca o el parpadeo feo)
     if (loading) {
         return (
             <div className="bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner h-full animate-pulse">
@@ -53,7 +52,6 @@ export default function ProviderDetails() {
         );
     }
 
-    // 2. CONTROL DE ERROR SI NO EXISTE DATA
     if (!provider) {
         return (
             <div className="bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center h-full shadow-inner gap-4">
@@ -84,7 +82,6 @@ export default function ProviderDetails() {
                 <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
 
                 <div className="relative z-10 flex flex-col gap-6">
-                    {/* HEADER */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Info size={22} />
@@ -101,11 +98,8 @@ export default function ProviderDetails() {
                         </button>
                     </div>
 
-                    {/* CARD DETAILS */}
-                    {/* 🔥 CORRECCIÓN: Ajustadas las propiedades a inglés según tu modelo (providerName, contactName, etc.) */}
                     <div className="bg-white rounded-2xl p-4 md:p-8 shadow-xl w-full max-w-3xl mx-auto">
                         <div className="flex flex-col">
-                            {/* INFO GENERAL */}
                             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                 <h3 className="text-sm font-bold uppercase text-gray-500">
                                     Información General
@@ -136,7 +130,6 @@ export default function ProviderDetails() {
                                 </div>
                             </div>
 
-                            {/* CONTACTO */}
                             <h3 className="text-sm font-bold uppercase text-gray-500 mt-6">
                                 Información De Contacto
                             </h3>
@@ -157,7 +150,6 @@ export default function ProviderDetails() {
                                 </div>
                             </div>
 
-                            {/* CATEGORÍAS */}
                             <h3 className="text-sm font-bold uppercase text-gray-500 mt-6">
                                 Categorías asociadas
                             </h3>

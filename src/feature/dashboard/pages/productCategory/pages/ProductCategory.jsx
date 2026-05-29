@@ -44,6 +44,7 @@ export default function ProductCategory() {
         setIsModalOpen(true);      // ABRIMOS LA MODAL
     };
 
+    // FUNCION PARA ABRIR EL MODAL EN MODO EDITAR
     const handleOpenEdit = (category) => {
         setSelectedCategory(category); // CARGAMOS LA CATEGORIA SELECCIONADA
         setIsModalOpen(true);          // ABIRMOS LA MODAL
@@ -55,7 +56,8 @@ export default function ProductCategory() {
         totalPages,
         deleteCategory,
         toggleEstado,
-        loadCategories
+        loadCategories,
+        loading
     } = useProductCategoryTable({
         setConfirmData,
         showAlert,
@@ -83,11 +85,12 @@ export default function ProductCategory() {
                 {/* TABLA */}
                 <ProductCategoryTable
                     data={data}
+                    loading={loading}
                     onEdit={handleOpenEdit}
                     onToggleEstado={toggleEstado}
                     onDelete={deleteCategory}
-                    currentPage={presentPage}       // <- Asegúrate de pasarle tu estado actual de la página
-                    recordsPerPage={recordsPerPage} // <- Asegúrate de pasarle cuántos registros renderizas
+                    currentPage={presentPage}
+                    recordsPerPage={recordsPerPage}
                 />
 
                 {/* PAGINACION */}

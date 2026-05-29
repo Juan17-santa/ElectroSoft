@@ -4,6 +4,7 @@ import { Restricted } from "../../../components/ui/Restricted";
 // COMPONENTE QUE MUESTRA LA TABLA DE PROVEEDORES
 export default function ProvidersTable({
     data,
+    loading = false,
     onDetails,
     onEdit,
     onToggleEstado,
@@ -31,7 +32,13 @@ export default function ProvidersTable({
                     </thead>
 
                     <tbody className="bg-white text-gray-700">
-                        {data.length === 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan="7" className="text-center py-4 text-gray-500">
+                                    Cargando proveedores...
+                                </td>
+                            </tr>
+                        ) : data.length === 0 ? (
                             <tr>
                                 <td colSpan="7" className="text-center py-4 text-gray-500">
                                     No se encontraron proveedores.

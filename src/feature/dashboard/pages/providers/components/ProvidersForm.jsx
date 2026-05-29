@@ -26,7 +26,6 @@ export default function ProviderForm({
         label: `${doc.name} (${doc.abbreviation})`
     }));
 
-    // Estilos reutilizables para inputs (actualizado con la validación en inglés)
     const inputClasses = `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${errors.document ? "focus:ring-red-500" : "focus:ring-yellow-400"}`;
 
     return (

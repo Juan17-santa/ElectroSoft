@@ -23,7 +23,7 @@ export const ServiceProductCategory = {
 
             const resJson = await response.json();
             if (!response.ok) {
-                // Lanza el mensaje del backend: "Esta categoría ya se encuentra registrada"
+                // lANZA EL MENSAJE DEL BACKEND: "Esta categoría ya se encuentra registrada"
                 throw new Error(resJson.error || "Error al crear la categoría");
             }
             return resJson.data;
@@ -57,9 +57,6 @@ export const ServiceProductCategory = {
             const response = await fetch(`${API_URL}/${id}/status`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" }
-                // Si tu backend no necesita body porque el controlador hace el toggle internamente, 
-                // puedes quitar la línea de abajo. Si tu controlador espera el valor actual o el nuevo,
-                // puedes pasar un objeto vacío o el valor correspondiente.
             });
 
             const resJson = await response.json();

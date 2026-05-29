@@ -128,7 +128,6 @@ export function useProviderForm({
             }
 
             if (mode === "update") {
-                // 🔥 CORRECCIÓN AQUÍ: Separamos el ID del body porque el servicio espera (id, data)
                 const { _id, ...providerData } = formData;
                 await ServicesProviders.update(_id, providerData);
             }
@@ -153,6 +152,6 @@ export function useProviderForm({
         handleChange,
         handleSubmit,
         setCategoriasAsociadas,
-        setFormData // DEVOLVEMOS setFormData PARA PODER INYECTAR LOS DATOS EN UPDATE
+        setFormData
     };
 }

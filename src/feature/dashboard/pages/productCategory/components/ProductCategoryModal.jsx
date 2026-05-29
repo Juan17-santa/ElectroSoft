@@ -28,19 +28,16 @@ export default function ProductCategoryModal({
 
     return (
         <>
-            {/* OVERLAY */}
             <div
                 className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
                 onClick={onClose}
             />
 
-            {/* CARD */}
             <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
                 <div
                     className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 border border-gray-200"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* HEADER DINÁMICO */}
                     <div className="flex justify-between items-start mb-4">
                         <div>
                             <p className="text-lg font-semibold">

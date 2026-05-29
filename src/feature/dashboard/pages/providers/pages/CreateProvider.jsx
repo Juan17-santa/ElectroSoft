@@ -11,21 +11,16 @@ export default function CreateProvider() {
 
     const [alert, setAlert] = useState(null);
 
-    // Estados locales para guardar los datos que vienen asíncronos de la API
     const [documentTypes, setDocumentTypes] = useState([]);
     const [categoriasActivas, setCategoriasActivas] = useState([]);
 
-    // Disparamos la carga de datos de la base de datos al montar el componente
     useEffect(() => {
         const loadFormData = async () => {
             try {
-                // 1. Usamos tu método getDocumentTypes()
                 const docsData = await ServicesProviders.getDocumentTypes();
                 setDocumentTypes(docsData);
 
-                // 2. Usamos tu método getCategories() 
                 const catsData = await ServicesProviders.getCategories();
-                // Filtramos las categorías activas (validando por las llaves de tu backend en inglés/español)
                 const activeCats = catsData.filter(cat => cat.status === true || cat.estado === true);
                 setCategoriasActivas(activeCats);
 
@@ -61,7 +56,6 @@ export default function CreateProvider() {
         <>
             <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 shadow-inner h-full overflow-y-auto">
 
-                {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="text-lg sm:text-xl font-semibold mb-1">
@@ -72,7 +66,6 @@ export default function CreateProvider() {
                         </p>
                     </div>
 
-                    {/* BOTÓN X */}
                     <button
                         onClick={() => navigate("/dashboard/providers")}
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
@@ -81,12 +74,11 @@ export default function CreateProvider() {
                     </button>
                 </div>
 
-                {/* FORM */}
                 <ProviderForm
                     formData={formData}
                     errors={errors}
-                    categorias={categoriasActivas}    // 👈 Mandamos las categorías filtradas desde tu servicio
-                    documentTypes={documentTypes}    // 👈 Mandamos los tipos de documento desde tu servicio
+                    categorias={categoriasActivas}
+                    documentTypes={documentTypes}
                     handleChange={handleChange}
                     setCategoriasAsociadas={setCategoriasAsociadas}
                     handleSubmit={handleSubmit}

@@ -40,7 +40,7 @@ export default function useProductCategoryModal({
     const validateField = (name, value) => {
         let error = "";
         switch (name) {
-            case "name": // Cambiado a "name"
+            case "name":
                 if (!value.trim()) {
                     error = "El nombre es obligatorio";
                 } else if (!Validations.soloLetras(value)) {

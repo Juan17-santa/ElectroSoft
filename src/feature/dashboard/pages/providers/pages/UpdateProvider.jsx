@@ -7,38 +7,36 @@ import ProviderForm from "../components/ProvidersForm";
 import { ServicesProviders } from "../services/ServicesProviders";
 
 export default function UpdateProvider() {
-    // 1. CAPTURA DE PARÁMETROS Y NAVEGACIÓN
+    // CAPTURA DE PARÁMETROS Y NAVEGACIÓN
     const { id } = useParams(); 
     const navigate = useNavigate(); 
 
-    // 2. ESTADOS LOCALES PARA LA DATA DE LOS SELECTS Y CONTROL
+    // ESTADOS LOCALES PARA LA DATA DE LOS SELECTS Y CONTROL
     const [alert, setAlert] = useState(null); 
     const [documentTypes, setDocumentTypes] = useState([]); 
     const [categoriasActivas, setCategoriasActivas] = useState([]); 
     const [loading, setLoading] = useState(true); 
 
-    // 3. INSTANCIAMOS EL HOOK DIRECTAMENTE AL INICIO (Como tú lo querías)
+    // INSTANCIAMOS EL HOOK DIRECTAMENTE AL INICIO (Como tú lo querías)
     const {
         formData,
         errors,
         handleChange,
         handleSubmit,
         setCategoriasAsociadas,
-        setFormData // 👈 Asegúrate de que useProviderForm devuelva setFormData para poder rellenarlo
+        setFormData
     } = useProviderForm({
         mode: "update",
-        initialData: {}, // Nace vacío para que React no chille por componentes controlados
+        initialData: {},
         onSuccess: () => {
             setAlert({ type: "success", message: "Proveedor actualizado con éxito." });
             setTimeout(() => navigate("/dashboard/providers"), 2000);
         }
     });
 
-    // 4. EFECTO PARA TRAER LA DATA DEL BACKEND
     useEffect(() => {
         const loadUpdateData = async () => {
             try {
-                // Traemos todo en paralelo
                 const [docsData, catsData, provider] = await Promise.all([
                     ServicesProviders.getDocumentTypes(), 
                     ServicesProviders.getCategories(),     
@@ -48,7 +46,6 @@ export default function UpdateProvider() {
                 setDocumentTypes(docsData);
                 setCategoriasActivas(catsData.filter(cat => cat.status === true || cat.estado === true));
 
-                // 🔥 SI EL PROVEEDOR EXISTE, SE LO INYECTAMOS DIRECTO AL HOOK
                 if (provider && setFormData) {
                     setFormData({
                         _id: provider._id,
@@ -78,7 +75,6 @@ export default function UpdateProvider() {
         <>
             <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 shadow-inner h-full overflow-y-auto">
 
-                {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="text-lg sm:text-xl font-semibold mb-1">Editar proveedor</p>
@@ -94,7 +90,6 @@ export default function UpdateProvider() {
                     </button>
                 </div>
 
-                {/* 5. REPLANTEO VISUAL: Si está cargando, muestra la silueta (Skeleton) en vez de pantalla blanca */}
                 {loading ? (
                     <div className="animate-pulse flex flex-col gap-10 mt-6 px-4 md:px-20">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16">
@@ -111,7 +106,6 @@ export default function UpdateProvider() {
                         </div>
                     </div>
                 ) : (
-                    /* FORMULARIO REAL (Ya con la data inyectada) */
                     <ProviderForm
                         formData={formData}
                         errors={errors}

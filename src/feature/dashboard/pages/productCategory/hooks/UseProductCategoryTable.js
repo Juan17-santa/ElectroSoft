@@ -18,6 +18,7 @@ export default function useProductCategoryTable({
             const data = await ServiceProductCategory.get();
             setCategories(data);
         } catch (error) {
+            console.error(error);
             showAlert("error", "No se pudieron cargar las categorías");
         } finally {
             setLoading(false);
@@ -43,17 +44,15 @@ export default function useProductCategoryTable({
             message: `¿Seguro que deseas eliminar la categoría "${categoryToDelete.name}"? Esta acción no se puede deshacer.`,
             onConfirm: async () => {
                 try {
-                    // El backend se encarga de validar restricciones de productos/proveedores
                     await ServiceProductCategory.delete(id);
 
-                    // Si todo sale bien, recargamos la lista desde el servidor
                     await loadCategories();
                     setConfirmData(null);
                     showAlert("success", "Categoría eliminada con éxito");
                 } catch (error) {
+                    console.error(error);
                     setConfirmData(null);
-                    // Aquí capturamos el mensaje exacto que configuraste en tu backend
-                    showAlert("error", error.message || "No se pudo eliminar la categoría");
+                    showAlert("error", "No se pudo eliminar la categoría");
                 }
             },
             onCancel: () => setConfirmData(null),
@@ -73,6 +72,7 @@ export default function useProductCategoryTable({
                     setConfirmData(null);
                     showAlert("success", "Estado de la categoría actualizado con éxito");
                 } catch (error) {
+                    console.error(error);
                     setConfirmData(null);
                     showAlert("error", "No se pudo cambiar el estado");
                 }
@@ -102,6 +102,7 @@ export default function useProductCategoryTable({
         totalPages,
         deleteCategory,
         toggleEstado,
-        loadCategories
+        loadCategories,
+        loading
     };
 }

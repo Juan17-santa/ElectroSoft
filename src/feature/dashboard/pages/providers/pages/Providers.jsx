@@ -19,8 +19,6 @@ export default function Providers() {
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
-    const categorias = JSON.parse(localStorage.getItem("productCategory")) || [];
-
     const showAlert = (type, message) => {
         setAlert({ type, message });
     };
@@ -37,7 +35,8 @@ export default function Providers() {
         data,
         totalPages,
         deleteProvider,
-        toggleEstado
+        toggleEstado,
+        loading
     } = useProvidersTable({
         setConfirmData,
         showAlert,
@@ -71,7 +70,7 @@ export default function Providers() {
                     <div className="min-w-max">
                         <ProvidersTable
                             data={data}
-                            categorias={categorias}
+                            loading={loading}
                             onDetails={handleDetailsNavigation}
                             onEdit={handleEditNavigation}
                             onDelete={deleteProvider}

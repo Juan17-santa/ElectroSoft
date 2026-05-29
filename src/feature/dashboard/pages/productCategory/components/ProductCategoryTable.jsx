@@ -3,6 +3,7 @@ import { Restricted } from "../../../components/ui/Restricted";
 
 export default function ProductCategoryTable({
     data,
+    loading =  false,
     onEdit,
     onToggleEstado,
     onDelete,
@@ -24,7 +25,13 @@ export default function ProductCategoryTable({
                     </thead>
 
                     <tbody className="bg-white text-gray-700">
-                        {data.length === 0 ? (
+                        {loading ? (
+                            <tr>
+                                <td colSpan="5" className="text-center py-4 text-gray-500">
+                                    Cargando categorías...
+                                </td>
+                            </tr>
+                        ) : data.length === 0 ? (
                             <tr>
                                 <td colSpan="5" className="text-center py-4 text-gray-500">
                                     No se encontraron categorias de productos.
