@@ -182,8 +182,8 @@ export default function useProductEditForm({
         return Object.keys(newErrors).length === 0;
     };
 
-    // HANDLE SUBMIT PARA ACTUALIZAR
-    const handleSubmit = (e) => {
+    // HANDLE SUBMIT PARA ACTUALIZAR (ASYNC)
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         const isValid = validateForm();
@@ -197,21 +197,24 @@ export default function useProductEditForm({
             return;
         }
 
-        const productoActualizado = {
-            id: formData.id,
-            nombre: formData.nombre,
-            categoriaId: Number(formData.categoriaId),
-            precio: Number(formData.precio),
-            stock: Number(formData.stock),
-            tipoStock: formData.tipoStock,
-            serial: formData.serial,
-            garantia: formData.garantia,
-            caracteristicas
-        };
+        try {
+            const productoActualizado = {
+                nombre: formData.nombre,
+                categoriaId: formData.categoriaId,
+                precio: Number(formData.precio),
+                stock: Number(formData.stock),
+                tipoStock: formData.tipoStock,
+                serial: formData.serial,
+                garantia: formData.garantia,
+                caracteristicas
+            };
 
-        ServicesProducts.update(productoActualizado);
-        
-        onSuccess();
+            await ServicesProducts.update(formData.id, productoActualizado);
+            
+            onSuccess();
+        } catch (error) {
+            alert(error.message || "Error al actualizar el producto");
+        }
     };
 
     // RETORNAMOS LOS DATOS Y FUNCIONES NECESARIAS PARA EL FORMULARIO

@@ -164,39 +164,25 @@ export default function useProductForm({
         return Object.keys(newErrors).length === 0;
     };
 
-    // HANDLE SUBMIT PARA CREAR
-    const handleSubmit = (e) => {
+    // HANDLE SUBMIT PARA CREAR (ASYNC)
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
-        // VALIDAR QUE NO EXISTA UN PRODUCTO EXACTAMENTE IGUAL
-        const productosExistentes = ServicesProducts.get();
-        const duplicado = productosExistentes.some(prod =>
-            prod.nombre?.toLowerCase().trim() === formData.nombre.toLowerCase().trim() &&
-            Number(prod.categoriaId) === Number(formData.categoriaId) &&
-            Number(prod.precio) === Number(formData.precio) &&
-            Number(prod.stock) === Number(formData.stock) &&
-            prod.tipoStock === formData.tipoStock &&
-            prod.serial?.toLowerCase().trim() === formData.serial.toLowerCase().trim() &&
-            prod.garantia === formData.garantia
-        );
+        try {
+            await ServicesProducts.create({
+                ...formData,
+                precio: Number(formData.precio),
+                stock: Number(formData.stock),
+                tipoStock: formData.tipoStock,
+                caracteristicas
+            });
 
-        if (duplicado) {
-            onError("Ya existe un producto con los mismos datos. Verifique los campos e intente de nuevo.");
-            return;
+            onSuccess();
+        } catch (error) {
+            onError(error.message || "Error al crear el producto");
         }
-
-        ServicesProducts.create({
-            ...formData,
-            categoriaId: Number(formData.categoriaId),
-            precio: Number(formData.precio),
-            stock: Number(formData.stock),
-            tipoStock: formData.tipoStock,
-            caracteristicas
-        });
-
-        onSuccess();
     };
 
     // RETORNAMOS LOS DATOS Y FUNCIONES NECESARIAS PARA EL FORMULARIO
