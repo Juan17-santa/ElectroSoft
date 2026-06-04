@@ -60,36 +60,23 @@ export default function useProductTable({
 
     // FUNCION PARA ELIMINAR UN PRODUCTO
     const deleteProduct = (id) => {
-        const productToDelete = ServicesProducts.getById(id);
-        
-        if (!productToDelete) {
-            showAlert("error", "Producto no encontrado");
-            return;
-        }
-
-        // Verificar si el producto tiene ventas o pedidos asociados
-        const { hasAssociations, type } = hasProductAssociations(productToDelete.nombre);
-
-        if (hasAssociations) {
-            const typeText = type === "venta" ? "una venta" : "un pedido";
-            showAlert(
-                "error", 
-                `No se puede eliminar este producto porque tiene ${typeText} asociada. Elimine o modifique las ${type === "venta" ? "ventas" : "órdenes"} relacionadas primero.`
-            );
-            return;
-        }
-
         setConfirmData({
             type: "delete",
             title: "Eliminar producto",
             message: "¿Seguro que deseas eliminar este producto? Esta acción no se puede deshacer.",
-            onConfirm: () => {
-                const updated = ServicesProducts.delete(id);
+            onConfirm: async () => {
+                try {
+                    await ServicesProducts.delete(id);
+                    
+                    // Recargar los productos después de eliminar
+                    const updated = await ServicesProducts.get();
+                    setProducts(updated);
+                    setConfirmData(null);
 
-                setProducts(updated);
-                setConfirmData(null);
-
-                showAlert("success", "Producto eliminado con éxito");
+                    showAlert("success", "Producto eliminado con éxito");
+                } catch (error) {
+                    showAlert("error", error.message || "Error al eliminar el producto");
+                }
             },
             oncancel: () => setConfirmData(null),
         });
@@ -101,16 +88,22 @@ export default function useProductTable({
             type: "warning",
             title: "Cambiar estado del producto",
             message: "¿Seguro que deseas cambiar el estado de este producto?",
-            onConfirm: () => {
-                const updated = ServicesProducts.toggleEstado(id);
+            onConfirm: async () => {
+                try {
+                    await ServicesProducts.toggleEstado(id);
+                    
+                    // Recargar los productos después de cambiar estado
+                    const updated = await ServicesProducts.get();
+                    setProducts(updated);
+                    setConfirmData(null);
 
-                setProducts(updated);
-                setConfirmData(null);
-
-                showAlert(
-                    "success",
-                    "Estado del producto actualizado con éxito"
-                );
+                    showAlert(
+                        "success",
+                        "Estado del producto actualizado con éxito"
+                    );
+                } catch (error) {
+                    showAlert("error", error.message || "Error al cambiar el estado");
+                }
             },
             oncancel: () => setConfirmData(null),
         });

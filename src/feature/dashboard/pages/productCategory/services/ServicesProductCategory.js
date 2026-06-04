@@ -1,12 +1,26 @@
 const API_URL = "http://localhost:4000/api/productCategory";
 
+// Función para mapear categoría del backend al formato del frontend
+const mapCategoryFromAPI = (apiCategory) => {
+    if (!apiCategory) return null;
+    return {
+        id: apiCategory._id || apiCategory.id,
+        nombre: apiCategory.name,
+        descripcion: apiCategory.description || "",
+        estado: apiCategory.status !== undefined ? apiCategory.status : true,
+        createdAt: apiCategory.createdAt,
+        updatedAt: apiCategory.updatedAt
+    };
+};
+
 export const ServiceProductCategory = {
     async get() {
         try {
             const response = await fetch(API_URL);
             if (!response.ok) throw new Error("Error al obtener las categorías");
             const resJson = await response.json();
-            return resJson.data;
+            // Mapear todas las categorías al formato del frontend
+            return (resJson.data || []).map(mapCategoryFromAPI);
         } catch (error) {
             console.error("Error en get:", error);
             throw error;
@@ -26,7 +40,7 @@ export const ServiceProductCategory = {
                 // lANZA EL MENSAJE DEL BACKEND: "Esta categoría ya se encuentra registrada"
                 throw new Error(resJson.error || "Error al crear la categoría");
             }
-            return resJson.data;
+            return mapCategoryFromAPI(resJson.data);
         } catch (error) {
             console.error("Error en create:", error);
             throw error;
@@ -45,7 +59,7 @@ export const ServiceProductCategory = {
             if (!response.ok) {
                 throw new Error(resJson.error || "Error al actualizar la categoría");
             }
-            return resJson.data;
+            return mapCategoryFromAPI(resJson.data);
         } catch (error) {
             console.error("Error en update:", error);
             throw error;
@@ -63,7 +77,7 @@ export const ServiceProductCategory = {
             if (!response.ok) {
                 throw new Error(resJson.error || "Error al cambiar el estado");
             }
-            return resJson.data;
+            return mapCategoryFromAPI(resJson.data);
         } catch (error) {
             console.error("Error en toggleEstado:", error);
             throw error;
@@ -79,7 +93,7 @@ export const ServiceProductCategory = {
             if (!response.ok) {
                 throw new Error(resJson.error || "Error al eliminar la categoría");
             }
-            return resJson.data;
+            return mapCategoryFromAPI(resJson.data);
         } catch (error) {
             console.error("Error en delete:", error);
             throw error;

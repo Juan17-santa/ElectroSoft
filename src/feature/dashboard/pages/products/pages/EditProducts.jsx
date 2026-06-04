@@ -25,15 +25,15 @@ export default function EditProducts() {
 
     const [alert, setAlert] = useState(null);
 
-    const initialProduct = location.state?.productToEdit || ServicesProducts.getById(Number(id));
+    const initialProduct = location.state?.productToEdit || null;
 
     const {
         formData,
         errors,
         handleChange,
-        handleSubmit: submitForm,
+        handleSubmit: submitForm
     } = useProductEditForm({
-        id: Number(id),
+        id,
         initialData: initialProduct || {},
         onSuccess: () => {
             setAlert({
@@ -49,17 +49,36 @@ export default function EditProducts() {
     });
 
     useEffect(() => {
-        const cats = ServiceProductCategory.get();
-
-        if (initialProduct) {
-            setCaracteristicas(initialProduct.caracteristicas || []);
-
-            const catsFiltradas = cats.filter(cat =>
-                cat.estado === true || cat.id === initialProduct.categoriaId
-            );
-            setCategorias(catsFiltradas);
-        }
-    }, [id]);
+        const cargarDatos = async () => {
+            try {
+                const cats = await ServiceProductCategory.get();
+                
+                let product = initialProduct;
+                
+                // Si no tenemos el producto de location.state, obtenerlo de la API
+                if (!product) {
+                    product = await ServicesProducts.getById(id);
+                }
+                
+                if (product) {
+                    setCaracteristicas(product.caracteristicas || []);
+                    
+                    const catsFiltradas = cats.filter(cat =>
+                        cat.estado === true || cat.id === product.categoriaId
+                    );
+                    setCategorias(catsFiltradas);
+                }
+            } catch (error) {
+                setAlert({
+                    type: "error",
+                    message: "Error al cargar los datos del producto"
+                });
+                console.error(error);
+            }
+        };
+        
+        cargarDatos();
+    }, [id, initialProduct]);
 
     const eliminarCaracteristica = (id) => {
         setDeleteConfirm(id);

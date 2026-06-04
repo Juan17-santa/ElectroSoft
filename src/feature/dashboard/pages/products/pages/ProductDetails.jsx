@@ -14,15 +14,28 @@ export default function ProductDetails() {
     const [categoryName, setCategoryName] = useState("");
 
     useEffect(() => {
-        if (!product && id) {
-            const p = ServicesProducts.getById(Number(id));
-            if (p) setProduct(p);
-        }
+        const cargarDatos = async () => {
+            try {
+                let p = product;
+                
+                // Si no tenemos el producto de location.state, obtenerlo de la API
+                if (!p && id) {
+                    p = await ServicesProducts.getById(id);
+                    setProduct(p);
+                }
 
-        // cargar nombre de categoría si existe
-        const cats = ServiceProductCategory.get();
-        const cat = cats.find(c => c.id === Number(product?.categoriaId));
-        if (cat) setCategoryName(cat.nombre);
+                // cargar nombre de categoría si existe
+                if (p) {
+                    const cats = await ServiceProductCategory.get();
+                    const cat = cats.find(c => c.id === p.categoriaId);
+                    if (cat) setCategoryName(cat.nombre);
+                }
+            } catch (error) {
+                console.error("Error cargando datos:", error);
+            }
+        };
+        
+        cargarDatos();
     }, [id, product]);
 
     if (!product) {

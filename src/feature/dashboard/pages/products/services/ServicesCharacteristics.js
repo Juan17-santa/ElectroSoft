@@ -1,53 +1,138 @@
-const KEY_CHAR = "product_characteristics";
-const KEY_MEAS = "product_measures";
+const API_URL_CHARS = "http://localhost:4000/api/productCharacteristics";
+const API_URL_MEAS = "http://localhost:4000/api/productMeasures";
 
 export const ServicesCharacteristics = {
-    // Características
-    getCharacteristics() {
-        const data = localStorage.getItem(KEY_CHAR);
-        return data ? JSON.parse(data) : [];
+    /**
+     * Obtener todas las características predeterminadas
+     */
+    async getCharacteristics() {
+        try {
+            const response = await fetch(API_URL_CHARS);
+            if (!response.ok) throw new Error("Error al obtener características");
+            const resJson = await response.json();
+            // Mapear el formato de API al formato del frontend
+            return (resJson.data || []).map(char => ({
+                id: char._id || char.id,
+                nombre: char.name
+            }));
+        } catch (error) {
+            console.error("Error en getCharacteristics:", error);
+            return [];
+        }
     },
 
-    addCharacteristic(name) {
-        const chars = this.getCharacteristics();
-        const exists = chars.find(c => c.nombre.toLowerCase() === name.toLowerCase());
-        if (exists) return exists;
+    /**
+     * Agregar nueva característica predeterminada
+     */
+    async addCharacteristic(name) {
+        try {
+            const response = await fetch(API_URL_CHARS, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name })
+            });
 
-        const nuevo = { id: Date.now(), nombre: name };
-        const nuevos = [...chars, nuevo];
-        localStorage.setItem(KEY_CHAR, JSON.stringify(nuevos));
-        return nuevo;
+            const resJson = await response.json();
+            if (!response.ok) {
+                throw new Error(resJson.error || "Error al crear la característica");
+            }
+            
+            return {
+                id: resJson.data._id || resJson.data.id,
+                nombre: resJson.data.name
+            };
+        } catch (error) {
+            console.error("Error en addCharacteristic:", error);
+            throw error;
+        }
     },
 
-    // Medidas
-    getMeasures() {
-        const data = localStorage.getItem(KEY_MEAS);
-        return data ? JSON.parse(data) : [];
+    /**
+     * Obtener todas las medidas predeterminadas
+     */
+    async getMeasures() {
+        try {
+            const response = await fetch(API_URL_MEAS);
+            if (!response.ok) throw new Error("Error al obtener medidas");
+            const resJson = await response.json();
+            // Mapear el formato de API al formato del frontend
+            return (resJson.data || []).map(meas => ({
+                id: meas._id || meas.id,
+                nombre: meas.name
+            }));
+        } catch (error) {
+            console.error("Error en getMeasures:", error);
+            return [];
+        }
     },
 
-    addMeasure(name) {
-        const measures = this.getMeasures();
-        const exists = measures.find(m => m.nombre.toLowerCase() === name.toLowerCase());
-        if (exists) return exists;
+    /**
+     * Agregar nueva medida predeterminada
+     */
+    async addMeasure(name) {
+        try {
+            const response = await fetch(API_URL_MEAS, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name })
+            });
 
-        const nuevo = { id: Date.now(), nombre: name };
-        const nuevos = [...measures, nuevo];
-        localStorage.setItem(KEY_MEAS, JSON.stringify(nuevos));
-        return nuevo;
+            const resJson = await response.json();
+            if (!response.ok) {
+                throw new Error(resJson.error || "Error al crear la medida");
+            }
+            
+            return {
+                id: resJson.data._id || resJson.data.id,
+                nombre: resJson.data.name
+            };
+        } catch (error) {
+            console.error("Error en addMeasure:", error);
+            throw error;
+        }
     },
 
-    // eliminaciones
-    removeCharacteristic(id) {
-        const chars = this.getCharacteristics();
-        const filtered = chars.filter(c => c.id !== id);
-        localStorage.setItem(KEY_CHAR, JSON.stringify(filtered));
-        return filtered;
+    /**
+     * Eliminar característica predeterminada
+     */
+    async removeCharacteristic(id) {
+        try {
+            const response = await fetch(`${API_URL_CHARS}/${id}`, {
+                method: "DELETE"
+            });
+            
+            const resJson = await response.json();
+            if (!response.ok) {
+                throw new Error(resJson.error || "Error al eliminar la característica");
+            }
+            
+            // Recargar y devolver la lista actualizada
+            return await this.getCharacteristics();
+        } catch (error) {
+            console.error("Error en removeCharacteristic:", error);
+            throw error;
+        }
     },
 
-    removeMeasure(id) {
-        const measures = this.getMeasures();
-        const filtered = measures.filter(m => m.id !== id);
-        localStorage.setItem(KEY_MEAS, JSON.stringify(filtered));
-        return filtered;
+    /**
+     * Eliminar medida predeterminada
+     */
+    async removeMeasure(id) {
+        try {
+            const response = await fetch(`${API_URL_MEAS}/${id}`, {
+                method: "DELETE"
+            });
+            
+            const resJson = await response.json();
+            if (!response.ok) {
+                throw new Error(resJson.error || "Error al eliminar la medida");
+            }
+            
+            // Recargar y devolver la lista actualizada
+            return await this.getMeasures();
+        } catch (error) {
+            console.error("Error en removeMeasure:", error);
+            throw error;
+        }
     }
 };

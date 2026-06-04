@@ -32,7 +32,7 @@ export default function Products() {
     };
 
     const getCategoryName = (id) => {
-        const categoria = categories.find(cat => cat.id === Number(id) || cat.id === id);
+        const categoria = categories.find(cat => cat.id === id);
         return categoria ? categoria.nombre : "Sin categoría";
     };
 
@@ -67,13 +67,30 @@ export default function Products() {
     };
 
     useEffect(() => {
-        getProducts();
-        setCategories(ServiceProductCategory.get());
+        const cargarDatos = async () => {
+            try {
+                const productosData = await ServicesProducts.get();
+                setProducts(productosData);
+                
+                const categoriasData = await ServiceProductCategory.get();
+                setCategories(categoriasData);
+            } catch (error) {
+                showAlert("error", "Error al cargar los datos");
+                console.error(error);
+            }
+        };
+        
+        cargarDatos();
     }, []);
 
-    const getProducts = () => {
-        const response = ServicesProducts.get();
-        setProducts(response);
+    const getProducts = async () => {
+        try {
+            const response = await ServicesProducts.get();
+            setProducts(response);
+        } catch (error) {
+            showAlert("error", "Error al cargar los productos");
+            console.error(error);
+        }
     };
 
     // USAMOS EL HOOK PARA OBTENER LAS FUNCIONES DE ELIMINAR Y CAMBIAR ESTADO

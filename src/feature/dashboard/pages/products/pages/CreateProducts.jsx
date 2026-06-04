@@ -58,10 +58,26 @@ export default function CreateProducts() {
     });
 
     useEffect(() => {
-        const data = ServiceProductCategory.get();
-        setCategorias(data);
-        setCharacteristicOptions(ServicesCharacteristics.getCharacteristics());
-        setMeasureOptions(ServicesCharacteristics.getMeasures());
+        const cargarDatos = async () => {
+            try {
+                const categoriasData = await ServiceProductCategory.get();
+                setCategorias(categoriasData);
+                
+                const caracteristicasData = await ServicesCharacteristics.getCharacteristics();
+                setCharacteristicOptions(caracteristicasData);
+                
+                const medidasData = await ServicesCharacteristics.getMeasures();
+                setMeasureOptions(medidasData);
+            } catch (error) {
+                setAlert({
+                    type: "error",
+                    message: "Error al cargar los datos"
+                });
+                console.error(error);
+            }
+        };
+        
+        cargarDatos();
     }, []);
 
     const handleModalChange = (e) => {
@@ -120,28 +136,56 @@ export default function CreateProducts() {
         validateCharacteristicField("medida", name);
     };
 
-    const addCharacteristicOption = (name) => {
-        const added = ServicesCharacteristics.addCharacteristic(name);
-        setCharacteristicOptions(prev => [...prev, added]);
-        setModalForm(prev => ({ ...prev, nombre: added.nombre }));
-        setCharDropdownOpen(false);
+    const addCharacteristicOption = async (name) => {
+        try {
+            const added = await ServicesCharacteristics.addCharacteristic(name);
+            setCharacteristicOptions(prev => [...prev, added]);
+            setModalForm(prev => ({ ...prev, nombre: added.nombre }));
+            setCharDropdownOpen(false);
+        } catch (error) {
+            setAlert({
+                type: "error",
+                message: error.message || "Error al agregar la característica"
+            });
+        }
     };
 
-    const removeCharacteristicOption = (id) => {
-        const updated = ServicesCharacteristics.removeCharacteristic(id);
-        setCharacteristicOptions(updated);
+    const removeCharacteristicOption = async (id) => {
+        try {
+            const updated = await ServicesCharacteristics.removeCharacteristic(id);
+            setCharacteristicOptions(updated);
+        } catch (error) {
+            setAlert({
+                type: "error",
+                message: error.message || "Error al eliminar la característica"
+            });
+        }
     };
 
-    const addMeasureOption = (name) => {
-        const added = ServicesCharacteristics.addMeasure(name);
-        setMeasureOptions(prev => [...prev, added]);
-        setModalForm(prev => ({ ...prev, medida: added.nombre }));
-        setMeasDropdownOpen(false);
+    const addMeasureOption = async (name) => {
+        try {
+            const added = await ServicesCharacteristics.addMeasure(name);
+            setMeasureOptions(prev => [...prev, added]);
+            setModalForm(prev => ({ ...prev, medida: added.nombre }));
+            setMeasDropdownOpen(false);
+        } catch (error) {
+            setAlert({
+                type: "error",
+                message: error.message || "Error al agregar la medida"
+            });
+        }
     };
 
-    const removeMeasureOption = (id) => {
-        const updated = ServicesCharacteristics.removeMeasure(id);
-        setMeasureOptions(updated);
+    const removeMeasureOption = async (id) => {
+        try {
+            const updated = await ServicesCharacteristics.removeMeasure(id);
+            setMeasureOptions(updated);
+        } catch (error) {
+            setAlert({
+                type: "error",
+                message: error.message || "Error al eliminar la medida"
+            });
+        }
     };
 
     const agregarCaracteristica = () => {
