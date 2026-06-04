@@ -28,7 +28,7 @@ export default function ProductDetails() {
                 if (p) {
                     const cats = await ServiceProductCategory.get();
                     const cat = cats.find(c => c.id === p.categoriaId);
-                    if (cat) setCategoryName(cat.nombre);
+                    if (cat) setCategoryName(cat.name);
                 }
             } catch (error) {
                 console.error("Error cargando datos:", error);

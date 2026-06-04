@@ -31,14 +31,14 @@ export default function CategorySelect({
     // Filtrar opciones según el término de búsqueda
     const filteredOptions = options.filter(option => {
         // Coincidencia con búsqueda
-        const matchesSearch = option.nombre &&
-            option.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = option.name &&
+            option.name.toLowerCase().includes(searchTerm.toLowerCase());
 
         // Regla de negocio:
         // Si onlyActive es true, mostramos solo si está activa O si es la opción seleccionada actualmente
         // (Esto evita que en edición el campo quede en blanco si la categoría se inactivó)
         if (onlyActive) {
-            const isActive = option.estado === true;
+            const isActive = option.status === true;
             const isSelected = option.id === value;
             return matchesSearch && (isActive || isSelected);
         }
@@ -85,7 +85,7 @@ export default function CategorySelect({
                             }`}
                     >
                         <span className={selectedOption ? "text-gray-800" : "text-gray-500"}>
-                            {selectedOption ? selectedOption.nombre : placeholder}
+                            {selectedOption ? selectedOption.name : placeholder}
                         </span>
                         <ChevronDown
                             size={18}
@@ -132,7 +132,7 @@ export default function CategorySelect({
                                                     : "hover:bg-yellow-100 text-gray-700"
                                                 }`}
                                         >
-                                            {option.nombre}
+                                            {option.name}
                                         </button>
                                     ))
                                 ) : (

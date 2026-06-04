@@ -64,7 +64,7 @@ export default function EditProducts() {
                     setCaracteristicas(product.caracteristicas || []);
                     
                     const catsFiltradas = cats.filter(cat =>
-                        cat.estado === true || cat.id === product.categoriaId
+                        cat.status === true || cat.id === product.categoriaId
                     );
                     setCategorias(catsFiltradas);
                 }

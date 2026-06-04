@@ -33,12 +33,13 @@ export default function Products() {
 
     const getCategoryName = (id) => {
         const categoria = categories.find(cat => cat.id === id);
-        return categoria ? categoria.nombre : "Sin categoría";
+        return categoria ? categoria.name : "Sin categoría";
     };
 
     const filteredProducts = products.filter(prod => {
         const q = search.toLowerCase();
-        const categoryName = getCategoryName(prod.categoriaId).toLowerCase();
+        const categoryNameValue = getCategoryName(prod.categoriaId);
+        const categoryName = categoryNameValue ? categoryNameValue.toLowerCase() : "sin categoría";
         const estado = prod.estado ? "activo" : "inactivo";
 
         return (

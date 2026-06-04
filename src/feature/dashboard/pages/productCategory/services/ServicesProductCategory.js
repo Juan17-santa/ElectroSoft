@@ -5,9 +5,9 @@ const mapCategoryFromAPI = (apiCategory) => {
     if (!apiCategory) return null;
     return {
         id: apiCategory._id || apiCategory.id,
-        nombre: apiCategory.name,
-        descripcion: apiCategory.description || "",
-        estado: apiCategory.status !== undefined ? apiCategory.status : true,
+        name: apiCategory.name,
+        description: apiCategory.description || "",
+        status: apiCategory.status !== undefined ? apiCategory.status : true,
         createdAt: apiCategory.createdAt,
         updatedAt: apiCategory.updatedAt
     };
