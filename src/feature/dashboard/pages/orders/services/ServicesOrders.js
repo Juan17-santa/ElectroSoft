@@ -1,127 +1,75 @@
-import { SalesService } from "../../SalesManagement/services/SalesService";
-const KEY = "orders";
+const API_URL = "http://localhost:4000/api/orders";
 
 export const ServicesOrders = {
 
-    get() {
-        const data = localStorage.getItem(KEY);
-        const orders = data ? JSON.parse(data) : [];
-        return orders.sort((a, b) => b.id - a.id);
+    // OBTENER TODOS LOS PEDIDOS
+    async getAllOrders() {
+        try {
+            const response = await fetch(API_URL);
+            const resJson = await response.json();
+
+            // 🛡️ Tu controlador devuelve { data: [...] } o { error: ... } si falla
+            if (!response.ok) throw new Error(resJson.error || "Error al obtener los pedidos");
+
+            return resJson.data || resJson;
+        } catch (error) {
+            console.error("Error en getAllOrders:", error);
+            throw error;
+        }
     },
 
-    create({
-        documento,
-        clienteId,
-        fechaPedido,
-        fechaVencimiento,
-        productos,
-        formaPago,
-        subtotal,
-        iva,
-        total
-    }) {
-        const orders = this.get();
+    // OBTENER PEDIDO POR ID
+    async getOrderById(id) {
+        try {
+            const response = await fetch(`${API_URL}/${id}`);
+            const resJson = await response.json();
 
-        const nuevoPedido = {
-            id: Date.now(),
-            documento,
-            clienteId,
-            fechaPedido,
-            fechaVencimiento,
-            productos,
-            formaPago,
-            subtotal,
-            iva,
-            total,
-            estado: "Pendiente",
-            fechaCreacion: new Date().toISOString()
-        };
+            if (!response.ok) throw new Error(resJson.error || "Error al obtener el pedido");
 
-        const nuevosPedidos = [...orders, nuevoPedido];
-
-        localStorage.setItem(KEY, JSON.stringify(nuevosPedidos));
-
-        return nuevoPedido;
+            return resJson.data || resJson;
+        } catch (error) {
+            console.error(`Error en getOrderById (ID: ${id}):`, error);
+            throw error;
+        }
     },
 
-    cancel(orderToCancel, motivo, fechaAnulacion) {
-        const storedOrders = this.get();
-        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+    // CREAR PEDIDO
+    async createOrder(orderData) {
+        try {
+            const response = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(orderData)
+            });
+            const resJson = await response.json();
 
-        // DEVOLVER STOCK
-        const updatedProducts = storedProducts.map(product => {
-            const productInOrder = orderToCancel.productos.find(p => p.id === product.id);
+            if (!response.ok) throw new Error(resJson.error || "Error al crear el pedido");
 
-            if (productInOrder) {
-                return {
-                    ...product,
-                    stock: product.stock + productInOrder.cantidad
-                };
-            }
-
-            return product;
-        });
-
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
-
-        // ACTUALIZAR PEDIDO
-        const updatedOrders = storedOrders.map(order =>
-            order.id === orderToCancel.id
-                ? {
-                    ...order,
-                    estado: "Anulado",
-                    cancelInfo: {
-                        motivo,
-                        fechaAnulacion
-                    }
-                }
-                : order
-        );
-
-        localStorage.setItem(KEY, JSON.stringify(updatedOrders));
+            return resJson.data;
+        } catch (error) {
+            console.error("Error en el servicio createOrder: ", error);
+            throw error;
+        }
     },
 
-    processToSale(order, diasPlazo) {
-        const storedOrders = this.get();
-        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+    // 🎯 CANCELAR PEDIDO MANUALLY (¡El que faltaba!)
+    async cancelOrder(id, cancelReason) {
+        try {
+            const response = await fetch(`${API_URL}/${id}/cancel`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ cancelReason }) // Enviamos el motivo en el body
+            });
+            const resJson = await response.json();
 
-        // DEVOLVER STOCK DEL PEDIDO YA QUE VENTAS SE ENCARGA DE RESTARLO
-        const restoredProducts = storedProducts.map(product => {
-            const productInOrder = order.productos.find(p => p.id === product.id);
+            // 🛡️ Si tiene menos de 20 caracteres o no está pendiente, el backend responde con resJson.error
+            if (!response.ok) throw new Error(resJson.error || "Error al cancelar el pedido");
 
-            if (productInOrder) {
-                return {
-                    ...product,
-                    stock: product.stock + productInOrder.cantidad
-                };
-            }
-
-            return product;
-        });
-
-        localStorage.setItem("products", JSON.stringify(restoredProducts));
-
-        // CREAR LA VENTA (AQUÍ SE VUELVE A DESCONTAR CORRECTAMENTE)
-        const saleData = {
-            numeroDocumento: order.documento,
-            tipoVenta: order.formaPago,
-            diasPlazo: order.formaPago === "Credito" ? Number(diasPlazo) : null,
-                fecha: (() => {
-                    const now = new Date();
-                    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                })(),
-            estado: order.formaPago === "Contado" ? "Finalizado" : "Vigente",
-            productos: order.productos.map(p => ({
-                nombre: p.nombre,
-                precio: p.precio,
-                cantidad: p.cantidad
-            }))
-        };
-
-        SalesService.create(saleData);
-
-        // ELIMINAR REGISTRO DE PEDIDOS Y AÑADIRLO A VENTAS
-        const updatedOrders = storedOrders.filter(o => o.id !== order.id);
-        localStorage.setItem(KEY, JSON.stringify(updatedOrders));
+            // Tu backend devuelve: { message: "...", data: result }
+            return resJson.data;
+        } catch (error) {
+            console.error(`Error en el servicio cancelOrder (ID: ${id}):`, error);
+            throw error;
+        }
     }
 };

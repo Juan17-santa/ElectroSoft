@@ -1,86 +1,120 @@
-const KEY = "roles";
+import api from "../../../../../utils/api.js";
 
+// Permisos en el mismo formato que el backend
 export const PERMISSION_SCOPES = [
-    { name: "Categoria de productos", actions: ["Crear", "Editar", "Eliminar"] },
-    { name: "Productos", actions: ["Ver", "Crear", "Editar", "Eliminar"] },
-    { name: "Ficha tecnica", actions: ["Ver", "Crear", "Eliminar"] },
-    { name: "Compras", actions: ["Ver", "Crear", "Editar", "Eliminar"] },
-    { name: "Proveedores", actions: ["Crear", "Editar", "Eliminar"] },
-    { name: "Ventas", actions: ["Ver", "Crear", "Editar", "Eliminar"] },
-    { name: "Clientes", actions: ["Ver", "Crear", "Editar", "Eliminar"] },
-    { name: "Pedidos", actions: ["Ver", "Crear", "Editar", "Eliminar"] },
-    { name: "Pagos y abonos", actions: ["Crear", "Editar", "Eliminar"] },
-    { name: "Devoluciones", actions: ["Crear", "Editar", "Eliminar"] },
-    { name: "Usuarios", actions: ["Ver", "Crear", "Editar", "Eliminar"] },
-    { name: "Roles", actions: ["Crear", "Editar", "Eliminar"] }
+  {
+    name: "categorias",
+    label: "Categoria de productos",
+    actions: ["ver", "crear", "editar", "estado", "eliminar"],
+  },
+  {
+    name: "productos",
+    label: "Productos",
+    actions: ["ver", "crear", "editar", "estado", "eliminar", "reporte"],
+  },
+  {
+    name: "proveedores",
+    label: "Proveedores",
+    actions: ["ver", "crear", "editar", "estado", "eliminar"],
+  },
+  {
+    name: "compras",
+    label: "Compras",
+    actions: ["ver", "crear", "anular", "reporte"],
+  },
+  {
+    name: "clientes",
+    label: "Clientes",
+    actions: ["ver", "crear", "editar", "cupo", "eliminar", "reporte"],
+  },
+  {
+    name: "pedidos",
+    label: "Pedidos",
+    actions: ["ver", "procesar", "anular", "reporte"],
+  },
+  {
+    name: "ventas",
+    label: "Ventas",
+    actions: ["ver", "crear", "anular", "devolver", "abonar", "reporte"],
+  },
+  {
+    name: "pagos",
+    label: "Pagos y abonos",
+    actions: ["ver", "abonar", "editar-cupo"],
+  },
+  {
+    name: "devoluciones",
+    label: "Devoluciones",
+    actions: ["ver", "editar", "anular", "reporte"],
+  },
+  {
+    name: "usuarios",
+    label: "Usuarios",
+    actions: ["ver", "crear", "editar", "estado", "eliminar"],
+  },
+  {
+    name: "dashboard",
+    label: "Dashboard",
+    actions: ["acceso"],
+  },
+  {
+    name: "roles",
+    label: "Roles",
+    actions: ["acceso"],
+  },
 ];
 
 export const RolesService = {
 
-    get() {
-        const data = localStorage.getItem(KEY);
-        return data ? JSON.parse(data) : [];
-    },
+  async get() {
+    const response = await api.get("/roles");
+    return response.data.data.map(r => ({
+      id:            r._id,
+      nombre:        r.name,
+      descripcion:   r.description,
+      estado:        r.isActive,
+      fechaCreacion: new Date(r.createdAt).toLocaleDateString("es-CO"),
+      permisos:      r.permissions, // array plano: ["ventas:ver", "ventas:crear"]
+    }));
+  },
 
-    /**
-     * Crea un nuevo rol
-     * @param {object} param0 - { nombre, descripcion, permisos }
-     * permisos es un objeto: { "Ventas": ["Crear", "Editar"], ... }
-     */
-    create({ nombre, descripcion, estado = true, permisos = {} }) {
+  async getById(id) {
+    const response = await api.get(`/roles/${id}`);
+    const r = response.data.data;
+    return {
+      id:            r._id,
+      nombre:        r.name,
+      descripcion:   r.description,
+      estado:        r.isActive,
+      fechaCreacion: new Date(r.createdAt).toLocaleDateString("es-CO"),
+      permisos:      r.permissions,
+    };
+  },
 
-        const roles = this.get();
+  async create({ nombre, descripcion, permisos = [] }) {
+    const response = await api.post("/roles", {
+      name:        nombre,
+      description: descripcion,
+      permissions: permisos, // ya viene en formato correcto ["ventas:ver"]
+    });
+    return response.data.data;
+  },
 
-        const nuevoRole = {
-            id: Date.now(),
-            nombre,
-            descripcion,
-            permisos,
-            fechaCreacion: new Date().toLocaleDateString('es-CO'),
-            estado
-        };
+  async update({ id, nombre, descripcion, permisos }) {
+    const response = await api.put(`/roles/${id}`, {
+      name:        nombre,
+      description: descripcion,
+      permissions: permisos,
+    });
+    return response.data.data;
+  },
 
-        const nuevosRoles = [...roles, nuevoRole];
+  async delete(id) {
+    await api.delete(`/roles/${id}`);
+  },
 
-        localStorage.setItem(KEY, JSON.stringify(nuevosRoles));
-
-        return nuevoRole;
-    },
-
-    update(roleActualizado) {
-
-        const roles = this.get();
-
-        const nuevosRoles = roles.map(role => role.id === roleActualizado.id ? roleActualizado : role);
-
-        localStorage.setItem(KEY, JSON.stringify(nuevosRoles));
-
-        return nuevosRoles;
-    },
-
-    delete(id) {
-
-        const data = JSON.parse(localStorage.getItem(KEY)) || [];
-
-        const newData = data.filter(role => role.id !== id);
-
-        localStorage.setItem(KEY, JSON.stringify(newData));
-
-        return newData;
-    },
-
-    toggleEstado(id) {
-
-        const roles = this.get();
-
-        const nuevosRoles = roles.map(role =>
-            role.id === id
-                ? { ...role, estado: !role.estado }
-                : role
-        );
-
-        localStorage.setItem(KEY, JSON.stringify(nuevosRoles));
-
-        return nuevosRoles;
-    },
-}
+  async toggleEstado(id) {
+    const response = await api.patch(`/roles/${id}/toggle-status`);
+    return response.data.data;
+  },
+};

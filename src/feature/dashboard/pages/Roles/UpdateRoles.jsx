@@ -1,42 +1,40 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { RolesService } from "./services/RolesService";
-import { useRoleForm } from "./hooks/useRoleForm";
-import RoleForm from "./components/RoleForm";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { RolesService } from "../Roles/services/RolesService";
+import { useRoleForm } from "../Roles/hooks/useRoleForm";
+import RoleForm from "../Roles/components/RoleForm";
 import Alert from "../../components/ui/Alert";
 import { X } from "lucide-react";
 
 export default function UpdateRoles() {
-    const navigate = useNavigate();
-    const [alert, setAlert] = useState(null);
+    const navigate  = useNavigate();
+    const location  = useLocation();
+    const [alert, setAlert]         = useState(null);
     const [initialData, setInitialData] = useState(null);
 
     useEffect(() => {
-        const data = localStorage.getItem("roleToEdit");
-        if (data) {
-            setInitialData(JSON.parse(data));
+        if (location.state?.role) {
+            setInitialData(location.state.role);
+        } else {
+            navigate("/dashboard/roles");
         }
     }, []);
 
     const formHook = useRoleForm({
         initialData,
-        onSubmit: (formData) => {
+        onSubmit: async (formData) => {
             try {
-                RolesService.update({
-                    id: formData.id,
-                    nombre: formData.nombre,
+                await RolesService.update({
+                    id:          formData.id,
+                    nombre:      formData.nombre,
                     descripcion: formData.descripcion,
-                    estado: formData.estado,
-                    fechaCreacion: formData.fechaCreacion,
-                    permisos: formData.permisos
+                    permisos:    formData.permisos,
                 });
-
-                setAlert({ type: "success", message: "Rol actualizado correctamente" });
-                localStorage.removeItem("roleToEdit");
+                setAlert({ type: "success", message: "Rol actualizado correctamente." });
                 setTimeout(() => navigate("/dashboard/roles"), 1500);
             } catch (error) {
-                console.error(error);
-                formHook.setFormError("Ocurrió un error al actualizar el rol.");
+                const message = error.response?.data?.message || "Error al actualizar el rol";
+                formHook.setFormError(message);
             }
         }
     });
@@ -45,9 +43,7 @@ export default function UpdateRoles() {
         <>
             <div className="bg-gray-100 p-8 rounded-2xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4">
                 <div className="flex justify-between mb-0">
-                    <h1 className="text-2xl font-bold text-gray-800">
-                        Editar rol
-                    </h1>
+                    <h1 className="text-2xl font-bold text-gray-800">Editar rol</h1>
                     <button
                         onClick={() => navigate("/dashboard/roles")}
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
@@ -61,10 +57,7 @@ export default function UpdateRoles() {
                         <RoleForm
                             {...formHook}
                             buttonText="Guardar cambios"
-                            onCancel={() => {
-                                localStorage.removeItem("roleToEdit");
-                                navigate("/dashboard/roles");
-                            }}
+                            onCancel={() => navigate("/dashboard/roles")}
                             isUpdate={true}
                         />
                     ) : (
@@ -74,11 +67,7 @@ export default function UpdateRoles() {
             </div>
 
             {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
+                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );

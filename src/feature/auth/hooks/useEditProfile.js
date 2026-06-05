@@ -5,36 +5,36 @@ import { Validations } from "../../../utils/validations";
 export const getPasswordStrength = (value) => {
     if (!value) return null;
     let score = 0;
-    if (value.length >= 6)           score++;
-    if (value.length >= 10)          score++;
-    if (/[A-Z]/.test(value))         score++;
-    if (/[0-9]/.test(value))         score++;
-    if (/[^a-zA-Z0-9]/.test(value))  score++;
+    if (value.length >= 6) score++;
+    if (value.length >= 10) score++;
+    if (/[A-Z]/.test(value)) score++;
+    if (/[0-9]/.test(value)) score++;
+    if (/[^a-zA-Z0-9]/.test(value)) score++;
 
-    if (score <= 2) return { label: "Poco segura", color: "text-red-500",    bar: "w-1/3 bg-red-400",    bars: 1 };
-    if (score <= 3) return { label: "Segura",      color: "text-yellow-500", bar: "w-2/3 bg-yellow-400", bars: 2 };
-    return            { label: "Muy segura",        color: "text-green-600",  bar: "w-full bg-green-500", bars: 3 };
+    if (score <= 2) return { label: "Poco segura", color: "text-red-500", bar: "w-1/3 bg-red-400", bars: 1 };
+    if (score <= 3) return { label: "Segura", color: "text-yellow-500", bar: "w-2/3 bg-yellow-400", bars: 2 };
+    return { label: "Muy segura", color: "text-green-600", bar: "w-full bg-green-500", bars: 3 };
 };
 
 export default function useEditProfile() {
 
     const [formData, setFormData] = useState({
-        tipoDoc:   "",
+        tipoDoc: "",
         documento: "",
-        nombre:    "",
-        email:     "",
-        telefono:  "",
-        rol:       "",
-        avatar:    "",
+        nombre: "",
+        email: "",
+        telefono: "",
+        rol: "",
+        avatar: "",
     });
 
-    const [passwordData,        setPasswordData]        = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    const [touched,             setTouched]             = useState({});
-    const [passwordTouched,     setPasswordTouched]     = useState({});
+    const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    const [touched, setTouched] = useState({});
+    const [passwordTouched, setPasswordTouched] = useState({});
     const [showPasswordSection, setShowPasswordSection] = useState(false);
-    const [errors,  setErrors]  = useState({});
+    const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
-    const [alert,   setAlert]   = useState(null);
+    const [alert, setAlert] = useState(null);
     const [success, setSuccess] = useState(false); // 🔥 NUEVO
     const fileRef = useRef();
 
@@ -42,13 +42,15 @@ export default function useEditProfile() {
         const user = getAuthUser();
         if (user) {
             setFormData({
-                tipoDoc:   user.tipoDoc   || "",
-                documento: user.documento || "",
-                nombre:    user.nombre    || "",
-                email:     user.email     || "",
-                telefono:  user.telefono  || "",
-                rol:       user.rol       || "",
-                avatar:    user.avatar    || "",
+                tipoDoc: user.documentType?._id?.toString() || "",
+                documento: user.documentNumber || "",
+                nombre: user.fullName || "",
+                email: user.email || "",
+                telefono: user.phone || "",
+                rol: typeof user.role === "object"
+                    ? user.role?.name || ""
+                    : user.role || "",
+                avatar: user.avatar || "",
             });
         }
     }, []);
@@ -58,23 +60,23 @@ export default function useEditProfile() {
             case "tipoDoc":
                 return !value ? "Selecciona un tipo de documento." : "";
             case "documento":
-                if (!value)                          return "El documento es obligatorio.";
+                if (!value) return "El documento es obligatorio.";
                 if (!Validations.soloNumeros(value)) return "Solo se permiten números.";
-                if (value.length < 8)                return "Mínimo 8 dígitos.";
+                if (value.length < 8) return "Mínimo 8 dígitos.";
                 return "";
             case "nombre":
-                if (!value)                         return "El nombre es obligatorio.";
+                if (!value) return "El nombre es obligatorio.";
                 if (!Validations.soloLetras(value)) return "Solo se permiten letras.";
-                if (value.trim().length < 3)        return "Mínimo 3 caracteres.";
+                if (value.trim().length < 3) return "Mínimo 3 caracteres.";
                 return "";
             case "email":
-                if (!value)                           return "El email es obligatorio.";
+                if (!value) return "El email es obligatorio.";
                 if (!Validations.formatoEmail(value)) return "Ingresa un email válido.";
                 return "";
             case "telefono":
-                if (!value)                          return "El teléfono es obligatorio.";
+                if (!value) return "El teléfono es obligatorio.";
                 if (!Validations.soloNumeros(value)) return "Solo se permiten números.";
-                if (value.length < 7)                return "Mínimo 7 dígitos.";
+                if (value.length < 7) return "Mínimo 7 dígitos.";
                 return "";
             default:
                 return "";
@@ -86,12 +88,12 @@ export default function useEditProfile() {
             case "currentPassword":
                 return !value ? "La contraseña actual es obligatoria." : "";
             case "newPassword":
-                if (!value)           return "La nueva contraseña es obligatoria.";
+                if (!value) return "La nueva contraseña es obligatoria.";
                 if (value.length < 6) return "Mínimo 6 caracteres.";
                 return "";
             case "confirmPassword": {
                 const newPass = currentData?.newPassword ?? passwordData.newPassword;
-                if (!value)            return "Debes confirmar la contraseña.";
+                if (!value) return "Debes confirmar la contraseña.";
                 if (value !== newPass) return "Las contraseñas no coinciden.";
                 return "";
             }
@@ -103,8 +105,8 @@ export default function useEditProfile() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        setTouched((prev)  => ({ ...prev, [name]: true }));
-        setErrors((prev)   => ({ ...prev, [name]: validateField(name, value) }));
+        setTouched((prev) => ({ ...prev, [name]: true }));
+        setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
     };
 
     const handlePasswordChange = (e) => {
@@ -129,8 +131,8 @@ export default function useEditProfile() {
     };
 
     const validate = () => {
-        const fields     = ["tipoDoc", "documento", "nombre", "email", "telefono"];
-        const newErrors  = {};
+        const fields = ["tipoDoc", "documento", "nombre", "email", "telefono"];
+        const newErrors = {};
         const newTouched = {};
         fields.forEach((f) => {
             newTouched[f] = true;
@@ -138,13 +140,13 @@ export default function useEditProfile() {
             if (err) newErrors[f] = err;
         });
         setTouched((prev) => ({ ...prev, ...newTouched }));
-        setErrors((prev)  => ({ ...prev, ...newErrors }));
+        setErrors((prev) => ({ ...prev, ...newErrors }));
         return Object.keys(newErrors).length === 0;
     };
 
     const validatePassword = () => {
-        const fields     = ["currentPassword", "newPassword", "confirmPassword"];
-        const newErrors  = {};
+        const fields = ["currentPassword", "newPassword", "confirmPassword"];
+        const newErrors = {};
         const newTouched = {};
         fields.forEach((f) => {
             newTouched[f] = true;
@@ -152,38 +154,41 @@ export default function useEditProfile() {
             if (err) newErrors[f] = err;
         });
         setPasswordTouched((prev) => ({ ...prev, ...newTouched }));
-        setErrors((prev)          => ({ ...prev, ...newErrors }));
+        setErrors((prev) => ({ ...prev, ...newErrors }));
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault(); // 🔥 ahora el hook maneja el evento
+    const handleSubmit = async (e) => {
+        e.preventDefault();
         if (!validate()) return;
         setLoading(true);
 
-        const result = updateProfile({
-            tipoDoc:   formData.tipoDoc,
-            documento: formData.documento,
-            nombre:    formData.nombre,
-            email:     formData.email,
-            telefono:  formData.telefono,
-            avatar:    formData.avatar,
+        const result = await updateProfile({
+            fullName: formData.nombre,
+            email: formData.email,
+            phone: formData.telefono,
+            documentType: formData.tipoDoc,
+            documentNumber: formData.documento,
+            avatar: formData.avatar,
         });
 
         setLoading(false);
 
         if (result.ok) {
             setAlert({ type: "success", message: "Tu perfil fue actualizado correctamente." });
-            setTimeout(() => setSuccess(true), 2500); // 🔥 vista reacciona a esto
+            setTimeout(() => setSuccess(true), 2500);
         } else {
             setAlert({ type: "error", message: result.message || "No se pudo actualizar el perfil." });
         }
     };
 
-    const handleChangePassword = () => {
+    const handleChangePassword = async () => {
         if (!validatePassword()) return;
 
-        const result = changePassword(passwordData.currentPassword, passwordData.newPassword);
+        const result = await changePassword(
+            passwordData.currentPassword,
+            passwordData.newPassword
+        );
 
         if (result.ok) {
             setAlert({ type: "success", message: "Tu contraseña fue cambiada correctamente." });

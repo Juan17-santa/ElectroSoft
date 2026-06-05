@@ -6,19 +6,34 @@ export function useUsersTable({
     showAlert,
 }) {
 
+    const refreshUsers = async () => {
+        const response = await usersService.get();
+        const mapped = response.map(u => ({
+            id: u._id,
+            nombre: u.fullName,
+            email: u.email,
+            telefono: u.phone,
+            tipoDoc: u.documentType?._id?.toString() || "",
+            tipoDocLabel: u.documentType?.abbreviation || "",
+            documento: u.documentNumber,
+            rol: u.role?._id?.toString() || "",
+            rolLabel: u.role?.name || "",
+            estado: u.isActive,
+        }));
+        setUsers(mapped);
+    };
+
     // ELIMINAR USUARIO
     const deleteUser = (id) => {
         setConfirmData({
             type: "delete",
             title: "Eliminar usuario",
             message: "¿Seguro que deseas eliminar este usuario? Esta acción no se puede deshacer.",
-            onConfirm: () => {
+            onConfirm: async () => {
                 try {
-                    const updated = usersService.delete(id);
-
-                    setUsers(updated);
+                    await usersService.delete(id);
+                    await refreshUsers();
                     setConfirmData(null);
-
                     showAlert("success", "Usuario eliminado con éxito");
                 } catch (error) {
                     console.error(error);
@@ -35,13 +50,11 @@ export function useUsersTable({
             type: "warning",
             title: "Cambiar estado del usuario",
             message: "¿Seguro que deseas cambiar el estado de este usuario?",
-            onConfirm: () => {
+            onConfirm: async () => {
                 try {
-                    const updated = usersService.toggleEstado(id);
-
-                    setUsers(updated);
+                    await usersService.toggleEstado(id);
+                    await refreshUsers();
                     setConfirmData(null);
-
                     showAlert("success", "Estado actualizado con éxito");
                 } catch (error) {
                     console.error(error);

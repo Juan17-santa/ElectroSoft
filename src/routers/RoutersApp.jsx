@@ -119,7 +119,7 @@ export default function RoutersApp() {
                 {/* PEDIDOS */}
                 <Route path="orders" element={<ProtectedRoute scope="Pedidos" element={<Orders />} />} />
                 <Route path="orders/create" element={<ProtectedRoute scope="Pedidos" action="Crear" element={<CreateOrder />} />} />
-                <Route path="orders/detail" element={<ProtectedRoute scope="Pedidos" element={<OrderDetails />} />} />
+                <Route path="orders/detail/:id" element={<ProtectedRoute scope="Pedidos" element={<OrderDetails />} />} />
 
                 {/* GESTION DE VENTAS */}
                 <Route path="sales-management" element={<ProtectedRoute scope="Ventas" element={<SalesManagement />} />} />

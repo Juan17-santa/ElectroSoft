@@ -6,13 +6,14 @@ import Modal from "../components/Modal";
 import PrimaryButton from "../../dashboard/components/ui/PrimaryButton";
 import CustomSelect from "../../dashboard/components/ui/CustomSelect";
 import useEditProfile, { getPasswordStrength } from "../hooks/useEditProfile";
+import api from "../../../utils/api.js";
 
 // ── InputField ───────────────────────────────────────────────────────────────
 function InputField({ icon: Icon, label, name, value, onChange, placeholder, error, touched, type = "text", disabled = false, showToggle, onToggle, showValue }) {
     const hasSuccess = touched && !error && value;
 
     return (
-        <div className="flex flex-col gap-1 w-80">
+        <div className="flex flex-col gap-1 w-full">
             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                 <Icon size={16} />
                 <span>{label}{!disabled && " *"}</span>
@@ -140,6 +141,23 @@ export default function EditProfile() {
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew,     setShowNew]     = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [documentTypes, setDocumentTypes] = useState([]);
+
+    // Cargar tipos de documento del backend
+    useEffect(() => {
+        const loadDocumentTypes = async () => {
+            try {
+                const response = await api.get("/documentTypes");
+                setDocumentTypes(response.data.data.map(d => ({
+                    value: d._id.toString(),
+                    label: d.abbreviation,
+                })));
+            } catch (error) {
+                console.error("Error cargando tipos de documento:", error);
+            }
+        };
+        loadDocumentTypes();
+    }, []);
 
     const {
         formData,
@@ -161,13 +179,12 @@ export default function EditProfile() {
         handleChangePassword,
     } = useEditProfile();
 
-    // 🔥 La vista decide qué hacer cuando el hook reporta éxito
     useEffect(() => {
         if (success) navigate(-1);
     }, [success]);
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+        <div className="bg-gray-100 p-3 sm:p-6 rounded-2xl flex flex-col gap-4 sm:gap-6 w-full h-full shadow-inner overflow-y-auto">
 
             {/* ALERTA */}
             {alert && (
@@ -177,7 +194,7 @@ export default function EditProfile() {
             {/* MODAL CAMBIAR CONTRASEÑA */}
             {showPasswordSection && (
                 <Modal onClose={() => setShowPasswordSection(false)}>
-                    <h2 className="text-2xl font-semibold text-center mb-1 tracking-wide">
+                    <h2 className="text-xl sm:text-2xl font-semibold text-center mb-1 tracking-wide">
                         Cambiar contraseña
                     </h2>
                     <p className="text-gray-500 text-sm text-center mb-6">
@@ -237,56 +254,51 @@ export default function EditProfile() {
             )}
 
             {/* FORMULARIO */}
-            <div className="w-full max-w-4xl bg-white rounded-3xl shadow-lg p-12 flex flex-col gap-2 overflow-hidden justify-center mx-auto">
+            <div className="w-full max-w-4xl bg-white rounded-3xl shadow-lg p-4 sm:p-8 md:p-12 flex flex-col gap-4 sm:gap-6 overflow-hidden mx-auto">
 
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <div>
-                        <p className="text-xl font-semibold">Editar perfil</p>
-                        <p className="text-sm text-gray-600">Actualiza tu información y foto de perfil</p>
+                        <p className="text-lg sm:text-xl font-semibold">Editar perfil</p>
+                        <p className="text-xs sm:text-sm text-gray-600">Actualiza tu información y foto de perfil</p>
                     </div>
-                    {/* 🔥 navigate(-1) directo, sin handleClose */}
                     <button type="button" onClick={() => navigate(-1)}>
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Avatar */}
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-4">
                     {formData.avatar ? (
                         <img src={formData.avatar} alt="avatar"
-                            className="w-20 h-20 rounded-full object-cover ring-2 ring-yellow-400" />
+                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-2 ring-yellow-400" />
                     ) : (
-                        <div className="w-20 h-20 rounded-full bg-yellow-100 ring-2 ring-yellow-400 flex items-center justify-center text-yellow-400">
-                            <User size={36} />
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-yellow-100 ring-2 ring-yellow-400 flex items-center justify-center text-yellow-400">
+                            <User size={30} />
                         </div>
                     )}
                     <button type="button" onClick={() => fileRef.current.click()}
                         className="flex flex-col items-center gap-1 text-yellow-500 hover:text-yellow-600 transition">
-                        <Image size={22} />
-                        <span className="text-sm font-semibold">Cambiar foto</span>
+                        <Image size={20} />
+                        <span className="text-xs sm:text-sm font-semibold">Cambiar foto</span>
                     </button>
                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </div>
 
-                {/* 🔥 Un solo form, onSubmit directo al hook */}
-                <form onSubmit={handleSubmit} className="flex flex-col gap-8 w-full">
+                {/* FORM */}
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5 sm:gap-8 w-full">
 
-                    <div className="flex flex-wrap gap-8 justify-between">
-                        <div className="flex flex-col gap-1 w-80">
+                    {/* FILA 1 — Tipo doc y Documento */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
+                        <div className="flex flex-col gap-1 w-full">
                             <CustomSelect
                                 label="Tipo documento *"
                                 icon={FileText}
-                                value={formData.tipoDoc}
+                                value={formData.tipoDoc?.toString() || ""}
                                 onChange={(value) =>
                                     handleChange({ target: { name: "tipoDoc", value } })
                                 }
-                                options={[
-                                    { value: "CC",        label: "C.C" },
-                                    { value: "CE",        label: "C.E" },
-                                    { value: "NIT",       label: "NIT" },
-                                    { value: "Pasaporte", label: "Pasaporte" },
-                                ]}
+                                options={documentTypes}
                                 placeholder="Seleccione un tipo"
                             />
                             {touched.tipoDoc && errors.tipoDoc && (
@@ -308,7 +320,8 @@ export default function EditProfile() {
                         />
                     </div>
 
-                    <div className="flex flex-wrap gap-8 justify-between">
+                    {/* FILA 2 — Nombre y Email */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
                         <InputField
                             icon={User} label="Nombre completo" name="nombre"
                             value={formData.nombre} onChange={handleChange}
@@ -323,7 +336,8 @@ export default function EditProfile() {
                         />
                     </div>
 
-                    <div className="flex flex-wrap gap-8 justify-between">
+                    {/* FILA 3 — Teléfono y Rol */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
                         <InputField
                             icon={Phone} label="Teléfono" name="telefono"
                             value={formData.telefono} onChange={handleChange}
@@ -340,7 +354,7 @@ export default function EditProfile() {
                     <button
                         type="button"
                         onClick={() => setShowPasswordSection(true)}
-                        className="text-sm font-semibold text-blue-600 hover:underline mb-2 self-start"
+                        className="text-sm font-semibold text-blue-600 hover:underline self-start"
                     >
                         ¿Deseas cambiar tu contraseña?
                     </button>

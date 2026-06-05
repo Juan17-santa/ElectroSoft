@@ -7,8 +7,8 @@ import Alert from "../../dashboard/components/ui/Alert"; // Asegúrate de que es
 export default function VerifyCode() {
   const navigate = useNavigate();
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
-  const [alert, setAlert]   = useState(null);
-  const inputRefs           = useRef([]);
+  const [alert, setAlert] = useState(null);
+  const inputRefs = useRef([]);
 
   const handleChange = (index, value) => {
     if (!/^\d?$/.test(value)) return; // solo números
@@ -44,22 +44,21 @@ export default function VerifyCode() {
     inputRefs.current[lastIndex].focus();
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const code = digits.join("");
-
     if (code.length !== 6) {
-      setAlert({ type: "error", message: "Por favor ingresa los 6 dígitos del código." });
+      setAlert({ type: "error", message: "Ingresa los 6 dígitos." });
       return;
     }
 
-    const ok = verifyCode(code);
+    const email = localStorage.getItem("reset_email"); // ← leer email
+    const ok = await verifyCode(email, code); // ← pasar email y code
 
     if (ok) {
-      setAlert({ type: "success", message: "Código verificado correctamente. Redirigiendo..." });
+      setAlert({ type: "success", message: "Código verificado. Redirigiendo..." });
       setTimeout(() => navigate("/reset-password"), 2000);
     } else {
-      setAlert({ type: "error", message: "El código ingresado es incorrecto. Intenta de nuevo." });
-      // Limpiar campos y volver al primero
+      setAlert({ type: "error", message: "Código incorrecto. Intenta de nuevo." });
       setDigits(["", "", "", "", "", ""]);
       inputRefs.current[0].focus();
     }
@@ -133,7 +132,7 @@ export default function VerifyCode() {
               </button>
             </div>
           </div>
-        
+
         </div>
       </div>
     </div>

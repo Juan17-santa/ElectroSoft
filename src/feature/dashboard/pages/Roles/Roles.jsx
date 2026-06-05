@@ -1,7 +1,7 @@
 import { Trash, Pencil, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RolesService } from "./services/RolesService";
+import { RolesService } from "../Roles/services/RolesService.js";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
@@ -14,34 +14,23 @@ const ITEMS_PER_PAGE = 6;
 export default function Roles() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
-    const [roles, setRoles] = useState([]);
-    const [search, setSearch] = useState("");
+    const [roles, setRoles]           = useState([]);
+    const [search, setSearch]         = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
+    const [alert, setAlert]           = useState(null);
 
     const showAlert = (type, message) => setAlert({ type, message });
 
-    const filteredRoles = roles.filter(role =>
-        role.nombre.toLowerCase().includes(search.toLowerCase()) ||
-        role.descripcion?.toLowerCase().includes(search.toLowerCase()) ||
-        (role.estado ? "activo" : "inactivo").includes(search.toLowerCase())
-    );
-
-    const totalPages = Math.max(1, Math.ceil(filteredRoles.length / ITEMS_PER_PAGE));
-    const pageActual = Math.min(currentPage, totalPages);
-    const paginatedRoles = filteredRoles.slice(
-        (pageActual - 1) * ITEMS_PER_PAGE,
-        pageActual * ITEMS_PER_PAGE
-    );
-
     useEffect(() => { getRoles(); }, []);
 
-    const getRoles = () => {
+    const getRoles = async () => {
         try {
-            setRoles(RolesService.get());
+            const data = await RolesService.get();
+            setRoles(data);
         } catch (error) {
             console.error(error);
+            showAlert("error", "Error al cargar los roles");
         }
     };
 
@@ -50,48 +39,81 @@ export default function Roles() {
         setCurrentPage(1);
     };
 
+    const filteredRoles = roles.filter(role =>
+        role.nombre?.toLowerCase().includes(search.toLowerCase()) ||
+        role.descripcion?.toLowerCase().includes(search.toLowerCase()) ||
+        (role.estado ? "activo" : "inactivo").includes(search.toLowerCase())
+    );
+
+    const totalPages    = Math.max(1, Math.ceil(filteredRoles.length / ITEMS_PER_PAGE));
+    const pageActual    = Math.min(currentPage, totalPages);
+    const paginatedRoles = filteredRoles.slice(
+        (pageActual - 1) * ITEMS_PER_PAGE,
+        pageActual * ITEMS_PER_PAGE
+    );
+
     const handleDelete = (role) => {
         setConfirmData({
             type: "delete",
             title: "Eliminar rol",
             message: `¿Estás seguro de que deseas eliminar el rol "${role.nombre}"?`,
-            onConfirm: () => {
-                const newData = RolesService.delete(role.id);
-                setRoles(newData);
-                showAlert("success", "Rol eliminado correctamente.");
-                setConfirmData(null);
+            onConfirm: async () => {
+                try {
+                    await RolesService.delete(role.id);
+                    await getRoles();
+                    showAlert("success", "Rol eliminado correctamente.");
+                    setConfirmData(null);
+                } catch (error) {
+                    const message = error.response?.data?.message || "Error al eliminar el rol";
+                    showAlert("error", message);
+                    setConfirmData(null);
+                }
+            }
+        });
+    };
+
+    const handleToggleEstado = (role) => {
+        setConfirmData({
+            type: "warning",
+            title: "Cambiar estado del rol",
+            message: `¿Seguro que deseas ${role.estado ? "desactivar" : "activar"} el rol "${role.nombre}"?`,
+            onConfirm: async () => {
+                try {
+                    await RolesService.toggleEstado(role.id);
+                    await getRoles();
+                    showAlert("success", "Estado actualizado correctamente.");
+                    setConfirmData(null);
+                } catch (error) {
+                    const message = error.response?.data?.message || "Error al cambiar el estado";
+                    showAlert("error", message);
+                    setConfirmData(null);
+                }
             }
         });
     };
 
     const handleEditNavigation = (role) => {
-        localStorage.setItem("roleToEdit", JSON.stringify(role));
-        navigate("/dashboard/roles/update");
+        navigate("/dashboard/roles/update", { state: { role } });
     };
 
     const handleViewDetails = (role) => {
-        localStorage.setItem("roleToView", JSON.stringify(role));
-        navigate("/dashboard/roles/details");
+        navigate("/dashboard/roles/details", { state: { role } });
     };
 
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
-                {/* TITULO */}
                 <p className="text-xl font-semibold">Control de roles</p>
 
-                {/* BUSCADOR */}
                 <Searchbar
                     searchTerm={search}
                     onSearchChange={handleSearch}
                     placeholder="Buscar roles..."
                     onCreateClick={() => navigate("/dashboard/roles/create")}
                     createButtonText="Nuevo Rol"
-                    showCreateButton={hasPermission("Roles", "Crear")}
-                    showReportButton={true}
+                    showCreateButton={hasPermission("roles:acceso")}
                 />
 
-                {/* TABLA */}
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
                     <div className="bg-white rounded-2xl border-none overflow-y-auto">
                         <table className="w-full text-sm">
@@ -119,21 +141,20 @@ export default function Roles() {
                                             </td>
                                             <td className="px-3 py-3 font-medium text-gray-800">{role.nombre}</td>
                                             <td className="px-3 py-3 max-w-xs">
-                                                {!role.descripcion || role.descripcion.length === 0 ? (
+                                                {!role.descripcion ? (
                                                     <span className="text-gray-400 italic">Sin descripción</span>
                                                 ) : (
-                                                    <span
-                                                        className="text-gray-500 block truncate max-w-55"
-                                                        title={role.descripcion}
-                                                    >
+                                                    <span className="text-gray-500 block truncate max-w-55" title={role.descripcion}>
                                                         {role.descripcion}
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-3 py-3">
+                                            <td className="px-3 py-2">
                                                 <div className="flex items-center gap-2">
-                                                    <span className={`w-2 h-2 rounded-full ${role.estado ? "bg-green-500" : "bg-red-500"}`}></span>
-                                                    <span className="text-sm text-gray-600 font-medium">{role.estado ? "Activo" : "Inactivo"}</span>
+                                                    <span className={`w-2.5 h-2.5 rounded-full ${role.estado ? "bg-green-500" : "bg-red-500"}`}></span>
+                                                    <span className="text-sm text-gray-600 font-medium">
+                                                        {role.estado ? "Activo" : "Inactivo"}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
@@ -154,6 +175,17 @@ export default function Roles() {
                                                             <Pencil size={18} className="text-yellow-600" />
                                                         </button>
                                                     </Restricted>
+                                                    <Restricted scope="Roles" action="Editar">
+                                                        <div
+                                                            onClick={() => handleToggleEstado(role)}
+                                                            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
+                                                                ${role.estado ? "bg-green-500" : "bg-red-500"}`}
+                                                        >
+                                                            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                                                                ${role.estado ? "translate-x-4" : "translate-x-0"}`}
+                                                            />
+                                                        </div>
+                                                    </Restricted>
                                                     <Restricted scope="Roles" action="Eliminar">
                                                         <button
                                                             onClick={() => handleDelete(role)}
@@ -173,7 +205,6 @@ export default function Roles() {
                     </div>
                 </div>
 
-                {/* PAGINADOR */}
                 {paginatedRoles.length > 0 && (
                     <div className="flex justify-end mt-auto">
                         <Pagination
@@ -185,7 +216,6 @@ export default function Roles() {
                 )}
             </div>
 
-            {/* MODAL DE CONFIRMACION */}
             {confirmData && (
                 <ConfirmModal
                     type={confirmData.type}
@@ -196,13 +226,8 @@ export default function Roles() {
                 />
             )}
 
-            {/* ALERTA */}
             {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
+                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );

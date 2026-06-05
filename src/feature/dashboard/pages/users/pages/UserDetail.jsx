@@ -9,6 +9,7 @@ export default function UserDetail() {
 
     const [user, setUser] = useState(null);
 
+    // Cambia este bloque
     useEffect(() => {
         if (location.state?.user) {
             setUser(location.state.user);
@@ -62,9 +63,9 @@ export default function UserDetail() {
                                 <div
                                     className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md
                                     ${user.estado
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-red-100 text-red-700"
-                                    }`}
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-red-100 text-red-700"
+                                        }`}
                                 >
                                     {user.estado ? "Activo" : "Inactivo"}
                                 </div>
@@ -97,7 +98,7 @@ export default function UserDetail() {
                                 <div>
                                     <p className="text-sm text-yellow-400 mb-1">Tipo documento</p>
                                     <p className="text-sm font-semibold text-gray-800">
-                                        {user.tipoDoc || "No registrado"}
+                                        {user.tipoDocLabel || user.tipoDoc || "No registrado"}
                                     </p>
                                 </div>
 
@@ -111,7 +112,7 @@ export default function UserDetail() {
                                 <div>
                                     <p className="text-sm text-yellow-400 mb-1">Rol</p>
                                     <p className="text-sm font-semibold text-gray-800">
-                                        {user.rol || "Sin rol asignado"}
+                                        {user.rolLabel || user.rol || "Sin rol asignado"}
                                     </p>
                                 </div>
 

@@ -1,64 +1,124 @@
-import { getAuthUser } from "../feature/auth/services/authService";
-import { RolesService } from "../feature/dashboard/pages/Roles/services/RolesService";
+// import { getAuthUser } from "../feature/auth/services/authService";
+// import { RolesService } from "../feature/dashboard/pages/Roles/services/RolesService";
+
+// export const usePermissions = () => {
+    
+//     const hasPermission = (scope, action) => {
+//         const authUser = getAuthUser();
+        
+//         if (!authUser) return false;
+
+//         const userRoleName = authUser.role || authUser.rol || "Empleado";
+
+//         // Dejar que el Admin tenga acceso total por defecto, como lo pidieron
+//         if (userRoleName.toLowerCase() === "administrador" || userRoleName.toLowerCase() === "admin") {
+//             return true;
+//         }
+
+//         const roles = RolesService.get();
+//         // Buscamos el rol del usuario actual
+//         // Aquí asumimos que el rol del usuario coincide con el 'nombre' del rol guardado
+//         // Si tienes el id guardado en `authUser.rol` en el futuro, se cambiaría a `r.id === Number(userRoleName)`
+//         const roleData = roles.find(r => r.nombre.toLowerCase() === userRoleName.toLowerCase());
+
+//         if (!roleData || !roleData.estado || !roleData.permisos) {
+//             return false;
+//         }
+
+//         const scopePermissions = roleData.permisos[scope];
+
+//         if (!scopePermissions) {
+//             return false;
+//         }
+
+//         // Si la acción es "Ver" y no está explícitamente en los permisos, 
+//         // pero el usuario tiene otras acciones (ej. "Crear"), permitimos ver.
+//         if (action === "Ver" && !scopePermissions.includes("Ver") && scopePermissions.length > 0) {
+//             return true;
+//         }
+
+//         return scopePermissions.includes(action);
+//     };
+
+//     const hasAccessToScope = (scope) => {
+//         const authUser = getAuthUser();
+//         if (!authUser) return false;
+
+//         const userRoleName = authUser.role || authUser.rol || "Empleado";
+
+//         if (userRoleName.toLowerCase() === "administrador" || userRoleName.toLowerCase() === "admin") {
+//             return true;
+//         }
+
+//         const roles = RolesService.get();
+//         const roleData = roles.find(r => r.nombre.toLowerCase() === userRoleName.toLowerCase());
+
+//         if (!roleData || !roleData.estado || !roleData.permisos) {
+//             return false;
+//         }
+
+//         return roleData.permisos[scope] && roleData.permisos[scope].length > 0;
+//     };
+
+//     return { hasPermission, hasAccessToScope };
+// };
+
+
+
+import { authStorage } from "../utils/authStorage";
 
 export const usePermissions = () => {
-    
-    const hasPermission = (scope, action) => {
-        const authUser = getAuthUser();
-        
-        if (!authUser) return false;
 
-        const userRoleName = authUser.role || authUser.rol || "Empleado";
+  const user = authStorage.getUser();
+  const permissions = user?.permissions || [];
 
-        // Dejar que el Admin tenga acceso total por defecto, como lo pidieron
-        if (userRoleName.toLowerCase() === "administrador" || userRoleName.toLowerCase() === "admin") {
-            return true;
-        }
+  // Mapeo de nombres del frontend al formato del backend
+  const scopeMap = {
+    "Categoria de productos": "categorias",
+    "Productos":              "productos",
+    "Ficha tecnica":          "fichatecnica",
+    "Compras":                "compras",
+    "Proveedores":            "proveedores",
+    "Ventas":                 "ventas",
+    "Clientes":               "clientes",
+    "Pedidos":                "pedidos",
+    "Pagos y abonos":         "pagos",
+    "Devoluciones":           "devoluciones",
+    "Usuarios":               "usuarios",
+    "Roles":                  "roles",
+    "Dashboard":              "dashboard",
+  };
 
-        const roles = RolesService.get();
-        // Buscamos el rol del usuario actual
-        // Aquí asumimos que el rol del usuario coincide con el 'nombre' del rol guardado
-        // Si tienes el id guardado en `authUser.rol` en el futuro, se cambiaría a `r.id === Number(userRoleName)`
-        const roleData = roles.find(r => r.nombre.toLowerCase() === userRoleName.toLowerCase());
+  const actionMap = {
+    "Ver":      "ver",
+    "Crear":    "crear",
+    "Editar":   "editar",
+    "Eliminar": "eliminar",
+    "Estado":   "estado",
+  };
 
-        if (!roleData || !roleData.estado || !roleData.permisos) {
-            return false;
-        }
+  const hasPermission = (scope, action = "ver") => {
+    if (!user) return false;
 
-        const scopePermissions = roleData.permisos[scope];
+    // Administrador tiene acceso total
+    if (user.role === "Administrador") return true;
 
-        if (!scopePermissions) {
-            return false;
-        }
+    const mappedScope  = scopeMap[scope]  || scope.toLowerCase();
+    const mappedAction = actionMap[action] || action.toLowerCase();
+    const permission   = `${mappedScope}:${mappedAction}`;
 
-        // Si la acción es "Ver" y no está explícitamente en los permisos, 
-        // pero el usuario tiene otras acciones (ej. "Crear"), permitimos ver.
-        if (action === "Ver" && !scopePermissions.includes("Ver") && scopePermissions.length > 0) {
-            return true;
-        }
+    return permissions.includes(permission);
+  };
 
-        return scopePermissions.includes(action);
-    };
+  const hasAccessToScope = (scope) => {
+    if (!user) return false;
+    if (user.role === "Administrador") return true;
 
-    const hasAccessToScope = (scope) => {
-        const authUser = getAuthUser();
-        if (!authUser) return false;
+    const mappedScope = scopeMap[scope] || scope.toLowerCase();
 
-        const userRoleName = authUser.role || authUser.rol || "Empleado";
+    // Tiene acceso al módulo si tiene al menos un permiso de ese módulo
+    return permissions.some((p) => p.startsWith(`${mappedScope}:`));
+  };
 
-        if (userRoleName.toLowerCase() === "administrador" || userRoleName.toLowerCase() === "admin") {
-            return true;
-        }
-
-        const roles = RolesService.get();
-        const roleData = roles.find(r => r.nombre.toLowerCase() === userRoleName.toLowerCase());
-
-        if (!roleData || !roleData.estado || !roleData.permisos) {
-            return false;
-        }
-
-        return roleData.permisos[scope] && roleData.permisos[scope].length > 0;
-    };
-
-    return { hasPermission, hasAccessToScope };
+  return { hasPermission, hasAccessToScope };
 };

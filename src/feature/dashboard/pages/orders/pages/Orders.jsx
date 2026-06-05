@@ -34,7 +34,27 @@ export default function Orders() {
     // MODAL DEL GENERAR REPORTE
     const [showReportModal, setShowReportModal] = useState(false);
 
-    
+    // FUNCIÓN AUXILIAR PARA COMPATIBILIZAR EL COUPLING CON EL HOOK
+    const showAlert = (type, message) => {
+        setAlert({ type, message });
+    };
+
+    const {
+        data,
+        totalPages,
+        cancelOrder,
+        processOrderToSale,
+        loading
+    } = useOrdersTable(
+        search,
+        presentPage,
+        recordsPerPage,
+        showAlert
+    );
+
+    // ESTADO PARA CANCELAR UN PEDIDO
+    const [orderToCancel, setOrderToCancel] = useState(null);
+
     // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA COLOMBIANA
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('es-CO', {
@@ -43,38 +63,33 @@ export default function Orders() {
             minimumFractionDigits: 0,
         }).format(value);
     };
-    
+
     // FUNCION PARA PREPARAR LA VISTA DE DETALLES
     const handleDetailsNavigation = (order) => {
-        navigate("/dashboard/orders/detail", {
-            state: { order },
-        })
-    };
-    
+        navigate(`/dashboard/orders/detail/${order._id}`)
+    }
+
     // FUNCION PARA ABRIR LA MODAL DE VENTA
     const handleOpenSaleConfirm = (order) => {
         setOrderToProcess(order);
         setIsSaleModalOpen(true);
     };
-    
+
     // FUNCION PARA CONFIRMAR LA VENTA Y REDIRIGIR
     const handleConfirmSale = (order, diasPlazo) => {
         try {
-            // EJECUTA LA LÓGICA DEL HOOK (GUARDAR EN VENTAS Y ELIMINAR DE PEDIDOS)
             processOrderToSale(order, diasPlazo);
             setIsSaleModalOpen(false);
-            
-            // MOSTRAR ALERTA DE EXITO
+
             setAlert({
                 type: "success",
                 message: "Venta procesada con éxito. Redirigiendo a ventas..."
             });
-            
-            // REDIRIGIR TRAS 2 SEGUNDOS PARA VER LA ALERTA
+
             setTimeout(() => {
                 navigate("/dashboard/sales-management");
             }, 3000);
-            
+
         } catch (error) {
             setAlert({
                 type: "error",
@@ -82,52 +97,31 @@ export default function Orders() {
             });
         }
     };
-    
-    // ESTADO PARA CANCELAR UN PEDIDO
-    const [orderToCancel, setOrderToCancel] = useState(null);
-    
-    // FUNCION PARA ANULAR UN PEDIDO Y DEVOLVER STOCK
-    const handleCancelOrder = ({ motivo, fechaAnulacion }) => {
+
+    // FUNCION ASINCRÓNICA PARA ANULAR UN PEDIDO Y ACTUALIZAR LA BASE DE DATOS
+    const handleCancelOrder = async ({ motivo }) => {
         if (!orderToCancel) return;
 
         try {
-            // LLAMADO A LA FUNCIÓN DEL HOOK PARA ACTUALIZAR STOCK Y ESTADO
-            cancelOrder(orderToCancel, motivo, fechaAnulacion);
+            await cancelOrder(orderToCancel._id, motivo);
 
             setOrderToCancel(null);
 
-            // MOSTRAR ALERTA DE EXITO
             setAlert({
                 type: "success",
                 message: "Pedido anulado con éxito."
             });
 
-            // REDIRIGIR TRAS 2 SEGUNDOS PARA VER LA ALERTA
             setTimeout(() => {
                 setAlert(null);
             }, 3000);
         } catch (error) {
-            setAlert({
-                type: "error",
-                message: "No se pudo anular el pedido correctamente."
-            });
+            setOrderToCancel(null);
         }
     };
-    
-    // LOGICA DEL HOOK
-    const {
-        data,
-        totalPages,
-        cancelOrder,
-        processOrderToSale
-    } = useOrdersTable(
-        search,
-        presentPage,
-        recordsPerPage
-    );
-    
+
     const { exportReport } = useOrdersReport(data, setAlert);
-    
+
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
@@ -149,8 +143,11 @@ export default function Orders() {
                 {/* TABLA */}
                 <OrdersTable
                     data={data}
+                    loading={loading}
+                    currentPage={presentPage}
+                    recordsPerPage={recordsPerPage}
                     onDetails={handleDetailsNavigation}
-                    onCancel={(order) => setOrderToCancel(order)}
+                    onCancel={(order, idVisual) => setOrderToCancel({ ...order, idVisual })}
                     onProcess={handleOpenSaleConfirm}
                 />
 
@@ -163,7 +160,6 @@ export default function Orders() {
                     />
                 </div>
             </div>
-
 
             {/* MODAL PARA PROCESAR EL PEDIDO COMO UNA VENTA FINAL */}
             <ConfirmSaleModal
@@ -178,11 +174,16 @@ export default function Orders() {
                 <CancellationModal
                     title="Anular pedido"
                     infoData={[
-                        { label: "Pedido", value: orderToCancel.id },
-                        { label: "Cliente", value: orderToCancel.nombreCliente || orderToCancel.cliente || "Sin nombre" },
+                        { label: "Pedido ID", value: orderToCancel.idVisual || orderToCancel._id.slice(-6) },
+                        {
+                            label: "Cliente",
+                            value: orderToCancel.client?.firstName
+                                ? `${orderToCancel.client.firstName} ${orderToCancel.client.lastName || ""}`.trim()
+                                : "Sin nombre"
+                        },
                         { label: "Total", value: formatCurrency(orderToCancel.total) }
                     ]}
-                    placeholder="Describe el motivo de la anulación del pedido..."
+                    placeholder="Describe el motivo de la anulación del pedido... (Mínimo 20 caracteres)"
                     onConfirm={handleCancelOrder}
                     onCancel={() => setOrderToCancel(null)}
                 />

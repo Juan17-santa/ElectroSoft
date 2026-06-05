@@ -1,114 +1,47 @@
-const KEY = "users";
+import api from "../../../../../utils/api.js";
 
 export const usersService = {
 
-    // OBTENER TODOS
-    get() {
-        const data = localStorage.getItem(KEY);
-        let users = data ? JSON.parse(data) : [];
+  async get() {
+    const response = await api.get("/users");
+    return response.data.data;
+  },
 
-        // Si el local storage está vacío, creamos el admin global por defecto
-        if (users.length === 0) {
-            const defaultAdmin = {
-                id: 1,
-                nombre: "Administrador Global",
-                email: "admin@gmail.com",
-                password: "admin", // Contraseña por defecto
-                rol: "Administrador",
-                estado: true,
-                documento: "000000000",
-                telefono: "0000000000"
-            };
-            users.push(defaultAdmin);
-            localStorage.setItem(KEY, JSON.stringify(users));
-        }
+  async getById(id) {
+    const response = await api.get(`/users/${id}`);
+    return response.data.data;
+  },
 
-        return users;
-    },
+  async create(user) {
+    const response = await api.post("/users", {
+      fullName:       user.nombre,
+      email:          user.email,
+      phone:          user.telefono,
+      documentType:   user.tipoDoc,
+      documentNumber: user.documento,
+      role:           user.rol,
+    });
+    return response.data.data;
+  },
 
-    // GUARDAR
-    save(users) {
-        localStorage.setItem(KEY, JSON.stringify(users));
-    },
+  async update(user) {
+    const response = await api.put(`/users/${user.id}`, {
+      fullName:       user.nombre,
+      email:          user.email,
+      phone:          user.telefono,
+      documentType:   user.tipoDoc,
+      documentNumber: user.documento,
+      role:           user.rol,
+    });
+    return response.data.data;
+  },
 
-    // CREAR
-    create(user) {
+  async delete(id) {
+    await api.delete(`/users/${id}`);
+  },
 
-        const users = this.get();
-
-        // Validación básica
-        if (!user.nombre || !user.email) {
-            alert("Nombre y email son obligatorios");
-            return users;
-        }
-
-        // Validar email duplicado
-        const existe = users.some(u => u.email === user.email);
-        if (existe) {
-            alert("El email ya existe");
-            return users;
-        }
-
-        const newUser = {
-            ...user,
-            id: Date.now(),
-            estado: true,
-            password: "123456"
-        };
-
-        const updated = [...users, newUser];
-
-        this.save(updated);
-
-        return updated; // 🔥 IMPORTANTE
-    },
-
-    // ACTUALIZAR
-    update(userActualizado) {
-
-        const users = this.get();
-
-        const updated = users.map(u =>
-            u.id === userActualizado.id
-                ? { ...u, ...userActualizado }
-                : u
-        );
-
-        this.save(updated);
-
-        return updated;
-    },
-
-    // ELIMINAR
-    delete(id) {
-
-        const users = this.get();
-
-        const updated = users.filter(u => u.id !== Number(id));
-
-        this.save(updated);
-
-        return updated;
-    },
-
-    // CAMBIAR ESTADO
-    toggleEstado(id) {
-
-        const users = this.get();
-
-        const updated = users.map(u =>
-            u.id === Number(id)
-                ? { ...u, estado: !u.estado }
-                : u
-        );
-
-        this.save(updated);
-
-        return updated;
-    },
-
-    // OBTENER POR ID
-    getById(id) {
-        return this.get().find(u => u.id === Number(id));
-    }
+  async toggleEstado(id) {
+    const response = await api.patch(`/users/${id}/toggle-status`);
+    return response.data.data;
+  },
 };
