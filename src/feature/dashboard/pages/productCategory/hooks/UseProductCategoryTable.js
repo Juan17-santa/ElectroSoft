@@ -80,7 +80,7 @@ export default function useProductCategoryTable({
         });
     };
 
-    // FILTRAR LAS CATEGORIAS USANDO LOS CAMPOS EN INGLÉS
+    // FILTRAR LAS CATEGORIAS
     const filteredCategories = categories.filter(cat => {
         const query = searchTerm.toLowerCase();
         return (
