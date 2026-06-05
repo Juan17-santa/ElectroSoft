@@ -37,8 +37,8 @@ export default function RoleForm({
     };
 
     const statusOptions = [
-        { label: "Activo", value: true },
-        { label: "Inactivo", value: false }
+        { label: "Activo",   value: true  },
+        { label: "Inactivo", value: false },
     ];
 
     return (
@@ -48,16 +48,16 @@ export default function RoleForm({
                 <Alert type="error" message={formError} onClose={() => setFormError(null)} />
             )}
 
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${isUpdate ? 'gap-x-12 gap-y-6' : 'gap-6'}`}>
-                {/* FIELDS */}
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${isUpdate ? "gap-x-12 gap-y-6" : "gap-6"}`}>
+
+                {/* NOMBRE Y ESTADO */}
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center text-yellow-500 gap-2 font-bold">
                         <Tag size={18} />
                         <span>Nombre del rol *</span>
                     </div>
-
                     <div className="flex flex-col">
-                        <div className={`rounded-xl px-4 py-3 flex items-center justify-between shadow-md transition-all duration-300 ${ringClass(estadoNombre)} ${!estadoNombre || estadoNombre.valido ? 'bg-gray-200' : ''}`}>
+                        <div className={`rounded-xl px-4 py-3 flex items-center justify-between shadow-md transition-all duration-300 ${ringClass(estadoNombre)} ${!estadoNombre || estadoNombre.valido ? "bg-gray-200" : ""}`}>
                             <input
                                 type="text"
                                 name="nombre"
@@ -84,26 +84,26 @@ export default function RoleForm({
                                 placeholder="Seleccionar Estado"
                             />
                         </div>
-
                         <div className="w-full md:w-1/2 flex flex-col justify-end">
                             <div className="flex items-center text-yellow-500 gap-2 font-bold mb-2">
                                 <Calendar size={18} />
                                 <span>Fecha de creación</span>
                             </div>
                             <div className="bg-gray-200/50 rounded-xl px-4 py-3 flex items-center shadow-sm border border-gray-200 text-gray-700 min-h-12">
-                                {formData.fechaCreacion || formData.fecha || "Automática"}
+                                {formData.fechaCreacion || "Automática"}
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {/* DESCRIPCIÓN */}
                 <div className="flex flex-col gap-3 h-full">
                     <div className="flex items-center text-yellow-500 gap-2 font-bold">
                         <FileText size={18} />
                         <span>Descripción</span>
                     </div>
                     <div className="flex flex-col flex-1">
-                        <div className={`rounded-xl px-4 py-3 flex flex-col shadow-sm transition-all duration-300 h-full flex-1 bg-gray-200/50`}>
+                        <div className="rounded-xl px-4 py-3 flex flex-col shadow-sm transition-all duration-300 h-full flex-1 bg-gray-200/50">
                             <textarea
                                 name="descripcion"
                                 value={formData.descripcion}
@@ -111,8 +111,8 @@ export default function RoleForm({
                                 placeholder="Descripción del rol (opcional)"
                                 className="bg-transparent w-full text-gray-700 placeholder-gray-500 outline-none resize-none min-h-20 flex-1"
                                 maxLength={200}
-                            ></textarea>
-                            <span className={`text-[11px] mt-1 self-end ${formData.descripcion.length > 180 ? 'text-red-400' : 'text-gray-400'}`}>
+                            />
+                            <span className={`text-[11px] mt-1 self-end ${formData.descripcion.length > 180 ? "text-red-400" : "text-gray-400"}`}>
                                 {formData.descripcion.length}/200
                             </span>
                         </div>
@@ -120,25 +120,32 @@ export default function RoleForm({
                 </div>
             </div>
 
-
             {/* GRID DE PERMISOS */}
             <h3 className="text-xl font-bold text-gray-800 mt-2">
                 Permisos y <span className="text-yellow-500">privilegios</span>
             </h3>
 
-            <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${!isUpdate ? 'mt-1' : ''} flex-1`}>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${!isUpdate ? "mt-1" : ""} flex-1`}>
                 {PERMISSION_SCOPES.map((scope) => {
-                    const currentActions = formData.permisos[scope.name] || [];
-                    const isAllSelected = currentActions.length === scope.actions.length;
+                    // Permisos actuales de este módulo
+                    const currentPermissions = formData.permisos.filter(
+                        p => p.startsWith(`${scope.name}:`)
+                    );
+                    const isAllSelected = scope.actions.every(
+                        a => formData.permisos.includes(`${scope.name}:${a}`)
+                    );
 
                     return (
                         <div key={scope.name} className="bg-white rounded-xl p-3 shadow-sm border border-gray-200 hover:border-yellow-400 transition-all duration-200 flex flex-col justify-center">
                             <div className="flex justify-between items-center mb-2 border-b border-gray-100 pb-1">
-                                <h3 className="font-bold text-gray-800 text-sm truncate" title={scope.name}>{scope.name}</h3>
+                                <h3 className="font-bold text-gray-800 text-sm truncate" title={scope.label}>
+                                    {scope.label}
+                                </h3>
+                                {/* Checkbox para seleccionar todo el módulo */}
                                 <div
                                     onClick={() => handleScopeToggle(scope.name, scope.actions)}
                                     className={`w-5 h-5 rounded cursor-pointer flex items-center justify-center transition
-                                        ${isAllSelected ? 'bg-yellow-500 text-white' : 'bg-gray-200 text-transparent hover:bg-gray-300'}`}
+                                        ${isAllSelected ? "bg-yellow-500 text-white" : "bg-gray-200 text-transparent hover:bg-gray-300"}`}
                                 >
                                     <Check size={14} strokeWidth={4} />
                                 </div>
@@ -146,19 +153,22 @@ export default function RoleForm({
 
                             <div className="flex flex-wrap gap-2 items-center mt-1">
                                 {scope.actions.map(action => {
-                                    const isChecked = currentActions.includes(action);
+                                    const permission = `${scope.name}:${action}`;
+                                    const isChecked  = formData.permisos.includes(permission);
                                     return (
                                         <div key={action} className="flex items-center gap-1.5 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
-                                            <span className="text-[10px] font-bold text-gray-600 uppercase">{action}</span>
+                                            <span className="text-[10px] font-bold text-gray-600 uppercase">
+                                                {action}
+                                            </span>
                                             <div
                                                 onClick={() => handlePermissionChange(scope.name, action)}
                                                 className={`w-4 h-4 rounded-sm hover:scale-110 transition cursor-pointer flex items-center justify-center
-                                                    ${isChecked ? 'bg-green-500 text-white' : 'bg-gray-300 text-transparent'}`}
+                                                    ${isChecked ? "bg-green-500 text-white" : "bg-gray-300 text-transparent"}`}
                                             >
                                                 <Check size={12} strokeWidth={4} />
                                             </div>
                                         </div>
-                                    )
+                                    );
                                 })}
                             </div>
                         </div>
@@ -176,7 +186,6 @@ export default function RoleForm({
                     <span>✕</span>
                     Cancelar
                 </button>
-
                 <PrimaryButton type="submit">
                     {buttonText}
                 </PrimaryButton>

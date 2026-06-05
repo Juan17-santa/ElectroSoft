@@ -10,18 +10,17 @@ export default function UserForm({
     handleSubmit,
     buttonText,
     onCancel,
-    roles = []
+    roles = [],
+    documentTypes = [],
 }) {
 
     const inputClasses = (field) =>
-        `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${
-            errors[field] ? "focus:ring-red-500" : "focus:ring-yellow-400"
+        `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${errors[field] ? "focus:ring-red-500" : "focus:ring-yellow-400"
         }`;
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-min gap-10">
 
-            {/* GRID RESPONSIVE */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 mt-6 px-4 md:px-20">
 
                 {/* TIPO DOCUMENTO */}
@@ -29,16 +28,15 @@ export default function UserForm({
                     <CustomSelect
                         label="Tipo documento *"
                         icon={IdCard}
-                        value={formData.tipoDoc}
+                        value={formData.tipoDoc?.toString() || ""}
                         onChange={(value) =>
                             handleChange({ target: { name: "tipoDoc", value } })
                         }
-                        options={[
-                            { value: "CC", label: "C.C" },
-                            { value: "CE", label: "C.E" },
-                            { value: "NIT", label: "NIT" },
-                            { value: "Pasaporte", label: "Pasaporte" },
-                        ]}
+                        options={documentTypes.map(d => ({
+                            value: d._id.toString(), // ← agregar toString()
+                            label: d.abbreviation,
+                        }))}
+
                         placeholder="Seleccione un tipo"
                         width="w-full"
                     />
@@ -74,14 +72,14 @@ export default function UserForm({
                 <div className="flex flex-col gap-1 w-full">
                     <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                         <User size={16} />
-                        <span>Nombre *</span>
+                        <span>Nombre completo *</span>
                     </div>
                     <input
                         type="text"
                         name="nombre"
                         value={formData.nombre}
                         onChange={handleChange}
-                        placeholder="Ingrese el nombre"
+                        placeholder="Ingrese el nombre completo"
                         className={inputClasses("nombre")}
                     />
                     <ValidationMessage
@@ -138,11 +136,14 @@ export default function UserForm({
                     <CustomSelect
                         label="Rol *"
                         icon={User}
-                        value={formData.rol}
+                        value={formData.rol?.toString() || ""}
                         onChange={(value) =>
                             handleChange({ target: { name: "rol", value } })
                         }
-                        options={roles.map((r) => ({ value: r.nombre, label: r.nombre }))}
+                        options={roles.map(r => ({
+                            value: r._id.toString(), // ← agregar toString()
+                            label: r.nombre,
+                        }))}
                         placeholder="Seleccione un rol"
                         width="w-full"
                     />

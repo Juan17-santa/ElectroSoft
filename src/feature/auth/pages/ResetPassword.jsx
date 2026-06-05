@@ -10,23 +10,23 @@ const getPasswordStrength = (value) => {
   if (!value) return null;
 
   let score = 0;
-  if (value.length >= 6)  score++;   // longitud mínima
+  if (value.length >= 6) score++;   // longitud mínima
   if (value.length >= 10) score++;   // longitud buena
   if (/[A-Z]/.test(value)) score++;  // mayúscula
   if (/[0-9]/.test(value)) score++;  // número
   if (/[^a-zA-Z0-9]/.test(value)) score++; // símbolo
 
-  if (score <= 2) return { label: "Poco segura", color: "text-red-500",   bar: "w-1/3 bg-red-400",    bars: 1 };
-  if (score <= 3) return { label: "Segura",      color: "text-yellow-500", bar: "w-2/3 bg-yellow-400", bars: 2 };
-  return            { label: "Muy segura",        color: "text-green-600",  bar: "w-full bg-green-500", bars: 3 };
+  if (score <= 2) return { label: "Poco segura", color: "text-red-500", bar: "w-1/3 bg-red-400", bars: 1 };
+  if (score <= 3) return { label: "Segura", color: "text-yellow-500", bar: "w-2/3 bg-yellow-400", bars: 2 };
+  return { label: "Muy segura", color: "text-green-600", bar: "w-full bg-green-500", bars: 3 };
 };
 
 export default function ResetPassword() {
   const [showPass1, setShowPass1] = useState(false);
   const [showPass2, setShowPass2] = useState(false);
-  const [pass1, setPass1]         = useState("");
-  const [pass2, setPass2]         = useState("");
-  const [alert, setAlert]         = useState(null);
+  const [pass1, setPass1] = useState("");
+  const [pass2, setPass2] = useState("");
+  const [alert, setAlert] = useState(null);
 
   // Touched
   const [pass1Touched, setPass1Touched] = useState(false);
@@ -80,7 +80,8 @@ export default function ResetPassword() {
   };
 
   // ─── Envío ────────────────────────────────────────────────────────────────
-  const handleReset = () => {
+  // ─── Envío ────────────────────────────────────────────────────────────────
+  const handleReset = async () => {
     setPass1Touched(true);
     setPass2Touched(true);
 
@@ -104,9 +105,14 @@ export default function ResetPassword() {
 
     if (!valid) return;
 
-    resetPassword(pass1);
-    setAlert({ type: "success", message: "Contraseña cambiada con éxito." });
-    setTimeout(() => navigate("/"), 2000);
+    const result = await resetPassword(pass1); // solo la nueva contraseña
+
+    if (result.ok) {
+      setAlert({ type: "success", message: "Contraseña cambiada con éxito." });
+      setTimeout(() => navigate("/"), 2000);
+    } else {
+      setAlert({ type: "error", message: result.message });
+    }
   };
 
   // ─── Helper clase input ───────────────────────────────────────────────────
@@ -115,8 +121,8 @@ export default function ResetPassword() {
     ${touched && error
       ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"
       : touched && !error
-      ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400"
-      : "focus:ring-yellow-400"
+        ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400"
+        : "focus:ring-yellow-400"
     }`;
 
   return (
