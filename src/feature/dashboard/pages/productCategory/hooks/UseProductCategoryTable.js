@@ -31,7 +31,7 @@ export default function useProductCategoryTable({
 
     // FUNCION PARA ELIMINAR UNA CATEGORIA DE PRODUCTO
     const deleteCategory = (id) => {
-        const categoryToDelete = categories.find(cat => cat._id === id);
+        const categoryToDelete = categories.find(cat => cat.id === id);
 
         if (!categoryToDelete) {
             showAlert("error", "Categoría no encontrada");
@@ -50,9 +50,8 @@ export default function useProductCategoryTable({
                     setConfirmData(null);
                     showAlert("success", "Categoría eliminada con éxito");
                 } catch (error) {
-                    console.error(error);
                     setConfirmData(null);
-                    showAlert("error", "No se pudo eliminar la categoría");
+                    showAlert("error", error.message || "No se pudo eliminar la categoría");
                 }
             },
             onCancel: () => setConfirmData(null),

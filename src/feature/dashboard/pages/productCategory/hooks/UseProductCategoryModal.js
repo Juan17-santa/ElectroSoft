@@ -28,7 +28,7 @@ export default function useProductCategoryModal({
                 name: initialData.name || "",
                 description: initialData.description || "",
                 status: initialData.status !== undefined ? initialData.status : true,
-                _id: initialData._id
+                id: initialData.id
             });
         } else {
             setFormData(defaultState);
@@ -84,7 +84,7 @@ export default function useProductCategoryModal({
             if (mode === "create") {
                 await ServiceProductCategory.create(formData);
             } else if (mode === "update") {
-                await ServiceProductCategory.update(formData._id, formData);
+                await ServiceProductCategory.update(formData.id, formData);
             }
 
             if (onSuccess) onSuccess();

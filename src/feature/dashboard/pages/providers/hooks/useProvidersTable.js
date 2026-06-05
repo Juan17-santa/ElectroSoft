@@ -82,20 +82,20 @@ export default function useProvidersTable({
         });
     };
 
-    // FILTRADO DEL BUSCADOR OPTIMIZADO (INCLUYE CATEGORÍAS Y CORRIGE BUGS)
+    // FILTRADO DEL BUSCADOR (INCLUYE CATEGORÍAS ASOCIADAS)
     const filteredProviders = providers.filter(pro => {
         const query = searchTerm.trim().toLowerCase();
-        if (!query) return true; // Si no hay búsqueda, pasan todos
+        if (!query) return true;
 
         // CONVERTIR TELEFONO Y DOCUMENTO A STRING PARA EVITAR ERRORES DE TIPO
         const phone = pro.contactPhone ? String(pro.contactPhone) : "";
         const documentStr = pro.document ? String(pro.document).toLowerCase() : "";
 
-        // EXTRAER ABREVIATURA Y NOMBRE DEL TIPO DE DOCUMENTO PARA BUSQUEDA (Si vienen poblados)
+        // EXTRAER ABREVIATURA Y NOMBRE DEL TIPO DE DOCUMENTO PARA BUSQUEDA
         const docTypeAbbreviation = pro.documentType?.abbreviation ? String(pro.documentType.abbreviation).toLowerCase() : "";
         const docTypeName = pro.documentType?.name ? String(pro.documentType.name).toLowerCase() : "";
 
-        // BUSQUEDA EN CATEGORÍAS: Verifica si alguna categoría asociada coincide con el término de búsqueda
+        // BUSQUEDA EN CATEGORÍAS ASOCIADAS
         const matchesCategory = pro.categoriesAssociated?.some(cat => {
             const catName = cat.name || cat.nombre || "";
             return String(catName).toLowerCase().includes(query);

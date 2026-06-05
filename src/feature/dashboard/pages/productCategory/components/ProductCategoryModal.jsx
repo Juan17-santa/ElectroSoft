@@ -11,7 +11,7 @@ export default function ProductCategoryModal({
 }) {
 
     // DETERMINAR SI EL MODAL ES PARA EDITAR O PARA CREAR
-    const isEdit = Boolean(categoryData && categoryData._id);
+    const isEdit = Boolean(categoryData && categoryData.id);
 
     // USO DEL HOOK PERSONALIZADO PARA MANEJAR EL FORMULARIO
     const {

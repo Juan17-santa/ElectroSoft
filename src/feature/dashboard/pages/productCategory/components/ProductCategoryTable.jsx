@@ -81,7 +81,7 @@ export default function ProductCategoryTable({
                                                     {/* SWITCH CAMBIAR ESTADO */}
                                                     <div className="flex justify-center items-center gap-2">
                                                         <div
-                                                            onClick={() => onToggleEstado(category._id)}
+                                                            onClick={() => onToggleEstado(category.id)}
                                                             className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
                                                                 ${category.status ? "bg-green-500" : "bg-red-500"}`}
                                                         >
@@ -97,7 +97,7 @@ export default function ProductCategoryTable({
                                                 <Restricted scope="Categoria de productos" action="Eliminar">
                                                     <button
                                                         className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                        onClick={() => onDelete(category._id)}
+                                                        onClick={() => onDelete(category.id)}
                                                     >
                                                         <Trash size={18} className="text-red-600" />
                                                     </button>

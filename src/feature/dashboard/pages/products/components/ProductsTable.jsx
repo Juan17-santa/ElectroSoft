@@ -26,7 +26,9 @@ import { Trash, Pencil, Eye } from "lucide-react";
 
 export default function ProductsTable({
     data,
-    firstIndex,
+    loading = false,
+    currentPage = 1,
+    recordsPerPage = 6,
     onDetails,
     onEdit,
     onToggleEstado,
@@ -34,9 +36,9 @@ export default function ProductsTable({
 }) {
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-            <div className="bg-gray-100 rounded-2xl overflow-hidden">
+            <div className="bg-gray-100 rounded-2xl overflow-x-auto">
 
-                <table className="w-full text-sm table-fixed">
+                <table className="min-w-250 w-full text-sm table-fixed">
 
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
@@ -51,95 +53,90 @@ export default function ProductsTable({
                     </thead>
 
                     <tbody className="bg-white text-gray-700">
-                        {data.length > 0 ? (
-                            data.map((product, index) => (
-                                <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                        {loading ? (
+                            <tr>
+                                <td colSpan="7" className="text-center py-4 text-gray-500">
+                                    Cargando productos...
+                                </td>
+                            </tr>
+                        ) : data.length > 0 ? (
+                            data.map((product, index) => {
+                                const consecutivo = (currentPage - 1) * recordsPerPage + index + 1;
+                                const idFormateado = String(consecutivo).padStart(2, '0');
 
-                                    {/* ID REAL PAGINADO */}
-                                    <td className="px-4 py-2">
-                                        {firstIndex + index + 1}
-                                    </td>
+                                return (
+                                    <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
 
-                                    <td className="px-4 py-2 font-medium">
-                                        {product.nombre}
-                                    </td>
+                                        <td className="px-4 py-2">{idFormateado}</td>
 
-                                    <td className="px-4 py-2">
-                                        {product.categoriaName || "Sin categoría"}
-                                    </td>
+                                        <td className="px-4 py-2 font-medium">{product.nombre}</td>
 
-                                    <td className="px-4 py-2">
-                                        ${product.precio?.toLocaleString()}
-                                    </td>
+                                        <td className="px-4 py-2">{product.categoriaName || "Sin categoría"}</td>
 
-                                    <td className="px-4 py-2">
-                                        <div className="flex flex-col">
-                                            <span>{product.stock}</span>
-                                            <span className="text-xs text-gray-400">
-                                                {product.tipoStock === "metros" ? "MTRS" : "UND"}
-                                            </span>
-                                        </div>
-                                    </td>
+                                        <td className="px-4 py-2">${product.precio?.toLocaleString()}</td>
 
-                                    <td className="px-4 py-2">
-                                        <div className="flex items-center gap-2">
-                                            <span
-                                                className={`w-2.5 h-2.5 rounded-full 
-                            ${product.estado ? "bg-green-500" : "bg-red-500"}`}
-                                            />
-                                            <span className="text-sm">
-                                                {product.estado ? "Activo" : "Inactivo"}
-                                            </span>
-                                        </div>
-                                    </td>
-
-                                    <td className="px-4 py-2">
-                                        <div className="flex justify-center gap-3 items-center">
-
-                                            {/* VER DETALLE */}
-                                            <button
-                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition"
-                                                onClick={() => onDetails(product)}
-                                            >
-                                                <Eye size={18} className="text-blue-600" />
-                                            </button>
-
-                                            {/* EDITAR */}
-                                            <button
-                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
-                                                onClick={() => onEdit(product)}
-                                            >
-                                                <Pencil size={18} className="text-yellow-600" />
-                                            </button>
-
-                                            {/* TOGGLE */}
-                                            <div
-                                                onClick={() => onToggleEstado(product.id)}
-                                                className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${product.estado ? "bg-green-500" : "bg-red-500"
-                                                    }`}
-                                            >
-                                                <div
-                                                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
-                                ${product.estado ? "translate-x-4" : "translate-x-0"}`}
-                                                />
+                                        <td className="px-4 py-2">
+                                            <div className="flex flex-col">
+                                                <span>{product.stock}</span>
+                                                <span className="text-xs text-gray-400">
+                                                    {product.tipoStock === "metros" ? "MTRS" : "UND"}
+                                                </span>
                                             </div>
+                                        </td>
 
-                                            {/* ELIMINAR */}
-                                            <button
-                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition"
-                                                onClick={() => onDelete(product.id)}
-                                            >
-                                                <Trash size={18} className="text-red-600" />
-                                            </button>
+                                        <td className="px-4 py-2">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className={`w-2.5 h-2.5 rounded-full ${product.estado ? "bg-green-500" : "bg-red-500"}`}
+                                                />
+                                                <span className="text-sm">
+                                                    {product.estado ? "Activo" : "Inactivo"}
+                                                </span>
+                                            </div>
+                                        </td>
 
-                                        </div>
-                                    </td>
+                                        <td className="px-4 py-2">
+                                            <div className="flex justify-center gap-3 items-center">
 
-                                </tr>
-                            ))
+                                                <button
+                                                    className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition"
+                                                    onClick={() => onDetails(product)}
+                                                >
+                                                    <Eye size={18} className="text-blue-600" />
+                                                </button>
+
+                                                <button
+                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
+                                                    onClick={() => onEdit(product)}
+                                                >
+                                                    <Pencil size={18} className="text-yellow-600" />
+                                                </button>
+
+                                                <div
+                                                    onClick={() => onToggleEstado(product.id)}
+                                                    className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition ${product.estado ? "bg-green-500" : "bg-red-500"}`}
+                                                >
+                                                    <div
+                                                        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition ${product.estado ? "translate-x-4" : "translate-x-0"}`}
+                                                    />
+                                                </div>
+
+                                                <button
+                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition"
+                                                    onClick={() => onDelete(product.id)}
+                                                >
+                                                    <Trash size={18} className="text-red-600" />
+                                                </button>
+
+                                            </div>
+                                        </td>
+
+                                    </tr>
+                                );
+                            })
                         ) : (
                             <tr>
-                                <td colSpan="7" className="text-center py-6 text-gray-400">
+                                <td colSpan="7" className="text-center py-4 text-gray-400">
                                     No se encontraron productos
                                 </td>
                             </tr>

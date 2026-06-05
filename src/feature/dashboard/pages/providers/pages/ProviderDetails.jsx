@@ -37,17 +37,10 @@ export default function ProviderDetails() {
 
     if (loading) {
         return (
-            <div className="bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col gap-6 w-full shadow-inner h-full animate-pulse">
-                <div className="bg-white rounded-3xl p-4 md:p-8 shadow-lg h-full flex flex-col gap-6">
-                    <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-                    <div className="bg-gray-50 rounded-2xl p-4 md:p-8 w-full max-w-3xl mx-auto flex flex-col gap-6">
-                        <div className="h-5 bg-gray-200 rounded w-1/3"></div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8">
-                            <div className="h-12 bg-gray-200 rounded-xl"></div>
-                            <div className="h-12 bg-gray-200 rounded-xl"></div>
-                        </div>
-                    </div>
-                </div>
+            <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
+                <p className="text-gray-500 text-sm animate-pulse">
+                    Cargando detalles del pedido...
+                </p>
             </div>
         );
     }
@@ -55,7 +48,7 @@ export default function ProviderDetails() {
     if (!provider) {
         return (
             <div className="bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col items-center justify-center h-full shadow-inner gap-4">
-                <p className="text-gray-500 text-sm font-medium">
+                <p className="text-gray-500 text-sm font-medium mb-6">
                     No se encontró la información del proveedor.
                 </p>
                 <button

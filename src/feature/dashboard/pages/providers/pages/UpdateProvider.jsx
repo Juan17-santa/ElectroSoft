@@ -17,7 +17,7 @@ export default function UpdateProvider() {
     const [categoriasActivas, setCategoriasActivas] = useState([]); 
     const [loading, setLoading] = useState(true); 
 
-    // INSTANCIAMOS EL HOOK DIRECTAMENTE AL INICIO (Como tú lo querías)
+    // INSTANCIAMOS EL HOOK DIRECTAMENTE AL INICIO
     const {
         formData,
         errors,
