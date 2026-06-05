@@ -21,7 +21,7 @@ Dependencias:
 - Validations → Para reglas de validación reutilizables
 */
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ServicesProducts } from "../services/ServicesProducts";
 
@@ -45,6 +45,29 @@ export default function useProductForm({
 
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
+    
+    // ESTADO PARA ALMACENAR PRODUCTOS EXISTENTES (para validar serial)
+    const [existingProducts, setExistingProducts] = useState([]);
+    
+    // ESTADO PARA INDICAR SI SE ESTÁ VALIDANDO EL SERIAL
+    const [validatingSerial, setValidatingSerial] = useState(false);
+    
+    // REF PARA CONTROLAR LOS TIMEOUTS DE VALIDACIÓN ASINCRÓNICA
+    const validationTimeoutRef = useRef(null);
+
+    // CARGAR PRODUCTOS AL MONTAR PARA VALIDAR SERIALES
+    useEffect(() => {
+        const loadProducts = async () => {
+            try {
+                const products = await ServicesProducts.get();
+                setExistingProducts(products || []);
+            } catch (error) {
+                console.error("Error al cargar productos para validación:", error);
+            }
+        };
+        
+        loadProducts();
+    }, []);
 
     // VALIDACIÓN INDIVIDUAL POR CAMPO
     const validateField = (name, value) => {
@@ -131,7 +154,7 @@ export default function useProductForm({
         return error;
     };
 
-    // HANDLE CHANGE CON VALIDACIÓN EN TIEMPO REAL
+    // HANDLE CHANGE CON VALIDACIÓN EN TIEMPO REAL (incluyendo serial)
     const handleChange = (e) => {
 
         const { name, value } = e.target;
@@ -147,6 +170,36 @@ export default function useProductForm({
             ...prev,
             [name]: error
         }));
+
+        // VALIDACIÓN ASINCRÓNICA ESPECIAL PARA SERIAL
+        if (name === "serial" && !error) {
+            // Limpiar timeout anterior si existe
+            if (validationTimeoutRef.current) {
+                clearTimeout(validationTimeoutRef.current);
+            }
+
+            setValidatingSerial(true);
+
+            // Esperar a que el usuario deje de escribir antes de validar
+            validationTimeoutRef.current = setTimeout(() => {
+                const serialAlreadyExists = existingProducts.some(prod => 
+                    prod.serial?.toLowerCase() === value.toLowerCase()
+                );
+
+                if (serialAlreadyExists) {
+                    setErrors(prev => ({
+                        ...prev,
+                        serial: "Este serial ya existe en otro producto"
+                    }));
+                } else {
+                    setErrors(prev => ({
+                        ...prev,
+                        serial: ""
+                    }));
+                }
+                setValidatingSerial(false);
+            }, 500); // Esperar 500ms después de que deje de escribir
+        }
     };
 
     // VALIDAR TODO EL FORMULARIO

@@ -44,7 +44,7 @@ export default function ProductCategoryTable({
                                 const idFormateado = String(consecutivo).padStart(2, '0');
 
                                 return (
-                                    <tr key={category._id} className="border-b border-gray-300">
+                                    <tr key={category.id} className="border-b border-gray-300">
                                         <td className="px-4 py-1">{idFormateado}</td>
                                         <td className="px-4 py-1">{category.name}</td>
                                         <td className="px-4 py-1 max-w-md">

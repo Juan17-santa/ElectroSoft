@@ -196,5 +196,25 @@ export const ServicesProducts = {
             console.error("Error en toggleEstado:", error);
             throw error;
         }
+    },
+
+    /**
+     * Verificar si un serial ya existe (para validación de unicidad)
+     * @param {string} serial - Serial a verificar
+     * @param {string} excludeId - ID del producto a excluir (opcional, para edición)
+     * @returns {boolean} true si el serial ya existe
+     */
+    async checkSerialExists(serial, excludeId = null) {
+        try {
+            const productos = await this.get();
+            const serialExists = productos.some(prod => 
+                prod.serial?.toLowerCase() === serial.toLowerCase() && 
+                prod.id !== excludeId
+            );
+            return serialExists;
+        } catch (error) {
+            console.error("Error en checkSerialExists:", error);
+            throw error;
+        }
     }
 };
