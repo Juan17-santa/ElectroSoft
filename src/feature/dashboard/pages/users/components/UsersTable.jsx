@@ -45,7 +45,7 @@ export default function UsersTable({
 
                                     {/* DOCUMENTO */}
                                     <td className="px-3 py-2 truncate">
-                                        {user.tipoDoc || "-"}<br />
+                                        {user.tipoDocLabel || "-"}<br />
                                         {user.documento || "-"}
                                     </td>
 
@@ -64,9 +64,10 @@ export default function UsersTable({
                                         {user.telefono || "-"}
                                     </td>
 
+
                                     {/* ROL */}
                                     <td className="px-3 py-2">
-                                        {user.rol || "-"}
+                                        {user.rolLabel || "-"}
                                     </td>
 
                                     {/* ESTADO */}
@@ -105,7 +106,7 @@ export default function UsersTable({
                                             </Restricted>
 
                                             {/* TOGGLE ESTADO */}
-                                            <Restricted scope="Usuarios" action="Editar">
+                                            <Restricted scope="Usuarios" action="Estado">
                                                 <div className="flex justify-center items-center gap-2">
                                                     <div
                                                         onClick={() => onToggleEstado(user.id)}

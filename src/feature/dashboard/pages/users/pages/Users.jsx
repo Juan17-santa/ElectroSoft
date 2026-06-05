@@ -34,10 +34,23 @@ export default function Users() {
         getUsers();
     }, []);
 
-    const getUsers = () => {
+
+    const getUsers = async () => {
         try {
-            const response = usersService.get();
-            setUsers(response);
+            const response = await usersService.get();
+            const mapped = response.map(u => ({
+                id: u._id,
+                nombre: u.fullName,
+                email: u.email,
+                telefono: u.phone,
+                tipoDoc: u.documentType?._id?.toString() || "",
+                tipoDocLabel: u.documentType?.abbreviation || "",
+                documento: u.documentNumber,
+                rol: u.role?._id?.toString() || "",
+                rolLabel: u.role?.name || "",
+                estado: u.isActive,
+            }));
+            setUsers(mapped);
         } catch (error) {
             console.error(error);
         }

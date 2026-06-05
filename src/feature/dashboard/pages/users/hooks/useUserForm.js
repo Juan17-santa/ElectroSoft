@@ -4,9 +4,6 @@ import { Validations } from "../../../../../utils/validations";
 
 export function useUserForm({ userToEdit, navigate }) {
 
-    // =========================
-    // STATE
-    // =========================
     const [formData, setFormData] = useState({
         tipoDoc: "",
         documento: "",
@@ -19,209 +16,116 @@ export function useUserForm({ userToEdit, navigate }) {
 
     const [errors, setErrors] = useState({});
     const [alert, setAlert] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-    // =========================
-    // CARGAR USUARIO (EDIT)
-    // =========================
+    // CARGAR USUARIO A EDITAR
     useEffect(() => {
         if (userToEdit) {
-            setFormData(userToEdit);
+            setFormData({
+                id: userToEdit.id,
+                tipoDoc: userToEdit.tipoDoc?.toString() || "",
+                documento: userToEdit.documento || "",
+                nombre: userToEdit.nombre || "",
+                email: userToEdit.email || "",
+                telefono: userToEdit.telefono || "",
+                rol: userToEdit.rol?.toString() || "",
+                estado: userToEdit.estado ?? true,
+            });
         }
     }, [userToEdit]);
 
-    // =========================
     // VALIDACIONES
-    // =========================
     const validateField = (name, value) => {
-
         let error = "";
-
         switch (name) {
-
             case "tipoDoc":
                 if (!value) error = "Seleccione un tipo de documento";
                 break;
-
             case "documento":
-                if (!value) {
-                    error = "El documento es obligatorio";
-                } else if (!Validations.soloNumeros(value)) {
-                    error = "Solo números permitidos";
-                } else if (value.length < 8 || value.length > 12) {
-                    error = "Debe tener entre 8 y 12 dígitos";
-                }
+                if (!value) error = "El documento es obligatorio";
+                else if (!Validations.soloNumeros(value)) error = "Solo números permitidos";
+                else if (value.length < 8 || value.length > 12) error = "Debe tener entre 8 y 12 dígitos";
                 break;
-
             case "nombre":
-                if (!value) {
-                    error = "El nombre es obligatorio";
-                } else if (!Validations.soloLetras(value)) {
-                    error = "Solo letras permitidas";
-                }
+                if (!value) error = "El nombre es obligatorio";
+                else if (!Validations.soloLetras(value)) error = "Solo letras permitidas";
                 break;
-
             case "email":
-                if (!value) {
-                    error = "El email es obligatorio";
-                } else if (!Validations.formatoEmail(value)) {
-                    error = "Formato inválido";
-                }
+                if (!value) error = "El email es obligatorio";
+                else if (!Validations.formatoEmail(value)) error = "Formato inválido";
                 break;
-
             case "telefono":
-                if (!value) {
-                    error = "El teléfono es obligatorio";
-                } else if (!Validations.soloNumeros(value)) {
-                    error = "Solo números";
-                } else if (value.length < 8 || value.length > 14) {
-                    error = "Debe tener entre 8 y 14 dígitos";
-                }
+                if (!value) error = "El teléfono es obligatorio";
+                else if (!Validations.soloNumeros(value)) error = "Solo números";
+                else if (value.length < 8 || value.length > 14) error = "Debe tener entre 8 y 14 dígitos";
                 break;
-
             case "rol":
                 if (!value) error = "Seleccione un rol";
                 break;
-
             default:
                 break;
         }
-
         return error;
     };
 
-    const handleSubmit = (e, mode) => {
-
-    e.preventDefault();
-
-    // Validar
-    if (!validateForm()) return;
-
-    let updated;
-
-    if (mode === "create") {
-        updated = createUser();
-    }
-
-    if (mode === "update") {
-        updated = updateUser();
-    }
-
-    // Si hubo error
-    if (!updated) return;
-
-    // Redirigir después de 2 segundos
-    setTimeout(() => {
-        navigate("/dashboard/users");
-    }, 1500);
-};
-
-
-    // =========================
-    // HANDLE CHANGE
-    // =========================
     const handleChange = (e) => {
-
         const { name, value } = e.target;
-
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-
-        const error = validateField(name, value);
-
-        setErrors(prev => ({
-            ...prev,
-            [name]: error
-        }));
+        setFormData(prev => ({ ...prev, [name]: value }));
+        setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
     };
 
-    // =========================
-    // VALIDAR FORM COMPLETO
-    // =========================
     const validateForm = () => {
-
-        let newErrors = {};
-
-        Object.keys(formData).forEach(field => {
-            const error = validateField(field, formData[field]);
-            if (error) newErrors[field] = error;
+        const fields = ["tipoDoc", "documento", "nombre", "email", "telefono", "rol"];
+        const newErrors = {};
+        fields.forEach(f => {
+            const error = validateField(f, formData[f]);
+            if (error) newErrors[f] = error;
         });
-
         setErrors(newErrors);
-
         return Object.keys(newErrors).length === 0;
     };
 
-    // =========================
-    // CREATE
-    // =========================
-   const createUser = () => {
+    // CREAR
+    const createUser = async () => {
+        try {
+            setLoading(true);
+            await usersService.create(formData);
+            setAlert({ type: "success", message: "Usuario creado correctamente" });
+            return true;
+        } catch (error) {
+            const message = error.response?.data?.message || "Error al crear usuario";
+            setAlert({ type: "error", message });
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const users = usersService.get();
-
-    const existeEmail = users.some(u =>
-        u.email.toLowerCase() === formData.email.toLowerCase()
-    );
-
-    if (existeEmail) {
-        setAlert({
-            type: "error",
-            message: "El email ya está registrado"
-        });
-        return null;
-    }
-
-    const updated = usersService.create(formData);
-
-    setAlert({
-        type: "success",
-        message: "Usuario creado correctamente"
-    });
-
-    return updated; // 🔥 IMPORTANTE
-};
-
-    // =========================
-    // UPDATE
-    // =========================
-    const updateUser = () => {
-
-    const users = usersService.get();
-
-    const existeEmail = users.some(u =>
-        u.email.toLowerCase() === formData.email.toLowerCase() &&
-        u.id !== formData.id
-    );
-
-    if (existeEmail) {
-        setAlert({
-            type: "error",
-            message: "El email ya está registrado"
-        });
-        return null;
-    }
-
-    const updated = usersService.update(formData);
-
-    setAlert({
-        type: "success",
-        message: "Usuario actualizado correctamente"
-    });
-
-    return updated; // 🔥 IMPORTANTE
-};
+    // ACTUALIZAR
+    const updateUser = async () => {
+        try {
+            setLoading(true);
+            await usersService.update(formData);
+            setAlert({ type: "success", message: "Usuario actualizado correctamente" });
+            return true;
+        } catch (error) {
+            const message = error.response?.data?.message || "Error al actualizar usuario";
+            setAlert({ type: "error", message });
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return {
-    formData,
-    errors,
-    alert,
-    setAlert,
-    handleChange,
-    validateForm,
-    createUser,
-    updateUser,
-    handleSubmit // 🔥
-};
-
+        formData,
+        errors,
+        alert,
+        setAlert,
+        loading,
+        handleChange,
+        validateForm,
+        createUser,
+        updateUser,
+    };
 }

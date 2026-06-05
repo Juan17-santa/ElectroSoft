@@ -4,16 +4,37 @@ import { X } from "lucide-react";
 import Alert from "../../../components/ui/Alert";
 import UserForm from "../components/UserForm";
 import { useUserForm } from "../hooks/useUserForm";
-import { RolesService } from "../../Roles/services/RolesService"; 
+import api from "../../../../../utils/api.js";
 
 export default function CreateUser() {
-
     const navigate = useNavigate();
     const [roles, setRoles] = useState([]);
+    const [documentTypes, setDocumentTypes] = useState([]);
 
-    // Carga los roles del localStorage al montar el componente
+    // Cargar roles y tipos de documento desde el backend
     useEffect(() => {
-        setRoles(RolesService.get());
+        const loadData = async () => {
+            try {
+                const [rolesRes, docTypesRes] = await Promise.all([
+                    api.get("/roles/list"),
+                    api.get("/documentTypes"),
+                ]);
+                // Mapear al formato que espera el select
+                setRoles(rolesRes.data.data.map(r => ({
+                    _id: r._id,
+                    nombre: r.name,
+                })));
+
+                setDocumentTypes(docTypesRes.data.data.map(d => ({
+                    _id: d._id,
+                    nombre: d.name,
+                    abbreviation: d.abbreviation,
+                })));
+            } catch (error) {
+                console.error("Error cargando datos:", error);
+            }
+        };
+        loadData();
     }, []);
 
     const {
@@ -21,65 +42,50 @@ export default function CreateUser() {
         errors,
         alert,
         setAlert,
+        loading,
         handleChange,
         validateForm,
-        createUser
+        createUser,
     } = useUserForm({ navigate });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (!validateForm()) return;
-
-        const success = createUser();
-
+        const success = await createUser();
         if (success) {
-            setTimeout(() => {
-                navigate("/dashboard/users");
-            }, 2000);
+            setTimeout(() => navigate("/dashboard/users"), 2000);
         }
     };
 
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
-
                 <div className="flex justify-between items-start">
                     <div>
-                        <p className="text-lg sm:text-xl font-semibold mb-1">
-                            Nuevo usuario
-                        </p>
-                        <p className="text-xs sm:text-sm text-gray-600">
-                            Complete todos los campos del formulario
-                        </p>
+                        <p className="text-lg sm:text-xl font-semibold mb-1">Nuevo usuario</p>
+                        <p className="text-xs sm:text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
-
-                    {/* BOTÓN X */}
-                    <button
-                        onClick={() => navigate("/dashboard/users")}
-                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
-                    >
+                    <button onClick={() => navigate("/dashboard/users")}
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
                         <X size={20} />
                     </button>
                 </div>
 
+                
                 <UserForm
                     formData={formData}
                     errors={errors}
                     handleChange={handleChange}
                     handleSubmit={handleSubmit}
                     onCancel={() => navigate("/dashboard/users")}
-                    buttonText="Crear usuario"
+                    buttonText={loading ? "Creando..." : "Crear usuario"}
                     roles={roles}
+                    documentTypes={documentTypes}
                 />
             </div>
 
             {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
+                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );
