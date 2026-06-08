@@ -37,9 +37,7 @@ export default function ReturnSalesPage() {
     useEffect(() => {
         const idVentaState = location.state?.idVenta;
         if (idVentaState) {
-            const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
-            const found = ventas.find((v) => String(v.id) === String(idVentaState));
-            setSale(found ?? null);
+            SalesService.getById(idVentaState).then(found => setSale(found || null)).catch(e => console.error(e));
         } else {
             const data = localStorage.getItem("saleToReturn");
             if (data) setSale(JSON.parse(data));

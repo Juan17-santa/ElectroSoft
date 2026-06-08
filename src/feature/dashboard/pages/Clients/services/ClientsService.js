@@ -1,120 +1,109 @@
-import { ServicesDevolutions } from "../../devolutions/services/ServicesDevolutions";
-import { SalesService } from "../../SalesManagement/services/SalesService";
+import api from "../../../../../utils/api.js";
 
-const KEY = "clients";
+// Mapea el modelo del backend al modelo del frontend
+const mapClientToFrontend = (client) => {
+    return {
+        id: client._id,
+        tipoDocumento: client.documentType?.name || client.documentType,
+        documentTypeId: client.documentType?._id || client.documentType,
+        documento: client.documentNumber,
+        nombres: client.firstName,
+        apellidos: client.lastName,
+        email: client.email,
+        telefono: client.phone,
+        estado: client.estado !== undefined ? client.estado : true,
+        cupoActivo: client.cupoActivo || false,
+        cupoTotal: client.cupoTotal || 0,
+        fechaCreacion: client.createdAt ? new Date(client.createdAt).toISOString().split('T')[0] : "",
+    };
+};
 
 export const ClientsService = {
-
-    get() {
-        const data = localStorage.getItem(KEY);
-        const clients = data ? JSON.parse(data) : [];
-
+    async get() {
         try {
-            const devolutions = ServicesDevolutions.get() || [];
-            const sales = SalesService.get() || [];
-
-            return clients.map(client => {
-                // Filtrar ventas de este cliente que no estén Anuladas
-                const clientSales = sales.filter(s =>
-                    s.numeroDocumento === client.documento &&
-                    s.estado !== "Anulado"
-                );
-
-                // Calcular el total vendido (sin descontar devoluciones aún)
-                const totalVendido = clientSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
-
-                // Calcular el total devuelto para este cliente (basado en devoluciones de sus ventas no anuladas)
-                const totalDevuelto = devolutions.reduce((sum, dev) => {
-                    const saleOfDev = clientSales.find(s => String(s.id) === String(dev.idVenta));
-                    if (saleOfDev) {
-                        // Buscar el precio del producto en la venta original para descontarlo correctamente
-                        const prodInSale = saleOfDev.productos.find(p => p.nombre === dev.producto);
-                        const precio = prodInSale ? prodInSale.precio : 0;
-                        return sum + (precio * (dev.cantidad || 0));
-                    }
-                    return sum;
-                }, 0);
-
-                return {
-                    ...client,
-                    totalCompras: Math.max(0, totalVendido - totalDevuelto)
-                };
-            });
+            const response = await api.get('/clients');
+            const data = response.data;
+            const clients = Array.isArray(data) ? data : (data.data || []);
+            return clients.map(mapClientToFrontend);
         } catch (error) {
-            console.error("Error calculando totalCompras:", error);
-            return clients;
+            console.error("Error fetching clients:", error);
+            throw error;
         }
     },
 
-    create({ tipoDocumento, documento, nombres, apellidos, email, telefono }) {
-
-        const clients = this.get();
-
-        const nuevoClient = {
-            id: Date.now(),
-            tipoDocumento,
-            documento,
-            nombres,
-            apellidos,
-            email,
-            telefono,
-            totalCompras: 0,
-            fechaCreacion: new Date().toISOString().split('T')[0],
-            estado: true
-        };
-
-        const nuevosClients = [...clients, nuevoClient];
-
-        localStorage.setItem(KEY, JSON.stringify(nuevosClients));
-
-        return nuevoClient;
+    async getById(id) {
+        try {
+            const response = await api.get(`/clients/${id}`);
+            const data = response.data.data || response.data;
+            return mapClientToFrontend(data);
+        } catch (error) {
+            console.error("Error fetching client by ID:", error);
+            throw error;
+        }
     },
 
-    update(clientActualizado) {
-
-        const clients = this.get();
-
-        const nuevosClients = clients.map(client => client.id === clientActualizado.id ? clientActualizado : client);
-
-        localStorage.setItem(KEY, JSON.stringify(nuevosClients));
-
-        return nuevosClients;
+    async create({ tipoDocumento, documento, nombres, apellidos, email, telefono }) {
+        try {
+            const payload = {
+                documentType: tipoDocumento,
+                documentNumber: documento,
+                firstName: nombres,
+                lastName: apellidos,
+                email,
+                phone: telefono
+            };
+            const response = await api.post('/clients', payload);
+            const data = response.data.data || response.data.client || response.data;
+            return mapClientToFrontend(data);
+        } catch (error) {
+            console.error("Error creating client:", error);
+            throw error;
+        }
     },
 
-    delete(id) {
-
-        const data = JSON.parse(localStorage.getItem(KEY)) || [];
-
-        const newData = data.filter(client => client.id !== id);
-
-        localStorage.setItem(KEY, JSON.stringify(newData));
-
-        return newData;
+    async update(clientActualizado) {
+        try {
+            const payload = {
+                documentType: clientActualizado.tipoDocumento || clientActualizado.documentTypeId,
+                documentNumber: clientActualizado.documento,
+                firstName: clientActualizado.nombres,
+                lastName: clientActualizado.apellidos,
+                email: clientActualizado.email,
+                phone: clientActualizado.telefono
+            };
+            const response = await api.put(`/clients/${clientActualizado.id}`, payload);
+            const data = response.data.data || response.data.client || response.data;
+            return mapClientToFrontend(data);
+        } catch (error) {
+            console.error("Error updating client:", error);
+            throw error;
+        }
     },
 
-    toggleEstado(id) {
+    // Actualiza SOLO cupo y/o estado en el backend
+    async updateCupo(id, { cupoTotal, cupoActivo, estado }) {
+        try {
+            const payload = {};
+            if (cupoTotal !== undefined) payload.cupoTotal = Number(cupoTotal);
+            if (cupoActivo !== undefined) payload.cupoActivo = Boolean(cupoActivo);
+            if (estado !== undefined) payload.estado = Boolean(estado);
 
-        const clients = this.get();
-
-        const nuevosClients = clients.map(client =>
-            client.id === id
-                ? { ...client, estado: !client.estado }
-                : client
-        );
-
-        localStorage.setItem(KEY, JSON.stringify(nuevosClients));
-
-        return nuevosClients;
+            const response = await api.patch(`/clients/${id}/cupo`, payload);
+            const data = response.data.client || response.data;
+            return mapClientToFrontend(data);
+        } catch (error) {
+            console.error("Error updating cupo/estado:", error);
+            throw error;
+        }
     },
 
-    sumarCompra(documento, monto) {
-        const clients = this.get();
-        const nuevosClients = clients.map(client =>
-            client.documento === documento
-                ? { ...client, totalCompras: (client.totalCompras || 0) + monto }
-                : client
-        );
-        localStorage.setItem(KEY, JSON.stringify(nuevosClients));
-        return nuevosClients;
-    },
-}
+    async delete(id) {
+        try {
+            await api.delete(`/clients/${id}`);
+            return true;
+        } catch (error) {
+            console.error("Error deleting client:", error);
+            throw error;
+        }
+    }
+};

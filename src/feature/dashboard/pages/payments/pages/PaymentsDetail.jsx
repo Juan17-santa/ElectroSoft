@@ -14,8 +14,11 @@ export default function PaymentDetail() {
     const [venta, setVenta] = useState(location.state?.payment || null);
 
     useEffect(() => {
-        const found = paymentsService.getById(id);
-        if (found) setVenta(found);
+        const fetchSale = async () => {
+            const found = await paymentsService.getById(id);
+            if (found) setVenta(found);
+        };
+        fetchSale();
     }, [id]);
 
     if (!venta) {
@@ -35,8 +38,8 @@ export default function PaymentDetail() {
     const abonosTable = paymentsService.buildAbonosTable(venta);
 
     // Handler anular último abono
-    const handleAnularAbono = () => {
-        const resultado = paymentsService.anularUltimoAbono(venta.id);
+    const handleAnularAbono = async () => {
+        const resultado = await paymentsService.anularUltimoAbono(venta.id);
         if (resultado) setVenta(resultado);
     };
 

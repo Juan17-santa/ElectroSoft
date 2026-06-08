@@ -19,9 +19,9 @@ export default function UpdateClients() {
 
     const formHook = useClientForm({
         initialData,
-        onSubmit: (formData) => {
+        onSubmit: async (formData) => {
             try {
-                ClientsService.update(formData);
+                await ClientsService.update(formData);
                 localStorage.removeItem("clientToEdit");
                 setAlert({ type: "success", message: "Cliente actualizado correctamente." });
                 setTimeout(() => navigate("/dashboard/clients"), 1500);

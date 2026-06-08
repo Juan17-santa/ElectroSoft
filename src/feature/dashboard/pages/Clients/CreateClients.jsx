@@ -12,9 +12,9 @@ export default function CreateClients() {
     const [formError, setFormError] = useState(null);
 
     const formHook = useClientForm({
-        onSubmit: (formData) => {
+        onSubmit: async (formData) => {
             try {
-                ClientsService.create(formData);
+                await ClientsService.create(formData);
                 setAlert({ type: "success", message: "Cliente creado correctamente." });
                 formHook.resetForm();
                 setTimeout(() => navigate("/dashboard/clients"), 1500);

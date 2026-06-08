@@ -22,26 +22,29 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
     const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
     useEffect(() => {
-        const sales = paymentsService.getPending();
-        setAllSales(sales);
+        const fetchPending = async () => {
+            const sales = await paymentsService.getPending();
+            setAllSales(sales);
 
-        // Si viene con ventaId preseleccionado desde la URL
-        if (ventaIdPreseleccionada) {
-            const found = sales.find(s => s.id === Number(ventaIdPreseleccionada));
-            if (found) {
-                setFormData(prev => ({
-                    ...prev,
-                    documento: found.numeroDocumento || documentoPreseleccionado || "",
-                    clienteNombre: found.cliente,
-                    ventaId: found.id,
-                    numeroVenta: found.numeroVenta || `V-${found.id}`,
-                    montoPorPagar: found.montoPorPagar,
-                    abonos: found.abonos || [],
-                }));
+            // Si viene con ventaId preseleccionado desde la URL
+            if (ventaIdPreseleccionada) {
+                const found = sales.find(s => s.id === Number(ventaIdPreseleccionada) || String(s.id) === String(ventaIdPreseleccionada));
+                if (found) {
+                    setFormData(prev => ({
+                        ...prev,
+                        documento: found.numeroDocumento || documentoPreseleccionado || "",
+                        clienteNombre: found.cliente,
+                        ventaId: found.id,
+                        numeroVenta: found.numeroVenta || `V-${found.id}`,
+                        montoPorPagar: found.montoPorPagar,
+                        abonos: found.abonos || [],
+                    }));
+                }
             }
-        }
 
-        setInitialized(true);
+            setInitialized(true);
+        };
+        fetchPending();
     }, []);
 
     // Buscar automáticamente al escribir el documento
@@ -159,13 +162,13 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
 
         const raw = parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0;
 
-        const resultado = paymentsService.createAbono(
+        const resultado = await paymentsService.createAbono(
             formData.documento,
             formData.ventaId,
             { paymentMethod: formData.metodoPago, amount: raw }

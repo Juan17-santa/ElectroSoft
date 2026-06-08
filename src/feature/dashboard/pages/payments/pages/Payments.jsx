@@ -20,9 +20,10 @@ export default function Payments() {
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
-    const cargarDatos = useCallback(() => {
-        paymentsService.checkAndExpireOverdue();
-        setClientes(paymentsService.getClientesConCupo());
+    const cargarDatos = useCallback(async () => {
+        await paymentsService.checkAndExpireOverdue();
+        const data = await paymentsService.getClientesConCupo();
+        setClientes(data);
     }, []);
 
     // Recarga al navegar a esta ruta
