@@ -43,11 +43,13 @@ export default function Clients() {
 
     useEffect(() => { getClients(); }, []);
 
-    const getClients = () => {
+    const getClients = async () => {
         try {
-            setClients(ClientsService.get());
+            const data = await ClientsService.get();
+            setClients(data);
         } catch (error) {
             console.error(error);
+            showAlert("error", "Error al cargar los clientes.");
         }
     };
 
@@ -61,10 +63,15 @@ export default function Clients() {
             type: "delete",
             title: "Eliminar cliente",
             message: `¿Estás seguro de que deseas eliminar a ${client.nombres} ${client.apellidos}?`,
-            onConfirm: () => {
-                const newData = ClientsService.delete(client.id);
-                setClients(newData);
-                showAlert("success", "Cliente eliminado correctamente.");
+            onConfirm: async () => {
+                try {
+                    await ClientsService.delete(client.id);
+                    await getClients(); // Refresh list
+                    showAlert("success", "Cliente eliminado correctamente.");
+                } catch (error) {
+                    console.error("Error eliminando cliente:", error);
+                    showAlert("error", "Error al eliminar el cliente.");
+                }
                 setConfirmData(null);
             }
         });
@@ -74,12 +81,16 @@ export default function Clients() {
         setAssignQuotaClient(client);
     };
 
-    const confirmAssignQuota = (amount) => {
+    const confirmAssignQuota = async (amount) => {
         if (!assignQuotaClient) return;
-        const clientActualizado = { ...assignQuotaClient, cupoActivo: true, cupoTotal: amount };
-        const newData = ClientsService.update(clientActualizado);
-        setClients(newData);
-        showAlert("success", `Cupo de $${amount.toLocaleString("es-CO")} asignado exitosamente.`);
+        try {
+            await ClientsService.updateCupo(assignQuotaClient.id, { cupoTotal: amount, cupoActivo: true });
+            await getClients();
+            showAlert("success", `Cupo de $${amount.toLocaleString("es-CO")} asignado exitosamente.`);
+        } catch (error) {
+             console.error("Error asignando cupo:", error);
+             showAlert("error", "Error al asignar cupo.");
+        }
         setAssignQuotaClient(null);
     };
 

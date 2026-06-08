@@ -34,7 +34,7 @@ export function useSalesForm({ onSubmit }) {
 
     useEffect(() => {
         setAvailableProducts(ServicesProducts.get().filter(p => p.estado));
-        setClients(ClientsService.get());
+        ClientsService.get().then(setClients).catch(console.error);
     }, []);
 
     const validarDocumentoCliente = (documento) => {

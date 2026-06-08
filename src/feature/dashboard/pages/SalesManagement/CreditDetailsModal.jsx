@@ -72,9 +72,9 @@ export default function CreditDetailsPage() {
         return [...rows].reverse();
     };
 
-    const refreshSale = () => {
+    const refreshSale = async () => {
         try {
-            const updatedSale = SalesService.getById(sale?.id);
+            const updatedSale = await SalesService.getById(sale?.id);
             if (updatedSale) {
                 setSale(updatedSale);
                 localStorage.setItem("saleToView", JSON.stringify(updatedSale));
@@ -93,7 +93,7 @@ export default function CreditDetailsPage() {
         }
     };
 
-    const handleAddPayment = (e) => {
+    const handleAddPayment = async (e) => {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
@@ -112,12 +112,11 @@ export default function CreditDetailsPage() {
                 return;
             }
 
-            SalesService.addPayment(sale.id, monto);
-            refreshSale();
+            // Redirige al módulo de Pagos para registrar abonos
+            setShowPaymentModal(false);
             setPaymentAmount("");
             setPaymentError("");
-            setShowPaymentModal(false);
-            setAlert({ type: "success", message: "Abono añadido correctamente." });
+            setAlert({ type: "info", message: "Para registrar abonos, usa el módulo de Pagos/Abonos." });
         } catch (error) {
             console.error("Error al añadir abono:", error);
             setAlert({ type: "error", message: "No se pudo registrar el abono. Intente de nuevo." });
@@ -149,12 +148,8 @@ export default function CreditDetailsPage() {
         setConfirmData({
             type: "warning",
             title: "Anular abono",
-            message: "¿Está seguro de anular este abono?",
-            onConfirm: () => {
-                SalesService.voidPayment(sale.id, paymentId);
-                refreshSale();
-                setConfirmData(null);
-            },
+            message: "Para anular abonos, usa el módulo de Pagos/Abonos.",
+            onConfirm: () => setConfirmData(null),
             onCancel: () => setConfirmData(null)
         });
     };

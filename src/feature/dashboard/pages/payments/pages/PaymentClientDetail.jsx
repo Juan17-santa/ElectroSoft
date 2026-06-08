@@ -20,13 +20,17 @@ export default function PaymentClientDetail() {
     const [nuevoCupo, setNuevoCupo] = useState("");
     const [errorCupo, setErrorCupo] = useState("");
 
-    const cargarDatos = () => {
-        paymentsService.checkAndExpireOverdue();
-        setResumen(paymentsService.getResumenCliente(documento));
-        setVentas(paymentsService.getVentasCredito(documento));
+    const cargarDatos = async () => {
+        await paymentsService.checkAndExpireOverdue();
+        const res = await paymentsService.getResumenCliente(documento);
+        const vts = await paymentsService.getVentasCredito(documento);
+        setResumen(res);
+        setVentas(vts);
     };
 
-    useEffect(() => { cargarDatos(); }, [documento]);
+    useEffect(() => {
+        cargarDatos();
+    }, [documento]);
 
     useEffect(() => {
         window.addEventListener("payments-updated", cargarDatos);
@@ -46,7 +50,7 @@ export default function PaymentClientDetail() {
         setErrorCupo("");
     };
 
-    const handleConfirmarCupo = () => {
+    const handleConfirmarCupo = async () => {
         const monto = Number(nuevoCupo);
         if (!monto || monto <= 0) {
             setErrorCupo("Ingresa un monto válido mayor a 0.");
@@ -56,8 +60,10 @@ export default function PaymentClientDetail() {
             setErrorCupo(`El cupo no puede ser menor al monto ya ocupado (${fmt(resumen.cupoOcupado)}).`);
             return;
         }
-        paymentsService.actualizarCupo(documento, monto);
+        // Usa el id del cliente (ObjectId del backend) en lugar del documento
+        await paymentsService.actualizarCupo(resumen.id, monto);
         setShowModal(false);
+        await cargarDatos();
     };
 
     if (!resumen) return (

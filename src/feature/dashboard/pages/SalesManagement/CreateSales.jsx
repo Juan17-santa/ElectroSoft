@@ -103,7 +103,8 @@ export default function CreateSales() {
 
     useEffect(() => {
         setAvailableProducts(ServicesProducts.get().filter(p => p.estado && (p.stock || 0) > 0));
-        setClients(ClientsService.get());
+        // ClientsService.get() es ahora async
+        ClientsService.get().then(setClients).catch(console.error);
     }, []);
 
     // Si el cliente cambia y ya no cumple los requisitos, resetear tipoVenta a Contado
@@ -127,10 +128,10 @@ export default function CreateSales() {
             setClienteNombre("");
             return;
         }
-        const allClients = ClientsService.get();
-        const found = allClients.find(c => c.documento === formData.numeroDocumento);
+        // clients ya es state actualizado async
+        const found = clients.find(c => c.documento === formData.numeroDocumento);
         setClienteNombre(found ? `${found.nombres} ${found.apellidos}` : "");
-    }, [formData.numeroDocumento]);
+    }, [formData.numeroDocumento, clients]);
 
     const handleChange = (e) => {
         let { name, value } = e.target;
@@ -223,7 +224,7 @@ export default function CreateSales() {
         currentPage * ITEMS_PER_PAGE
     );
 
-    const handleForm = (e) => {
+    const handleForm = async (e) => {
         e.preventDefault();
         setTocado({ numeroDocumento: true, fecha: true, tipoVenta: true, diasPlazo: true });
 
@@ -247,9 +248,12 @@ export default function CreateSales() {
 
         try {
             const datosVenta = {
-                ...formData,
+                numeroDocumento: resultadoDoc.cliente?.id, // clienteId ObjectId para el backend
+                tipoVenta: formData.tipoVenta === "Credito" ? "Crédito" : "Contado",
                 diasPlazo: formData.tipoVenta === "Credito" ? Number(formData.diasPlazo) : null,
                 cliente: clienteNombre,
+                fecha: formData.fecha,
+                estado: formData.estado,
                 productos,
                 subtotal,
                 iva,
@@ -257,13 +261,12 @@ export default function CreateSales() {
                 montoPagado: formData.tipoVenta === "Contado" ? total : 0,
                 montoPorPagar: formData.tipoVenta === "Contado" ? 0 : total
             };
-            SalesService.create(datosVenta);
-            ClientsService.sumarCompra(formData.numeroDocumento, total);
+            await SalesService.create(datosVenta);
             setAlert({ type: "success", message: "Venta registrada correctamente." });
             setTimeout(() => navigate("/dashboard/sales-management"), 1500);
         } catch (error) {
             console.error(error);
-            setAlert({ type: "error", message: "Error al registrar la venta." });
+            setAlert({ type: "error", message: "Error al registrar la venta: " + (error?.response?.data?.error || error.message) });
         }
     };
 

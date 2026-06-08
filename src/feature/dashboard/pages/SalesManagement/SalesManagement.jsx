@@ -57,21 +57,24 @@ export default function SalesManagement() {
 
     useEffect(() => { getSales(); }, []);
 
-    const getSales = () => {
+    const getSales = async () => {
         try {
-            const response = SalesService.get();
+            const response = await SalesService.get();
+            // Assuming backend response contains populated clients, we don't need local storage fallback as much, 
+            // but keep it just in case if the name is missing
             const clients = JSON.parse(localStorage.getItem("clients") || "[]");
             const salesConCliente = response.map(sale => {
-                if (!sale.cliente) {
+                if (!sale.cliente || sale.cliente === "Cliente Desconocido") {
                     const found = clients.find(c => c.documento === sale.numeroDocumento);
                     if (found) return { ...sale, cliente: `${found.nombres} ${found.apellidos}` };
                 }
                 return sale;
             });
-            const sortedSales = salesConCliente.sort((a, b) => b.id - a.id);
+            const sortedSales = salesConCliente.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // sort by date or id if backend provides monotonic id
             setSales(sortedSales);
         } catch (error) {
             console.error(error);
+            showAlert("error", "Error al cargar las ventas.");
         }
     };
 
@@ -99,36 +102,16 @@ export default function SalesManagement() {
         setCancelModalSale(sale);
     };
 
-    const confirmAnull = (motivo) => {
-        const availableProducts = ServicesProducts.get();
-        cancelModalSale.productos?.forEach(p => {
-             const currentProd = availableProducts.find(ap => ap.nombre === p.nombre);
-             if (currentProd) {
-                  ServicesProducts.update({ ...currentProd, stock: (currentProd.stock || 0) + p.cantidad });
-             }
-        });
-
-        const allSales = SalesService.get();
-        const saleIndex = allSales.findIndex(s => s.id === cancelModalSale.id);
-        if (saleIndex !== -1) {
-             allSales[saleIndex].estado = "Anulado";
-             allSales[saleIndex].motivoAnulacion = motivo;
-             allSales[saleIndex].fechaAnulacion = (() => {
-                 const now = new Date();
-                 return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-             })();
-             localStorage.setItem("sales", JSON.stringify(allSales));
-             setSales(allSales.map(sale => {
-                 if (!sale.cliente) {
-                     const clients = JSON.parse(localStorage.getItem("clients") || "[]");
-                     const found = clients.find(c => c.documento === sale.numeroDocumento);
-                     if (found) return { ...sale, cliente: `${found.nombres} ${found.apellidos}` };
-                 }
-                 return sale;
-             }));
+    const confirmAnull = async (motivo) => {
+        try {
+            await SalesService.anullSale(cancelModalSale.id);
+            // Stock is returned by the backend (impactApplied)
+            await getSales();
+            showAlert("success", "Venta anulada correctamente.");
+        } catch (error) {
+            console.error("Error anulling sale:", error);
+            showAlert("error", "Error al anular la venta.");
         }
-        
-        showAlert("success", "Venta anulada y productos devueltos al stock correctamente.");
         setCancelModalSale(null);
     };
 
