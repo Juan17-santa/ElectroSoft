@@ -21,59 +21,55 @@ export const Validations = {
 
     // Validación de email con verificación de dominio conocido
     validarEmail: (value) => {
-        if (!value || !value.trim()) return { valido: false, mensaje: "El email es requerido." };
+        if (!value || !value.trim()) {
+            return {
+                valido: false,
+                mensaje: "El email es requerido."
+            };
+        }
 
-        const basicRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        if (!basicRegex.test(value)) return { valido: false, mensaje: "Formato de email inválido." };
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        const dominiosValidos = [
-            "gmail.com", "hotmail.com", "outlook.com", "yahoo.com",
-            "icloud.com", "live.com", "msn.com", "protonmail.com",
-            "mail.com", "zoho.com", "aol.com", "yandex.com",
-            "edu.co", "gov.co", "mil.co", "org.co", "net.co", "com.co"
-        ];
+        if (!regex.test(value)) {
+            return {
+                valido: false,
+                mensaje: "Formato de email inválido."
+            };
+        }
 
-        const partes   = value.toLowerCase().split("@");
-        const dominio  = partes[1];
-        const esValido = dominiosValidos.some(d => dominio === d || dominio.endsWith("." + d));
-
-        if (!esValido) return { valido: false, mensaje: "Dominio de email no reconocido." };
-
-        return { valido: true, mensaje: "" };
+        return {
+            valido: true,
+            mensaje: ""
+        };
     },
 
     // Validaciones específicas para Clientes
-    validarDocumentoCliente: (tipo, documento) => {
-        if (!documento) return { valido: false, mensaje: "El documento es requerido." };
-        if (!/^\d+$/.test(documento) && tipo !== "Pasaporte") {
-            return { valido: false, mensaje: "Solo se permiten números." };
+    validarDocumentoCliente: (documento) => {
+        if (!documento) {
+            return {
+                valido: false,
+                mensaje: "El documento es requerido."
+            };
         }
 
-        switch (tipo) {
-            case "CC":
-                if (documento.length < 8 || documento.length > 12) {
-                    return { valido: false, mensaje: "La cédula debe tener entre 8 y 12 dígitos." };
-                }
-                break;
-            case "CE":
-                if (documento.length < 6 || documento.length > 12) {
-                    return { valido: false, mensaje: "La cédula de extranjería debe tener entre 6 y 12 dígitos." };
-                }
-                break;
-            case "NIT":
-                if (documento.length < 8 || documento.length > 12) {
-                    return { valido: false, mensaje: "El NIT debe tener entre 8 y 12 dígitos." };
-                }
-                break;
-            case "Pasaporte":
-                if (!/^[a-zA-Z0-9]{5,15}$/.test(documento)) {
-                    return { valido: false, mensaje: "Pasaporte inválido (5-15 caracteres alfanuméricos)." };
-                }
-                break;
-            default:
-                return { valido: false, mensaje: "Seleccione un tipo de documento válido." };
+        if (!/^\d+$/.test(documento)) {
+            return {
+                valido: false,
+                mensaje: "Solo se permiten números."
+            };
         }
-        return { valido: true, mensaje: "" };
+
+        if (documento.length < 8 || documento.length > 12) {
+            return {
+                valido: false,
+                mensaje: "Debe tener entre 8 y 12 dígitos."
+            };
+        }
+
+        return {
+            valido: true,
+            mensaje: ""
+        };
     },
 
     validarNombreApellido: (value) => {
@@ -88,7 +84,7 @@ export const Validations = {
 
     validarTelefono: (value) => {
         if (!value) return { valido: false, mensaje: "El teléfono es requerido." };
-        if (!/^\d{7,10}$/.test(value)) return { valido: false, mensaje: "Debe tener entre 7 y 10 dígitos." };
+        if (!/^\d{7,14}$/.test(value)) return { valido: false, mensaje: "Debe tener entre 7 y 14 dígitos." };
         if (/^(\d)\1{6,}$/.test(value)) return { valido: false, mensaje: "Número no válido (dígitos repetidos)." };
         if (value.startsWith("0")) return { valido: false, mensaje: "El teléfono no puede comenzar con 0." };
         return { valido: true, mensaje: "" };
