@@ -20,7 +20,11 @@ export default function CreateClients() {
                 setTimeout(() => navigate("/dashboard/clients"), 1500);
             } catch (error) {
                 console.error(error);
-                setFormError("Error al crear el cliente.");
+
+                setFormError(
+                    error.response?.data?.error ||
+                    "Error al crear el cliente."
+                );
             }
         }
     });
@@ -42,7 +46,7 @@ export default function CreateClients() {
                     </button>
                 </div>
 
-                <ClientForm 
+                <ClientForm
                     {...formHook}
                     formError={formError}
                     setFormError={setFormError}

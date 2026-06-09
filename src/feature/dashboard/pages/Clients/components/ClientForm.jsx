@@ -3,6 +3,8 @@ import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import Alert from "../../../components/ui/Alert";
+import { useEffect, useState } from "react";
+import { ClientsService } from "../services/ClientsService";
 
 export default function ClientForm({
     formData,
@@ -20,12 +22,22 @@ export default function ClientForm({
         return errors[campo], "focus:ring-yellow-400 bg-gray-200";
     };
 
-    const docTypeOptions = [
-        { label: "Cédula de Ciudadanía (CC)", value: "CC" },
-        { label: "NIT", value: "NIT" },
-        { label: "Cédula de Extranjería (CE)", value: "CE" },
-        { label: "Pasaporte", value: "Pasaporte" }
-    ];
+    const [documentTypes, setDocumentTypes] = useState([]);
+
+    useEffect(() => {
+        const loadDocumentTypes = async () => {
+            const data = await ClientsService.getDocumentTypes();
+
+            setDocumentTypes(
+                data.map(doc => ({
+                    label: `${doc.name} (${doc.abbreviation})`,
+                    value: doc._id
+                }))
+            );
+        };
+
+        loadDocumentTypes();
+    }, []);
 
     return (
         <form onSubmit={handleForm} className="flex flex-col flex-1">
@@ -39,7 +51,7 @@ export default function ClientForm({
                     <CustomSelect
                         label="Tipo de documento *"
                         icon={FileText}
-                        options={docTypeOptions}
+                        options={documentTypes}
                         value={formData.tipoDocumento}
                         onChange={(val) => handleSelectChange("tipoDocumento", val)}
                         placeholder="Seleccione tipo"
