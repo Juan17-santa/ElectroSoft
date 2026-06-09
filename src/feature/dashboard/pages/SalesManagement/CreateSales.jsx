@@ -102,8 +102,11 @@ export default function CreateSales() {
     const ringClass = () => "focus:ring-yellow-400";
 
     useEffect(() => {
-        setAvailableProducts(ServicesProducts.get().filter(p => p.estado && (p.stock || 0) > 0));
-        // ClientsService.get() es ahora async
+        // ServicesProducts.get() es async, hay que usar await o .then()
+        ServicesProducts.get()
+            .then(prods => setAvailableProducts(prods.filter(p => p.estado && (p.stock || 0) > 0)))
+            .catch(console.error);
+        // ClientsService.get() también es async
         ClientsService.get().then(setClients).catch(console.error);
     }, []);
 

@@ -17,6 +17,7 @@ export default function Clients() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     const [clients, setClients] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
@@ -44,12 +45,15 @@ export default function Clients() {
     useEffect(() => { getClients(); }, []);
 
     const getClients = async () => {
+        setLoading(true);
         try {
             const data = await ClientsService.get();
             setClients(data);
-        } catch (error) {
-            console.error(error);
-            showAlert("error", "Error al cargar los clientes.");
+        } catch (err) {
+            const message = "No se pudieron cargar los clientes." || err.message;
+            showAlert("error", message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -88,8 +92,8 @@ export default function Clients() {
             await getClients();
             showAlert("success", `Cupo de $${amount.toLocaleString("es-CO")} asignado exitosamente.`);
         } catch (error) {
-             console.error("Error asignando cupo:", error);
-             showAlert("error", "Error al asignar cupo.");
+            console.error("Error asignando cupo:", error);
+            showAlert("error", "Error al asignar cupo.");
         }
         setAssignQuotaClient(null);
     };
@@ -170,7 +174,16 @@ export default function Clients() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white text-gray-700 text-sm">
-                                {paginatedClients.length === 0 ? (
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <svg className="animate-spin h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                                                Cargando clientes...
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : paginatedClients.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="px-4 py-4 text-center text-gray-400">
                                             No hay clientes registrados.

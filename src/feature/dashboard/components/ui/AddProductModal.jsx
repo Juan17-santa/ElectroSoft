@@ -57,7 +57,7 @@ export default function AddProductModal({
 
     // ── PRODUCTOS FILTRADOS + PAGINADOS ──────────────────────────────────────
     const filteredProducts = products.filter((p) =>
-        p.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.nombre || "").toLowerCase().includes((searchTerm || "").toLowerCase())
     );
     const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
     const paginatedItems = filteredProducts.slice(
