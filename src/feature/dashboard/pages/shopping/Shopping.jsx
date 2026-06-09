@@ -41,8 +41,8 @@ function BanButton({ puedeAnularse, onClick }) {
                 ref={buttonRef}
                 onClick={puedeAnularse ? onClick : undefined}
                 className={`p-2 rounded-lg transition duration-300 ${puedeAnularse
-                        ? "bg-red-100 hover:bg-red-200 cursor-pointer"
-                        : "bg-red-100 opacity-40 cursor-not-allowed"
+                    ? "bg-red-100 hover:bg-red-200 cursor-pointer"
+                    : "bg-red-100 opacity-40 cursor-not-allowed"
                     }`}
             >
                 <Ban size={18} className="text-red-600" />
@@ -147,7 +147,10 @@ export default function Shopping() {
                                 {loading ? (
                                     <tr>
                                         <td colSpan={7} className="px-4 py-4 text-center text-gray-400">
-                                            Cargando compras...
+                                            <div className="flex items-center justify-center gap-2">
+                                                <svg className="animate-spin h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                                                Cargando compras...
+                                            </div>
                                         </td>
                                     </tr>
                                 ) : comprasPagina.length === 0 ? (
@@ -170,8 +173,8 @@ export default function Shopping() {
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.total}</td>
                                                 <td className="px-4 py-1 border-b border-gray-300">
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${compra.estado === "Activo"
-                                                            ? "bg-green-100 text-green-700"
-                                                            : "bg-red-100 text-red-600"
+                                                        ? "bg-green-100 text-green-700"
+                                                        : "bg-red-100 text-red-600"
                                                         }`}>
                                                         {compra.estado}
                                                     </span>
