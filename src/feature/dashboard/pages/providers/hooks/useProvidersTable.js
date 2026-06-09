@@ -51,9 +51,12 @@ export default function useProvidersTable({
                     setConfirmData(null);
                     showAlert("success", "Proveedor eliminado con éxito");
                 } catch (error) {
-                    console.error(error);
                     setConfirmData(null);
-                    showAlert("error", "No se pudo eliminar el proveedor");
+
+                    showAlert(
+                        "error",
+                        error.message || "No se pudo eliminar el 52314"
+                    );
                 }
             },
             onCancel: () => setConfirmData(null),
