@@ -29,30 +29,12 @@ export function useClientForm({ initialData = null, onSubmit }) {
         }
     }, [initialData]);
 
-    const [docTypeOptions, setDocTypeOptions] = useState([]);
-
-    useEffect(() => {
-        const fetchDocTypes = async () => {
-            try {
-                // api.js might not be imported, let's import it at the top of the file using another tool call, or do it here if possible. 
-                // Better to import it at the top. Let's provide the whole content or just the effect.
-                const { default: api } = await import("../../../../../utils/api.js");
-                const response = await api.get('/documentTypes');
-                const types = response.data.data || response.data;
-                setDocTypeOptions(types.map(t => ({ label: `${t.name} (${t.code})`, value: t._id })));
-            } catch (error) {
-                console.error("Error fetching document types:", error);
-            }
-        };
-        fetchDocTypes();
-    }, []);
-
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
 
     const validate = () => {
         return {
             tipoDocumento: Validations.campoRequerido(formData.tipoDocumento) ? null : "Seleccione un tipo de documento.",
-            documento: formData.documento ? null : "El documento es obligatorio", // simplified validation since validation might depend on old logic
+            documento: Validations.validarDocumentoCliente(formData.tipoDocumento, formData.documento).valido ? null : Validations.validarDocumentoCliente(formData.tipoDocumento, formData.documento).mensaje,
             nombres: Validations.validarNombreApellido(formData.nombres).valido ? null : Validations.validarNombreApellido(formData.nombres).mensaje,
             apellidos: Validations.validarNombreApellido(formData.apellidos).valido ? null : Validations.validarNombreApellido(formData.apellidos).mensaje,
             email: Validations.validarEmail(formData.email).valido ? null : Validations.validarEmail(formData.email).mensaje,
@@ -110,7 +92,6 @@ export function useClientForm({ initialData = null, onSubmit }) {
         handleChange,
         handleSelectChange,
         handleForm,
-        resetForm,
-        docTypeOptions
+        resetForm
     };
 }

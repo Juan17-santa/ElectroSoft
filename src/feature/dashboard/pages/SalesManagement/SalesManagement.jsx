@@ -26,6 +26,7 @@ export default function SalesManagement() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
     const [sales, setSales] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
@@ -58,6 +59,7 @@ export default function SalesManagement() {
     useEffect(() => { getSales(); }, []);
 
     const getSales = async () => {
+        setLoading(true);
         try {
             const response = await SalesService.get();
             // Assuming backend response contains populated clients, we don't need local storage fallback as much, 
@@ -72,9 +74,11 @@ export default function SalesManagement() {
             });
             const sortedSales = salesConCliente.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // sort by date or id if backend provides monotonic id
             setSales(sortedSales);
-        } catch (error) {
-            console.error(error);
-            showAlert("error", "Error al cargar las ventas.");
+        } catch (err) {
+            const message = "No se pudieron cargar las ventas." || err.message;
+            showAlert("error", message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -166,7 +170,16 @@ export default function SalesManagement() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white text-gray-700">
-                                {paginatedSales.length === 0 ? (
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={9} className="px-4 py-6 text-center text-gray-400">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <svg className="animate-spin h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                                                Cargando ventas...
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : paginatedSales.length === 0 ? (
                                     <tr>
                                         <td colSpan={9} className="px-4 py-4 text-center text-gray-400">
                                             No hay ventas registradas.
@@ -291,10 +304,10 @@ export default function SalesManagement() {
 
             {/* MODAL DE CONFIRMACION ANULACION */}
             {cancelModalSale && (
-                <CancellationModal 
-                    saleId={cancelModalSale.numeroVenta || cancelModalSale.id} 
-                    onConfirm={confirmAnull} 
-                    onCancel={() => setCancelModalSale(null)} 
+                <CancellationModal
+                    saleId={cancelModalSale.numeroVenta || cancelModalSale.id}
+                    onConfirm={confirmAnull}
+                    onCancel={() => setCancelModalSale(null)}
                 />
             )}
 

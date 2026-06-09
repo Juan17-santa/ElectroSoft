@@ -89,7 +89,7 @@ export function useSalesForm({ onSubmit }) {
                 const sumQty = prev[index].cantidad + quantity;
                 if (sumQty > (selectedProduct.stock || 0)) {
                     setProductosError(`Stock insuficiente para ${selectedProduct.nombre}.`);
-                    return prev; 
+                    return prev;
                 }
                 const newArr = [...prev];
                 newArr[index] = { ...newArr[index], cantidad: sumQty };
@@ -110,17 +110,17 @@ export function useSalesForm({ onSubmit }) {
     const handleProductChange = (index, field, value) => {
         const newProductos = [...productos];
         const val = field === "cantidad" ? parseInt(value, 10) || 1 : value;
-        
+
         if (field === "cantidad") {
             const productRef = availableProducts.find(ap => ap.nombre === newProductos[index].nombre);
             if (productRef && val > productRef.stock) {
-                 setProductosError(`Stock insuf. para ${productRef.nombre}. Máx: ${productRef.stock}`);
-                 return;
+                setProductosError(`Stock insuf. para ${productRef.nombre}. Máx: ${productRef.stock}`);
+                return;
             } else {
-                 setProductosError("");
+                setProductosError("");
             }
         }
-        
+
         newProductos[index][field] = val;
         setProductos(newProductos);
     };
@@ -182,10 +182,10 @@ export function useSalesForm({ onSubmit }) {
         };
 
         productos.forEach(p => {
-             const currentProd = availableProducts.find(ap => ap.nombre === p.nombre);
-             if (currentProd) {
-                  ServicesProducts.update({ ...currentProd, stock: currentProd.stock - p.cantidad });
-             }
+            const currentProd = availableProducts.find(ap => ap.nombre === p.nombre);
+            if (currentProd) {
+                ServicesProducts.update({ ...currentProd, stock: currentProd.stock - p.cantidad });
+            }
         });
 
         onSubmit(datosVenta, total);

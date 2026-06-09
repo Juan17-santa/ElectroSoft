@@ -14,6 +14,7 @@ export default function Payments() {
     const location = useLocation();
 
     const [clientes, setClientes] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [showReportModal, setShowReportModal] = useState(false);
     const [alert, setAlert] = useState()
@@ -21,9 +22,17 @@ export default function Payments() {
     const recordsPerPage = 6;
 
     const cargarDatos = useCallback(async () => {
-        await paymentsService.checkAndExpireOverdue();
-        const data = await paymentsService.getClientesConCupo();
-        setClientes(data);
+        setLoading(true);
+        try {
+            await paymentsService.checkAndExpireOverdue();
+            const data = await paymentsService.getClientesConCupo();
+            setClientes(data);
+        } catch (err) {
+            const message = "No se pudieron cargar los créditos." || err.message;
+            setAlert({ type: "error", message });
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     // Recarga al navegar a esta ruta
@@ -69,7 +78,12 @@ export default function Payments() {
             />
 
             <div className="flex flex-col gap-3">
-                {currentRecords.length === 0 ? (
+                {loading ? (
+                    <div className="bg-white rounded-2xl p-10 flex flex-col items-center gap-3 text-center shadow-md">
+                        <svg className="animate-spin h-6 w-6 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                        <p className="text-gray-500 text-sm font-medium">Cargando créditos...</p>
+                    </div>
+                ) : currentRecords.length === 0 ? (
                     <div className="bg-white rounded-2xl p-10 flex flex-col items-center gap-3 text-center shadow-md">
                         <CreditCard size={32} className="text-gray-300" />
                         <p className="text-gray-500 text-sm font-medium">

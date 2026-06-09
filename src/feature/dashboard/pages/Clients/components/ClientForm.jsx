@@ -11,15 +11,21 @@ export default function ClientForm({
     handleChange,
     handleSelectChange,
     handleForm,
-    buttonText,
     formError,
     setFormError,
     onCancel,
-    docTypeOptions = []
+    buttonText
 }) {
     const ringClass = (campo) => {
-        return errors[campo] ? "focus:ring-yellow-400 bg-gray-200" : "";
+        return errors[campo], "focus:ring-yellow-400 bg-gray-200";
     };
+
+    const docTypeOptions = [
+        { label: "Cédula de Ciudadanía (CC)", value: "CC" },
+        { label: "NIT", value: "NIT" },
+        { label: "Cédula de Extranjería (CE)", value: "CE" },
+        { label: "Pasaporte", value: "Pasaporte" }
+    ];
 
     return (
         <form onSubmit={handleForm} className="flex flex-col flex-1">
