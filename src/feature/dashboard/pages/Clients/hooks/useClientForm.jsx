@@ -34,7 +34,7 @@ export function useClientForm({ initialData = null, onSubmit }) {
     const validate = () => {
         return {
             tipoDocumento: Validations.campoRequerido(formData.tipoDocumento) ? null : "Seleccione un tipo de documento.",
-            documento: Validations.validarDocumentoCliente(formData.tipoDocumento, formData.documento).valido ? null : Validations.validarDocumentoCliente(formData.tipoDocumento, formData.documento).mensaje,
+            documento: Validations.validarDocumentoCliente(formData.documento).valido ? null : Validations.validarDocumentoCliente(formData.documento).mensaje,
             nombres: Validations.validarNombreApellido(formData.nombres).valido ? null : Validations.validarNombreApellido(formData.nombres).mensaje,
             apellidos: Validations.validarNombreApellido(formData.apellidos).valido ? null : Validations.validarNombreApellido(formData.apellidos).mensaje,
             email: Validations.validarEmail(formData.email).valido ? null : Validations.validarEmail(formData.email).mensaje,

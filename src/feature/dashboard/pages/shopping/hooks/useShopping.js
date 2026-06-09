@@ -35,7 +35,7 @@ export function useShopping() {
             setCompras(comprasApi);
             return comprasApi;
         } catch (err) {
-            const message = err.message || "No se pudieron cargar las compras.";
+            const message = "No se pudieron cargar las compras." || err.message;
             setError(message);
             return [];
         } finally {

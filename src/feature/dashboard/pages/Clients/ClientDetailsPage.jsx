@@ -92,29 +92,29 @@ export default function ClientDetailsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
 
-                        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+                        <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
                             <p className="text-xs text-gray-400">Tipo documento</p>
                             <p className="text-sm font-semibold text-gray-800">
-                                {client.tipoDocumento}
+                                {client.tipoDocumento} ({client.abreviacion})
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+                        <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
                             <p className="text-xs text-gray-400">Número</p>
                             <p className="text-sm font-semibold text-gray-800">
                                 {client.documento}
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+                        <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
                             <p className="text-xs text-gray-400">Teléfono</p>
                             <p className="text-sm font-semibold text-gray-800">
                                 {client.telefono}
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-                            <p className="text-xs text-gray-400">Fecha</p>
+                        <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+                            <p className="text-xs text-gray-400">Fecha creación</p>
                             <p className="text-sm font-semibold text-gray-800">
                                 {client.fechaCreacion || new Date().toISOString().split("T")[0]}
                             </p>
@@ -128,14 +128,14 @@ export default function ClientDetailsPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
 
-                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                        <div className="flex flex-col gap-1 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                             <p className="text-xs text-gray-400 mb-1">Total Compras</p>
                             <p className="text-lg font-bold text-gray-800">
                                 ${client.totalCompras?.toLocaleString("es-CO") || "0"}
                             </p>
                         </div>
 
-                        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                        <div className="flex flex-col gap-1 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
                             <p className="text-xs text-gray-400 mb-1">Cupo Asignado</p>
                             <p className="text-lg font-bold text-gray-800">
                                 ${client.cupoTotal?.toLocaleString("es-CO") || "0"}

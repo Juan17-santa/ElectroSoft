@@ -5,6 +5,7 @@ const mapClientToFrontend = (client) => {
     return {
         id: client._id,
         tipoDocumento: client.documentType?.name || client.documentType,
+        abreviacion: client.documentType?.abbreviation || client.abbreviation,
         documentTypeId: client.documentType?._id || client.documentType,
         documento: client.documentNumber,
         nombres: client.firstName,
@@ -64,7 +65,7 @@ export const ClientsService = {
     async update(clientActualizado) {
         try {
             const payload = {
-                documentType: clientActualizado.tipoDocumento || clientActualizado.documentTypeId,
+                documentType: clientActualizado.documentTypeId || clientActualizado.tipoDocumento,
                 documentNumber: clientActualizado.documento,
                 firstName: clientActualizado.nombres,
                 lastName: clientActualizado.apellidos,
@@ -104,6 +105,16 @@ export const ClientsService = {
         } catch (error) {
             console.error("Error deleting client:", error);
             throw error;
+        }
+    },
+
+    async getDocumentTypes() {
+        try {
+            const response = await api.get('/documentTypes');
+            return response.data.data || [];
+        } catch (error) {
+            console.error("Error obteniendo tipos de documento:", error);
+            return [];
         }
     }
 };
