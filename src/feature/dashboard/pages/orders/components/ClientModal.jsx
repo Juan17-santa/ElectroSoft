@@ -9,21 +9,14 @@ import CustomSelect from "../../../components/ui/CustomSelect";
 // COMPONENTE PRINCIPAL DE LA MODAL DE CREAR CLIENTE
 export default function ClientModal({ onClose, onSave }) {
 
-    // ESTADO PARA LA ALERTA
-    const [alert, setAlert] = useState(null);
-
     // CONFIGURACIÓN DEL HOOK PERSONALIZADO PARA EL FORMULARIO
     const {
         formData,
         errors,
         handleChange,
-        handleSubmit
+        handleSubmit,
+        documentTypes
     } = useClientModal((clienteRecibido) => {
-        setAlert({
-            type: "success",
-            message: "Cliente creado exitosamente"
-        });
-
         // ENVIAMOS LOS DATOS REALES AL PADRE
         if (onSave) onSave(clienteRecibido);
 
@@ -83,12 +76,10 @@ export default function ClientModal({ onClose, onSave }) {
                                             target: { name: "tipoDocumento", value }
                                         })
                                     }
-                                    options={[
-                                        { value: "CC", label: "C.C" },
-                                        { value: "CE", label: "C.E" },
-                                        { value: "NIT", label: "NIT" },
-                                        { value: "Pasaporte", label: "Pasaporte" },
-                                    ]}
+                                    options={documentTypes.map(tipo => ({
+                                        value: tipo._id,
+                                        label: `${tipo.name} (${tipo.abbreviation})`
+                                    }))}
                                     placeholder="Seleccione un tipo"
                                 />
 
@@ -246,14 +237,6 @@ export default function ClientModal({ onClose, onSave }) {
                     </form>
                 </div>
             </div>
-            {/* ALERTA */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
         </>
     );
 }

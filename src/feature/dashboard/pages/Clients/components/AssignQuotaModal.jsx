@@ -9,7 +9,7 @@ const formatCOP = (val) => {
     }).format(val || 0);
 };
 
-export default function AssignQuotaModal({ isOpen, onClose, onConfirm, clientName }) {
+export default function AssignQuotaModal({ isOpen, onClose, onConfirm, clientName, currentQuota }) {
     const [amount, setAmount] = useState("");
     const [error, setError] = useState("");
 
@@ -49,7 +49,7 @@ export default function AssignQuotaModal({ isOpen, onClose, onConfirm, clientNam
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md animate-scale-in border border-yellow-100 overflow-hidden relative">
-                
+
                 {/* DECORACIÓN SUPERIOR */}
                 <div className="h-2 bg-linear-to-r from-yellow-400 to-yellow-600 w-full"></div>
 
@@ -72,6 +72,13 @@ export default function AssignQuotaModal({ isOpen, onClose, onConfirm, clientNam
                             <X size={20} />
                         </button>
                     </div>
+
+                    <p className="text-sm text-gray-500 mb-6">
+                        Cupo actual:
+                        <span className="font-bold text-green-600">
+                            {formatCOP(currentQuota)}
+                        </span>
+                    </p>
 
                     {/* Info */}
                     <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-6 flex items-start gap-3">

@@ -187,8 +187,15 @@ export default function OrdersForm({
 
                             <ValidationMessage
                                 error={errors.formaPago}
-                                success={formData.formaPago}
-                                successMessage="Forma de pago válida"
+                                success={
+                                    formData.formaPago &&
+                                    !errors.formaPago
+                                }
+                                successMessage={
+                                    formData.formaPago === "Credito"
+                                        ? `Crédito aprobado - Cupo disponible: ${formatCurrency(formData.clienteCupoTotal)}`
+                                        : "Forma de pago válida"
+                                }
                             />
                         </div>
                     </div>

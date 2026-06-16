@@ -27,6 +27,7 @@ export default function CreateOrder() {
         errors,
         handleChange,
         handleSubmit,
+        setFormData,
         products,
         addProduct,
         currentProducts,
@@ -49,12 +50,25 @@ export default function CreateOrder() {
     });
 
     // FUNCIÓN PARA GUARDAR UN NUEVO CLIENTE DESDE LA MODAL
-    const handleSaveClient = (nuevoCliente) => {
-        // OBTENER CLIENTES Y AGREGAR EL NUEVO CLIENTE
-        const clientes = JSON.parse(localStorage.getItem("clients")) || [];
-        const nuevosClientes = [...clientes, nuevoCliente];
+    const handleSaveClient = (clienteCreado) => {
 
-        localStorage.setItem("clients", JSON.stringify(nuevosClientes));
+        // ACTUALIZAR EL CAMPO DE CLIENTE EN EL FORMULARIO CON EL NUEVO CLIENTE CREADO
+        setFormData(prev => ({
+            ...prev,
+            documento: clienteCreado.documento,
+            clienteId: clienteCreado.id,
+            clienteNombre: `${clienteCreado.nombres} ${clienteCreado.apellidos}`,
+            clienteTipoDocumento: clienteCreado.tipoDocumento,
+            clienteTotalCompras: 0
+        }));
+
+        setAlert({
+            type: "success",
+            message: "Cliente creado exitosamente"
+        });
+
+        // CERRAR LA MODAL DE NUEVO CLIENTE
+        setShowClientModal(false);
     };
 
     return (

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Validations } from "../../../../../utils/validations";
+import { ClientsService } from "../../Clients/services/ClientsService";
 
 // HOOK PERSONALIZADO PARA GESTIONAR LA LÓGICA DEL FORMULARIO DE CLIENTES
 export const useClientModal = (onSave) => {
@@ -17,9 +18,20 @@ export const useClientModal = (onSave) => {
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
+    // ESTADO PARA OBTENER LOS TIPOS DE DOCUMENTO DESDE EL BACKEND
+    const [documentTypes, setDocumentTypes] = useState([]);
+
+    useEffect(() => {
+        const loadDocumentTypes = async () => {
+            const data = await ClientsService.getDocumentTypes();
+            setDocumentTypes(data);
+        };
+
+        loadDocumentTypes();
+    }, []);
+
     // FUNCIÓN PARA VALIDAR UN CAMPO INDIVIDUAL
     const validateField = (name, value) => {
-
         let error = "";
 
         // EVALUACIÓN DE REGLAS SEGÚN EL NOMBRE DEL CAMPO
@@ -36,7 +48,7 @@ export const useClientModal = (onSave) => {
                     error = "Solo números permitidos";
                 } else if (value.length < 8 || value.length > 12) {
                     error = "Debe tener entre 8 y 12 dígitos";
-                } 
+                }
                 break;
 
             case "nombres":
@@ -121,22 +133,16 @@ export const useClientModal = (onSave) => {
     };
 
     // PROCESAMIENTO DEL ENVÍO DEL FORMULARIO
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         // DETENER LA EJECUCIÓN SI EL FORMULARIO NO ES VÁLIDO
         if (!validateForm()) return;
 
         // CONSTRUCCIÓN DEL OBJETO DE NUEVO CLIENTE CON DATOS ADICIONALES
-        const nuevoCliente = {
-            ...formData,
-            id: Date.now(),
-            estado: true,
-            fechaCreacion: new Date().toISOString().split("T")[0],
-            totalCompras: 0
-        };
+        const clienteCreado = await ClientsService.create(formData);
 
-        onSave(nuevoCliente);
+        onSave(clienteCreado);
     };
 
     // RETORNO DE LAS PROPIEDADES Y FUNCIONES NECESARIAS PARA EL COMPONENTE
@@ -144,6 +150,7 @@ export const useClientModal = (onSave) => {
         formData,
         errors,
         handleChange,
-        handleSubmit
+        handleSubmit,
+        documentTypes
     };
 };
