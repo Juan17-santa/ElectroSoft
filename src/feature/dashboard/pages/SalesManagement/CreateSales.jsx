@@ -68,18 +68,32 @@ export default function CreateSales() {
     const resultadoDoc = validarDocumentoCliente(formData.numeroDocumento);
     const estadoNumDoc = tocado.numeroDocumento ? resultadoDoc : null;
 
-    const totalComprasCliente = Number(resultadoDoc.cliente?.totalCompras) || 0;
-    const clienteTieneCupo = resultadoDoc.cliente?.cupoActivo;
-    const puedeTenerCredito = totalComprasCliente > 1000000 && clienteTieneCupo;
+    // Siempre se muestran ambas opciones — las validaciones de crédito son inline
+    const opcionesTipoVenta = [
+        { value: "Contado", label: "Contado" },
+        { value: "Credito", label: "Crédito" }
+    ];
 
-    const opcionesTipoVenta = puedeTenerCredito
-        ? [
-            { value: "Contado", label: "Contado" },
-            { value: "Credito", label: "Crédito" }
-        ]
-        : [
-            { value: "Contado", label: "Contado" }
-        ];
+    const clienteTieneCupo = resultadoDoc.cliente?.cupoActivo && (resultadoDoc.cliente?.cupoTotal || 0) > 0;
+    const cupoTotal = resultadoDoc.cliente?.cupoTotal || 0;
+
+    const calcularTotales = () => {
+        const t = productos.reduce((acc, p) => acc + (p.cantidad * p.precio),0);
+        const i = t * 0.19;
+        const s = t - i;
+        return { subtotal: s, iva: i, total: t };
+    };
+    const { subtotal, iva, total } = calcularTotales();
+
+    const isCreditBlocked = formData.tipoVenta === "Credito" && resultadoDoc.valido && !clienteTieneCupo;
+    const isQuotaExceeded = formData.tipoVenta === "Credito" && resultadoDoc.valido && clienteTieneCupo && total > cupoTotal;
+
+    // Error de crédito: se calcula si eligieron Crédito y hay un problema
+    const errorCredito = isCreditBlocked
+        ? "Este cliente no tiene cupo de crédito asignado. Asígnale uno desde el módulo de Clientes para poder fiarle."
+        : isQuotaExceeded
+            ? `El total de la venta (${formatCOP(total)}) supera el cupo de crédito del cliente (${formatCOP(cupoTotal)}).`
+            : null;
 
     const validarTipoVenta = () => {
         if (!formData.tipoVenta) return { valido: false, mensaje: "Seleccione un tipo de venta." };
@@ -110,13 +124,7 @@ export default function CreateSales() {
         ClientsService.get().then(setClients).catch(console.error);
     }, []);
 
-    // Si el cliente cambia y ya no cumple los requisitos, resetear tipoVenta a Contado
-    useEffect(() => {
-        const canCredit = (Number(resultadoDoc.cliente?.totalCompras) || 0) > 1000000 && resultadoDoc.cliente?.cupoActivo;
-        if (!canCredit && formData.tipoVenta === "Credito") {
-            setFormData(prev => ({ ...prev, tipoVenta: "Contado" }));
-        }
-    }, [resultadoDoc.cliente?.cupoActivo, resultadoDoc.cliente?.totalCompras, formData.tipoVenta]);
+    // Ya no forzamos resetear a Contado — el usuario ve el error inline y decide
 
     useEffect(() => {
         setFormData(prev => ({
@@ -177,6 +185,11 @@ export default function CreateSales() {
                 const cant = parseFloat(item.cantidad) || 0;
                 const precio = parseFloat(item.precio) || 0;
 
+                // ✅ FIX CRÍTICO: preservar el id real del producto (ObjectId de MongoDB)
+                // Antes se sobreescribía con Date.now() + Math.random(), causando el error
+                // "Uno o más productoId no son ObjectId válidos" al crear la venta.
+                const productoId = item.id || item.productoId || item.idProducto;
+
                 if (cant <= 0) return;
 
                 const existingIndex = updated.findIndex(p => p.nombre === nombre);
@@ -188,7 +201,8 @@ export default function CreateSales() {
                     };
                 } else {
                     updated.push({
-                        id: Date.now() + Math.random(),
+                        id: productoId,          // ObjectId real de MongoDB
+                        productoId: productoId,  // Alias explícito para SalesService.create()
                         nombre,
                         cantidad: cant,
                         precio
@@ -211,15 +225,7 @@ export default function CreateSales() {
         }
     };
 
-    const calcularTotales = () => {
-        const total = productos.reduce((acc, p) => acc + (p.cantidad * p.precio),0);
-        const iva = total * 0.19;
-        const subtotal = total - iva;
-
-        return { subtotal, iva, total };
-    };
-
-    const { subtotal, iva, total } = calcularTotales();
+    // Totales ya están calculados arriba para la validación de cupo
 
     const totalPages = Math.max(1, Math.ceil(productos.length / ITEMS_PER_PAGE));
     const paginatedProducts = productos.slice(
@@ -244,8 +250,9 @@ export default function CreateSales() {
 
         if (!vDoc.valido || !vFech.valido || !vTipoVenta.valido || !vDiasPlazo.valido || productos.length === 0) return;
 
-        if (formData.tipoVenta === "Credito" && total > (resultadoDoc.cliente?.cupoTotal || 0)) {
-            setAlert({ type: "error", message: `El total de la venta ($${total.toLocaleString("es-CO")}) supera el cupo asignado ($${(resultadoDoc.cliente?.cupoTotal || 0).toLocaleString("es-CO")}).` });
+        // Bloquear si hay error de crédito (sin cupo o total supera cupo)
+        if (errorCredito) {
+            setAlert({ type: "error", message: errorCredito });
             return;
         }
 
@@ -269,7 +276,17 @@ export default function CreateSales() {
             setTimeout(() => navigate("/dashboard/sales-management"), 1500);
         } catch (error) {
             console.error(error);
-            setAlert({ type: "error", message: "Error al registrar la venta: " + (error?.response?.data?.error || error.message) });
+            const rawError = error?.response?.data?.error || error.message;
+            let friendlyError = "Error al registrar la venta: " + rawError;
+            
+            // Traducir errores técnicos del backend a lenguaje amigable
+            if (rawError.includes("ObjectId válidos") || rawError.includes("productoId no son ObjectId")) {
+                friendlyError = "Hay productos en la lista que no son válidos. Por favor, elimínelos y vuelva a agregarlos.";
+            } else if (rawError.includes("clienteId no es un ObjectId")) {
+                friendlyError = "El cliente seleccionado no es válido.";
+            }
+
+            setAlert({ type: "error", message: friendlyError });
         }
     };
 
@@ -350,9 +367,16 @@ export default function CreateSales() {
                             {estadoTipoVenta && (
                                 <ValidationMessage
                                     error={!estadoTipoVenta.valido ? estadoTipoVenta.mensaje : null}
-                                    success={estadoTipoVenta.valido}
+                                    success={estadoTipoVenta.valido && !errorCredito}
                                     successMessage="Listo"
                                 />
+                            )}
+                            {/* Error inline de crédito — siempre visible si hay problema */}
+                            {errorCredito && (
+                                <div className="flex items-start gap-1.5 mt-1.5 px-3 py-2 bg-red-50 border border-red-200 rounded-xl">
+                                    <AlertCircle size={13} className="text-red-500 mt-0.5 shrink-0" />
+                                    <span className="text-xs text-red-600 leading-snug">{errorCredito}</span>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -381,10 +405,11 @@ export default function CreateSales() {
                                     value={formData.diasPlazo}
                                     onChange={handleChange}
                                     onBlur={() => tocar("diasPlazo")}
-                                    placeholder="Ej: 45 (Máx 60)"
-                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-inner focus:outline-none focus:ring-2 transition-all duration-300 ${ringClass(estadoDiasPlazo)}`}
+                                    disabled={isCreditBlocked}
+                                    placeholder={isCreditBlocked ? "No disponible sin cupo" : "Ej: 45 (Máx 60)"}
+                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-inner focus:outline-none focus:ring-2 transition-all duration-300 ${ringClass(estadoDiasPlazo)} ${isCreditBlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 />
-                                {tocado.diasPlazo && (
+                                {tocado.diasPlazo && !isCreditBlocked && (
                                     <div className="mt-1">
                                         <ValidationMessage
                                             error={!estadoDiasPlazo?.valido ? estadoDiasPlazo?.mensaje : null}
@@ -419,8 +444,9 @@ export default function CreateSales() {
                                 <PrimaryButton
                                     type="button"
                                     icon={Plus}
-                                    onClick={() => setIsModalOpen(true)}
-                                    className="w-full md:w-auto justify-center"
+                                    onClick={() => !isCreditBlocked && setIsModalOpen(true)}
+                                    className={`w-full md:w-auto justify-center ${isCreditBlocked ? 'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400' : ''}`}
+                                    title={isCreditBlocked ? "El cliente no tiene cupo de crédito" : "Añadir producto"}
                                 >
                                     Añadir producto
                                 </PrimaryButton>
@@ -502,7 +528,8 @@ export default function CreateSales() {
                             Cancelar
                         </button>
                         <button type="submit"
-                            className="px-5 py-2.5 text-sm rounded-lg bg-linear-to-r from-white to-yellow-300 shadow-md hover:shadow-lg transition cursor-pointer font-medium">
+                            disabled={!!errorCredito}
+                            className="px-5 py-2.5 text-sm rounded-lg bg-linear-to-r from-white to-yellow-300 shadow-md hover:shadow-lg transition font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
                             Crear Venta
                         </button>
                     </div>

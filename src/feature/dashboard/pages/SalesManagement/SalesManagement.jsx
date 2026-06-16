@@ -1,5 +1,5 @@
 import { Eye, Undo2, Ban, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
 import Searchbar from "../../components/ui/Searchbar";
@@ -56,31 +56,27 @@ export default function SalesManagement() {
         pageActual * ITEMS_PER_PAGE
     );
 
-    useEffect(() => { getSales(); }, []);
-
-    const getSales = async () => {
+    const getSales = useCallback(async () => {
         setLoading(true);
         try {
             const response = await SalesService.get();
-            // Assuming backend response contains populated clients, we don't need local storage fallback as much, 
-            // but keep it just in case if the name is missing
-            const clients = JSON.parse(localStorage.getItem("clients") || "[]");
-            const salesConCliente = response.map(sale => {
-                if (!sale.cliente || sale.cliente === "Cliente Desconocido") {
-                    const found = clients.find(c => c.documento === sale.numeroDocumento);
-                    if (found) return { ...sale, cliente: `${found.nombres} ${found.apellidos}` };
-                }
-                return sale;
-            });
-            const sortedSales = salesConCliente.sort((a, b) => new Date(b.fecha) - new Date(a.fecha)); // sort by date or id if backend provides monotonic id
+            const sortedSales = response.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
             setSales(sortedSales);
         } catch (err) {
-            const message = "No se pudieron cargar las ventas." || err.message;
+            const message = err.message || "No se pudieron cargar las ventas.";
             showAlert("error", message);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => { getSales(); }, [getSales]);
+
+    // ✅ Refresca la tabla automáticamente cuando se registra un abono desde el módulo de Pagos
+    useEffect(() => {
+        window.addEventListener("payments-updated", getSales);
+        return () => window.removeEventListener("payments-updated", getSales);
+    }, [getSales]);
 
     const handleSearch = (e) => {
         setSearch(e.target.value);
@@ -244,7 +240,7 @@ export default function SalesManagement() {
 
                                                     {/* CREDITO */}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                        {sale.tipoVenta === "Credito" && (sale.estado === "Vigente" || sale.estado === "Finalizado") && (
+                                                        {(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") && (sale.estado === "Vigente" || sale.estado === "Finalizado") && (
                                                             <button
                                                                 className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
                                                                 onClick={() => handleViewCredit(sale)}

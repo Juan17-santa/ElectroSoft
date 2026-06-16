@@ -3,9 +3,30 @@ import { ServicesOrders } from "../../../../../feature/dashboard/pages/orders/se
 import { ClientsService } from "../../../../../feature/dashboard/pages/Clients/services/ClientsService";
 import api from "../../../../../utils/api.js";
 
+// ✅ Cache de clientes para evitar N llamadas a GET /clients por cada venta
+let _clientsCache = null;
+let _clientsCacheTime = 0;
+const CLIENTS_CACHE_TTL = 30_000; // 30 segundos
+
+const getCachedClients = async () => {
+    const now = Date.now();
+    if (_clientsCache && (now - _clientsCacheTime) < CLIENTS_CACHE_TTL) {
+        return _clientsCache;
+    }
+    _clientsCache = await ClientsService.get();
+    _clientsCacheTime = now;
+    return _clientsCache;
+};
+
+// Invalida el cache al registrar pagos o actualizar cupos
+const invalidateClientsCache = () => {
+    _clientsCache = null;
+    _clientsCacheTime = 0;
+};
+
 const getClientName = async (documento, clienteId) => {
     try {
-        const clients = await ClientsService.get();
+        const clients = await getCachedClients();
         const found = documento
             ? clients.find(c => c.documento === String(documento))
             : clients.find(c => String(c.id) === String(clienteId));
@@ -15,6 +36,7 @@ const getClientName = async (documento, clienteId) => {
         return "Sin nombre";
     }
 };
+
 
 const calcularFechaLimite = (fecha) => {
     if (!fecha) return null;
@@ -37,8 +59,18 @@ const esCredito = (tipoVenta) =>
 const esAnulada = (estado) =>
     estado === "Anulada" || estado === "Anulado" || estado === "ANULADA";
 
+// ✅ FIX: Las ventas ANULADAS no deben aparecer en pagos pendientes
 const esPendiente = (estado) =>
-    estado === "Vigente" || estado === "ACTIVA" || esAnulada(estado) || estado === "Pendiente";
+    estado === "Vigente" || estado === "ACTIVA" || estado === "Pendiente";
+
+// ✅ Helper: parsea la respuesta de /payments/venta/:id correctamente.
+// El backend devuelve { venta, totalPagado, saldoPendiente, estadoPago, pagos: [] }
+// NO devuelve directamente un array.
+const parsePagosResponse = (responseData) => {
+    if (Array.isArray(responseData)) return responseData;
+    if (responseData && Array.isArray(responseData.pagos)) return responseData.pagos;
+    return [];
+};
 
 const paymentsService = {
 
@@ -80,7 +112,9 @@ const paymentsService = {
                 let abonos = [];
                 try {
                     const payRes = await api.get(`/payments/venta/${s.id}`);
-                    abonos = (payRes.data.data || payRes.data).map(p => ({
+                    // ✅ FIX: el backend devuelve { pagos: [], totalPagado, ... } no un array directo
+                    const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
+                    abonos = pagosRaw.map(p => ({
                         id: p._id,
                         fecha: new Date(p.fechaPago).toISOString().split('T')[0],
                         monto: p.monto,
@@ -95,20 +129,29 @@ const paymentsService = {
                     .filter(a => !a.anulado)
                     .reduce((acc, a) => acc + Number(a.monto), 0);
                 const montoPorPagar = s.total - totalAbonado;
-                
+                // ✅ FIX: calcular estado Finalizado cuando ya está pagado
+                const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : s.estado;
+
                 return enriquecerVenta({
                     ...s,
                     fuente: "venta",
                     cliente: s.cliente || await getClientName(s.numeroDocumento, null),
+                    montoPagado: totalAbonado,
                     montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+                    estado: estadoFinal,
                     abonos
                 });
             });
 
         const ventas = (await Promise.all(ventasPromises)).filter(s => s.montoPorPagar > 0);
 
-        // Orders are local
-        const pedidos = ServicesOrders.get()
+        // Orders are from backend now
+        let allOrders = [];
+        try {
+            allOrders = await ServicesOrders.getAllOrders();
+        } catch(e) { console.error("Error fetching orders:", e); }
+
+        const pedidos = allOrders
             .filter(o =>
                 esCredito(o.formaPago) &&
                 o.estado === "Pendiente"
@@ -153,24 +196,37 @@ const paymentsService = {
             let abonos = [];
             try {
                 const payRes = await api.get(`/payments/venta/${venta.id}`);
-                abonos = (payRes.data.data || payRes.data).map(p => ({
+                // ✅ FIX: parsear correctamente la respuesta del backend
+                const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
+                abonos = pagosRaw.map(p => ({
                     id: p._id,
                     fecha: new Date(p.fechaPago).toISOString().split('T')[0],
                     monto: p.monto,
                     metodoPago: p.metodoPago,
                     anulado: p.estado === 'ANULADO' || false
                 }));
-            } catch (e) {}
+            } catch (e) {
+                console.error(`Error fetching abonos for sale ${venta.id}:`, e);
+            }
 
             const totalAbonado = abonos.filter(a => !a.anulado).reduce((acc, a) => acc + Number(a.monto), 0);
+            const montoPorPagar = venta.total - totalAbonado > 0 ? venta.total - totalAbonado : 0;
+            const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : venta.estado;
             return enriquecerVenta({
                 ...venta,
-                montoPorPagar: venta.total - totalAbonado > 0 ? venta.total - totalAbonado : 0,
+                montoPagado: totalAbonado,
+                montoPorPagar,
+                estado: estadoFinal,
                 abonos
             });
         }
 
-        const pedido = ServicesOrders.get().find(o => o.id === Number(id) || String(o.id) === String(id));
+        let allOrders = [];
+        try {
+            allOrders = await ServicesOrders.getAllOrders();
+        } catch(e) { console.error("Error fetching orders:", e); }
+
+        const pedido = allOrders.find(o => o.id === Number(id) || String(o.id) === String(id) || String(o._id) === String(id));
         if (!pedido) return null;
 
         const subtotal = (pedido.productos || []).reduce((acc, p) => acc + (Number(p.precio) * Number(p.cantidad)), 0);
@@ -196,26 +252,35 @@ const paymentsService = {
     },
 
     async createAbono(documento, ventaId, { paymentMethod, amount }) {
+        let isSale = false;
         try {
-            // First check if it's a sale in the backend
             const sale = await SalesService.getById(ventaId);
-            if (sale) {
-                const paymentRes = await api.post('/payments', {
-                    ventaId,
-                    monto: Number(amount),
-                    metodoPago: paymentMethod,
-                    notas: "Pago de crédito"
-                });
-                
-                window.dispatchEvent(new Event("payments-updated"));
-                return paymentRes.data.data || paymentRes.data;
-            }
+            if (sale) isSale = true;
         } catch (e) {
-            // Proceed to check orders
+            // No es una venta
         }
 
-        const orders = ServicesOrders.get();
-        const order = orders.find(o => String(o.id) === String(ventaId));
+        if (isSale) {
+            let mappedMethod = paymentMethod.toUpperCase();
+            if (mappedMethod.includes("TARJETA")) mappedMethod = "TARJETA";
+            if (mappedMethod === "CHEQUE") mappedMethod = "TRANSFERENCIA"; // Fallback to avoid crash
+
+            // Sabemos que es una venta real, enviamos al backend y PROPAGAMOS errores
+            const paymentRes = await api.post('/payments', {
+                ventaId,
+                monto: Number(amount),
+                metodoPago: mappedMethod,
+                notas: "Pago de crédito"
+            });
+            window.dispatchEvent(new Event("payments-updated"));
+            return paymentRes.data.data || paymentRes.data;
+        }
+
+        let orders = [];
+        try {
+            orders = await ServicesOrders.getAllOrders();
+        } catch(e) { console.error("Error fetching orders:", e); }
+        const order = orders.find(o => String(o.id) === String(ventaId) || String(o._id) === String(ventaId));
 
         if (order) {
             const nuevoAbono = {
@@ -298,9 +363,9 @@ const paymentsService = {
         }
     },
 
+    // Obtiene clientes del backend y filtra los que tienen cupo activo
     async getClientesConCupo() {
-        // Obtiene clientes del backend y filtra los que tienen cupo activo
-        const clients = await ClientsService.get();
+        const clients = await getCachedClients();
         const filtered = clients.filter(c => c.cupoActivo === true && c.cupoTotal > 0);
 
         const promises = filtered.map(async c => {
@@ -327,7 +392,7 @@ const paymentsService = {
     },
 
     async getResumenCliente(documento) {
-        const clients = await ClientsService.get();
+        const clients = await getCachedClients();
         const client = clients.find(c => c.documento === String(documento));
         if (!client) return null;
 
@@ -359,6 +424,7 @@ const paymentsService = {
                 cupoTotal: Number(nuevoCupo),
                 cupoActivo: true
             });
+            invalidateClientsCache(); // ✅ Invalidar cache para que la próxima carga sea fresca
             window.dispatchEvent(new Event("payments-updated"));
             return true;
         } catch (e) {
@@ -375,9 +441,10 @@ const paymentsService = {
     // Anula el último abono activo de una venta usando el backend
     async anularUltimoAbono(ventaId) {
         try {
-            // Buscar los pagos de esta venta
             const payRes = await api.get(`/payments/venta/${ventaId}`);
-            const pagos = (payRes.data.data || payRes.data)
+            // ✅ FIX: parsear correctamente — el backend devuelve { pagos: [] }
+            const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
+            const pagos = pagosRaw
                 .filter(p => p.estado !== 'ANULADO')
                 .sort((a, b) => new Date(b.fechaPago) - new Date(a.fechaPago));
 
@@ -388,12 +455,11 @@ const paymentsService = {
             const ultimoPago = pagos[0];
             await api.patch(`/payments/${ultimoPago._id}/cancel`);
 
-            // Recalcular y retornar el estado de la venta
-            const venta = await SalesService.getById(ventaId);
-            return await this.getById(ventaId) || venta;
+            // Recalcular y retornar el estado de la venta con abonos actualizados
+            return await this.getById(ventaId);
         } catch (e) {
             console.error("Error anulando abono:", e);
-            return null;
+            throw e;
         }
     },
 };

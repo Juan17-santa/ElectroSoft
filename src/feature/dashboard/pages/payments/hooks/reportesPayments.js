@@ -11,23 +11,58 @@ const hoy = () => new Date().toISOString().split("T")[0];
  * Reporte general — todos los clientes con cupo de crédito
  * Una hoja por cliente con sus ventas y abonos detallados
  * + una hoja resumen general
+ * 
+ * @param {Array}  clientes   - Array de clientes con cupo (desde getClientesConCupo)
+ * @param {string} fechaInicio - Fecha ISO inicio del filtro (YYYY-MM-DD), opcional
+ * @param {string} fechaFin   - Fecha ISO fin del filtro (YYYY-MM-DD), opcional
  */
-export const generarReporteGeneral = (clientes) => {
+export const generarReporteGeneral = (clientes, fechaInicio, fechaFin) => {
     const workbook = XLSX.utils.book_new();
 
+    // ── Aplicar filtro de fechas a ventas de cada cliente ───────────
+    const clientesFiltrados = clientes
+        .map(c => {
+            // Si no se proporcionan fechas, usar todas las ventas
+            if (!fechaInicio && !fechaFin) return c;
+
+            const ventasFiltradas = (c.ventas || []).filter(v => {
+                const fechaVenta = v.fecha || "";
+                const dentroDeInicio = !fechaInicio || fechaVenta >= fechaInicio;
+                const dentroDeFin    = !fechaFin    || fechaVenta <= fechaFin;
+                return dentroDeInicio && dentroDeFin;
+            });
+
+            // Recalcular cupo ocupado solo con ventas filtradas
+            const cupoOcupado = ventasFiltradas.reduce((acc, v) => acc + (v.montoPorPagar || 0), 0);
+
+            return {
+                ...c,
+                ventas: ventasFiltradas,
+                totalVentas: ventasFiltradas.length,
+                cupoOcupado,
+                cupoDisponible: Math.max(c.cupoCredito - cupoOcupado, 0),
+            };
+        })
+        .filter(c => !fechaInicio && !fechaFin ? true : c.ventas.length > 0); // Si hay filtro, excluir clientes sin ventas en rango
+
+    const periodoLabel = fechaInicio || fechaFin
+        ? `${fechaInicio || "inicio"} — ${fechaFin || "hoy"}`
+        : "Todos los períodos";
+
     // ── HOJA 1: Resumen general ──────────────────────────────────────
-    const totalCupoAsignado   = clientes.reduce((acc, c) => acc + c.cupoCredito,    0);
-    const totalCupoOcupado    = clientes.reduce((acc, c) => acc + c.cupoOcupado,    0);
-    const totalCupoDisponible = clientes.reduce((acc, c) => acc + c.cupoDisponible, 0);
-    const clientesSuspendidos = clientes.filter(c => c.estado === false).length;
+    const totalCupoAsignado   = clientesFiltrados.reduce((acc, c) => acc + c.cupoCredito,    0);
+    const totalCupoOcupado    = clientesFiltrados.reduce((acc, c) => acc + c.cupoOcupado,    0);
+    const totalCupoDisponible = clientesFiltrados.reduce((acc, c) => acc + c.cupoDisponible, 0);
+    const clientesSuspendidos = clientesFiltrados.filter(c => c.estado === false).length;
 
     const resumenData = [
         ["REPORTE GENERAL DE CRÉDITOS Y ABONOS"],
         [`Generado: ${hoy()}`],
+        [`Período: ${periodoLabel}`],
         [],
         ["RESUMEN EJECUTIVO"],
-        ["Total clientes con cupo",  clientes.length],
-        ["Clientes activos",         clientes.length - clientesSuspendidos],
+        ["Total clientes con cupo",  clientesFiltrados.length],
+        ["Clientes activos",         clientesFiltrados.length - clientesSuspendidos],
         ["Clientes suspendidos",     clientesSuspendidos],
         ["Cupo total asignado",      fmt(totalCupoAsignado)],
         ["Cupo total ocupado",       fmt(totalCupoOcupado)],
@@ -47,7 +82,7 @@ export const generarReporteGeneral = (clientes) => {
             "Cupo disponible",
             "Ventas pendientes",
         ],
-        ...clientes.map(c => {
+        ...clientesFiltrados.map(c => {
             const estadoPago = c.estado === false
                 ? "Suspendido"
                 : c.cupoOcupado > 0 ? "Por pagar" : "Al día";
@@ -76,7 +111,7 @@ export const generarReporteGeneral = (clientes) => {
     XLSX.utils.book_append_sheet(workbook, wsResumen, "Resumen general");
 
     // ── HOJA POR CLIENTE: ventas + abonos ───────────────────────────
-    clientes.forEach(c => {
+    clientesFiltrados.forEach(c => {
         const rows = [];
 
         // Encabezado cliente
@@ -84,12 +119,13 @@ export const generarReporteGeneral = (clientes) => {
         rows.push([`Documento: ${c.tipoDocumento} ${c.documento}`]);
         rows.push([`Email: ${c.email || "—"}   Teléfono: ${c.telefono || "—"}`]);
         rows.push([`Estado: ${c.estado === false ? "Suspendido" : "Activo"}`]);
+        rows.push([`Período filtrado: ${periodoLabel}`]);
         rows.push([]);
         rows.push(["Cupo total", fmt(c.cupoCredito), "Cupo ocupado", fmt(c.cupoOcupado), "Cupo disponible", fmt(c.cupoDisponible)]);
         rows.push([]);
 
         if (!c.ventas || c.ventas.length === 0) {
-            rows.push(["Sin ventas a crédito registradas."]);
+            rows.push(["Sin ventas a crédito en el período seleccionado."]);
         } else {
             c.ventas.forEach((v, vi) => {
                 const estadoVenta = v.estado === "Anulada" || v.estado === "Anulado"
@@ -150,8 +186,10 @@ export const generarReporteGeneral = (clientes) => {
         XLSX.utils.book_append_sheet(workbook, wsCliente, nombreHoja);
     });
 
-    XLSX.writeFile(workbook, `reporte_creditos_${hoy()}.xlsx`);
+    const sufijo = fechaInicio || fechaFin ? `_${fechaInicio || ""}_${fechaFin || ""}` : "";
+    XLSX.writeFile(workbook, `reporte_creditos${sufijo}_${hoy()}.xlsx`);
 };
+
 
 /**
  * Reporte individual — estado de cuenta de un cliente

@@ -8,29 +8,52 @@
  * Diseño: Fondo con decoraciones SVG doradas, tarjeta blanca con borde izquierdo.
  * 
  * Navegación: Se accede desde SalesManagement (icono ojo).
- * Los datos de la venta se leen de localStorage (clave "saleToView").
+ * Los datos de la venta se leen de localStorage (carga inicial rápida) y luego
+ * se refrescan desde el backend para garantizar datos financieros actualizados.
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, FileText, ArrowLeft } from "lucide-react";
+import { X, FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
+import { SalesService } from "./services/SalesService";
 import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 
 export default function SaleDetailsPage() {
     const navigate = useNavigate();
     const [sale, setSale] = useState(null);
+    const [loadingRefresh, setLoadingRefresh] = useState(false);
     const [alert, setAlert] = useState(null);
     const [confirmData, setConfirmData] = useState(null);
 
-    /** Lee los datos de la venta desde localStorage al montar el componente */
+    /**
+     * Carga inicial desde localStorage (instantánea) + refresco desde backend.
+     * Esto garantiza que los datos financieros (montoPagado, montoPorPagar, estado)
+     * siempre estén actualizados aunque se hayan registrado abonos recientemente.
+     */
     useEffect(() => {
         const data = localStorage.getItem("saleToView");
-        if (data) {
-            const parsedSale = JSON.parse(data);
-            setSale(parsedSale);
+        if (!data) return;
+
+        const parsedSale = JSON.parse(data);
+        setSale(parsedSale); // Mostrar inmediatamente con datos de localStorage
+
+        // Refrescar desde el backend en segundo plano
+        if (parsedSale?.id) {
+            setLoadingRefresh(true);
+            SalesService.getById(parsedSale.id)
+                .then(freshSale => {
+                    if (freshSale) {
+                        setSale(freshSale);
+                        localStorage.setItem("saleToView", JSON.stringify(freshSale));
+                    }
+                })
+                .catch(err => {
+                    console.warn("[SaleDetailsPage] No se pudo refrescar desde el backend:", err?.message);
+                })
+                .finally(() => setLoadingRefresh(false));
         }
     }, []);
 
@@ -184,9 +207,15 @@ export default function SaleDetailsPage() {
 
                 {/* Header */}
                 <div className="flex flex-col md:flex-row gap-3 justify-between items-center mb-10">
-                    <h2 className="text-[22px] font-bold italic text-gray-800">
-                       Ver información de la venta #{String(sale.numeroVenta || "").padStart(2, '0')}
-                    </h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-[22px] font-bold italic text-gray-800">
+                           Ver información de la venta #{String(sale.numeroVenta || "").padStart(2, '0')}
+                        </h2>
+                        {loadingRefresh && (
+                            <RefreshCw size={16} className="animate-spin text-yellow-500" title="Actualizando datos..." />
+                        )}
+                    </div>
+
                     <div className="flex w-full md:w-auto items-center gap-4">
                         <button
                             onClick={handleGenerateReport}

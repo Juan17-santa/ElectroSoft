@@ -15,6 +15,8 @@ export default function CreatePayment() {
     const {
         formData,
         errors,
+        formError,
+        setFormError,
         handleChange,
         handleSelectVenta,
         handleSubmit,
@@ -66,6 +68,14 @@ export default function CreatePayment() {
                     onCancel={() => navigate(-1)}
                 />
             </div>
+
+            {formError && (
+                <Alert
+                    type="error"
+                    message={formError}
+                    onClose={() => setFormError("")}
+                />
+            )}
 
             {alert && (
                 <Alert
