@@ -115,15 +115,15 @@ export default function Clients() {
             message: "¿Deseas descargar el reporte de clientes?",
             onConfirm: () => {
                 const reportTitle = "Gestión de Clientes - Reporte";
-                const columns = ["ID", "Tipo Doc", "Documento", "Nombre", "Email", "Teléfono", "Total Compras"];
+                const columns = ["ID", "Documento", "Nombre completo", "Email", "Teléfono", "Total Compras", "Cupo"];
                 const data = filteredClients.map((c, i) => [
                     String(i + 1).padStart(2, "0"),
-                    c.tipoDocumento,
-                    c.documento,
+                    `${c.abreviacion} - ${c.documento}`,
                     `${c.nombres} ${c.apellidos}`,
                     c.email,
                     c.telefono,
-                    `$${c.totalCompras?.toLocaleString("es-CO") || "0"}`
+                    `$${c.totalCompras?.toLocaleString("es-CO") || "0"}`,
+                    c.cupoActivo ? `$${c.cupoTotal?.toLocaleString("es-CO")}` : "Sin cupo"
                 ]);
 
                 generateExcelReport({
@@ -164,12 +164,12 @@ export default function Clients() {
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
                                     <th className="px-3 py-2 font-semibold w-8">ID</th>
-                                    <th className="px-3 py-2 font-semibold w-16">Tipo Doc</th>
                                     <th className="px-3 py-2 font-semibold w-24">Documento</th>
                                     <th className="px-3 py-2 font-semibold w-32">Nombre</th>
-                                    <th className="px-3 py-2 font-semibold w-32">Email</th>
-                                    <th className="px-3 py-2 font-semibold w-20">Teléfono</th>
+                                    <th className="px-3 py-2 font-semibold w-36">Email</th>
+                                    <th className="px-3 py-2 font-semibold w-24">Teléfono</th>
                                     <th className="px-3 py-2 font-semibold w-24">Total Compras</th>
+                                    <th className="px-3 py-2 font-semibold w-24">Cupo</th>
                                     <th className="px-3 py-2 font-semibold text-center w-36">Acciones</th>
                                 </tr>
                             </thead>
@@ -192,28 +192,47 @@ export default function Clients() {
                                 ) : (
                                     paginatedClients.map((client, index) => (
                                         <tr key={client.id} className="border-b border-gray-300">
-                                            <td className="px-3 py-2 w-8">
+                                            <td className="px-3 py-2">
                                                 {String((pageActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                             </td>
-                                            <td className="px-3 py-2 w-16">{client.abreviacion}</td>
-                                            <td className="px-3 py-2 w-24">{client.documento}</td>
-                                            <td className="px-3 py-2 w-32 truncate">{client.nombres} {client.apellidos}</td>
-                                            <td className="px-3 py-2 w-32 truncate">{client.email}</td>
+                                            <td className="px-3 py-2">
+                                                {client.abreviacion} <br />
+                                                {client.documento}
+                                            </td>
+                                            <td className="px-3 py-2 truncate">{client.nombres} {client.apellidos}</td>
+                                            <td className="px-3 py-2 truncate">{client.email}</td>
                                             <td className="px-3 py-2 w-20">{client.telefono}</td>
                                             <td className="px-3 py-2 w-24">${client.totalCompras?.toLocaleString("es-CO")}</td>
+                                            <td className="px-3 py-2 w-24">
+                                                {client.cupoActivo ? (
+                                                    <span className="text-green-600 font-medium">
+                                                        ${client.cupoTotal?.toLocaleString("es-CO")}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400">
+                                                        Sin cupo
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td className="px-3 py-2 w-36">
                                                 <div className="flex justify-center flex-nowrap gap-1.5 h-9">
                                                     {hasPermission("Clientes", "Editar") && (
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            {client.totalCompras > 1000000 && (
-                                                                <button
-                                                                    className="p-2 rounded-lg bg-green-100 hover:bg-green-200 transition duration-300 cursor-pointer"
-                                                                    onClick={() => handleAsignarCupo(client)}
-                                                                    title="Asignar cupo"
-                                                                >
-                                                                    <CreditCard size={18} className="text-green-600" />
-                                                                </button>
-                                                            )}
+                                                            <button
+                                                                onClick={() => handleAsignarCupo(client)}
+                                                                disabled={client.totalCompras < 1000000}
+                                                                className={`p-2 rounded-lg transition ${client.totalCompras >= 1000000
+                                                                    ? "bg-green-200 text-green-700 hover:bg-green-300 cursor-pointer"
+                                                                    : "bg-gray-300 cursor-not-allowed opacity-50"
+                                                                    }`}
+                                                                title={
+                                                                    client.totalCompras >= 1000000
+                                                                        ? "Asignar cupo"
+                                                                        : "Debe superar $1.000.000 en compras"
+                                                                }
+                                                            >
+                                                                <CreditCard size={18} />
+                                                            </button>
                                                         </div>
                                                     )}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
@@ -286,6 +305,7 @@ export default function Clients() {
                 onClose={() => setAssignQuotaClient(null)}
                 onConfirm={confirmAssignQuota}
                 clientName={assignQuotaClient ? `${assignQuotaClient.nombres} ${assignQuotaClient.apellidos}` : ''}
+                currentQuota={assignQuotaClient?.cupoTotal || 0}
             />
 
             {/* ALERTA */}

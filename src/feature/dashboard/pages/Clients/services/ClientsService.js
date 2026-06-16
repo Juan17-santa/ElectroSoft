@@ -13,6 +13,7 @@ const mapClientToFrontend = (client) => {
         email: client.email,
         telefono: client.phone,
         estado: client.estado !== undefined ? client.estado : true,
+        totalCompras: client.totalCompras || 0,
         cupoActivo: client.cupoActivo || false,
         cupoTotal: client.cupoTotal || 0,
         fechaCreacion: client.createdAt ? new Date(client.createdAt).toISOString().split('T')[0] : "",
@@ -39,6 +40,22 @@ export const ClientsService = {
             return mapClientToFrontend(data);
         } catch (error) {
             console.error("Error fetching client by ID:", error);
+            throw error;
+        }
+    },
+
+    async getByDocument(documento) {
+        try {
+            const response = await api.get(
+                `/clients/document/${documento}`
+            );
+
+            const data = response.data;
+            return mapClientToFrontend(data);
+        } catch (error) {
+            if (error.response?.status === 404) {
+                return null;
+            }
             throw error;
         }
     },
