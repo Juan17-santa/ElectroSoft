@@ -1,7 +1,6 @@
 import { X, User, Mail, Phone, FileText, IdCard } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { useClientModal } from "../hooks/UseClientModal";
-import { useState } from "react";
 import Alert from "../../../components/ui/Alert";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
@@ -15,7 +14,9 @@ export default function ClientModal({ onClose, onSave }) {
         errors,
         handleChange,
         handleSubmit,
-        documentTypes
+        documentTypes,
+        formError,
+        setFormError
     } = useClientModal((clienteRecibido) => {
         // ENVIAMOS LOS DATOS REALES AL PADRE
         if (onSave) onSave(clienteRecibido);
@@ -50,7 +51,6 @@ export default function ClientModal({ onClose, onSave }) {
                                 Complete la información del cliente
                             </p>
                         </div>
-
                         <button
                             onClick={onClose}
                             className="hover:bg-gray-100 p-2 rounded-lg transition cursor-pointer"
@@ -58,6 +58,12 @@ export default function ClientModal({ onClose, onSave }) {
                             <X size={18} />
                         </button>
                     </div>
+
+                    {formError && (
+                        <div className="mb-4">
+                            <Alert type="error" message={formError} onClose={() => setFormError("")} />
+                        </div>
+                    )}
 
                     {/* FORMULARIO */}
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4 md:gap-6">

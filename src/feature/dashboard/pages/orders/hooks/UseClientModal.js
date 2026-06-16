@@ -17,6 +17,7 @@ export const useClientModal = (onSave) => {
 
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
+    const [formError, setFormError] = useState("");
 
     // ESTADO PARA OBTENER LOS TIPOS DE DOCUMENTO DESDE EL BACKEND
     const [documentTypes, setDocumentTypes] = useState([]);
@@ -38,50 +39,51 @@ export const useClientModal = (onSave) => {
         switch (name) {
 
             case "tipoDocumento":
-                if (!value) error = "Seleccione un tipo de documento";
+                if (!Validations.campoRequerido(value)) error = "Seleccione un tipo de documento.";
                 break;
 
             case "documento":
-                if (!value) {
-                    error = "El documento es obligatorio";
-                } else if (!Validations.soloNumeros(value)) {
-                    error = "Solo números permitidos";
-                } else if (value.length < 8 || value.length > 12) {
-                    error = "Debe tener entre 8 y 12 dígitos";
+                if (!Validations.campoRequerido(value)) {
+                    error = "El documento es obligatorio.";
+                } else {
+                    const documentoResult = Validations.validarDocumentoCliente(value);
+                    if (!documentoResult.valido) error = documentoResult.mensaje;
                 }
                 break;
 
             case "nombres":
-                if (!value) {
-                    error = "El nombre es obligatorio";
-                } else if (!Validations.soloLetras(value)) {
-                    error = "Solo se permiten letras";
+                if (!Validations.campoRequerido(value)) {
+                    error = "El nombre es obligatorio.";
+                } else {
+                    const nombresResult = Validations.validarNombreApellido(value);
+                    if (!nombresResult.valido) error = nombresResult.mensaje;
                 }
                 break;
 
             case "apellidos":
-                if (!value) {
-                    error = "El apellido es obligatorio";
-                } else if (!Validations.soloLetras(value)) {
-                    error = "Solo se permiten letras";
+                if (!Validations.campoRequerido(value)) {
+                    error = "El apellido es obligatorio.";
+                } else {
+                    const apellidosResult = Validations.validarNombreApellido(value);
+                    if (!apellidosResult.valido) error = apellidosResult.mensaje;
                 }
                 break;
 
             case "email":
-                if (!value) {
-                    error = "El email es obligatorio";
-                } else if (!Validations.formatoEmail(value)) {
-                    error = "Formato email invalido";
+                if (!Validations.campoRequerido(value)) {
+                    error = "El email es obligatorio.";
+                } else {
+                    const emailResult = Validations.validarEmail(value);
+                    if (!emailResult.valido) error = emailResult.mensaje;
                 }
                 break;
 
             case "telefono":
-                if (!value) {
-                    error = "El teléfono es obligatorio";
-                } else if (!Validations.soloNumeros(value)) {
-                    error = "Solo números permitidos";
-                } else if (value.length < 8 || value.length > 14) {
-                    error = "Debe tener entre 8 y 14 dígitos";
+                if (!Validations.campoRequerido(value)) {
+                    error = "El teléfono es obligatorio.";
+                } else {
+                    const telefonoResult = Validations.validarTelefono(value);
+                    if (!telefonoResult.valido) error = telefonoResult.mensaje;
                 }
                 break;
 
@@ -103,6 +105,9 @@ export const useClientModal = (onSave) => {
             ...prev,
             [name]: value
         }));
+
+        // Limpiar cualquier error global del formulario cuando el usuario edita un campo
+        if (formError) setFormError("");
 
         // VALIDAR EL CAMPO EN TIEMPO REAL MIENTRAS EL USUARIO ESCRIBE
         const error = validateField(name, value);
@@ -127,6 +132,7 @@ export const useClientModal = (onSave) => {
 
         // REEMPLAZAR EL ESTADO DE ERRORES CON LOS NUEVOS ENCONTRADOS
         setErrors(newErrors);
+        setFormError("");
 
         // RETORNAR TRUE SI NO HAY NINGÚN ERROR
         return Object.keys(newErrors).length === 0;
@@ -139,10 +145,40 @@ export const useClientModal = (onSave) => {
         // DETENER LA EJECUCIÓN SI EL FORMULARIO NO ES VÁLIDO
         if (!validateForm()) return;
 
-        // CONSTRUCCIÓN DEL OBJETO DE NUEVO CLIENTE CON DATOS ADICIONALES
-        const clienteCreado = await ClientsService.create(formData);
+        try {
+            const existingClient = await ClientsService.getByDocument(formData.documento);
+            if (existingClient) {
+                setErrors(prev => ({
+                    ...prev,
+                    documento: "Este documento ya está registrado."
+                }));
+                return;
+            }
+        } catch (error) {
+            if (error.response?.status !== 404) {
+                console.error("Error verificando documento existente:", error);
+                setFormError("No fue posible verificar si el documento ya existe.");
+                return;
+            }
+        }
 
-        onSave(clienteCreado);
+        try {
+            const clienteCreado = await ClientsService.create(formData);
+            setFormError("");
+            onSave(clienteCreado);
+        } catch (error) {
+            console.error(error);
+            const backendMessage = error.response?.data?.error || error.response?.data?.message || "Error al crear el cliente.";
+
+            if (/documento|document/i.test(backendMessage)) {
+                setErrors(prev => ({
+                    ...prev,
+                    documento: backendMessage
+                }));
+            } else {
+                setFormError(backendMessage);
+            }
+        }
     };
 
     // RETORNO DE LAS PROPIEDADES Y FUNCIONES NECESARIAS PARA EL COMPONENTE
@@ -151,6 +187,8 @@ export const useClientModal = (onSave) => {
         errors,
         handleChange,
         handleSubmit,
-        documentTypes
+        documentTypes,
+        formError,
+        setFormError
     };
 };
