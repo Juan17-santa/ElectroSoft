@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ServicesOrders } from "../services/ServicesOrders";
+import { ClientsService } from "../../Clients/services/ClientsService";
+import { ServicesProducts } from "../../products/services/ServicesProducts";
 
 // HOOK PERSONALIZADO PARA GESTIONAR LA LÓGICA DEL FORMULARIO DE PEDIDOS
 export function useOrdersForm({ onSuccess }) {
@@ -22,7 +24,10 @@ export function useOrdersForm({ onSuccess }) {
         clienteId: null,
         clienteNombre: "",
         clienteTipoDocumento: "",
-        clienteTotalCompras: 0,
+
+        clienteCupoActivo: false,
+        clienteCupoTotal: 0,
+
         fechaPedido: todayFormatted,
         formaPago: "",
         fechaVencimiento: calculateVencimiento(todayFormatted),
@@ -38,33 +43,12 @@ export function useOrdersForm({ onSuccess }) {
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
-    // CÁLCULO DINÁMICO DE OPCIONES DE PAGO SEGÚN HISTORIAL DEL CLIENTE
-    const totalCompras = Number(formData.clienteTotalCompras) || 0;
 
-    // SI EL CLIENTE TIENE COMPRAS > 1M, SE HABILITA EL CRÉDITO
-    const paymentOptions =
-        totalCompras > 1000000
-            ? [
-                { value: "Contado", label: "Contado" },
-                { value: "Credito", label: "Credito" }
-            ]
-            : [
-                { value: "Contado", label: "Contado" }
-            ];
-
-    // SI EL CLIENTE NO APLICA A CRÉDITO, RESETEAR A CONTADO
-    useEffect(() => {
-        if (
-            formData.clienteTotalCompras <= 1000000 &&
-            formData.formaPago === "Credito"
-        ) {
-            setFormData(prev => ({
-                ...prev,
-                formaPago: "Contado"
-            }));
-        }
-
-    }, [formData.clienteTotalCompras]);
+    // OPCIONES DE PAGO DISPONIBLES
+    const paymentOptions = [
+        { value: "Contado", label: "Contado" },
+        { value: "Credito", label: "Credito" }
+    ];
 
     // PAGINADOR PARA LA LISTA DE PRODUCTOS AGREGADOS
     const itemsPerPage = 4;
@@ -87,43 +71,80 @@ export function useOrdersForm({ onSuccess }) {
 
     // BUSCAR CLIENTE POR MEDIO DEL DOCUMENTO
     useEffect(() => {
-        if (!formData.documento) return;
+        const buscarCliente = async () => {
+            if (!formData.documento) {
+                setFormData(prev => ({
+                    ...prev,
+                    clienteId: null,
+                    clienteNombre: "",
+                    clienteTipoDocumento: "",
+                    formaPago: "",
+                    clienteCupoActivo: false,
+                    clienteCupoTotal: 0,
+                }));
+                return;
+            }
 
-        const clientes = JSON.parse(localStorage.getItem("clients")) || [];
+            try {
+                const clienteEncontrado = await ClientsService.getByDocument(formData.documento);
 
-        const clienteEncontrado = clientes.find(
-            c => c.documento === formData.documento && c.estado === true
-        );
+                if (clienteEncontrado?.estado) {
+                    setFormData(prev => ({
+                        ...prev,
+                        clienteId: clienteEncontrado.id,
+                        clienteNombre: `${clienteEncontrado.nombres} ${clienteEncontrado.apellidos}`,
+                        clienteTipoDocumento: clienteEncontrado.tipoDocumento,
+                        clienteCupoActivo: clienteEncontrado.cupoActivo,
+                        clienteCupoTotal: clienteEncontrado.cupoTotal || 0,
+                    }));
 
-        if (clienteEncontrado) {
-            setFormData(prev => ({
-                ...prev,
-                clienteId: clienteEncontrado.id,
-                clienteNombre: `${clienteEncontrado.nombres} ${clienteEncontrado.apellidos}`,
-                clienteTipoDocumento: clienteEncontrado.tipoDocumento,
-                clienteTotalCompras: Number(clienteEncontrado.totalCompras) || 0
-            }));
-
-            setErrors(prev => ({ ...prev, documento: "" }));
-        } else {
-            // SI NO EXISTE, RESETEAR CAMPOS RELACIONADOS AL CLIENTE
-            setFormData(prev => ({
-                ...prev,
-                clienteId: null,
-                clienteNombre: "",
-                clienteTipoDocumento: "",
-                clienteTotalCompras: 0,
-                formaPago: ""
-            }));
-        }
-
+                    setErrors(prev => ({
+                        ...prev,
+                        documento: ""
+                    }));
+                } else {
+                    setFormData(prev => ({
+                        ...prev,
+                        clienteId: null,
+                        clienteNombre: "",
+                        clienteTipoDocumento: "",
+                        formaPago: "",
+                        clienteCupoActivo: false,
+                        clienteCupoTotal: 0,
+                    }));
+                }
+            } catch (error) {
+                setFormData(prev => ({
+                    ...prev,
+                    clienteId: null,
+                    clienteNombre: "",
+                    clienteTipoDocumento: "",
+                    formaPago: "",
+                    clienteCupoActivo: false,
+                    clienteCupoTotal: 0,
+                }));
+            }
+        };
+        buscarCliente();
     }, [formData.documento]);
 
     // CARGAR SÓLO PRODUCTOS ACTIVOS Y CON STOCK AL INICIAR
     useEffect(() => {
-        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
-        const activos = storedProducts.filter(p => p.estado === true && p.stock > 0);
-        setProducts(activos);
+        const loadProducts = async () => {
+            try {
+                const allProducts = await ServicesProducts.get();
+
+                const activos = allProducts.filter(
+                    p => p.estado === true && p.stock > 0
+                );
+
+                setProducts(activos);
+            } catch (error) {
+                console.error("Error cargando productos:", error);
+            }
+        };
+
+        loadProducts();
     }, []);
 
     // FUNCIÓN DE VALIDACIÓN PARA CAMPOS INDIVIDUALES
@@ -148,6 +169,14 @@ export function useOrdersForm({ onSuccess }) {
             case "formaPago":
                 if (!value) {
                     error = "La forma de pago es obligatoria";
+                } else if (value === "Credito") {
+                    if (!formData.clienteCupoActivo) {
+                        error = "El cliente no tiene un cupo de crédito activo";
+                    } else if (formData.clienteCupoTotal <= 0) {
+                        error = "El cliente no tiene cupo disponible";
+                    } else if (formData.total > formData.clienteCupoTotal) {
+                        error = "El total del pedido supera el cupo disponible";
+                    }
                 }
                 break;
 
@@ -157,6 +186,23 @@ export function useOrdersForm({ onSuccess }) {
 
         return error;
     };
+
+    // VALIDACIÓN ESPECIAL PARA CREDITO CUANDO CAMBIAN LOS CAMPOS RELACIONADOS
+    useEffect(() => {
+        if (formData.formaPago === "Credito") {
+            const error = validateField("formaPago", "Credito");
+
+            setErrors(prev => ({
+                ...prev,
+                formaPago: error
+            }));
+        }
+    }, [
+        formData.formaPago,
+        formData.total,
+        formData.clienteCupoActivo,
+        formData.clienteCupoTotal
+    ]);
 
     // MANEJADOR DE CAMBIOS CON ACTUALIZACIÓN DE FECHAS Y VALIDACIÓN
     const handleChange = (e) => {
@@ -253,10 +299,6 @@ export function useOrdersForm({ onSuccess }) {
             newErrors.productos = "Debe agregar al menos un producto";
         }
 
-        // VALIDAR SELECCIÓN DE PAGO
-        if (!formData.formaPago) {
-            newErrors.formaPago = "Debe seleccionar una forma de pago";
-        }
 
         setErrors(newErrors);
 
@@ -264,39 +306,35 @@ export function useOrdersForm({ onSuccess }) {
     };
 
     // PROCESAMIENTO DEL ENVÍO DEL FORMULARIO
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         // DETENER LA EJECUCIÓN SI EL FORMULARIO NO ES VÁLIDO
         if (!validateForm()) return;
 
-        // OBTENER ESTADO ACTUAL DE PRODUCTOS PARA ACTUALIZAR STOCK
-        const storedProducts = JSON.parse(localStorage.getItem("products")) || [];
+        try {
+            // PREPARAR LOS DATOS EN EL FORMATO QUE ESPERA EL BACKEND
+            const orderData = {
+                documentNumber: formData.documento,
+                client: formData.clienteId,
+                orderDate: formData.fechaPedido,
+                paymentMethod: formData.formaPago,
 
-        // ACTUALIZAR STOCK SEGÚN LOS PRODUCTOS DEL PEDIDO
-        const updatedProducts = storedProducts.map(product => {
+                products: formData.productos.map(product => ({
+                    product: product.id,
+                    quantity: product.cantidad
+                }))
+            };
 
-            const productoPedido = formData.productos.find(
-                p => p.id === product.id
-            );
+            // ENVIAR LOS DATOS AL SERVICIO PARA CREAR EL PEDIDO
+            const nuevoPedido = await ServicesOrders.createOrder(orderData);
 
-            if (productoPedido) {
-                return {
-                    ...product,
-                    stock: product.stock - productoPedido.cantidad
-                };
-            }
+            onSuccess(nuevoPedido);
 
-            return product;
-        });
-
-        // GUARDAR NUEVO STOCK
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
-
-        // CREAR PEDIDO
-        const nuevoPedido = ServicesOrders.create(formData);
-
-        onSuccess(nuevoPedido);
+        } catch (error) {
+            console.error(error);
+            setErrors(prev => ({...prev, submit: error.message || "Error al crear el pedido" }));
+        }
     };
 
     // RETORNO DE LAS PROPIEDADES Y FUNCIONES NECESARIAS PARA EL COMPONENTE

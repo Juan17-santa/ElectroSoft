@@ -1,15 +1,18 @@
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
+import { ServicesOrders } from "../services/ServicesOrders";
 
 export function useOrdersReport(data, setAlert) {
 
-    const exportReport = (fechaInicio, fechaFin) => {
+    const exportReport = async (fechaInicio, fechaFin) => {
 
-        const filtrados = data.filter(order => {
-            const fecha = new Date(order.fechaPedido);
+        const pedidos = await ServicesOrders.getAllOrders();
+
+        const filtrados = pedidos.filter(order => {
+            const fecha = new Date(order.orderDate);
 
             return (
-                fecha >= new Date(fechaInicio + "T00:00:00") &&
-                fecha <= new Date(fechaFin + "T23:59:59")
+                fecha >= fechaInicio &&
+                fecha <= fechaFin
             );
         });
 
@@ -25,22 +28,22 @@ export function useOrdersReport(data, setAlert) {
 
         filtrados.forEach((order, index) => {
 
-            order.productos.forEach((prod, i) => {
+            order.products.forEach((prod, i) => {
                 excelData.push([
                     i === 0 ? String(index + 1) : "",
-                    i === 0 ? String(order.nombreCliente || "Sin nombre") : "",
-                    i === 0 ? String(`${order.tipoDocumento || ""} ${order.documento || ""}`) : "",
-                    i === 0 ? String(order.fechaPedido) : "",
+                    i === 0 ? String(`${order.client?.firstName || ""} ${order.client?.lastName || ""}`) : "",
+                    i === 0 ? String(`${order.client?.documentType?.abbreviation || ""} ${order.client?.documentNumber || ""}`) : "",
+                    i === 0 ? String(order.orderDate?.split("T")[0]) : "",
 
-                    prod.nombre,
-                    prod.cantidad,
-                    prod.precio,
-                    prod.subtotal,
+                    prod.name,
+                    prod.quantity,
+                    prod.price,
+                    prod.lineTotal,
 
                     i === 0 ? order.total : "",
-                    i === 0 ? (order.fechaVencimiento || "-") : "",
-                    i === 0 ? (order.formaPago || "-") : "",
-                    i === 0 ? order.estado : ""
+                    i === 0 ? (order.dueDate?.split("T")[0]) : "",
+                    i === 0 ? (order.paymentMethod) : "",
+                    i === 0 ? order.status : ""
                 ]);
             });
             excelData.push([]);
