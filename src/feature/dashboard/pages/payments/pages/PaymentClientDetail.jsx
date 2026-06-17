@@ -20,12 +20,19 @@ export default function PaymentClientDetail() {
     const [nuevoCupo, setNuevoCupo] = useState("");
     const [errorCupo, setErrorCupo] = useState("");
 
+    const [loading, setLoading] = useState(true);
+
     const cargarDatos = async () => {
-        await paymentsService.checkAndExpireOverdue();
-        const res = await paymentsService.getResumenCliente(documento);
-        const vts = await paymentsService.getVentasCredito(documento);
-        setResumen(res);
-        setVentas(vts);
+        setLoading(true);
+        try {
+            await paymentsService.checkAndExpireOverdue();
+            const res = await paymentsService.getResumenCliente(documento);
+            const vts = await paymentsService.getVentasCredito(documento);
+            setResumen(res);
+            setVentas(vts);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -65,6 +72,15 @@ export default function PaymentClientDetail() {
         setShowModal(false);
         await cargarDatos();
     };
+
+    if (loading) return (
+        <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
+            <div className="flex flex-col items-center gap-3 text-yellow-500">
+                <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-medium text-gray-500">Cargando cuenta de crédito...</p>
+            </div>
+        </div>
+    );
 
     if (!resumen) return (
         <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">

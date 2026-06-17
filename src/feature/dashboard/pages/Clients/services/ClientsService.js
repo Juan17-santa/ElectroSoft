@@ -13,7 +13,7 @@ const mapClientToFrontend = (client) => {
         email: client.email,
         telefono: client.phone,
         estado: client.estado !== undefined ? client.estado : true,
-        totalCompras: client.totalCompras || 0,
+        totalCompras: Math.max(0, client.totalCompras || 0),
         cupoActivo: client.cupoActivo || false,
         cupoTotal: client.cupoTotal || 0,
         fechaCreacion: client.createdAt ? new Date(client.createdAt).toISOString().split('T')[0] : "",

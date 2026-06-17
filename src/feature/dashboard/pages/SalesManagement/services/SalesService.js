@@ -7,9 +7,11 @@ const mapSaleToFrontend = (sale) => {
         numeroVenta: sale.numeroFactura,
         numeroDocumento: sale.clienteId?.documentNumber || "N/A",
         cliente: sale.clienteId ? `${sale.clienteId.firstName} ${sale.clienteId.lastName}` : "Cliente Desconocido",
-        tipoVenta: sale.tipoVenta || "Contado",
+        // ✅ FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
+        tipoVenta: sale.tipoVenta === "Crédito" ? "Credito" : (sale.tipoVenta || "Contado"),
         fecha: sale.fechaVenta || new Date(sale.fechaCreacion).toISOString().split('T')[0],
-        estado: sale.estado === 'ACTIVA' ? 'Vigente' : (sale.estado === 'ANULADA' ? 'Anulado' : sale.estado),
+        // ✅ FIX: estado más preciso (Finalizado se calcula en paymentsService al enriquecer con pagos, pero para Contado es automático)
+        estado: sale.estado === 'ACTIVA' ? (sale.tipoVenta === 'Contado' ? 'Finalizado' : 'Vigente') : (sale.estado === 'ANULADA' ? 'Anulado' : sale.estado),
         productos: (sale.productos || []).map(p => ({
             productoId: p.productoId?._id || p.productoId,
             nombre: p.productoId?.name || p.nombre || "Producto",
@@ -19,8 +21,10 @@ const mapSaleToFrontend = (sale) => {
         subtotal: sale.total,
         iva: 0,
         total: sale.total,
-        montoPagado: sale.montoPagado || 0,
-        montoPorPagar: sale.montoPorPagar || sale.total,
+        // montoPagado y montoPorPagar los enriquece paymentsService al consultar /payments/venta/:id para ventas a Crédito.
+        // Para Contado, se pagan inmediatamente al crear la venta.
+        montoPagado: sale.tipoVenta === 'Contado' ? sale.total : (sale.montoPagado || 0),
+        montoPorPagar: sale.tipoVenta === 'Contado' ? 0 : (sale.montoPorPagar ?? sale.total),
         abonos: sale.abonos || [],
         observaciones: sale.observaciones || "",
     };
@@ -46,9 +50,10 @@ export const SalesService = {
             const payload = {
                 numeroFactura,
                 clienteId: numeroDocumento, // ObjectId del cliente
-                tipoVenta: tipoVenta || "Contado",
+                // ✅ FIX: el backend solo acepta "Crédito" (con tilde) en el enum
+                tipoVenta: tipoVenta === "Credito" ? "Crédito" : (tipoVenta || "Contado"),
                 productos: productos.map(p => ({
-                    productoId: p.productoId || p.id,
+                    productoId: p.productoId || p.id || p.idProducto,
                     cantidad: p.cantidad,
                     precioUnitario: p.precio
                 })),
@@ -59,8 +64,8 @@ export const SalesService = {
             const newSale = response.data.data || response.data;
             const mappedSale = mapSaleToFrontend(newSale);
 
-            // Crear pago inicial si es Contado
-            if (tipoVenta === 'Contado') {
+            // ✅ FIX: si el pago inicial de contado falla, lanzar warning pero no silenciar
+            if (tipoVenta === 'Contado' || tipoVenta === "Contado") {
                 try {
                     await api.post('/payments', {
                         ventaId: mappedSale.id,
@@ -69,7 +74,8 @@ export const SalesService = {
                         notas: "Pago automático de contado"
                     });
                 } catch (paymentErr) {
-                    console.error("Error creating initial payment:", paymentErr);
+                    // No bloquea la venta, pero avisa en consola con detalle
+                    console.warn("[SalesService] Venta creada pero el pago inicial de contado falló:", paymentErr?.response?.data || paymentErr.message);
                 }
             }
 

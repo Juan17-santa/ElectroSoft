@@ -17,6 +17,7 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
     const [allSales, setAllSales] = useState([]);
     const [ventasDelDocumento, setVentasDelDocumento] = useState([]);
     const [errors, setErrors] = useState({});
+    const [formError, setFormError] = useState("");
     const [initialized, setInitialized] = useState(false);
 
     const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
@@ -139,7 +140,7 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
     };
 
     const handleSelectVenta = (id) => {
-        const found = allSales.find(s => s.id === Number(id));
+        const found = allSales.find(s => String(s.id) === String(id));
         if (found) {
             setFormData(prev => ({
                 ...prev,
@@ -168,19 +169,31 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
 
         const raw = parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0;
 
-        const resultado = await paymentsService.createAbono(
-            formData.documento,
-            formData.ventaId,
-            { paymentMethod: formData.metodoPago, amount: raw }
-        );
+        setFormError("");
+        try {
+            const resultado = await paymentsService.createAbono(
+                formData.documento,
+                formData.ventaId,
+                { paymentMethod: formData.metodoPago, amount: raw }
+            );
 
-        if (!resultado) return;
-        onSuccess();
+            if (!resultado) {
+                setFormError("No se pudo crear el abono.");
+                return;
+            }
+            onSuccess();
+        } catch (e) {
+            console.error("Error creating abono:", e);
+            const msg = e.response?.data?.error || e.message || "Error al procesar el abono en el servidor";
+            setFormError(msg);
+        }
     };
 
     return {
         formData,
         errors,
+        formError,
+        setFormError,
         handleChange,
         handleSelectVenta,
         handleSubmit,

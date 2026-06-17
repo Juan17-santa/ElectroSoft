@@ -28,7 +28,7 @@ export default function Payments() {
             const data = await paymentsService.getClientesConCupo();
             setClientes(data);
         } catch (err) {
-            const message = "No se pudieron cargar los créditos." || err.message;
+            const message = err.message || "No se pudieron cargar los créditos.";
             setAlert({ type: "error", message });
         } finally {
             setLoading(false);
