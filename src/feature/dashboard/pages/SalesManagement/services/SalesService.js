@@ -45,7 +45,10 @@ export const SalesService = {
 
     async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos, subtotal, iva, total }) {
         try {
-            const numeroFactura = `FAC-${Date.now().toString().slice(-6)}`;
+            const allSalesRes = await api.get('/sales');
+            const allSalesData = allSalesRes.data.data || allSalesRes.data;
+            const count = Array.isArray(allSalesData) ? allSalesData.length + 1 : 1;
+            const numeroFactura = String(count).padStart(2, '0');
 
             const payload = {
                 numeroFactura,
