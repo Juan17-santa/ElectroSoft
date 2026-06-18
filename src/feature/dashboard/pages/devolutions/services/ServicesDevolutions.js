@@ -22,8 +22,14 @@ export const ServicesDevolutions = {
 
     get() {
         const data = localStorage.getItem(KEY);
-        const parsed = data ? JSON.parse(data) : [];
-        const normalized = parsed.map(normalizeDevolution);
+        let parsed = [];
+        try {
+            parsed = data ? JSON.parse(data) : [];
+            if (!Array.isArray(parsed)) parsed = [];
+        } catch(e) {
+            parsed = [];
+        }
+        const normalized = parsed.filter(d => d).map(normalizeDevolution);
 
         const changed = normalized.some((item, index) => {
             const original = parsed[index] || {};
