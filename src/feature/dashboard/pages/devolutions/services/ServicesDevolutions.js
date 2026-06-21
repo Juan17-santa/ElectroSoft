@@ -124,6 +124,7 @@ export const ServicesDevolutions = {
     async getAll() {
         const devolutions = await request("");
         return (Array.isArray(devolutions) ? devolutions : []).map(normalizeDevolution);
+
     },
 
     async getById(id) {

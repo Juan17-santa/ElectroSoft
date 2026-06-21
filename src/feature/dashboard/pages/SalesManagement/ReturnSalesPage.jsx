@@ -165,10 +165,10 @@ export default function ReturnSalesPage() {
 
     const handleGenerarPDF = () => {
         generatePDFReport({
-            title: `Devolución de venta — ${sale.numeroDocumento ?? sale.id}`,
-            fileName: `devolucion_${sale.numeroDocumento ?? sale.id}.pdf`,
+            title: `Devolución de venta — ${String(sale.numeroVenta || "").padStart(2, '0')}`,
+            fileName: `devolucion_${String(sale.numeroVenta || "").padStart(2, '0')}.pdf`,
             extraInfo: [
-                `ID venta: ${sale.numeroDocumento ?? sale.id}`,
+                `ID venta: ${String(sale.numeroVenta || "").padStart(2, '0')}`,
                 `Fecha creación: ${sale.fecha ?? "—"}`,
                 `Total venta: ${formatCOP(sale.total)}`,
                 `Estado: ${sale.estado ?? "—"}`,
@@ -254,7 +254,7 @@ export default function ReturnSalesPage() {
                 <div>
                     <p className="font-semibold text-gray-800 mb-2">Información venta</p>
                     <div className="bg-white rounded-xl border-l-4 border-yellow-400 px-5 py-4 grid grid-cols-1 md:grid-cols-5 items-center gap-8 shadow-sm">
-                        <div><p className="text-xs text-gray-400">ID venta</p><p className="font-semibold text-gray-800">{sale.numeroDocumento ?? sale.id}</p></div>
+                        <div><p className="text-xs text-gray-400">ID venta</p><p className="font-semibold text-gray-800">{String(sale.numeroVenta || "").padStart(2, '0')}</p></div>
                         <div><p className="text-xs text-gray-400">Fecha creación</p><p className="font-semibold text-gray-800">{sale.fecha ?? "—"}</p></div>
                         <div><p className="text-xs text-gray-400">IVA</p><p className="font-bold text-gray-800">{formatCOP(sale.iva)}</p></div>
                         <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 text-base">{formatCOP(sale.total)}</p></div>

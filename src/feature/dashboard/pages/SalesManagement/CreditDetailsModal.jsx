@@ -41,6 +41,7 @@ export default function CreditDetailsPage() {
                     setNetTotal(parsed.total - totalRetornadoConIVA);
                 }).catch(e => console.error("Error al cargar devoluciones:", e));
 
+
                 // ✅ FIX: Cargar abonos reales desde el backend
                 paymentsService.getById(parsed.id).then(ventaEnriquecida => {
                     if (ventaEnriquecida) {
