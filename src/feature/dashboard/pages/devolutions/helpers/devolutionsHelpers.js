@@ -37,6 +37,7 @@ export const ESTADOS_RESOLUCION = [
     "PRODUCTO_ENTREGADO_PROVEEDOR",
     "PRODUCTO_ENTREGADO_CLIENTE",
     "REEMBOLSO_PROVEEDOR",
+    "REEMBOLSO_EMPRESA",
     "RESUELTO",
     "RECHAZADA",
 ];
@@ -89,6 +90,7 @@ export function getEstadoColor(estado) {
         case "RECHAZADA":                    return "bg-red-100 text-red-700";
         case "ENVIADO_PROVEEDOR":            return "bg-blue-100 text-blue-700";
         case "REEMBOLSO_PROVEEDOR":          return "bg-purple-100 text-purple-700";
+        case "REEMBOLSO_EMPRESA":            return "bg-indigo-100 text-indigo-700";
         case "PRODUCTO_ENTREGADO_PROVEEDOR":
         case "PRODUCTO_ENTREGADO_CLIENTE":   return "bg-yellow-100 text-yellow-700";
         case "PENDIENTE_PROVEEDOR":          return "bg-orange-100 text-orange-700";

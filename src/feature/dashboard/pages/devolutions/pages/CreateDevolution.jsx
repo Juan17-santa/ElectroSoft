@@ -11,6 +11,35 @@ import {
     getResponsableAuto,
 } from "../helpers/devolutionsHelpers";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
+async function fetchSales() {
+    const response = await fetch(`${API_BASE}/sales`);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.error || body.message || "No se pudieron cargar las ventas");
+    return Array.isArray(body.data) ? body.data.map(normalizeSale) : [];
+}
+
+function normalizeSale(sale) {
+    return {
+        ...sale,
+        id: sale._id || sale.id,
+        estado: sale.estado === "ANULADA" ? "Anulado" : sale.estado,
+        fecha: sale.fecha || sale.fechaVenta || sale.fechaCreacion?.slice?.(0, 10),
+        numeroDocumento: sale.numeroDocumento || sale.numeroFactura || sale.clienteId?.documentNumber,
+        cliente:
+            sale.cliente ||
+            [sale.clienteId?.firstName, sale.clienteId?.lastName].filter(Boolean).join(" "),
+        productos: (sale.productos || []).map((producto) => ({
+            ...producto,
+            id: producto.id || producto.productoId?._id || producto.productoId || producto.producto?._id,
+            productoId: producto.productoId?._id || producto.productoId || producto.id || producto.producto?._id,
+            nombre: producto.nombre || producto.productoId?.name || producto.producto?.name || producto.name,
+            precio: producto.precio || producto.precioUnitario || producto.productoId?.price || producto.producto?.price || 0,
+        })),
+    };
+}
+
 // ─── Estado vacío del formulario ──────────────────────────────────────────────
 const EMPTY_FORM = (() => {
     const hoy   = new Date().toISOString().split("T")[0];
@@ -24,6 +53,7 @@ const EMPTY_FORM = (() => {
         gestion:            "",
         responsable:        "",
         garantiaProveedor:  null,
+        montoReembolso:     "",
         descripcion:        "",
         observaciones:      "",
         fechaDevolucion:    hoy,
@@ -34,7 +64,7 @@ const EMPTY_FORM = (() => {
 const EMPTY_TOCADOS = {
     idVenta: false, motivo: false, submotivo: false, producto: false,
     cantidad: false, condicionProducto: false, gestion: false,
-    responsable: false, garantiaProveedor: false, descripcion: false,
+    montoReembolso: false, responsable: false, garantiaProveedor: false, descripcion: false,
     observaciones: false,
 };
 
@@ -55,7 +85,7 @@ function validarProducto(val, idVenta) {
     if (!val) return { valido: false, mensaje: "Selecciona el producto a devolver." };
     return { valido: true, mensaje: "" };
 }
-function validarCantidad(val, producto, idVenta, ventasList) {
+function validarCantidad(val, producto, idVenta, ventasList, devolucionesVenta = []) {
     if (!val) return { valido: false, mensaje: "Ingresa la cantidad." };
     const cantidad = Number(val);
     if (isNaN(cantidad) || cantidad <= 0) return { valido: false, mensaje: "La cantidad debe ser mayor a 0." };
@@ -63,7 +93,9 @@ function validarCantidad(val, producto, idVenta, ventasList) {
         const venta = ventasList.find((v) => String(v.id) === String(idVenta));
         const productoEnVenta = venta?.productos?.find((p) => p.nombre === producto);
         if (productoEnVenta) {
-            const yaDevuelto = ServicesDevolutions.getCantidadDevuelta(idVenta, producto);
+            const yaDevuelto = devolucionesVenta
+                .filter((d) => d.estadoResolucion !== "Anulada" && d.producto === producto)
+                .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
             const disponible = productoEnVenta.cantidad - yaDevuelto;
             if (cantidad > disponible)
                 return { valido: false, mensaje: `Disponible para devolver: ${disponible} unidad${disponible !== 1 ? "es" : ""}.` };
@@ -85,6 +117,29 @@ function validarGestion(val, motivo, submotivo) {
             return { valido: false, mensaje: "Gestión no permitida para el motivo/submotivo elegido." };
     }
     return { valido: true, mensaje: "" };
+}
+function getMontoMaximoReembolso(form, ventasList) {
+    const venta = ventasList.find((v) => String(v.id) === String(form.idVenta));
+    const producto = venta?.productos?.find((p) => p.nombre === form.producto);
+    return Number(form.cantidad || 0) * Number(producto?.precio || 0);
+}
+function validarMontoReembolso(form, ventasList) {
+    if (form.gestion !== "REEMBOLSO_PARCIAL") return null;
+    const monto = Number(form.montoReembolso);
+    const maximo = getMontoMaximoReembolso(form, ventasList);
+    if (!Number.isFinite(monto) || monto <= 0) {
+        return { valido: false, mensaje: "Ingresa el monto parcial a reembolsar." };
+    }
+    if (maximo <= 0) {
+        return { valido: false, mensaje: "Selecciona producto y cantidad para calcular el maximo." };
+    }
+    if (monto > maximo) {
+        return { valido: false, mensaje: `El monto parcial no puede superar ${formatCOP(maximo)}.` };
+    }
+    return { valido: true, mensaje: "" };
+}
+function formatCOP(value) {
+    return `$${Number(value || 0).toLocaleString("en-US")}`;
 }
 function validarResponsable(val, motivo, garantiaProveedor) {
     if (!val) return { valido: false, mensaje: "Selecciona el responsable." };
@@ -136,24 +191,43 @@ export default function CreateDevolution() {
     const [tocados, setTocados]             = useState(EMPTY_TOCADOS);
     const [ventasList, setVentasList]       = useState([]);
     const [productosList, setProductosList] = useState([]);
+    const [devolucionesVenta, setDevolucionesVenta] = useState([]);
     const [sinProductos, setSinProductos]   = useState(false);
     const [confirmData, setConfirmData]     = useState(null);
     const [alert, setAlert]                 = useState(null);
 
     useEffect(() => {
-        const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
-        setVentasList(ventas.filter((v) => v.estado !== "Anulado"));
+        let active = true;
+
+        fetchSales()
+            .then((ventas) => {
+                if (active) setVentasList(ventas.filter((v) => v.estado !== "Anulado"));
+            })
+            .catch((err) => {
+                if (active) setAlert({ type: "error", message: err.message });
+            });
+
+        return () => {
+            active = false;
+        };
     }, []);
 
     useEffect(() => {
         if (!form.idVenta) { setProductosList([]); setSinProductos(false); return; }
-        const ventas  = JSON.parse(localStorage.getItem("sales") || "[]");
-        const venta   = ventas.find((v) => String(v.id) === String(form.idVenta));
+        const venta   = ventasList.find((v) => String(v.id) === String(form.idVenta));
         if (!venta?.productos) { setProductosList([]); setSinProductos(false); return; }
 
         // Solo mostrar productos con cantidad aún disponible para devolver
+        ServicesDevolutions.getBySaleId(form.idVenta)
+            .then((devoluciones) => {
+                const localDevsStr = localStorage.getItem(`pendingDevs_${form.idVenta}`);
+                const localDevs = localDevsStr ? JSON.parse(localDevsStr) : [];
+                const todasLasDevoluciones = [...devoluciones, ...localDevs];
+                setDevolucionesVenta(todasLasDevoluciones);
         const conDisponible = venta.productos.filter((p) => {
-            const devuelto = ServicesDevolutions.getCantidadDevuelta(form.idVenta, p.nombre);
+            const devuelto = todasLasDevoluciones
+                .filter((d) => d.estadoResolucion !== "Anulada" && d.producto === p.nombre)
+                .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
             return devuelto < p.cantidad;
         });
         setProductosList(conDisponible);
@@ -161,18 +235,21 @@ export default function CreateDevolution() {
 
         if (form.producto && !conDisponible.find((p) => p.nombre === form.producto))
             setForm((prev) => ({ ...prev, producto: "" }));
-    }, [form.idVenta]);
+            })
+            .catch((err) => setAlert({ type: "error", message: err.message }));
+    }, [form.idVenta, ventasList, form.producto]);
 
     const handleChange = (field, value) => {
         let autoTouched = {};
         setForm((prev) => {
             const next = { ...prev, [field]: value };
             if (field === "motivo") {
-                next.submotivo = ""; next.gestion = ""; next.condicionProducto = ""; next.garantiaProveedor = null;
+                next.submotivo = ""; next.gestion = ""; next.condicionProducto = ""; next.garantiaProveedor = null; next.montoReembolso = "";
                 if (value === "LOGISTICA" || value === "CLIENTE") { next.responsable = "EMPRESA"; autoTouched.responsable = true; }
                 else next.responsable = "";
             }
-            if (field === "submotivo") next.gestion = "";
+            if (field === "submotivo") { next.gestion = ""; next.montoReembolso = ""; }
+            if (field === "gestion" && value !== "REEMBOLSO_PARCIAL") next.montoReembolso = "";
             if (field === "garantiaProveedor" && prev.motivo === "GARANTIA") {
                 next.responsable = getResponsableAuto("GARANTIA", value);
                 autoTouched.responsable = true;
@@ -191,9 +268,10 @@ export default function CreateDevolution() {
             case "motivo":            return validarMotivo(form.motivo);
             case "submotivo":         return validarSubmotivo(form.submotivo, form.motivo);
             case "producto":          return validarProducto(form.producto, form.idVenta);
-            case "cantidad":          return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList);
+            case "cantidad":          return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, devolucionesVenta);
             case "condicionProducto": return validarCondicion(form.condicionProducto, form.motivo);
             case "gestion":           return validarGestion(form.gestion, form.motivo, form.submotivo);
+            case "montoReembolso":    return validarMontoReembolso(form, ventasList);
             case "responsable":       return validarResponsable(form.responsable, form.motivo, form.garantiaProveedor);
             case "garantiaProveedor": return validarGarantia(form.garantiaProveedor, form.motivo);
             case "descripcion":       return validarDescripcion(form.descripcion);
@@ -207,9 +285,10 @@ export default function CreateDevolution() {
             validarMotivo(form.motivo),
             validarSubmotivo(form.submotivo, form.motivo),
             validarProducto(form.producto, form.idVenta),
-            validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList),
+            validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, devolucionesVenta),
             validarCondicion(form.condicionProducto, form.motivo),
             validarGestion(form.gestion, form.motivo, form.submotivo),
+            validarMontoReembolso(form, ventasList),
             validarResponsable(form.responsable, form.motivo, form.garantiaProveedor),
             validarGarantia(form.garantiaProveedor, form.motivo),
             validarDescripcion(form.descripcion),
@@ -226,12 +305,33 @@ export default function CreateDevolution() {
         }
         setConfirmData({
             type: "info",
-            title: "Crear devolución",
+            title: "Agregar devolución",
             message: `¿Deseas registrar la devolución del producto "${form.producto}"?`,
-            onConfirm: () => {
-                guardarDevolucion(form);
+            onConfirm: async () => {
+                try {
+                    const venta = ventasList.find((v) => String(v.id) === String(form.idVenta));
+                    const producto = venta?.productos?.find((p) => p.nombre === form.producto);
+                    const devolucionData = {
+                        ...form,
+                        productoId: producto?.productoId || producto?.id,
+                    };
+
+                    if (fromReturn) {
+                        // Guardar en localStorage temporalmente
+                        const key = `pendingDevs_${form.idVenta}`;
+                        const currentPendingStr = localStorage.getItem(key);
+                        const currentPending = currentPendingStr ? JSON.parse(currentPendingStr) : [];
+                        currentPending.push({
+                            ...devolucionData,
+                            id: `temp-${Date.now()}` // ID temporal
+                        });
+                        localStorage.setItem(key, JSON.stringify(currentPending));
+                    } else {
+                        // Creación normal (backend)
+                        await guardarDevolucion(devolucionData);
+                    }
                 setConfirmData(null);
-                setAlert({ type: "success", message: "Devolución creada correctamente." });
+                setAlert({ type: "success", message: fromReturn ? "Devolución agregada a la lista." : "Devolución creada correctamente." });
                     setTimeout(() => {
                     if (fromReturn) {
                         navigate("/dashboard/sales-management/return", {
@@ -241,6 +341,10 @@ export default function CreateDevolution() {
                         navigate("/dashboard/devolutions");
                     }
                 }, 1200);
+                } catch (err) {
+                    setConfirmData(null);
+                    setAlert({ type: "error", message: err.message });
+                }
             },
         });
     };
@@ -276,7 +380,7 @@ export default function CreateDevolution() {
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
                 title="Nueva Devolución"
-                submitText="Crear devolución"
+                submitText="Agregar devolución"
                 productosList={productosList}
                 ventasList={ventasList}
                 estadoCampo={estadoCampo}

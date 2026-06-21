@@ -291,16 +291,13 @@ export default function CreateShopping() {
                 <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent"></div>
 
                 {/* CAMPOS SUPERIORES */}
-                {catalogLoading && (
-                    <p className="text-sm text-gray-500">Cargando proveedores...</p>
-                )}
 
                 <div className="flex flex-wrap gap-6 items-start">
 
                     {/* --- SECCIÓN PROVEEDOR --- */}
                     <div className="flex flex-col w-full md:w-64">
                         <div className="flex items-start gap-2">
-                            <div className="flex-1 w-full">
+                            <div className="flex-1 min-w-0">
                                 <CustomSelect
                                     label="Proveedor *"
                                     icon={Truck}
@@ -310,7 +307,7 @@ export default function CreateShopping() {
                                     }))}
                                     value={proveedorId}
                                     onChange={(val) => handleSelectProveedor(val)}
-                                    placeholder="— No seleccionado —"
+                                    placeholder={"No seleccionado —"}
                                 />
                             </div>
                             <button
@@ -329,15 +326,37 @@ export default function CreateShopping() {
 
                     {/* FECHA FACTURA */}
                     <div className="flex flex-col gap-2 w-full md:w-56">
-                        <Calendar
-                            fechaISO={fechaISO}
-                            onFechaChange={(iso) => {
-                                setFechaISO(iso);
-                                setFechaTocada(true);
+                        {/*
+                         * Solución para bloquear fechas futuras:
+                         * 1. Pasamos maxDate como prop (soportado si Calendar lo acepta).
+                         * 2. El ref callback inyecta el atributo `max` directamente en el
+                         *    input[type=date] subyacente — funciona independientemente de
+                         *    cómo esté implementado Calendar, sin modificarlo.
+                         * 3. onFechaChange filtra programáticamente fechas futuras.
+                         * 4. validarFecha() rechaza fechas futuras al enviar el formulario.
+                         */}
+                        <div
+                            ref={(el) => {
+                                if (!el) return;
+                                const today = new Date().toISOString().split("T")[0];
+                                const input = el.querySelector('input[type="date"]');
+                                if (input && input.max !== today) input.max = today;
                             }}
-                            label="Fecha Factura"
-                            required={true}
-                        />
+                        >
+                            <Calendar
+                                fechaISO={fechaISO}
+                                onFechaChange={(iso) => {
+                                    const today = new Date().toISOString().split("T")[0];
+                                    // Bloqueo funcional: ignorar fechas futuras
+                                    if (iso && iso > today) return;
+                                    setFechaISO(iso);
+                                    setFechaTocada(true);
+                                }}
+                                label="Fecha Factura"
+                                required={true}
+                                maxDate={new Date().toISOString().split("T")[0]}
+                            />
+                        </div>
                         <FieldStatus estado={estadoFecha} />
                     </div>
 
@@ -523,51 +542,58 @@ export default function CreateShopping() {
                     </PrimaryButton>
                 </div>
 
-                {/* MODAL AÑADIR PRODUCTO */}
-                {showModal && (
-                    <AddProductModal
-                        onClose={() => setShowModal(false)}
-                        onAnadir={handleAnadirProducto}
-                        productosYaAgregados={productos}
-                    />
-                )}
-
-                {/* MODAL CREAR PRODUCTO */}
-                {showCreateProductModal && (
-                    <CreateProductModal
-                        onClose={() => setShowCreateProductModal(false)}
-                        onSuccess={() => { }}
-                    />
-                )}
-
-                {/* MODAL CREAR PROVEEDOR */}
-                {showCreateProviderModal && (
-                    <CreateProviderModal
-                        onClose={() => setShowCreateProviderModal(false)}
-                        onSuccess={handleProveedorCreado}
-                    />
-                )}
-
-                {/* MODAL CONFIRMACION */}
-                {confirmData && (
-                    <ConfirmModal
-                        type={confirmData.type}
-                        title={confirmData.title}
-                        message={confirmData.message}
-                        onConfirm={confirmData.onConfirm}
-                        onCancel={() => setConfirmData(null)}
-                    />
-                )}
-
-                {/* ALERTA DE ÉXITO */}
-                {alertData && (
-                    <Alert
-                        type={alertData.type}
-                        message={alertData.message}
-                        onClose={() => setAlertData(null)}
-                    />
-                )}
             </div>
+
+            {/* ── MODALES GLOBALES ─────────────────────────────────────────────
+                Montados FUERA del div scrollable para que los modales con
+                `fixed inset-0` cubran toda la ventana (navbar + sidebar).
+                ConfirmModal y Alert ya usan `fixed` internamente.
+            ────────────────────────────────────────────────────────────────── */}
+
+            {/* MODAL AÑADIR PRODUCTO */}
+            {showModal && (
+                <AddProductModal
+                    onClose={() => setShowModal(false)}
+                    onAnadir={handleAnadirProducto}
+                    productosYaAgregados={productos}
+                />
+            )}
+
+            {/* MODAL CREAR PRODUCTO */}
+            {showCreateProductModal && (
+                <CreateProductModal
+                    onClose={() => setShowCreateProductModal(false)}
+                    onSuccess={() => { }}
+                />
+            )}
+
+            {/* MODAL CREAR PROVEEDOR */}
+            {showCreateProviderModal && (
+                <CreateProviderModal
+                    onClose={() => setShowCreateProviderModal(false)}
+                    onSuccess={handleProveedorCreado}
+                />
+            )}
+
+            {/* MODAL CONFIRMACION */}
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={() => setConfirmData(null)}
+                />
+            )}
+
+            {/* ALERTA DE ÉXITO */}
+            {alertData && (
+                <Alert
+                    type={alertData.type}
+                    message={alertData.message}
+                    onClose={() => setAlertData(null)}
+                />
+            )}
         </>
     );
 }

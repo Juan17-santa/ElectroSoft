@@ -11,6 +11,35 @@ import {
     getResponsableAuto,
 } from "../helpers/devolutionsHelpers";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
+async function fetchSales() {
+    const response = await fetch(`${API_BASE}/sales`);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.error || body.message || "No se pudieron cargar las ventas");
+    return Array.isArray(body.data) ? body.data.map(normalizeSale) : [];
+}
+
+function normalizeSale(sale) {
+    return {
+        ...sale,
+        id: sale._id || sale.id,
+        estado: sale.estado === "ANULADA" ? "Anulado" : sale.estado,
+        fecha: sale.fecha || sale.fechaVenta || sale.fechaCreacion?.slice?.(0, 10),
+        numeroDocumento: sale.numeroDocumento || sale.numeroFactura || sale.clienteId?.documentNumber,
+        cliente:
+            sale.cliente ||
+            [sale.clienteId?.firstName, sale.clienteId?.lastName].filter(Boolean).join(" "),
+        productos: (sale.productos || []).map((producto) => ({
+            ...producto,
+            id: producto.id || producto.productoId || producto.producto?._id,
+            productoId: producto.productoId || producto.id || producto.producto?._id,
+            nombre: producto.nombre || producto.producto?.name || producto.name,
+            precio: producto.precio || producto.precioUnitario || producto.producto?.price || 0,
+        })),
+    };
+}
+
 // ─── Estado de campos "tocados" ───────────────────────────────────────────────
 const EMPTY_TOCADOS = {
     idVenta: false, motivo: false, submotivo: false, producto: false,
@@ -46,7 +75,7 @@ function validarProducto(val, idVenta) {
     return { valido: true, mensaje: "" };
 }
 
-function validarCantidad(val, producto, idVenta, ventasList, devolucionId) {
+function validarCantidad(val, producto, idVenta, ventasList, devolucionId, devolucionesVenta = []) {
     if (!val) return { valido: false, mensaje: "Ingresa la cantidad." };
 
     const cantidad = Number(val);
@@ -57,9 +86,14 @@ function validarCantidad(val, producto, idVenta, ventasList, devolucionId) {
         const venta = ventasList.find((v) => String(v.id) === String(idVenta));
         const productoEnVenta = venta?.productos?.find((p) => p.nombre === producto);
         if (productoEnVenta) {
-            const yaDevueltoPorOtros = ServicesDevolutions.getCantidadDevueltaExcluyendo(
-                idVenta, producto, devolucionId,
-            );
+            const yaDevueltoPorOtros = devolucionesVenta
+                .filter(
+                    (d) =>
+                        String(d.id) !== String(devolucionId) &&
+                        d.estadoResolucion !== "Anulada" &&
+                        d.producto === producto,
+                )
+                .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
             const disponible = productoEnVenta.cantidad - yaDevueltoPorOtros;
             if (cantidad > disponible)
                 return {
@@ -145,20 +179,42 @@ export default function EditDevolution() {
     const [tocados, setTocados]             = useState(EMPTY_TOCADOS);
     const [productosList, setProductosList] = useState([]);
     const [ventasList, setVentasList]       = useState([]);
+    const [devolucionesVenta, setDevolucionesVenta] = useState([]);
     const [confirmData, setConfirmData]     = useState(null);
     const [alert, setAlert]                 = useState(null);
 
     useEffect(() => {
-        const ventas = JSON.parse(localStorage.getItem("sales") || "[]");
-        setVentasList(ventas.filter((v) => v.estado !== "Anulado"));
+        let active = true;
 
-        const found = ServicesDevolutions.getById(id);
-        if (found) {
-            setForm({ ...found, fechaDevolucion: found.fechaDevolucion ?? "" });
-            // Cargar productos de la venta para el campo read-only del formulario
-            const venta = ventas.find((v) => String(v.id) === String(found.idVenta));
-            setProductosList(venta?.productos ?? []);
+        async function loadData() {
+            try {
+                const [ventas, found] = await Promise.all([
+                    fetchSales(),
+                    ServicesDevolutions.getById(id),
+                ]);
+
+                if (!active) return;
+
+                const ventasActivas = ventas.filter((v) => v.estado !== "Anulado");
+                setVentasList(ventasActivas);
+
+                if (found) {
+                    setForm({ ...found, fechaDevolucion: found.fechaDevolucion ?? "" });
+                    const venta = ventasActivas.find((v) => String(v.id) === String(found.idVenta));
+                    setProductosList(venta?.productos ?? []);
+                    const devoluciones = await ServicesDevolutions.getBySaleId(found.idVenta);
+                    if (active) setDevolucionesVenta(devoluciones);
+                }
+            } catch (err) {
+                if (active) setAlert({ type: "error", message: err.message });
+            }
         }
+
+        loadData();
+
+        return () => {
+            active = false;
+        };
     }, [id]);
 
     const handleChange = (field, value) => {
@@ -216,7 +272,7 @@ export default function EditDevolution() {
             case "motivo":            return validarMotivo(form.motivo);
             case "submotivo":         return validarSubmotivo(form.submotivo, form.motivo);
             case "producto":          return validarProducto(form.producto, form.idVenta);
-            case "cantidad":          return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id);
+            case "cantidad":          return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id, devolucionesVenta);
             case "condicionProducto": return validarCondicion(form.condicionProducto, form.motivo);
             case "gestion":           return validarGestion(form.gestion, form.motivo, form.submotivo);
             case "responsable":       return validarResponsable(form.responsable, form.motivo, form.garantiaProveedor);
@@ -230,7 +286,7 @@ export default function EditDevolution() {
     // ─── Verificar si el formulario es válido en su totalidad ────────────────
     const formularioEsValido = () => {
         const validaciones = [
-            validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id),
+            validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id, devolucionesVenta),
             validarCondicion(form.condicionProducto, form.motivo),
             validarGestion(form.gestion, form.motivo, form.submotivo),
             validarResponsable(form.responsable, form.motivo, form.garantiaProveedor),
@@ -255,8 +311,9 @@ export default function EditDevolution() {
             type: "info",
             title: "Guardar cambios",
             message: "¿Deseas guardar los cambios realizados en esta devolución?",
-            onConfirm: () => {
-                editarDevolucion(form);
+            onConfirm: async () => {
+                try {
+                    await editarDevolucion(form);
                 setConfirmData(null);
                 setAlert({ type: "success", message: "Devolución actualizada correctamente." });
                 const idVenta = location.state?.idVenta ?? form.idVenta;
@@ -268,6 +325,10 @@ export default function EditDevolution() {
                         navigate("/dashboard/devolutions");
                     }
                 }, 1500);
+                } catch (err) {
+                    setConfirmData(null);
+                    setAlert({ type: "error", message: err.message });
+                }
             },
         });
     };

@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import {
-    X, Package, Layers, DollarSign, Box,
+    X, Package, Layers, DollarSign, Box, Ruler,
     AlertCircle, CheckCircle2, Hash, ShieldCheck,
     Plus, Trash, Tag, ChevronDown
 } from "lucide-react";
+import CustomSelect from "../../../components/ui/CustomSelect";
 import { parseCOP } from "../helpers/shoppingHelpers";
 import { ServicesCharacteristics } from "../../products/services/ServicesCharacteristics";
 import CategorySelect from "../../../components/ui/CategorySelect";
@@ -38,6 +39,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
     const [stock,             setStock]             = useState("");
     const [serial,            setSerial]            = useState("");
     const [garantia,          setGarantia]          = useState("");
+    const [tipoStock,         setTipoStock]         = useState("unidad");
     const [nombresExistentes, setNombresExistentes] = useState([]);
     const [saving,            setSaving]            = useState(false);
     const [apiError,          setApiError]          = useState("");
@@ -53,28 +55,45 @@ export default function CreateProductModal({ onClose, onSuccess }) {
     // ─── Tocados ──────────────────────────────────────────────────────────────
     const [tocados, setTocados] = useState({
         nombre: false, categoriaId: false, precio: false,
-        stock: false, serial: false, garantia: false,
+        stock: false, serial: false, garantia: false, tipoStock: false,
     });
 
     // ─── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
         let mounted = true;
-        ServicesShopping.fetchCategories()
-            .then((categories) => {
-                if (mounted) setCategoriasList(categories.filter((category) => category.estado));
-            })
-            .catch((err) => {
+
+        (async () => {
+            try {
+                const categories = await ServicesShopping.fetchCategories();
+                if (mounted) setCategoriasList((Array.isArray(categories) ? categories : []).filter((category) => category.estado));
+            } catch (err) {
                 if (mounted) setApiError(err.message || "No se pudieron cargar las categorias.");
-            });
-        setCharacteristicOptions(ServicesCharacteristics.getCharacteristics());
-        setMeasureOptions(ServicesCharacteristics.getMeasures());
-        ServicesShopping.fetchProducts()
-            .then((productos) => {
-                if (mounted) setNombresExistentes(productos.map((p) => p.nombre.trim().toLowerCase()));
-            })
-            .catch(() => {
+            }
+
+            try {
+                const chars = await ServicesCharacteristics.getCharacteristics();
+                if (mounted) setCharacteristicOptions(Array.isArray(chars) ? chars : []);
+            } catch (err) {
+                if (mounted) setCharacteristicOptions([]);
+                console.error("Error cargando características:", err);
+            }
+
+            try {
+                const meas = await ServicesCharacteristics.getMeasures();
+                if (mounted) setMeasureOptions(Array.isArray(meas) ? meas : []);
+            } catch (err) {
+                if (mounted) setMeasureOptions([]);
+                console.error("Error cargando medidas:", err);
+            }
+
+            try {
+                const productos = await ServicesShopping.fetchProducts();
+                if (mounted) setNombresExistentes((Array.isArray(productos) ? productos : []).map((p) => p.nombre.trim().toLowerCase()));
+            } catch (_) {
                 if (mounted) setNombresExistentes([]);
-            });
+            }
+        })();
+
         return () => {
             mounted = false;
         };
@@ -94,6 +113,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
     const validarStock     = (val) => { if (val === "" || val === null || val === undefined) return { valido: false, mensaje: "El stock es obligatorio." }; if (parseInt(val) < 0) return { valido: false, mensaje: "No puede ser negativo." }; if (!Number.isInteger(Number(val))) return { valido: false, mensaje: "Debe ser un número entero." }; return { valido: true, mensaje: "" }; };
     const validarSerial    = (val) => { if (!val || val.trim() === "") return { valido: false, mensaje: "El serial es obligatorio." }; if (val.trim().length < 2) return { valido: false, mensaje: "Mínimo 2 caracteres." }; if (val.trim().length > 50) return { valido: false, mensaje: "Máximo 50 caracteres." }; if (!/^[a-zA-Z0-9_-]+$/.test(val.trim())) return { valido: false, mensaje: "Solo letras, números, guiones y guiones bajos." }; return { valido: true, mensaje: "" }; };
     const validarGarantia  = (val) => { if (!val) return { valido: false, mensaje: "Selecciona una garantía." }; if (!["3 meses", "6 meses", "12 meses"].includes(val)) return { valido: false, mensaje: "Garantía no válida." }; return { valido: true, mensaje: "" }; };
+    const validarTipoStock  = (val) => { if (!val) return { valido: false, mensaje: "Selecciona tipo de stock." }; if (!["unidad", "metros"].includes(val)) return { valido: false, mensaje: "Tipo de stock no válido." }; return { valido: true, mensaje: "" }; };
 
     const estadoNombre    = tocados.nombre      ? validarNombre(nombre)         : null;
     const estadoCategoria = tocados.categoriaId ? validarCategoria(categoriaId) : null;
@@ -101,6 +121,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
     const estadoStock     = tocados.stock       ? validarStock(stock)           : null;
     const estadoSerial    = tocados.serial      ? validarSerial(serial)         : null;
     const estadoGarantia  = tocados.garantia    ? validarGarantia(garantia)     : null;
+    const estadoTipoStock = tocados.tipoStock   ? validarTipoStock(tipoStock)   : null;
 
     const tocar = (campo) => setTocados((t) => ({ ...t, [campo]: true }));
 
@@ -108,21 +129,49 @@ export default function CreateProductModal({ onClose, onSuccess }) {
     const handleSelectCharacteristic = (name) => { setCharForm((p) => ({ ...p, nombre: name })); setCharDropdownOpen(false); };
     const handleSelectMeasure        = (name) => { setCharForm((p) => ({ ...p, medida: name })); setMeasDropdownOpen(false); };
 
-    const addCharacteristicOption = (name) => {
-        const added = ServicesCharacteristics.addCharacteristic(name);
-        setCharacteristicOptions((prev) => [...prev, added]);
-        setCharForm((p) => ({ ...p, nombre: added.nombre }));
-        setCharDropdownOpen(false);
+    const addCharacteristicOption = async (name) => {
+        try {
+            const added = await ServicesCharacteristics.addCharacteristic(name);
+            setCharacteristicOptions((prev) => [...prev, added]);
+            setCharForm((p) => ({ ...p, nombre: added.nombre }));
+            setCharDropdownOpen(false);
+        } catch (err) {
+            console.error("Error añadiendo característica:", err);
+            setApiError(err.message || "No se pudo añadir la característica.");
+        }
     };
-    const removeCharacteristicOption = (id) => setCharacteristicOptions(ServicesCharacteristics.removeCharacteristic(id));
 
-    const addMeasureOption = (name) => {
-        const added = ServicesCharacteristics.addMeasure(name);
-        setMeasureOptions((prev) => [...prev, added]);
-        setCharForm((p) => ({ ...p, medida: added.nombre }));
-        setMeasDropdownOpen(false);
+    const removeCharacteristicOption = async (id) => {
+        try {
+            const updated = await ServicesCharacteristics.removeCharacteristic(id);
+            setCharacteristicOptions(Array.isArray(updated) ? updated : []);
+        } catch (err) {
+            console.error("Error eliminando característica:", err);
+            setApiError(err.message || "No se pudo eliminar la característica.");
+        }
     };
-    const removeMeasureOption = (id) => setMeasureOptions(ServicesCharacteristics.removeMeasure(id));
+
+    const addMeasureOption = async (name) => {
+        try {
+            const added = await ServicesCharacteristics.addMeasure(name);
+            setMeasureOptions((prev) => [...prev, added]);
+            setCharForm((p) => ({ ...p, medida: added.nombre }));
+            setMeasDropdownOpen(false);
+        } catch (err) {
+            console.error("Error añadiendo medida:", err);
+            setApiError(err.message || "No se pudo añadir la medida.");
+        }
+    };
+
+    const removeMeasureOption = async (id) => {
+        try {
+            const updated = await ServicesCharacteristics.removeMeasure(id);
+            setMeasureOptions(Array.isArray(updated) ? updated : []);
+        } catch (err) {
+            console.error("Error eliminando medida:", err);
+            setApiError(err.message || "No se pudo eliminar la medida.");
+        }
+    };
 
     // ─── Añadir / eliminar característica ─────────────────────────────────────
     const agregarCaracteristica = () => {
@@ -138,7 +187,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
 
     // ─── Submit ───────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
-        setTocados({ nombre: true, categoriaId: true, precio: true, stock: true, serial: true, garantia: true });
+        setTocados({ nombre: true, categoriaId: true, precio: true, stock: true, serial: true, garantia: true, tipoStock: true });
         const ok = validarNombre(nombre).valido && validarCategoria(categoriaId).valido && validarPrecio(precio).valido && validarStock(stock).valido && validarSerial(serial).valido && validarGarantia(garantia).valido;
         if (!ok) return;
         setSaving(true);
@@ -149,7 +198,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                 categoriaId,
                 precio: parseCOP(precio),
                 stock: parseInt(stock),
-                tipoStock: "unidad",
+                tipoStock: tipoStock,
                 serial: serial.trim(),
                 garantia,
                 caracteristicas,
@@ -166,17 +215,19 @@ export default function CreateProductModal({ onClose, onSuccess }) {
     // ─── Render ───────────────────────────────────────────────────────────────
     return (
         <>
-            {/* OVERLAY */}
-            <div className="absolute inset-0 bg-white/30 backdrop-blur-sm rounded-2xl z-10" onClick={onClose} />
+            {/* OVERLAY global — cubre toda la ventana incluido navbar y sidebar */}
+            <div
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+            />
 
-            {/* TARJETA scrollable */}
-            <div className="absolute inset-0 flex items-start justify-center z-20 pointer-events-none overflow-y-auto py-6">
-                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl pointer-events-auto border border-gray-300" onClick={(e) => e.stopPropagation()}>
+            {/* TARJETA scrollable centrada respecto a toda la ventana */}
+            <div className="fixed inset-0 flex items-start justify-center z-50 pointer-events-none overflow-y-auto pt-4 pb-6">
+                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl pointer-events-auto border border-gray-300 mx-4" onClick={(e) => e.stopPropagation()}>
 
                     {/* HEADER */}
                     <div className="flex items-start justify-between mb-4">
                         <div>
-                            <p className="text-base font-semibold">Crear nuevo <span className="text-yellow-400">producto</span></p>
+                            <p className="text-base font-semibold">Crear <span className="text-yellow-400">producto</span></p>
                             <p className="text-xs text-gray-500 mt-0.5">Complete todos los campos obligatorios del formulario</p>
                         </div>
                         <button onClick={onClose} className="hover:bg-gray-100 p-1.5 rounded-lg transition cursor-pointer"><X size={18} /></button>
@@ -243,18 +294,34 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><ShieldCheck size={18} /><span>Garantía *</span></div>
                             <div className="relative">
-                                <select value={garantia}
-                                    onChange={(e) => { setGarantia(e.target.value); tocar("garantia"); }}
-                                    onBlur={() => tocar("garantia")}
-                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all cursor-pointer w-full appearance-none ${estadoGarantia === null ? "focus:ring-gray-400 text-gray-500" : estadoGarantia.valido ? "ring-1 ring-green-300 text-gray-700" : "ring-1 ring-red-300 text-gray-500"}`}>
-                                    <option value="">Seleccione una garantía</option>
-                                    <option value="3 meses">3 meses</option>
-                                    <option value="6 meses">6 meses</option>
-                                    <option value="12 meses">12 meses</option>
-                                </select>
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+                                <CustomSelect
+                                    value={garantia}
+                                    onChange={(val) => { setGarantia(val); tocar("garantia"); }}
+                                    options={[
+                                        { value: "3 meses", label: "3 meses" },
+                                        { value: "6 meses", label: "6 meses" },
+                                        { value: "12 meses", label: "12 meses" },
+                                    ]}
+                                    placeholder="Seleccione una garantía"
+                                    width="w-full"
+                                />
                             </div>
                             <FieldStatus estado={estadoGarantia} />
+                        </div>
+
+                        {/* TIPO DE STOCK */}
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><Ruler size={18} /><span>Tipo de Stock *</span></div>
+                            <CustomSelect
+                                value={tipoStock}
+                                onChange={(value) => { setTipoStock(value); tocar("tipoStock"); }}
+                                options={[
+                                    { value: "unidad", label: "Unidad" },
+                                    { value: "metros", label: "Metros" },
+                                ]}
+                                placeholder="Seleccione tipo de stock"
+                            />
+                            <FieldStatus estado={estadoTipoStock} />
                         </div>
 
                     </div>

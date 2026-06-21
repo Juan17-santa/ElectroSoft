@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Ban, RotateCcw, Check, X } from "lucide-react";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { useDevolutionsReport } from "../hooks/useDevolutionsReport";
@@ -14,20 +14,30 @@ const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 
 function formatFechaDisplay(fechaISO) {
-    if (!fechaISO || !/^\d{4}-\d{2}-\d{2}$/.test(fechaISO)) return fechaISO || "—";
-    const [y, m, d] = fechaISO.split("-");
+    if (!fechaISO) return "—";
+    const match = fechaISO.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return fechaISO;
+    const [_, y, m, d] = match;
     return `${d}/${m}/${y}`;
+}
+
+function formatFechaEstadoDisplay(fechaISO) {
+    if (!fechaISO) return "—";
+    const match = fechaISO.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) return fechaISO;
+    const [_, y, m, d] = match;
+    return `${d}-${m}-${y}`;
 }
 
 export default function Devolutions() {
     const navigate = useNavigate();
-    const location = useLocation();
     const {
         devolucionesFiltradas,
         searchTerm,
         setSearchTerm,
         anularPorVenta,
-        recargar,
+        loading,
+        error,
     } = useDevolutions();
 
     const [currentPage, setCurrentPage] = useState(1);
@@ -37,11 +47,9 @@ export default function Devolutions() {
 
     const { exportReport } = useDevolutionsReport(devolucionesFiltradas, setAlert);
 
-    // Recargar desde localStorage cada vez que se navega a esta página.
-    // location.key cambia en cada navegación, incluso si la URL es la misma.
     useEffect(() => {
-        recargar();
-    }, [location.key]);
+        if (error) setAlert({ type: "error", message: error });
+    }, [error]);
 
     // Agrupar por idVenta — una fila por venta
     const gruposPorVenta = useMemo(() => {
@@ -103,10 +111,15 @@ export default function Devolutions() {
             type: "warning",
             title: "Anular devolución",
             message: `¿Anular la devolución de la venta #${idVenta}? Se anularán todos los productos devueltos.`,
-            onConfirm: () => {
-                anularPorVenta(idVenta);
+            onConfirm: async () => {
+                try {
+                    await anularPorVenta(idVenta);
                 setAlert({ type: "success", message: "Devolución anulada correctamente." });
                 setConfirmData(null);
+                } catch (err) {
+                    setAlert({ type: "error", message: err.message });
+                    setConfirmData(null);
+                }
             },
         });
     };
@@ -144,7 +157,13 @@ export default function Devolutions() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white text-gray-700">
-                                {itemsPagina.length === 0 ? (
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={6} className="px-4 py-4 text-center text-gray-400">
+                                            Cargando devoluciones...
+                                        </td>
+                                    </tr>
+                                ) : itemsPagina.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="px-4 py-4 text-center text-gray-400">
                                             No hay devoluciones registradas.
@@ -159,9 +178,13 @@ export default function Devolutions() {
                                         const colorEstado = getEstadoColor(estado);
                                         const textColor = colorEstado.split(" ").find((c) => c.startsWith("text-")) ?? "text-gray-500";
                                         const fechaInicio = formatFechaDisplay(getFechaInicio(grupo));
-                                        const fechaEstado = getFechaEstado(grupo);
+                                        const fechaEstado = formatFechaEstadoDisplay(getFechaEstado(grupo));
                                         const bloqueado = editBloqueado(grupo);
                                         const anulado = grupo.every((d) => d.estadoResolucion === "Anulada");
+
+                                        const cantidadDevuelta = grupo
+                                            .filter((d) => d.estadoResolucion !== "Anulada")
+                                            .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
 
                                         return (
                                             <tr key={idVenta} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
@@ -171,7 +194,7 @@ export default function Devolutions() {
                                                 <td className="px-4 py-2 font-medium">{idVenta || "—"}</td>
                                                 <td className="px-4 py-2">
                                                     <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                                                        {grupo.length} producto{grupo.length !== 1 ? "s" : ""}
+                                                        {cantidadDevuelta} producto{cantidadDevuelta !== 1 ? "s" : ""}
                                                     </span>
                                                 </td>
 

@@ -1,10 +1,11 @@
 import {
     AlertTriangle, Box, Boxes, Wrench, User,
     ShieldCheck, FileText, CalendarDays, ClipboardList, Tag,
-    GitBranch, AlertCircle, CheckCircle2,
+    GitBranch, AlertCircle, CheckCircle2, DollarSign,
     Plus
 } from "lucide-react";
 import Calendar, { formatearFecha } from "../../../components/ui/Calendar";
+import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import GarantiaCheckbox from "./GarantiaCheckbox";
 import {
@@ -19,9 +20,9 @@ import {
  * Wrapper de campo con ícono + label amarillo.
  * ⚠️ NUNCA mover esto dentro de DevolutionForm.
  */
-function Field({ icon: Icon, label, children }) {
+function Field({ icon: Icon, label, children, className = "" }) {
     return (
-        <div className="flex flex-col">
+        <div className={`flex flex-col ${className}`}>
             <p className="flex items-center gap-2 text-yellow-400 text-sm font-medium mb-2">
                 <Icon size={20} />
                 {label}
@@ -101,6 +102,7 @@ export default function DevolutionForm({
 }) {
     // Helper para verificar si un campo debe estar readonly
     const esReadOnly = (campo) => readOnly || readOnlyFields.includes(campo);
+    
     // Opciones filtradas según reglas de negocio
     const gestionesDisponibles   = getGestionesPermitidas(form.motivo, form.submotivo);
     const condicionesDisponibles = getCondicionesPermitidas(form.motivo);
@@ -110,6 +112,16 @@ export default function DevolutionForm({
     const garantiaAplica   = form.motivo === "GARANTIA";
     const garantiaNoAplica = !readOnly && form.motivo && !garantiaAplica;
 
+    // Determina si el campo de monto parcial debe mostrarse
+    const mostrarMontoParcial = form.gestion === "REEMBOLSO_PARCIAL";
+
+    // Calcula el valor total de referencia para el badge
+    // (cantidad × precio del producto seleccionado)
+    const productoSeleccionado = productosList.find(p => p.nombre === form.producto);
+    const valorTotalReferencia = productoSeleccionado?.precio
+        ? (parseFloat(productoSeleccionado.precio) * (parseInt(form.cantidad) || 0))
+        : 0;
+
     const fieldBase = (campo) => `
         bg-gray-200 text-gray-500 rounded-xl px-4 py-3 text-sm w-full shadow-sm
         focus:outline-none focus:ring-2
@@ -117,6 +129,10 @@ export default function DevolutionForm({
         ${esReadOnly(campo) ? "opacity-75 cursor-not-allowed" : "cursor-pointer"}
         ${ring(estadoCampo(campo))}
     `;
+
+    // Clase para el input de monto parcial cuando excede el total
+    const montoExcedeTotal = form.montoReembolso && valorTotalReferencia > 0
+        && parseFloat(form.montoReembolso) > valorTotalReferencia;
 
     return (
         <div className="bg-gray-100 p-6 rounded-2xl flex flex-col h-full gap-6 shadow-inner overflow-auto">
@@ -135,21 +151,18 @@ export default function DevolutionForm({
                 {/* PRODUCTO — primero */}
                 <Field icon={Box} label="Producto *">
                     {esReadOnly("producto") ? (
-                        <input type="text" value={form.producto} readOnly className={fieldBase("producto")} />
-                    ) : (
-                        <select
-                            value={form.producto}
-                            onChange={(e) => onChange("producto", e.target.value)}
-                            onBlur={() => onFieldBlur("producto")}
-                            disabled={!form.idVenta || productosList.length === 0}
-                            className={`${fieldBase("producto")} ${(!form.idVenta || productosList.length === 0) ? "opacity-40 cursor-not-allowed" : ""}`}
-                        >
-                            <option value="">{form.idVenta ? "Seleccionar..." : "Primero elige venta"}</option>
-                            {productosList.map((p) => (
-                                <option key={p.id ?? p.nombre} value={p.nombre}>{p.nombre}</option>
-                            ))}
-                        </select>
-                    )}
+                            <input type="text" value={form.producto} readOnly className={fieldBase("producto")} />
+                        ) : (!form.idVenta || productosList.length === 0) ? (
+                            <div className={`${fieldBase("producto")} opacity-40 cursor-not-allowed`}>{form.idVenta ? "Seleccionar..." : "Primero elige venta"}</div>
+                        ) : (
+                            <CustomSelect
+                                value={form.producto}
+                                onChange={(val) => { onChange("producto", val); onFieldBlur("producto"); }}
+                                options={productosList.map((p) => ({ value: p.nombre, label: p.nombre }))}
+                                placeholder={form.idVenta ? "Seleccionar..." : "Primero elige venta"}
+                                width="w-full"
+                            />
+                        )}
                     {sinProductos && !esReadOnly("producto") ? (
                         <div className="flex items-center gap-1 text-xs mt-1 text-amber-600">
                             <AlertCircle size={12} />
@@ -162,16 +175,14 @@ export default function DevolutionForm({
 
                 {/* MOTIVO */}
                 <Field icon={AlertTriangle} label="Motivo *">
-                    <select
+                    <CustomSelect
                         value={form.motivo}
-                        onChange={(e) => onChange("motivo", e.target.value)}
-                        onBlur={() => onFieldBlur("motivo")}
+                        onChange={(val) => { onChange("motivo", val); onFieldBlur("motivo"); }}
+                        options={MOTIVOS.map((m) => ({ value: m, label: m }))}
+                        placeholder="Seleccionar..."
+                        width="w-full"
                         disabled={esReadOnly("motivo")}
-                        className={fieldBase("motivo")}
-                    >
-                        <option value="">Seleccionar...</option>
-                        {MOTIVOS.map((m) => <option key={m} value={m}>{m}</option>)}
-                    </select>
+                    />
                     <FieldStatus estado={estadoCampo("motivo")} />
                 </Field>
 
@@ -179,26 +190,24 @@ export default function DevolutionForm({
                 <Field icon={GitBranch} label="Submotivo *">
                     {esReadOnly("submotivo") ? (
                         <input type="text" value={form.submotivo || "—"} readOnly className={fieldBase("submotivo")} />
-                    ) : (
-                        <select
-                            value={form.submotivo}
-                            onChange={(e) => onChange("submotivo", e.target.value)}
-                            onBlur={() => onFieldBlur("submotivo")}
-                            disabled={!form.motivo}
-                            className={`${fieldBase("submotivo")} ${!form.motivo ? "opacity-40 cursor-not-allowed" : ""}`}
-                        >
-                            <option value="">{form.motivo ? "Seleccionar..." : "Primero elige motivo"}</option>
-                            {submotivosDisponibles.map((s) => (
-                                <option key={s} value={s}>{s.replace(/_/g, " ")}</option>
-                            ))}
-                        </select>
-                    )}
+                        ) : (!form.motivo ? (
+                            <div className={`${fieldBase("submotivo")} opacity-40 cursor-not-allowed`}>{form.motivo ? "Seleccionar..." : "Primero elige motivo"}</div>
+                        ) : (
+                            <CustomSelect
+                                value={form.submotivo}
+                                onChange={(val) => { onChange("submotivo", val); onFieldBlur("submotivo"); }}
+                                options={submotivosDisponibles.map((s) => ({ value: s, label: s.replace(/_/g, " ") }))}
+                                placeholder={form.motivo ? "Seleccionar..." : "Primero elige motivo"}
+                                width="w-full"
+                                disabled={!form.motivo}
+                            />
+                        ))}
                     <FieldStatus estado={estadoCampo("submotivo")} />
                 </Field>
 
             </div>
 
-            {/* ── FILA 2: Cantidad · Condición · Gestión · Responsable ────────── */}
+            {/* ── FILA 2: Cantidad · Condición producto · Responsable · Fecha devolución ── */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 px-10 gap-y-6">
 
                 {/* CANTIDAD */}
@@ -219,117 +228,193 @@ export default function DevolutionForm({
 
                 {/* CONDICIÓN PRODUCTO — filtrada por motivo */}
                 <Field icon={Wrench} label="Condición producto *">
-                    <select
+                    <CustomSelect
                         value={form.condicionProducto}
-                        onChange={(e) => onChange("condicionProducto", e.target.value)}
-                        onBlur={() => onFieldBlur("condicionProducto")}
+                        onChange={(val) => { onChange("condicionProducto", val); onFieldBlur("condicionProducto"); }}
+                        options={condicionesDisponibles.map((c) => ({ value: c, label: c.replace(/_/g, " ") }))}
+                        placeholder="Seleccionar..."
+                        width="w-full"
                         disabled={esReadOnly("condicionProducto")}
-                        className={fieldBase("condicionProducto")}
-                    >
-                        <option value="">Seleccionar...</option>
-                        {condicionesDisponibles.map((c) => (
-                            <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
-                        ))}
-                    </select>
+                    />
                     <FieldStatus estado={estadoCampo("condicionProducto")} />
-                </Field>
-
-                {/* GESTIÓN — filtrada por motivo/submotivo */}
-                <Field icon={ClipboardList} label="Gestión *">
-                    <select
-                        value={form.gestion}
-                        onChange={(e) => onChange("gestion", e.target.value)}
-                        onBlur={() => onFieldBlur("gestion")}
-                        disabled={esReadOnly("gestion") || gestionesDisponibles.length === 0}
-                        className={`${fieldBase("gestion")} ${(!form.motivo || gestionesDisponibles.length === 0) ? "opacity-40" : ""}`}
-                    >
-                        <option value="">
-                            {!form.motivo
-                                ? "Primero elige motivo"
-                                : form.motivo === "CLIENTE" && !form.submotivo
-                                    ? "Primero elige submotivo"
-                                    : "Seleccionar..."}
-                        </option>
-                        {gestionesDisponibles.map((g) => (
-                            <option key={g} value={g}>{g.replace(/_/g, " ")}</option>
-                        ))}
-                    </select>
-                    <FieldStatus estado={estadoCampo("gestion")} />
                 </Field>
 
                 {/* RESPONSABLE — auto-set por reglas de negocio */}
                 <Field icon={User} label="Responsable *">
-                    <select
+                    <CustomSelect
                         value={form.responsable}
-                        onChange={(e) => onChange("responsable", e.target.value)}
-                        onBlur={() => onFieldBlur("responsable")}
+                        onChange={(val) => { onChange("responsable", val); onFieldBlur("responsable"); }}
+                        options={RESPONSABLES.map((r) => ({ value: r, label: r }))}
+                        placeholder="Seleccionar..."
+                        width="w-full"
                         disabled={esReadOnly("responsable") || form.motivo === "LOGISTICA" || form.motivo === "CLIENTE"}
-                        className={`${fieldBase("responsable")} ${(form.motivo === "LOGISTICA" || form.motivo === "CLIENTE") ? "opacity-60" : ""}`}
-                    >
-                        <option value="">Seleccionar...</option>
-                        {RESPONSABLES.map((r) => (
-                            <option key={r} value={r}>{r}</option>
-                        ))}
-                    </select>
+                    />
                     <FieldStatus estado={estadoCampo("responsable")} />
+                </Field>
+
+                {/* FECHA — siempre automática, no editable */}
+                <Field icon={CalendarDays} label="Fecha de devolución">
+                    <input
+                        type="text"
+                        value={formatFechaDisplay(form.fechaDevolucion)}
+                        readOnly
+                        className={`${fieldBase("fecha")} cursor-not-allowed opacity-75`}
+                    />
+                    <p className="text-xs text-gray-400 mt-0.5">Se asigna automáticamente.</p>
                 </Field>
 
             </div>
 
-            {/* ── FILA 3: Estado resolución | [Fecha · Garantía] ─────────────── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6 px-10">
+            {/* ── FILA 3: Gestión (con REEMBOLSO PARCIAL inline) · Estado resolución · Garantía proveedor ── */}
+            <div className={`grid grid-cols-1 ${mostrarMontoParcial ? 'md:grid-cols-[1fr_1fr]' : 'md:grid-cols-3'} gap-x-8 px-10 gap-y-6 transition-all duration-300`}>
 
-                <Field icon={Tag} label="Estado resolución">
-                    <select
-                        value={form.estadoResolucion}
-                        onChange={(e) => onChange("estadoResolucion", e.target.value)}
-                        onBlur={() => onFieldBlur("estadoResolucion")}
-                        disabled={esReadOnly("estadoResolucion")}
-                        className={fieldBase("estadoResolucion")}
-                    >
-                        <option value="">Seleccionar...</option>
-                        {ESTADOS_RESOLUCION.map((e) => (
-                            <option key={e} value={e}>{e.replace(/_/g, " ")}</option>
-                        ))}
-                    </select>
-                    <FieldStatus estado={estadoCampo("estadoResolucion")} />
-                </Field>
+                {/* GESTIÓN — con monto parcial inline (Field propio con label) cuando aplica */}
+                <div className={`${mostrarMontoParcial ? 'flex gap-2 items-start' : ''}`}>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-
-                    {/* FECHA — siempre automática, no editable */}
-                    <Field icon={CalendarDays} label="Fecha de devolución">
-                        <input
-                            type="text"
-                            value={formatFechaDisplay(form.fechaDevolucion)}
-                            readOnly
-                            className={`${fieldBase("fecha")} cursor-not-allowed opacity-75`}
-                        />
-                        <p className="text-xs text-gray-400 mt-0.5">Se asigna automáticamente.</p>
-                    </Field>
-
-                    {/* GARANTÍA PROVEEDOR — solo activa cuando motivo = GARANTIA */}
-                    <Field icon={ShieldCheck} label="Garantía proveedor *">
-                        {garantiaNoAplica ? (
-                            <div className="flex items-center gap-2 bg-gray-100 border border-dashed border-gray-300 rounded-xl px-4 py-3">
-                                <span className="text-xs text-gray-400 italic">Solo aplica para GARANTÍA</span>
-                            </div>
-                        ) : (
-                            <>
-                                <GarantiaCheckbox
-                                    value={form.garantiaProveedor}
-                                    onChange={(val) => {
-                                        onChange("garantiaProveedor", val);
-                                        onFieldBlur("garantiaProveedor");
-                                    }}
-                                    readOnly={esReadOnly("garantiaProveedor")}
+                    {/* Campo de gestión */}
+                    <div className={mostrarMontoParcial ? 'flex-[0_0_45%] min-w-0' : 'w-full'}>
+                        <Field icon={ClipboardList} label="Gestión *">
+                            {(!form.motivo || gestionesDisponibles.length === 0) ? (
+                                <div className={`${fieldBase("gestion")} opacity-40`}>{!form.motivo ? "Primero elige motivo" : (form.motivo === "CLIENTE" && !form.submotivo ? "Primero elige submotivo" : "Seleccionar...")}</div>
+                            ) : (
+                                <CustomSelect
+                                    value={form.gestion}
+                                    onChange={(val) => { onChange("gestion", val); onFieldBlur("gestion"); }}
+                                    options={gestionesDisponibles.map((g) => ({ value: g, label: g.replace(/_/g, " ") }))}
+                                    placeholder={!form.motivo ? "Primero elige motivo" : (form.motivo === "CLIENTE" && !form.submotivo ? "Primero elige submotivo" : "Seleccionar...")}
+                                    width="w-full"
+                                    disabled={esReadOnly("gestion") || gestionesDisponibles.length === 0}
                                 />
-                                <FieldStatus estado={estadoCampo("garantiaProveedor")} />
-                            </>
-                        )}
-                    </Field>
+                            )}
+                            <FieldStatus estado={estadoCampo("gestion")} />
+                        </Field>
+                    </div>
 
+                    {/* Campo de monto parcial — visible solo con REEMBOLSO_PARCIAL */}
+                    {mostrarMontoParcial && (
+                        <div className="flex-1 min-w-0">
+                            <Field icon={DollarSign} label="Monto reembolso *">
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="100"
+                                        value={form.montoReembolso || ""}
+                                        onChange={(e) => onChange("montoReembolso", e.target.value)}
+                                        onBlur={() => onFieldBlur("montoReembolso")}
+                                        readOnly={esReadOnly("montoReembolso")}
+                                        placeholder="Monto"
+                                        className={`${fieldBase("montoReembolso")} pr-20 ${
+                                            montoExcedeTotal ? 'ring-1 ring-red-300 bg-red-50' : ''
+                                        }`}
+                                    />
+                                    {/* Badge del valor total de referencia */}
+                                    {valorTotalReferencia > 0 && (
+                                        <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 text-[0.65rem] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap pointer-events-none ${
+                                            montoExcedeTotal 
+                                                ? 'bg-red-100 text-red-800 border-red-200' 
+                                                : 'bg-amber-100 text-amber-800 border-amber-300'
+                                        }`}>
+                                            <span className="font-bold">${valorTotalReferencia.toLocaleString('es-CO')}</span> total
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Hint de monto máximo o error de validación */}
+                                {valorTotalReferencia > 0 && (
+                                    <div className={`flex items-center gap-1 text-xs mt-1 ${
+                                        montoExcedeTotal ? 'text-red-500' : 'text-amber-600'
+                                    }`}>
+                                        {montoExcedeTotal ? (
+                                            <>
+                                                <AlertCircle size={12} />
+                                                <span>El monto no puede superar ${valorTotalReferencia.toLocaleString('es-CO')}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>ⓘ</span>
+                                                <span>Máximo ${valorTotalReferencia.toLocaleString('es-CO')} ({form.cantidad || 0} ud × ${productoSeleccionado?.precio?.toLocaleString('es-CO') || 0})</span>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </Field>
+                        </div>
+                    )}
                 </div>
+
+                {/* ESTADO RESOLUCIÓN y GARANTÍA — se reagrupan en la segunda columna cuando hay split */}
+                {mostrarMontoParcial ? (
+                    /* Lado a lado dentro de la segunda mitad */
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-6 min-w-0">
+                        <Field icon={Tag} label="Estado resolución" className="min-w-0">
+                            <CustomSelect
+                                value={form.estadoResolucion}
+                                onChange={(val) => { onChange("estadoResolucion", val); onFieldBlur("estadoResolucion"); }}
+                                options={ESTADOS_RESOLUCION.map((e) => ({ value: e, label: e.replace(/_/g, " ") }))}
+                                placeholder="Seleccionar..."
+                                width="w-full"
+                                disabled={esReadOnly("estadoResolucion")}
+                            />
+                            <FieldStatus estado={estadoCampo("estadoResolucion")} />
+                        </Field>
+
+                        <Field icon={ShieldCheck} label="Garantía proveedor *" className="min-w-0">
+                            {garantiaNoAplica ? (
+                                <div className="flex items-center gap-2 bg-gray-100 border border-dashed border-gray-300 rounded-xl px-4 py-3">
+                                    <span className="text-xs text-gray-400 italic">Solo aplica para GARANTÍA</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <GarantiaCheckbox
+                                        value={form.garantiaProveedor}
+                                        onChange={(val) => {
+                                            onChange("garantiaProveedor", val);
+                                            onFieldBlur("garantiaProveedor");
+                                        }}
+                                        readOnly={esReadOnly("garantiaProveedor")}
+                                    />
+                                    <FieldStatus estado={estadoCampo("garantiaProveedor")} />
+                                </>
+                            )}
+                        </Field>
+                    </div>
+                ) : (
+                    /* Layout normal de 3 columnas cuando NO es REEMBOLSO PARCIAL */
+                    <>
+                        <Field icon={Tag} label="Estado resolución">
+                            <CustomSelect
+                                value={form.estadoResolucion}
+                                onChange={(val) => { onChange("estadoResolucion", val); onFieldBlur("estadoResolucion"); }}
+                                options={ESTADOS_RESOLUCION.map((e) => ({ value: e, label: e.replace(/_/g, " ") }))}
+                                placeholder="Seleccionar..."
+                                width="w-full"
+                                disabled={esReadOnly("estadoResolucion")}
+                            />
+                            <FieldStatus estado={estadoCampo("estadoResolucion")} />
+                        </Field>
+
+                        <Field icon={ShieldCheck} label="Garantía proveedor *">
+                            {garantiaNoAplica ? (
+                                <div className="flex items-center gap-2 bg-gray-100 border border-dashed border-gray-300 rounded-xl px-4 py-3">
+                                    <span className="text-xs text-gray-400 italic">Solo aplica para GARANTÍA</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <GarantiaCheckbox
+                                        value={form.garantiaProveedor}
+                                        onChange={(val) => {
+                                            onChange("garantiaProveedor", val);
+                                            onFieldBlur("garantiaProveedor");
+                                        }}
+                                        readOnly={esReadOnly("garantiaProveedor")}
+                                    />
+                                    <FieldStatus estado={estadoCampo("garantiaProveedor")} />
+                                </>
+                            )}
+                        </Field>
+                    </>
+                )}
             </div>
 
             {/* ── FILA 4: Observaciones · Descripción ────────────────────────── */}

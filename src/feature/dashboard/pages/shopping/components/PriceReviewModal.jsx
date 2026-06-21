@@ -28,7 +28,7 @@ export default function PriceReviewModal({ productos, onConfirmar, onCancelar })
     const countWac = productos.length - countSugeridos;
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-start justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
 
                 {/* ── HEADER ───────────────────────────────────────── */}

@@ -78,10 +78,10 @@ export function useShopping() {
             };
         }
 
-        if (compra.estado !== "Activo") {
+        if (compra.estado !== "Completada") {
             return {
                 puedeAnularse: false,
-                razon: "Solo se pueden anular compras activas.",
+                razon: "Solo se pueden anular compras completadas.",
                 horasRestantes: 0,
             };
         }
@@ -94,7 +94,7 @@ export function useShopping() {
     }, [cancelStatusById]);
 
     const cargarEstadoAnulacion = useCallback(async (compra) => {
-        if (!compra?.id || compra.estado !== "Activo") return null;
+        if (!compra?.id || compra.estado !== "Completada") return null;
 
         try {
             const status = await ServicesShopping.getCancellationStatus(compra.id);
@@ -118,17 +118,17 @@ export function useShopping() {
 
     useEffect(() => {
         compras
-            .filter((compra) => compra.estado === "Activo" && !cancelStatusById[String(compra.id)])
+            .filter((compra) => compra.estado === "Completada" && !cancelStatusById[String(compra.id)])
             .forEach((compra) => {
                 cargarEstadoAnulacion(compra);
             });
     }, [compras, cancelStatusById, cargarEstadoAnulacion]);
 
-    const handleAnular = useCallback(async (id) => {
+    const handleAnular = useCallback(async (id, motivo = null) => {
         setCanceling(true);
         setError("");
         try {
-            const compraAnulada = await ServicesShopping.cancelRemote(id);
+            const compraAnulada = await ServicesShopping.cancelRemote(id, motivo);
             const comprasActualizadas = await ServicesShopping.fetchAll();
             setCompras(comprasActualizadas);
             setCancelStatusById((prev) => ({

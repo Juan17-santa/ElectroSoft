@@ -48,7 +48,6 @@ export default function StatusHistoryModal({ devolucion, onClose }) {
         /* Overlay */
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-            onClick={(e) => e.target === e.currentTarget && onClose()}
         >
             {/* Panel */}
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">

@@ -22,8 +22,19 @@ export default function DevolutionProductDetails() {
     const [form, setForm] = useState(null);
 
     useEffect(() => {
-        const found = ServicesDevolutions.getById(id);
-        if (found) setForm(found);
+        let active = true;
+
+        ServicesDevolutions.getById(id)
+            .then((found) => {
+                if (active && found) setForm(found);
+            })
+            .catch(() => {
+                if (active) setForm(null);
+            });
+
+        return () => {
+            active = false;
+        };
     }, [id]);
 
     if (form === null) {
