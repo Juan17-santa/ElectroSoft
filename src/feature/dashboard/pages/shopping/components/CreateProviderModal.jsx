@@ -4,6 +4,7 @@ import {
     AlertCircle, CheckCircle2, Truck, Tag, ChevronDown,
 } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
+import CustomSelect from "../../../components/ui/CustomSelect";
 import { ServicesShopping } from "../services/ServicesShopping";
 
 // ─── Indicador de validación ───────────────────────────────────────────────────
@@ -203,7 +204,6 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
         <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
             style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
-            onClick={onClose}
         >
             <div
                 className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl border border-gray-200 max-h-screen overflow-y-auto"
@@ -238,19 +238,18 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                             <IdCard size={18} />
                             <span>Tipo de documento *</span>
                         </div>
-                        <select
+                        <CustomSelect
                             value={tipoDoc}
-                            onChange={(e) => { setTipoDoc(e.target.value); tocar("tipoDoc"); }}
-                            onBlur={() => tocar("tipoDoc")}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 cursor-pointer ${ring(estadoTipoDoc)}`}
-                        >
-                            <option value="">— Seleccionar —</option>
-                            {documentTypes.map((doc) => (
-                                <option key={doc.id} value={doc.id}>
-                                    {doc.abbreviation || doc.nombre}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(val) => { setTipoDoc(val); tocar("tipoDoc"); }}
+                            options={documentTypes.map((doc) => ({
+                                value: doc._id ?? String(doc.id ?? doc.id),
+                                label: doc.name
+                                    ? (doc.abbreviation ? `${doc.name} (${doc.abbreviation})` : doc.name)
+                                    : (doc.abbreviation || doc.nombre || "")
+                            }))}
+                            placeholder="Selecciona tipo de documento"
+                            width="w-full"
+                        />
                         <FieldStatus estado={estadoTipoDoc} />
                     </div>
 

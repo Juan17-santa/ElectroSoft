@@ -3,6 +3,7 @@ import { X, Box, Boxes, DollarSign, Plus, AlertCircle, CheckCircle2, TrendingUp,
 import { formatCOP, parseCOP } from "../helpers/shoppingHelpers";
 import CreateProductModal from "./CreateProductModal";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
+import CustomSelect from "../../../components/ui/CustomSelect";
 import { ServicesShopping } from "../services/ServicesShopping";
 
 function FieldStatus({ estado }) {
@@ -147,11 +148,12 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
     return (
         <>
-            <div className="absolute inset-0 bg-white/30 backdrop-blur-sm rounded-2xl z-10" onClick={onClose} />
+            {/* OVERLAY global — cubre toda la ventana incluido navbar y sidebar */}
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
 
-            {/* Modal más ancha: max-w-2xl */}
-            <div className="absolute inset-0 flex items-start justify-center z-20 pointer-events-none overflow-y-auto py-4">
-                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl pointer-events-auto border border-gray-300 my-auto" onClick={(e) => e.stopPropagation()}>
+            {/* Modal centrado respecto a toda la ventana */}
+            <div className="fixed inset-0 flex items-start justify-center z-50 pointer-events-none overflow-y-auto pt-4 pb-4">
+                <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl pointer-events-auto border border-gray-300 my-auto mx-4" onClick={(e) => e.stopPropagation()}>
 
                     {/* HEADER */}
                     <div className="flex items-start justify-between mb-4">
@@ -173,11 +175,14 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><Box size={18} /><span>Producto *</span></div>
                             <div className="flex items-center gap-2">
-                                <select value={modalProducto} onChange={(e) => handleSelectProducto(e.target.value)} onBlur={() => setTocados((t) => ({ ...t, producto: true }))}
-                                    className={`flex-1 bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all cursor-pointer ${estadoProducto === null ? "focus:ring-gray-400 text-gray-500" : estadoProducto.valido ? "ring-1 ring-green-300 text-gray-700" : "ring-1 ring-red-300 text-gray-500"}`}>
-                                    <option value="">{loadingProducts ? "Cargando productos..." : "Elige un producto..."}</option>
-                                    {productosList.map((p) => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-                                </select>
+                                <div className="flex-1 min-w-0">
+                                    <CustomSelect
+                                        options={productosList.map(p => ({ value: String(p.id), label: p.nombre }))}
+                                        value={String(modalProducto)}
+                                        onChange={(val) => { handleSelectProducto(val); }}
+                                        placeholder={"Elige un producto..."}
+                                    />
+                                </div>
                                 <button type="button" onClick={() => setShowCreateProductModal(true)} className="bg-yellow-400 hover:bg-yellow-500 transition p-3 rounded-xl shadow-md cursor-pointer flex-shrink-0">
                                     <Plus size={18} className="text-white" />
                                 </button>

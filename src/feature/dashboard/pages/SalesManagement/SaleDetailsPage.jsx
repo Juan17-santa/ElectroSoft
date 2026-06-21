@@ -62,28 +62,29 @@ export default function SaleDetailsPage() {
 
     useEffect(() => {
         if (sale) {
-            const devoluciones = ServicesDevolutions.getByIdVenta(sale.id);
-            const cantDevueltasMap = devoluciones.reduce((acc, d) => {
-                acc[d.producto] = (acc[d.producto] || 0) + Number(d.cantidad || 0);
-                return acc;
-            }, {});
+            ServicesDevolutions.getBySaleId(sale.id).then(devoluciones => {
+                const cantDevueltasMap = devoluciones.reduce((acc, d) => {
+                    acc[d.producto] = (acc[d.producto] || 0) + Number(d.cantidad || 0);
+                    return acc;
+                }, {});
 
-            const netos = (sale.productos || []).map(p => {
-                const devuelto = cantDevueltasMap[p.nombre] || 0;
-                return {
-                    ...p,
-                    cantOriginal: p.cantidad,
-                    cantDevuelta: devuelto,
-                    cantNeta: Math.max(0, p.cantidad - devuelto)
-                };
-            });
+                const netos = (sale.productos || []).map(p => {
+                    const devuelto = cantDevueltasMap[p.nombre] || 0;
+                    return {
+                        ...p,
+                        cantOriginal: p.cantidad,
+                        cantDevuelta: devuelto,
+                        cantNeta: Math.max(0, p.cantidad - devuelto)
+                    };
+                });
 
-            const newSubtotal = netos.reduce((sum, p) => sum + (p.precio * p.cantNeta), 0);
-            const newIva = newSubtotal * 0.19;
-            const newTotal = newSubtotal + newIva;
+                const newSubtotal = netos.reduce((sum, p) => sum + (p.precio * p.cantNeta), 0);
+                const newIva = newSubtotal * 0.19;
+                const newTotal = newSubtotal + newIva;
 
-            setProductosNetos(netos);
-            setTotalesNetos({ subtotal: newSubtotal, iva: newIva, total: newTotal });
+                setProductosNetos(netos);
+                setTotalesNetos({ subtotal: newSubtotal, iva: newIva, total: newTotal });
+            }).catch(e => console.error("Error al obtener devoluciones:", e));
         }
     }, [sale]);
 

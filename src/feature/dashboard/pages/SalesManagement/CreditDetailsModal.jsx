@@ -32,21 +32,15 @@ export default function CreditDetailsPage() {
                 const parsed = JSON.parse(data);
                 setSale(parsed);
 
-                let devoluciones = [];
-                try {
-                    devoluciones = ServicesDevolutions.getByIdVenta(parsed.id) || [];
-                } catch(e) {
-                    console.error("Error obteniendo devoluciones:", e);
-                }
+                ServicesDevolutions.getBySaleId(parsed.id).then(devoluciones => {
+                    const totalRetornado = devoluciones.reduce((sum, d) => {
+                        const prodPrice = parsed.productos?.find(p => p.nombre === d.producto)?.precio || 0;
+                        return sum + (Number(d.cantidad || 0) * prodPrice);
+                    }, 0);
+                    const totalRetornadoConIVA = totalRetornado * 1.19;
+                    setNetTotal(parsed.total - totalRetornadoConIVA);
+                }).catch(e => console.error("Error al cargar devoluciones:", e));
 
-                const totalRetornado = devoluciones.reduce((sum, d) => {
-                    const prodPrice = parsed.productos?.find(p => p.nombre === d.producto)?.precio || 0;
-                    return sum + (Number(d.cantidad || 0) * prodPrice);
-                }, 0);
-                const totalRetornadoConIVA = totalRetornado * 1.19;
-                
-                const currentTotal = parsed.total || 0;
-                setNetTotal(currentTotal - totalRetornadoConIVA);
 
                 // ✅ FIX: Cargar abonos reales desde el backend
                 paymentsService.getById(parsed.id).then(ventaEnriquecida => {
@@ -95,13 +89,14 @@ export default function CreditDetailsPage() {
                 setSale(updatedSale);
                 localStorage.setItem("saleToView", JSON.stringify(updatedSale));
 
-                const devoluciones = ServicesDevolutions.getByIdVenta(updatedSale.id) || [];
-                const totalRetornado = devoluciones.reduce((sum, d) => {
-                    const prodPrice = updatedSale.productos?.find(p => p.nombre === d.producto)?.precio || 0;
-                    return sum + (Number(d.cantidad || 0) * prodPrice);
-                }, 0);
-                const totalRetornadoConIVA = totalRetornado * 1.19;
-                setNetTotal(updatedSale.total - totalRetornadoConIVA);
+                ServicesDevolutions.getBySaleId(updatedSale.id).then(devoluciones => {
+                    const totalRetornado = devoluciones.reduce((sum, d) => {
+                        const prodPrice = updatedSale.productos?.find(p => p.nombre === d.producto)?.precio || 0;
+                        return sum + (Number(d.cantidad || 0) * prodPrice);
+                    }, 0);
+                    const totalRetornadoConIVA = totalRetornado * 1.19;
+                    setNetTotal(updatedSale.total - totalRetornadoConIVA);
+                }).catch(e => console.error("Error al refrescar devoluciones:", e));
             }
         } catch (error) {
             console.error("Error al refrescar venta:", error);

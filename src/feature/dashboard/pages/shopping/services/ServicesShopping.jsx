@@ -88,13 +88,13 @@ function normalizeProvider(provider = {}) {
 }
 
 function normalizeEstado(estado) {
-    if (estado === "ACTIVA") return "Activo";
+    if (estado === "ACTIVA") return "Completada";
     if (estado === "ANULADA") return "Anulada";
-    return estado || "Activo";
+    return estado || "Completada";
 }
 
 function normalizeBackendEstado(estado) {
-    if (estado === "Activo") return "ACTIVA";
+    if (estado === "Completada") return "ACTIVA";
     if (estado === "Anulada") return "ANULADA";
     return estado;
 }
@@ -306,8 +306,12 @@ export const ServicesShopping = {
         return normalizeProvider(payload?.data);
     },
 
-    async cancelRemote(id) {
-        const payload = await request(`/shopping/${id}/cancel`, { method: "PATCH" });
+    async cancelRemote(id, motivo = null) {
+        const body = motivo ? { motivo } : {};
+        const payload = await request(`/shopping/${id}/cancel`, {
+            method: "PATCH",
+            body: JSON.stringify(body),
+        });
         const catalogs = await this.fetchCatalogs();
         return normalizeShopping(payload?.data, catalogs);
     },

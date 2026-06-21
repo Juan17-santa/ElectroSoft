@@ -113,7 +113,7 @@ export default function ShoppingDetails() {
 
                                 <div>
                                     <p className="text-xs sm:text-sm text-yellow-400 mb-1">Estado</p>
-                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${compra.estado === "Activo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${compra.estado === "Completada" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
                                         {compra.estado}
                                     </span>
                                 </div>

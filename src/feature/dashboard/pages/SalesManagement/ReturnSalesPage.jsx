@@ -46,7 +46,16 @@ export default function ReturnSalesPage() {
 
     // ─── Cargar devoluciones ──────────────────────────────────────────────────
     const recargarDevoluciones = useCallback(() => {
-        if (sale?.id) setDevolucionesVenta(ServicesDevolutions.getByIdVenta(sale.id));
+        if (sale?.id) {
+            ServicesDevolutions.getBySaleId(sale.id)
+                .then((devs) => {
+                    const devsActivas = devs.filter(d => d.estadoResolucion !== "Anulada");
+                    const localDevsStr = localStorage.getItem(`pendingDevs_${sale.id}`);
+                    const localDevs = localDevsStr ? JSON.parse(localDevsStr) : [];
+                    setDevolucionesVenta([...devsActivas, ...localDevs]);
+                })
+                .catch(e => console.error("Error cargando devoluciones:", e));
+        }
     }, [sale?.id]);
 
     useEffect(() => { recargarDevoluciones(); }, [recargarDevoluciones]);
@@ -98,7 +107,16 @@ export default function ReturnSalesPage() {
             title: "Eliminar devolución",
             message: `¿Eliminar la devolución del producto "${devolucion.producto}"? Esta acción no se puede deshacer.`,
             onConfirm: () => {
-                ServicesDevolutions.delete(devolucion.id);
+                if (String(devolucion.id).startsWith("temp-")) {
+                    const key = `pendingDevs_${sale.id}`;
+                    const localDevsStr = localStorage.getItem(key);
+                    if (localDevsStr) {
+                        const localDevs = JSON.parse(localDevsStr).filter(d => String(d.id) !== String(devolucion.id));
+                        localStorage.setItem(key, JSON.stringify(localDevs));
+                    }
+                } else {
+                    ServicesDevolutions.delete(devolucion.id);
+                }
                 setDevolucionesVenta((prev) => prev.filter((d) => String(d.id) !== String(devolucion.id)));
                 setAlertMsg({ type: "success", message: "Devolución eliminada." });
                 setConfirmData(null);
@@ -115,13 +133,32 @@ export default function ReturnSalesPage() {
             type: "warning",
             title: "Registrar devolución",
             message: "¿Estás seguro? El estado de la venta cambiará a 'Devuelto'.",
-            onConfirm: () => {
-                const esParcial = devolucionesVenta.length < productos.length;
-                SalesService.returnSale(sale.id, esParcial);
-                localStorage.removeItem("saleToReturn");
-                setAlertMsg({ type: "success", message: "Devolución registrada correctamente." });
-                setConfirmData(null);
-                setTimeout(() => navigate("/dashboard/sales-management"), 1500);
+            onConfirm: async () => {
+                try {
+                    const key = `pendingDevs_${sale.id}`;
+                    const localDevsStr = localStorage.getItem(key);
+                    const localDevs = localDevsStr ? JSON.parse(localDevsStr) : [];
+                    
+                    // Enviar devoluciones pendientes al backend
+                    if (localDevs.length > 0) {
+                        for (const dev of localDevs) {
+                            const payload = { ...dev };
+                            delete payload.id; // Remover ID temporal
+                            await ServicesDevolutions.create(payload);
+                        }
+                    }
+
+                    const esParcial = devolucionesVenta.length < productos.length;
+                    SalesService.returnSale(sale.id, esParcial);
+                    localStorage.removeItem(key);
+                    localStorage.removeItem("saleToReturn");
+                    setAlertMsg({ type: "success", message: "Devolución registrada correctamente." });
+                    setConfirmData(null);
+                    setTimeout(() => navigate("/dashboard/sales-management"), 1500);
+                } catch (error) {
+                    setAlertMsg({ type: "error", message: "Error registrando devolución: " + error.message });
+                    setConfirmData(null);
+                }
             },
         });
     };
@@ -150,6 +187,9 @@ export default function ReturnSalesPage() {
     };
 
     const handleVolver = () => {
+        if (sale?.id) {
+            localStorage.removeItem(`pendingDevs_${sale.id}`);
+        }
         if (isFromSales) {
             localStorage.removeItem("saleToReturn");
             navigate("/dashboard/sales-management");
@@ -368,14 +408,6 @@ export default function ReturnSalesPage() {
 
                 {/* Footer */}
                 <div className="flex justify-end gap-4 items-center pt-4 border-t border-gray-200 mt-auto">
-                    <button
-                        onClick={handleVolver}
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-100 rounded-xl text-sm font-medium shadow cursor-pointer transition"
-                    > 
-                        <X size={16} />
-                        {isFromSales ? "Cancelar" : "Volver a devoluciones"}
-                    </button>
-
                     {isFromSales && !isYaDevuelto && (
                         <button
                             onClick={handleRegistrar}

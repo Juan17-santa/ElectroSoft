@@ -68,7 +68,7 @@ export default function PaymentDetail() {
                         </div>
                         <button
                             onClick={() => generarReporteVenta(venta, abonosTable)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-yellow-300 hover:bg-yellow-50 text-sm font-medium text-yellow-600 shadow-sm transition cursor-pointer"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
                         >
                             <FileDown size={16} />
                             <span className="hidden sm:inline">Descargar detalle</span>

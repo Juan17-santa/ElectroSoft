@@ -1,91 +1,117 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
 
 export function useDevolutions() {
     const [devolutions, setDevolutions] = useState([]);
-    const [searchTerm, setSearchTerm]   = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const recargar = () => {
-        setDevolutions(ServicesDevolutions.get());
-    };
+    const recargar = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const data = await ServicesDevolutions.getAll();
+            setDevolutions(data);
+            return data;
+        } catch (err) {
+            setError(err.message);
+            setDevolutions([]);
+            return [];
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         recargar();
-    }, []);
+    }, [recargar]);
 
     const devolucionesFiltradas = devolutions.filter((d) => {
         const term = searchTerm.toLowerCase().trim();
         if (!term) return true;
+        
+        let formattedDate = "";
+        if (d.fechaDevolucion && /^\d{4}-\d{2}-\d{2}/.test(d.fechaDevolucion)) {
+            const [y, m, day] = d.fechaDevolucion.split("-");
+            formattedDate = `${day}/${m}/${y}`;
+        }
+
+        let formattedEstadoDate = "";
+        if (d.fechaEstado && /^\d{4}-\d{2}-\d{2}/.test(d.fechaEstado)) {
+            const [y, m, day] = d.fechaEstado.split("-");
+            formattedEstadoDate = `${day}-${m}-${y}`;
+        }
+
         return (
-            String(d.id              ?? "").toLowerCase().includes(term) ||
-            String(d.idVenta         ?? "").toLowerCase().includes(term) ||
-            String(d.motivo          ?? "").toLowerCase().includes(term) ||
-            String(d.producto        ?? "").toLowerCase().includes(term) ||
-            String(d.responsable     ?? "").toLowerCase().includes(term) ||
+            String(d.id ?? "").toLowerCase().includes(term) ||
+            String(d.idVenta ?? "").toLowerCase().includes(term) ||
+            String(d.motivo ?? "").toLowerCase().includes(term) ||
+            String(d.producto ?? "").toLowerCase().includes(term) ||
+            String(d.responsable ?? "").toLowerCase().includes(term) ||
             String(d.estadoResolucion ?? "").toLowerCase().includes(term) ||
-            String(d.fechaDevolucion ?? "").toLowerCase().includes(term)
+            String(d.fechaDevolucion ?? "").toLowerCase().includes(term) ||
+            formattedDate.includes(term) ||
+            formattedEstadoDate.includes(term)
         );
     });
 
-    const guardarDevolucion = (data) => {
-        const nueva = ServicesDevolutions.create(data);
-        setDevolutions((prev) => [...prev, nueva]);
+    const guardarDevolucion = async (data) => {
+        setError(null);
+        const nueva = await ServicesDevolutions.create(data);
+        await recargar();
         return nueva;
     };
-    
 
-    const editarDevolucion = (data) => {
-        ServicesDevolutions.update(data);
-        const hoy   = new Date().toISOString().split("T")[0];
-        const ahora = new Date().toISOString();
+    const editarDevolucion = async (data) => {
+        setError(null);
+        const updated = await ServicesDevolutions.update(data.id, data);
         setDevolutions((prev) =>
-            prev.map((d) =>
-                String(d.id) === String(data.id)
-                    ? { ...d, ...data, fechaEstado: hoy, actualizadoEn: ahora }
-                    : d
-            )
+            prev.map((d) => (String(d.id) === String(updated.id) ? updated : d)),
         );
+        return updated;
     };
 
-    const eliminarDevolucion = (id) => {
-        ServicesDevolutions.delete(id);
-        setDevolutions((prev) => prev.filter((d) => String(d.id) !== String(id)));
-    };
-
-    const anularDevolucion = (id) => {
-        ServicesDevolutions.anular(id);
+    const anularDevolucion = async (id) => {
+        setError(null);
+        const updated = await ServicesDevolutions.anular(id);
         setDevolutions((prev) =>
-            prev.map((d) =>
-                String(d.id) === String(id)
-                    ? { ...d, estadoResolucion: "Anulada" }
-                    : d
-            )
+            prev.map((d) => (String(d.id) === String(id) ? updated : d)),
         );
+        return updated;
     };
 
-    /** Anula todas las devoluciones de una venta */
-    const anularPorVenta = (idVenta) => {
-        ServicesDevolutions.anularByIdVenta(idVenta);
+    const anularPorVenta = async (idVenta) => {
+        setError(null);
+        const devolucionesVenta = await ServicesDevolutions.getBySaleId(idVenta);
+        const anuladas = await Promise.all(
+            devolucionesVenta
+                .filter((d) => d.estadoResolucion !== "Anulada")
+                .map((d) => ServicesDevolutions.anular(d.id)),
+        );
+
         setDevolutions((prev) =>
-            prev.map((d) =>
-                String(d.idVenta) === String(idVenta)
-                    ? { ...d, estadoResolucion: "Anulada" }
-                    : d
-            )
+            prev.map((d) => {
+                const updated = anuladas.find((item) => String(item.id) === String(d.id));
+                return updated || d;
+            }),
         );
+
+        return anuladas;
     };
 
-    const getDevolucionById = (id) =>
-        devolutions.find((d) => String(d.id) === String(id)) || null;
+    const getDevolucionById = async (id) => ServicesDevolutions.getById(id);
 
     return {
         devolutions,
         devolucionesFiltradas,
         searchTerm,
         setSearchTerm,
+        loading,
+        error,
         guardarDevolucion,
         editarDevolucion,
-        eliminarDevolucion,
         anularDevolucion,
         anularPorVenta,
         getDevolucionById,

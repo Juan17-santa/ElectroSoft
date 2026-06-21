@@ -1,185 +1,168 @@
-const KEY = "devolutions";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const DEVOLUTIONS_URL = `${API_BASE}/devolutions`;
 
-function normalizeDevolution(devolution) {
-    const {
-        fecha,
-        fechaISO,
-        ...rest
-    } = devolution;
-    const fechaDevolucion =
-        rest.fechaDevolucion ??
-        fechaISO ??
-        "";
+function getToken() {
+    const directToken =
+        localStorage.getItem("token") ||
+        localStorage.getItem("auth_token") ||
+        localStorage.getItem("accessToken");
+
+    if (directToken) return directToken;
+
+    try {
+        const authUser = JSON.parse(localStorage.getItem("auth_user") || "null");
+        return authUser?.token || authUser?.accessToken || null;
+    } catch {
+        return null;
+    }
+}
+
+function getHeaders() {
+    const token = getToken();
+    if (!token) {
+        throw new Error("Tu sesión no tiene token de acceso. Inicia sesión nuevamente para cargar devoluciones.");
+    }
 
     return {
-        ...rest,
-        fechaDevolucion,
-        fechaEstado: rest.fechaEstado ?? fechaDevolucion,
+        "Content-Type": "application/json",
+        Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
+    };
+}
+
+async function request(path = "", options = {}) {
+    const response = await fetch(`${DEVOLUTIONS_URL}${path}`, {
+        ...options,
+        headers: {
+            ...getHeaders(),
+            ...(options.headers || {}),
+        },
+    });
+
+    const body = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(body.error || body.message || "No se pudo completar la solicitud");
+    }
+
+    return body.data ?? body;
+}
+
+function toDateOnly(value) {
+    if (!value) return "";
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+    return new Date(value).toISOString().split("T")[0];
+}
+
+function getFirstProduct(devolution) {
+    return devolution.productos?.[0] ?? {};
+}
+
+function normalizeDevolution(devolution) {
+    if (!devolution) return null;
+
+    const product = getFirstProduct(devolution);
+    const createdAt = devolution.fechaCreacion || devolution.creadoEn || "";
+    const updatedAt = devolution.actualizadoEn || createdAt;
+
+    return {
+        ...devolution,
+        id: devolution._id || devolution.id,
+        idVenta: devolution.saleId || devolution.idVenta || "",
+        saleId: devolution.saleId || devolution.idVenta || "",
+        productoId: product.productoId || devolution.productoId || "",
+        producto: product.nombre || devolution.producto || "",
+        cantidad: product.cantidad ?? devolution.cantidad ?? "",
+        motivo: product.motivo || devolution.motivo || "",
+        submotivo: product.submotivo || devolution.submotivo || "",
+        condicionProducto: product.condicionProducto || devolution.condicionProducto || "",
+        gestion: product.gestion || devolution.gestion || "",
+        responsable: product.responsable || devolution.responsable || "",
+        garantiaProveedor:
+            product.garantiaProveedor ?? devolution.garantiaProveedor ?? null,
+        descripcion: product.descripcion || devolution.descripcion || "",
+        observaciones: product.observaciones || devolution.observaciones || "",
+        fechaDevolucion: toDateOnly(devolution.fechaDevolucion),
+        fechaEstado: toDateOnly(updatedAt || devolution.fechaDevolucion),
+        estadoResolucion:
+            devolution.estadoResolucion ||
+            (devolution.anulada ? "Anulada" : "CREADA"),
+        historialEstados: devolution.historialEstados || [],
+        creadoEn: createdAt,
+        actualizadoEn: updatedAt,
+    };
+}
+
+function toApiPayload(data) {
+    const producto = data.productos?.[0] || data;
+
+    return {
+        saleId: data.saleId || data.idVenta,
+        fechaDevolucion: data.fechaDevolucion,
+        estadoResolucion: data.estadoResolucion || "CREADA",
+        productos: [
+            {
+                productoId: producto.productoId,
+                nombre: producto.nombre || producto.producto,
+                cantidad: Number(producto.cantidad),
+                motivo: producto.motivo,
+                submotivo: producto.submotivo || "",
+                condicionProducto: producto.condicionProducto || "",
+                gestion: producto.gestion || "",
+                responsable: producto.responsable || "",
+                garantiaProveedor:
+                    producto.garantiaProveedor === undefined
+                        ? null
+                        : producto.garantiaProveedor,
+                descripcion: producto.descripcion || "",
+                observaciones: producto.observaciones || "",
+            },
+        ],
     };
 }
 
 export const ServicesDevolutions = {
+    async getAll() {
+        const devolutions = await request("");
+        return (Array.isArray(devolutions) ? devolutions : []).map(normalizeDevolution);
 
-    get() {
-        const data = localStorage.getItem(KEY);
-        let parsed = [];
-        try {
-            parsed = data ? JSON.parse(data) : [];
-            if (!Array.isArray(parsed)) parsed = [];
-        } catch(e) {
-            parsed = [];
-        }
-        const normalized = parsed.filter(d => d).map(normalizeDevolution);
-
-        const changed = normalized.some((item, index) => {
-            const original = parsed[index] || {};
-            return (
-                item.fechaDevolucion !== original.fechaDevolucion ||
-                item.fechaEstado !== original.fechaEstado ||
-                "fecha" in original ||
-                "fechaISO" in original
-            );
-        });
-
-        if (changed) {
-            localStorage.setItem(KEY, JSON.stringify(normalized));
-        }
-
-        return normalized;
     },
 
-    getById(id) {
-        return this.get().find((d) => String(d.id) === String(id)) || null;
+    async getById(id) {
+        return normalizeDevolution(await request(`/${id}`));
     },
 
-    /** Todas las devoluciones asociadas a una venta */
-    getByIdVenta(idVenta) {
-        return this.get().filter((d) => String(d.idVenta) === String(idVenta));
+    async getBySaleId(saleId) {
+        const devolutions = await request(`/sale/${saleId}`);
+        return (Array.isArray(devolutions) ? devolutions : []).map(normalizeDevolution);
     },
 
-    /** Nombres de productos ya devueltos para una venta (incluyendo anuladas) */
-    getProductosDevueltosByVenta(idVenta) {
-        return this.getByIdVenta(idVenta).map((d) => d.producto);
+    async create(data) {
+        return normalizeDevolution(
+            await request("", {
+                method: "POST",
+                body: JSON.stringify(toApiPayload(data)),
+            }),
+        );
     },
 
-    /**
-     * Cantidad total YA devuelta para un producto en una venta (sin contar anuladas).
-     * Usado para saber cuánto queda disponible para seguir devolviendo.
-     */
-    getCantidadDevuelta(idVenta, productoNombre) {
-        return this.getByIdVenta(idVenta)
-            .filter((d) => d.estadoResolucion !== "Anulada" && d.producto === productoNombre)
-            .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
+    async update(id, data) {
+        const { idVenta, saleId, productos, productoId, producto, fechaCreacion, creadoEn, ...editable } =
+            data;
+
+        return normalizeDevolution(
+            await request(`/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify(editable),
+            }),
+        );
     },
 
-    /**
-     * Igual que getCantidadDevuelta pero excluye una devolución concreta.
-     * Útil en edición para no contar la propia devolución que se está editando.
-     */
-    getCantidadDevueltaExcluyendo(idVenta, productoNombre, excludeId) {
-        return this.getByIdVenta(idVenta)
-            .filter(
-                (d) =>
-                    String(d.id) !== String(excludeId) &&
-                    d.estadoResolucion !== "Anulada" &&
-                    d.producto === productoNombre,
-            )
-            .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
-    },
-
-    create(devolution) {
-        const all   = this.get();
-        const hoy   = new Date().toISOString().split("T")[0];
-        const ahora = new Date().toISOString();
-        const estadoInicial = devolution.estadoResolucion ?? "CREADA";
-        const nueva = {
-            id:                 Date.now(),
-            idVenta:            devolution.idVenta            ?? "",
-            motivo:             devolution.motivo             ?? "",
-            submotivo:          devolution.submotivo          ?? "",
-            producto:           devolution.producto           ?? "",
-            cantidad:           devolution.cantidad           ?? "",
-            condicionProducto:  devolution.condicionProducto  ?? "",
-            gestion:            devolution.gestion            ?? "",
-            responsable:        devolution.responsable        ?? "",
-            garantiaProveedor:  devolution.garantiaProveedor  ?? false,
-            descripcion:        devolution.descripcion        ?? "",
-            observaciones:      devolution.observaciones      ?? "",
-            fechaDevolucion:    devolution.fechaDevolucion    ?? devolution.fechaISO ?? hoy,
-            fechaEstado:        hoy,
-            estadoResolucion:   estadoInicial,
-            creadoEn:           ahora,
-            actualizadoEn:      ahora,
-            historialEstados:   [{ estado: estadoInicial, fecha: ahora }],
-        };
-        const normalized = normalizeDevolution(nueva);
-        localStorage.setItem(KEY, JSON.stringify([...all, normalized]));
-        return normalized;
-    },
-
-    update(devolucionActualizada) {
-        const hoy   = new Date().toISOString().split("T")[0];
-        const ahora = new Date().toISOString();
-        const updated = this.get().map((d) => {
-            if (String(d.id) !== String(devolucionActualizada.id)) return d;
-
-            // Agregar entrada al historial solo si el estado cambió
-            let historialEstados = d.historialEstados ||
-                [{ estado: d.estadoResolucion, fecha: d.creadoEn ?? ahora }];
-            if (
-                devolucionActualizada.estadoResolucion &&
-                devolucionActualizada.estadoResolucion !== d.estadoResolucion
-            ) {
-                historialEstados = [
-                    ...historialEstados,
-                    { estado: devolucionActualizada.estadoResolucion, fecha: ahora },
-                ];
-            }
-
-            return normalizeDevolution({
-                ...d,
-                ...devolucionActualizada,
-                historialEstados,
-                fechaEstado:   hoy,
-                actualizadoEn: ahora,
-            });
-        });
-        localStorage.setItem(KEY, JSON.stringify(updated));
-        return normalizeDevolution(devolucionActualizada);
-    },
-
-    delete(id) {
-        const updated = this.get().filter((d) => String(d.id) !== String(id));
-        localStorage.setItem(KEY, JSON.stringify(updated));
-        return updated;
-    },
-
-    anular(id) {
-        const ahora = new Date().toISOString();
-        const updated = this.get().map((d) => {
-            if (String(d.id) !== String(id)) return d;
-            const historialEstados = [
-                ...(d.historialEstados || [{ estado: d.estadoResolucion, fecha: d.creadoEn ?? ahora }]),
-                { estado: "Anulada", fecha: ahora },
-            ];
-            return { ...d, estadoResolucion: "Anulada", historialEstados };
-        });
-        localStorage.setItem(KEY, JSON.stringify(updated));
-        return updated;
-    },
-
-    /** Anula TODAS las devoluciones de una venta */
-    anularByIdVenta(idVenta) {
-        const ahora = new Date().toISOString();
-        const updated = this.get().map((d) => {
-            if (String(d.idVenta) !== String(idVenta)) return d;
-            const historialEstados = [
-                ...(d.historialEstados || [{ estado: d.estadoResolucion, fecha: d.creadoEn ?? ahora }]),
-                { estado: "Anulada", fecha: ahora },
-            ];
-            return { ...d, estadoResolucion: "Anulada", historialEstados };
-        });
-        localStorage.setItem(KEY, JSON.stringify(updated));
-        return updated;
+    async anular(id) {
+        return normalizeDevolution(
+            await request(`/${id}/anular`, {
+                method: "PATCH",
+                body: JSON.stringify({}),
+            }),
+        );
     },
 };

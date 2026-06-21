@@ -1,5 +1,33 @@
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+
+async function fetchSales() {
+    const response = await fetch(`${API_BASE}/sales`);
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.error || body.message || "No se pudieron cargar las ventas");
+    return Array.isArray(body.data) ? body.data.map(normalizeSale) : [];
+}
+
+function normalizeSale(sale) {
+    return {
+        ...sale,
+        id: sale._id || sale.id,
+        numeroVenta: sale.numeroVenta || sale.numeroFactura,
+        numeroDocumento: sale.numeroDocumento || sale.clienteId?.documentNumber,
+        cliente:
+            sale.cliente ||
+            [sale.clienteId?.firstName, sale.clienteId?.lastName].filter(Boolean).join(" "),
+        fecha: sale.fecha || sale.fechaVenta || sale.fechaCreacion?.slice?.(0, 10),
+        estado: sale.estado === "ANULADA" ? "Anulado" : sale.estado,
+        productos: (sale.productos || []).map((producto) => ({
+            ...producto,
+            nombre: producto.nombre || producto.producto?.name || producto.name,
+            precio: producto.precio || producto.precioUnitario || producto.producto?.price || 0,
+        })),
+    };
+}
+
 const fmt = (n) => "$" + Number(n || 0).toLocaleString("es-CO");
 
 function calcularMonto(devolucion, venta) {
@@ -25,14 +53,14 @@ function formatFechaDisplay(fechaISO) {
 }
 
 export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
-    const exportReport = (fechaInicio, fechaFin) => {
-        const ventas = (() => {
-            try {
-                return JSON.parse(localStorage.getItem("sales") || "[]");
-            } catch {
-                return [];
-            }
-        })();
+    const exportReport = async (fechaInicio, fechaFin) => {
+        let ventas = [];
+        try {
+            ventas = await fetchSales();
+        } catch (err) {
+            setAlert({ type: "error", message: err.message });
+            return;
+        }
 
         const filtradas = devolucionesFiltradas.filter((devolucion) => {
             const fecha = devolucion.fechaDevolucion ?? devolucion.fechaEstado ?? "";

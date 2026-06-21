@@ -172,7 +172,7 @@ export default function Shopping() {
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.proveedor}</td>
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.total}</td>
                                                 <td className="px-4 py-1 border-b border-gray-300">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${compra.estado === "Activo"
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${compra.estado === "Completada"
                                                         ? "bg-green-100 text-green-700"
                                                         : "bg-red-100 text-red-600"
                                                         }`}>
@@ -247,9 +247,9 @@ export default function Shopping() {
                     ]}
                     placeholder="Describe el motivo de la anulación..."
                     minLength={20}
-                    onConfirm={async () => {
+                    onConfirm={async ({ motivo }) => {
                         try {
-                            await handleAnular(cancelModalData.id);
+                            await handleAnular(cancelModalData.id, motivo);
                             setCancelModalData(null);
                             showAlert("success", "La compra fue anulada correctamente.");
                         } catch (err) {
