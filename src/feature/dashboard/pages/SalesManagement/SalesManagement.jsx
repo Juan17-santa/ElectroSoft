@@ -242,11 +242,11 @@ export default function SalesManagement() {
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
                                                         {(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") && (sale.estado === "Vigente" || sale.estado === "Finalizado") && (
                                                             <button
-                                                                className="p-1.5 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
                                                                 onClick={() => handleViewCredit(sale)}
                                                                 title="Detalles del crédito"
                                                             >
-                                                                <Wallet size={17} className="text-yellow-600" />
+                                                                <Wallet size={18} className="text-yellow-600" />
                                                             </button>
                                                         )}
                                                     </div>

@@ -66,9 +66,18 @@ export default function CreditDetailsPage() {
     const getPaymentRows = () => {
         if (!sale) return [];
         let saldoPendiente = sale.total || 0;
-        const abonosArray = sale.abonos || [];
+        
+        // ✅ FIX: Ordenar cronológicamente (más antiguos primero)
+        // El backend envía los abonos en orden descendente, lo que causa un cálculo visual inverso
+        // si no se ordenan primero cronológicamente.
+        const abonosCronologicos = [...(sale.abonos || [])].sort((a, b) => {
+            const valA = a.timestamp || a.id;
+            const valB = b.timestamp || b.id;
+            if (typeof valA === 'string' && typeof valB === 'string') return valA.localeCompare(valB);
+            return valA - valB;
+        });
 
-        const rows = abonosArray.map((abono, index) => {
+        const rows = abonosCronologicos.map((abono, index) => {
             if (!abono.anulado) {
                 saldoPendiente = saldoPendiente - (abono.monto || 0);
             }
@@ -79,7 +88,9 @@ export default function CreditDetailsPage() {
                 saldoPendiente: saldoPendiente > 0 ? saldoPendiente : 0
             };
         });
-        return [...rows].reverse();
+        
+        // Revertir al final para mostrar el abono más reciente arriba en la tabla
+        return rows.reverse();
     };
 
     const refreshSale = async () => {

@@ -8,14 +8,27 @@ let _clientsCache = null;
 let _clientsCacheTime = 0;
 const CLIENTS_CACHE_TTL = 30_000; // 30 segundos
 
+let _clientsCachePromise = null;
+
 const getCachedClients = async () => {
     const now = Date.now();
     if (_clientsCache && (now - _clientsCacheTime) < CLIENTS_CACHE_TTL) {
         return _clientsCache;
     }
-    _clientsCache = await ClientsService.get();
-    _clientsCacheTime = now;
-    return _clientsCache;
+    // ✅ FIX: Si ya hay una petición en curso, esperar a que termine
+    if (_clientsCachePromise) {
+        return _clientsCachePromise;
+    }
+    _clientsCachePromise = ClientsService.get().then(clients => {
+        _clientsCache = clients;
+        _clientsCacheTime = Date.now();
+        _clientsCachePromise = null;
+        return clients;
+    }).catch(err => {
+        _clientsCachePromise = null;
+        throw err;
+    });
+    return _clientsCachePromise;
 };
 
 // Invalida el cache al registrar pagos o actualizar cupos
@@ -104,26 +117,40 @@ const paymentsService = {
             console.error("Error fetching sales for payments:", error);
         }
 
-        // We must fetch payments for each sale to know saldoPendiente
-        // Alternatively, the backend could aggregate it, but since it doesn't, we will fetch payments
+        // ✅ FIX: Obtener todos los pagos de una vez para evitar consultas N+1 por cada venta
+        let allPayments = [];
+        try {
+            const payRes = await api.get('/payments');
+            allPayments = payRes.data?.data || payRes.data || [];
+        } catch (error) {
+            console.error("Error fetching all payments:", error);
+        }
+
+        // Agrupar los pagos por ventaId en memoria
+        const paymentsByVentaId = allPayments.reduce((acc, p) => {
+            const vId = String(p.ventaId);
+            if (!acc[vId]) acc[vId] = [];
+            acc[vId].push(p);
+            return acc;
+        }, {});
+
+        // ✅ FIX: Pre-cargar los clientes una vez ANTES del mapeo concurrente.
+        // Esto evita disparar decenas de llamadas simultáneas a GET /clients.
+        await getCachedClients();
+
+        // We must map payments to each sale to know saldoPendiente
         const ventasPromises = sales
             .filter(s => esCredito(s.tipoVenta) && esPendiente(s.estado))
             .map(async s => {
-                let abonos = [];
-                try {
-                    const payRes = await api.get(`/payments/venta/${s.id}`);
-                    // ✅ FIX: el backend devuelve { pagos: [], totalPagado, ... } no un array directo
-                    const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
-                    abonos = pagosRaw.map(p => ({
-                        id: p._id,
-                        fecha: new Date(p.fechaPago).toISOString().split('T')[0],
-                        monto: p.monto,
-                        metodoPago: p.metodoPago,
-                        anulado: p.estado === 'ANULADO' || false
-                    }));
-                } catch (e) {
-                    console.error(`Error fetching payments for sale ${s.id}:`, e);
-                }
+                const pagosRaw = paymentsByVentaId[String(s.id)] || [];
+                const abonos = pagosRaw.map(p => ({
+                    id: p._id,
+                    fecha: new Date(p.fechaPago).toISOString().split('T')[0],
+                    timestamp: new Date(p.fechaPago).getTime(),
+                    monto: p.monto,
+                    metodoPago: p.metodoPago,
+                    anulado: p.estado === 'ANULADO' || false
+                }));
 
                 const totalAbonado = abonos
                     .filter(a => !a.anulado)
@@ -201,6 +228,7 @@ const paymentsService = {
                 abonos = pagosRaw.map(p => ({
                     id: p._id,
                     fecha: new Date(p.fechaPago).toISOString().split('T')[0],
+                    timestamp: new Date(p.fechaPago).getTime(),
                     monto: p.monto,
                     metodoPago: p.metodoPago,
                     anulado: p.estado === 'ANULADO' || false
@@ -286,6 +314,7 @@ const paymentsService = {
             const nuevoAbono = {
                 id: Date.now(),
                 fecha: new Date().toISOString().split("T")[0],
+                timestamp: Date.now(),
                 monto: Number(amount),
                 metodoPago: paymentMethod,
                 anulado: false,
@@ -332,7 +361,16 @@ const paymentsService = {
 
         let saldo = venta.total;
 
-        (venta.abonos || []).forEach((abono, i, arr) => {
+        // ✅ FIX: Ordenar los abonos cronológicamente (más antiguos primero)
+        // El backend los envía descendentes, lo que causaba que el saldo se restara "el doble" visualmente
+        const abonosCronologicos = [...(venta.abonos || [])].sort((a, b) => {
+            const valA = a.timestamp || a.id;
+            const valB = b.timestamp || b.id;
+            if (typeof valA === 'string' && typeof valB === 'string') return valA.localeCompare(valB);
+            return valA - valB;
+        });
+
+        abonosCronologicos.forEach((abono, i, arr) => {
             if (!abono.anulado) saldo -= Number(abono.monto);
             const esUltimo = i === arr.length - 1 && saldo <= 0 && !abono.anulado;
             rows.push({
@@ -368,8 +406,11 @@ const paymentsService = {
         const clients = await getCachedClients();
         const filtered = clients.filter(c => c.cupoActivo === true && c.cupoTotal > 0);
 
+        // ✅ FIX: Obtener TODAS las ventas pendientes de una vez para evitar llamadas N+1 a getPending()
+        const allPendingSales = await this.getPending();
+
         const promises = filtered.map(async c => {
-            const ventasCredito = await this.getVentasCredito(c.documento);
+            const ventasCredito = allPendingSales.filter(s => String(s.numeroDocumento) === String(c.documento));
             const cupoOcupado = ventasCredito.reduce((acc, v) => acc + v.montoPorPagar, 0);
             return {
                 id: c.id,
