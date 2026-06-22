@@ -4,7 +4,8 @@ import api from "../../../../../utils/api.js";
 const mapSaleToFrontend = (sale) => {
     return {
         id: sale._id,
-        numeroVenta: sale.numeroFactura,
+        // Extrae solo los números del numeroFactura, eliminando prefijos como "FAC"
+        numeroVenta: String(sale.numeroFactura || "").replace(/\D/g, ""),
         numeroDocumento: sale.clienteId?.documentNumber || "N/A",
         cliente: sale.clienteId ? `${sale.clienteId.firstName} ${sale.clienteId.lastName}` : "Cliente Desconocido",
         // ✅ FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
