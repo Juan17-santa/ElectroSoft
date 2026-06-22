@@ -14,7 +14,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
     if (!isOpen || !order) return null;
 
     // DETERMINACIÓN DEL ESTADO SEGÚN LA FORMA DE PAGO
-    const estadoFinal = order.formaPago === "Contado" ? "Finalizado" : "Vigente";
+    const estadoFinal = order.paymentMethod === "Contado" ? "Finalizado" : "Vigente";
 
     return (
         <>
@@ -51,7 +51,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
 
                     {/* CUERPO DE LA MODAL */}
                     <div className="flex flex-col gap-6">
-                        
+
                         {/* NOTA AZUL */}
                         <div className="flex gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 text-xs shadow-sm">
                             <Info size={18} className="shrink-0" />
@@ -60,7 +60,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
 
                         {/* DETALLES EN GRID  */}
                         <div className="grid grid-cols-2 gap-6">
-                            
+
                             {/* CLIENTE */}
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
@@ -68,7 +68,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                                     <span>Cliente</span>
                                 </div>
                                 <div className="bg-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 font-medium shadow-inner border border-gray-200">
-                                    {order.nombreCliente}
+                                    {order.client?.firstName || ""} {order.client?.lastName || ""}
                                 </div>
                             </div>
 
@@ -79,7 +79,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                                     <span>Documento</span>
                                 </div>
                                 <div className="bg-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 shadow-inner border border-gray-200">
-                                    {order.documento}
+                                    {order.client?.documentType?.abbreviation || ""} {order.client?.documentNumber || ""}
                                 </div>
                             </div>
 
@@ -90,7 +90,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                                     <span>Método de pago</span>
                                 </div>
                                 <div className="bg-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 shadow-inner border border-gray-200 font-semibold">
-                                    {order.formaPago}
+                                    {order.paymentMethod}
                                 </div>
                             </div>
 
@@ -107,7 +107,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
 
                         </div>
 
-                        {order?.formaPago === "Credito" && (
+                        {order?.paymentMethod === "Credito" && (
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
                                     <FileText size={16} />
@@ -148,7 +148,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm }) 
                             <PrimaryButton
                                 onClick={() => onConfirm(order, diasPlazo)}
                                 className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={order?.formaPago === "Credito" && (!diasPlazo || Number(diasPlazo) < 0 || Number(diasPlazo) > 60)}
+                                disabled={order?.paymentMethod === "Credito" && (!diasPlazo || Number(diasPlazo) < 0 || Number(diasPlazo) > 60)}
                             >
                                 <CheckCircle2 size={18} />
                                 Confirmar Venta

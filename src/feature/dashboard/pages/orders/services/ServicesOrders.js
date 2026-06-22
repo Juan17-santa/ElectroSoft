@@ -71,5 +71,32 @@ export const ServicesOrders = {
             console.error(`Error en el servicio cancelOrder (ID: ${id}):`, error);
             throw error;
         }
+    },
+
+    // CONFIRMAR PEDIDO Y CONVERTIRLO EN VENTA
+    async confirmOrder(id) {
+        try {
+            const response = await fetch(`${API_URL}/${id}/confirm`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+            const resJson = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    resJson.error ||
+                    "Error al confirmar el pedido"
+                );
+            }
+            return resJson.data;
+        } catch (error) {
+            console.error(
+                `Error en confirmOrder (${id})`,
+                error
+            );
+            throw error;
+        }
     }
 };

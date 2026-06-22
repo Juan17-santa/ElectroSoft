@@ -1,4 +1,4 @@
-import { Boxes, CircleUser, FileText, Plus, X, Trash, CreditCard } from "lucide-react";
+import { Boxes, CircleUser, FileText, Plus, X, Trash, CreditCard, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Calendar from "../../../components/ui/Calendar";
@@ -185,18 +185,26 @@ export default function OrdersForm({
                                 placeholder="Seleccionar tipo"
                             />
 
-                            <ValidationMessage
-                                error={errors.formaPago}
-                                success={
-                                    formData.formaPago &&
-                                    !errors.formaPago
-                                }
-                                successMessage={
-                                    formData.formaPago === "Credito"
-                                        ? `Crédito aprobado - Cupo disponible: ${formatCurrency(formData.clienteCupoTotal)}`
-                                        : "Forma de pago válida"
-                                }
-                            />
+                            {/* Error inline de crédito — siempre visible si hay problema */}
+                            {formData.formaPago === "Credito" && errors.formaPago ? (
+                                <div className="flex items-start gap-1.5 mt-1.5 px-3 py-2 bg-red-50 border border-red-200 rounded-xl">
+                                    <AlertCircle size={13} className="text-red-500 mt-0.5 shrink-0" />
+                                    <span className="text-xs text-red-600 leading-snug">{errors.formaPago}</span>
+                                </div>
+                            ) : (
+                                <ValidationMessage
+                                    error={errors.formaPago && formData.formaPago !== "Credito" ? errors.formaPago : ""}
+                                    success={
+                                        formData.formaPago &&
+                                        !errors.formaPago
+                                    }
+                                    successMessage={
+                                        formData.formaPago === "Credito"
+                                            ? `Crédito aprobado - Cupo disponible: ${formatCurrency(formData.clienteCupoTotal)}`
+                                            : "Forma de pago válida"
+                                    }
+                                />
+                            )}
                         </div>
                     </div>
 

@@ -23,7 +23,7 @@ export default function OrdersTable({
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white ">
             <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
-                <table className="min-w-270 w-full text-sm table-fixed">
+                <table className="min-w-250 w-full text-sm table-fixed">
 
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
@@ -33,7 +33,7 @@ export default function OrdersTable({
                             <th className="px-4 py-2 w-28 font-semibold">Total</th>
                             <th className="px-4 py-2 w-32 font-semibold">Fecha vencimiento</th>
                             <th className="px-4 py-2 w-24 font-semibold">Forma Pago</th>
-                            <th className="px-4 py-2 w-28 font-semibold text-center">Estado</th>
+                            <th className="px-4 py-2 w-32 font-semibold text-center">Estado</th>
                             <th className="px-4 py-2 font-semibold w-36 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -103,17 +103,13 @@ export default function OrdersTable({
                                         <td className="px-4 py-2">{order.paymentMethod || "-"}</td>
 
                                         {/* ESTADO (status) */}
-                                        <td className="px-4 py-2">
-                                            <div className="flex items-center gap-2 justify-center">
-                                                <span
-                                                    className={`w-2.5 h-2.5 rounded-full
-                                                        ${order.status === "Pendiente"
-                                                            ? "bg-yellow-400"
-                                                            : "bg-red-500"
-                                                        }`}
-                                                ></span>
-                                                <span>{order.status}</span>
-                                            </div>
+                                        <td className="px-4 py-2 text-center">
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${order.status === "Pendiente"
+                                                ? "bg-yellow-100 text-yellow-700"
+                                                : "bg-red-100 text-red-600"
+                                                }`}>
+                                                {order.status}
+                                            </span>
                                         </td>
 
                                         {/* ACCIONES */}

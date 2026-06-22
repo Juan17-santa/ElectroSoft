@@ -171,11 +171,12 @@ export function useOrdersForm({ onSuccess }) {
                     error = "La forma de pago es obligatoria";
                 } else if (value === "Credito") {
                     if (!formData.clienteCupoActivo) {
-                        error = "El cliente no tiene un cupo de crédito activo";
+                        error = "Este cliente no tiene cupo de crédito asignado. Asígnale uno desde el módulo de Clientes para poder fiarle.";
                     } else if (formData.clienteCupoTotal <= 0) {
-                        error = "El cliente no tiene cupo disponible";
+                        error = "El cliente no tiene cupo disponible.";
                     } else if (formData.total > formData.clienteCupoTotal) {
-                        error = "El total del pedido supera el cupo disponible";
+                        const formatCOP = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val || 0);
+                        error = `El total del pedido (${formatCOP(formData.total)}) supera el cupo de crédito del cliente (${formatCOP(formData.clienteCupoTotal)}).`;
                     }
                 }
                 break;

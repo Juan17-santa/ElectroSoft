@@ -34,6 +34,16 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage, showAler
         }
     };
 
+    const processOrderToSale = async (id) => {
+        try {
+            await ServicesOrders.confirmOrder(id);
+            await loadOrders();
+        } catch (error) {
+            console.error(error);
+            showAlert("error", error.message || "No se pudo procesar la venta");
+        }
+    };
+
     // FILTRADO DEL BUSCADOR (DATOS DE LA TABLA)
     const filteredOrders = orders.filter(order => {
         const query = searchTerm?.toLowerCase().trim() || "";
@@ -94,6 +104,7 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage, showAler
         data: currentRecords,
         totalPages,
         cancelOrder,
+        processOrderToSale,
         loadOrders,
         loading,
     };

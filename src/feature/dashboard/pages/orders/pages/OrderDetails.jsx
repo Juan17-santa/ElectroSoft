@@ -101,7 +101,7 @@ export default function OrderDetails() {
                 <div className="relative bg-white rounded-3xl p-8 shadow-lg flex-1"
                     style={{ backgroundImage: "url(/background-details.jpg)", backgroundSize: "cover", backgroundPosition: "center" }}>
                     <div className="absolute inset-0 bg-white/40 rounded-3xl"></div>
-                    
+
                     <div className="relative z-10 flex flex-col gap-6">
                         {/* ENCABEZADO */}
                         <div className="flex flex-col md:flex-row gap-3 justify-between">
@@ -137,10 +137,33 @@ export default function OrderDetails() {
                                             <p className="text-sm font-semibold text-gray-800">{paymentMethod}</p>
                                         </div>
                                         <div className="col-span-2">
-                                            <p className="text-sm text-yellow-500 font-medium mb-1">Estado</p>
-                                            <p className={`py-1 rounded-full text-sm text-center font-bold shadow-sm ${status === 'Pendiente' ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
-                                                {status}
-                                            </p>
+                                            <div
+                                                className={`rounded-xl shadow-sm overflow-hidden ${status === "Pendiente"
+                                                        ? "bg-yellow-100"
+                                                        : "bg-red-100"
+                                                    }`}
+                                            >
+                                                <div
+                                                    className={`px-4 py-2 font-semibold text-center uppercase ${status === "Pendiente"
+                                                            ? "bg-yellow-200 text-yellow-800"
+                                                            : "bg-red-200 text-red-800"
+                                                        }`}
+                                                >
+                                                    {status}
+                                                </div>
+
+                                                {status === "Anulado" && (
+                                                    <div className="px-4 py-3">
+                                                        <p className="text-xs font-semibold uppercase text-red-600 mb-1">
+                                                            Motivo de anulación
+                                                        </p>
+
+                                                        <p className="text-sm text-red-700">
+                                                            {order.cancelReason}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

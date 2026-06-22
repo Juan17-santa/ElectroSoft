@@ -76,25 +76,23 @@ export default function Orders() {
     };
 
     // FUNCION PARA CONFIRMAR LA VENTA Y REDIRIGIR
-    const handleConfirmSale = (order, diasPlazo) => {
+    const handleConfirmSale = async (order) => {
         try {
-            processOrderToSale(order, diasPlazo);
+            await processOrderToSale(order._id);
             setIsSaleModalOpen(false);
-
-            setAlert({
-                type: "success",
-                message: "Venta procesada con éxito. Redirigiendo a ventas..."
-            });
+            setAlert({ type: "success", message: "Pedido procesado como venta con éxito. Redirigiendo a ventas"});
 
             setTimeout(() => {
                 navigate("/dashboard/sales-management");
-            }, 3000);
+            }, 1500);
 
         } catch (error) {
+
             setAlert({
                 type: "error",
-                message: "No se pudo procesar la venta correctamente."
+                message: error.message
             });
+
         }
     };
 
