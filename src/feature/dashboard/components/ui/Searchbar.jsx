@@ -39,7 +39,7 @@ export default function SearchBar({
             {showReportButton && onReportClick && (
                 <button
                     onClick={onReportClick}
-                    className="flex items-center gap-2 border border-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-50 transition duration-300 shadow-sm cursor-pointer"
+                    className="flex items-center gap-2 border border-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition duration-300 shadow-sm cursor-pointer"
                 >
                     <FileText size={18} className="text-gray-500" />
                     Generar reporte
