@@ -19,7 +19,7 @@ export default function ProductCategoryTable({
                             <th className="px-4 py-2 font-semibold w-12">ID</th>
                             <th className="px-4 py-2 font-semibold w-56">Nombre</th>
                             <th className="px-4 py-2 font-semibold">Descripción</th>
-                            <th className="px-4 py-2 font-semibold w-28">Estado</th>
+                            <th className="px-4 py-2 font-semibold w-28 text-center">Estado</th>
                             <th className="px-4 py-2 font-semibold text-center w-48">Acciones</th>
                         </tr>
                     </thead>
@@ -57,13 +57,22 @@ export default function ProductCategoryTable({
                                                 category.description
                                             )}
                                         </td>
-                                        <td className="px-4 py-1 w-28">
-                                            <div className="flex items-center gap-2">
-                                                <span
-                                                    className={`w-2.5 h-2.5 rounded-full 
+                                        <td className="px-4 py-2">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div
+                                                    onClick={() => onToggleEstado(category.id)}
+                                                    className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
                                                         ${category.status ? "bg-green-500" : "bg-red-500"}`}
-                                                ></span>
-                                                <span>
+                                                >
+                                                    <div
+                                                        className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
+                                                        ${category.status ? "translate-x-5" : "translate-x-0"}`}
+                                                    />
+                                                </div>
+                                                <span
+                                                    className={`text-xs font-semibold
+                                                    ${category.status ? "text-green-600" : "text-red-600"}`}
+                                                >
                                                     {category.status ? "Activo" : "Inactivo"}
                                                 </span>
                                             </div>
@@ -81,19 +90,7 @@ export default function ProductCategoryTable({
                                                         <Pencil size={18} className="text-yellow-600" />
                                                     </button>
 
-                                                    {/* SWITCH CAMBIAR ESTADO */}
-                                                    <div className="flex justify-center items-center gap-2">
-                                                        <div
-                                                            onClick={() => onToggleEstado(category.id)}
-                                                            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
-                                                                ${category.status ? "bg-green-500" : "bg-red-500"}`}
-                                                        >
-                                                            <div
-                                                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
-                                                                    ${category.status ? "translate-x-4" : "translate-x-0"}`}
-                                                            ></div>
-                                                        </div>
-                                                    </div>
+
                                                 </Restricted>
 
                                                 {/* BOTON ELIMINAR */}

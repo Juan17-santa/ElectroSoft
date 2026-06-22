@@ -26,7 +26,7 @@ export default function ProvidersTable({
                             <th className="px-3 py-2 font-semibold w-56">Nombre proveedor</th>
                             <th className="px-3 py-2 font-semibold w-48">Nombre contacto</th>
                             <th className="px-3 py-2 font-semibold w-32">Telefono contacto</th>
-                            <th className="px-3 py-2 font-semibold w-28">Estado</th>
+                            <th className="px-3 py-2 font-semibold w-28 text-center">Estado</th>
                             <th className="px-3 py-2 font-semibold w-48 text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -63,13 +63,22 @@ export default function ProvidersTable({
                                         <td className="px-3 py-2">{provider.providerName}</td>
                                         <td className="px-3 py-2">{provider.contactName}</td>
                                         <td className="px-3 py-2">{provider.contactPhone}</td>
-                                        <td className="px-3 py-2">
-                                            <div className="flex items-center gap-2">
+                                        <td className="px-4 py-2">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div
+                                                    onClick={() => onToggleEstado(provider._id)}
+                                                    className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
+                                                        ${provider.status ? "bg-green-500" : "bg-red-500"}`}
+                                                >
+                                                    <div
+                                                        className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
+                                                        ${provider.status ? "translate-x-5" : "translate-x-0"}`}
+                                                    />
+                                                </div>
                                                 <span
-                                                    className={`w-2.5 h-2.5 rounded-full 
-                                                    ${provider.status === true ? "bg-green-500" : "bg-red-500"}`}
-                                                ></span>
-                                                <span>
+                                                    className={`text-xs font-semibold
+                                                    ${provider.status ? "text-green-600" : "text-red-600"}`}
+                                                >
                                                     {provider.status ? "Activo" : "Inactivo"}
                                                 </span>
                                             </div>
@@ -95,21 +104,6 @@ export default function ProvidersTable({
                                                     >
                                                         <Pencil size={18} className="text-yellow-600" />
                                                     </button>
-
-                                                    {/* SWITCH CAMBIAR ESTADO */}
-                                                    <div className="flex justify-center items-center gap-2">
-                                                        <div
-                                                            onClick={() => onToggleEstado(provider._id)}
-                                                            className={`w-10 h-6 flex items-center rounded-full p-1 cursor-pointer transition
-                                                            ${provider.status ? "bg-green-500" : "bg-red-500"}`}
-                                                        >
-                                                            <div
-                                                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
-                                                                ${provider.status ? "translate-x-4" : "translate-x-0"}`}
-                                                            >
-                                                            </div>
-                                                        </div>
-                                                    </div>
                                                 </Restricted>
 
                                                 {/* BOTON ELIMINAR */}
