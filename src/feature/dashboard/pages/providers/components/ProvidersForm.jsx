@@ -33,7 +33,7 @@ export default function ProviderForm({
             <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-min gap-10">
 
                 {/* GRID RESPONSIVE */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 mt-6 px-4 md:px-20">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-24 gap-x-16 mt-6 px-4 md:px-20">
 
                     {/* TIPO DOCUMENTO REAL */}
                     <div className="flex flex-col gap-1 w-full">
