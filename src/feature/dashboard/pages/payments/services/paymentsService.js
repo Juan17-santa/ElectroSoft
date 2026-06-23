@@ -128,7 +128,7 @@ const paymentsService = {
 
         // Agrupar los pagos por ventaId en memoria
         const paymentsByVentaId = allPayments.reduce((acc, p) => {
-            const vId = String(p.ventaId);
+            const vId = String(p.ventaId?._id || p.ventaId);
             if (!acc[vId]) acc[vId] = [];
             acc[vId].push(p);
             return acc;

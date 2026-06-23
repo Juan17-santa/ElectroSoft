@@ -11,6 +11,7 @@ const mapSaleToFrontend = (sale) => {
         // ✅ FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
         tipoVenta: sale.tipoVenta === "Crédito" ? "Credito" : (sale.tipoVenta || "Contado"),
         fecha: sale.fechaVenta || new Date(sale.fechaCreacion).toISOString().split('T')[0],
+        fechaCreacion: sale.fechaCreacion,
         // ✅ FIX: estado más preciso (Finalizado se calcula en paymentsService al enriquecer con pagos, pero para Contado es automático)
         estado: sale.estado === 'ACTIVA' ? (sale.tipoVenta === 'Contado' ? 'Finalizado' : 'Vigente') : (sale.estado === 'ANULADA' ? 'Anulado' : sale.estado),
         productos: (sale.productos || []).map(p => ({
@@ -26,6 +27,7 @@ const mapSaleToFrontend = (sale) => {
         // Para Contado, se pagan inmediatamente al crear la venta.
         montoPagado: sale.tipoVenta === 'Contado' ? sale.total : (sale.montoPagado || 0),
         montoPorPagar: sale.tipoVenta === 'Contado' ? 0 : (sale.montoPorPagar ?? sale.total),
+        anuladaEn: sale.anuladaEn || null,
         abonos: sale.abonos || [],
         observaciones: sale.observaciones || "",
     };
@@ -100,9 +102,9 @@ export const SalesService = {
         console.warn("voidPayment called on SalesService. Not supported in backend.");
     },
 
-    async anullSale(id) {
+    async anullSale(id, motivo) {
         try {
-            const response = await api.patch(`/sales/${id}/cancel`);
+            const response = await api.patch(`/sales/${id}/cancel`, { motivo });
             const updatedSale = response.data.data || response.data;
             return mapSaleToFrontend(updatedSale);
         } catch (error) {
