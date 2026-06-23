@@ -261,11 +261,13 @@ export default function SaleDetailsPage() {
                                 <>
                                     <div className="mt-2">
                                         <p className="text-xs text-red-500 leading-none mb-1">Motivo Anulación</p>
-                                        <p className="font-bold text-red-600 text-[14px]">{sale.motivoAnulacion || "N/A"}</p>
+                                        <p className="font-bold text-red-600 text-[14px]">{sale.observaciones || "Anulación registrada sin motivo."}</p>
                                     </div>
                                     <div>
                                         <p className="text-xs text-red-500 leading-none mb-1">Fecha Anulación</p>
-                                        <p className="font-bold text-red-600 text-[14px]">{sale.fechaAnulacion || "N/A"}</p>
+                                        <p className="font-bold text-red-600 text-[14px]">
+                                            {sale.anuladaEn ? new Date(sale.anuladaEn).toLocaleString('es-CO') : (sale.fecha || "N/A")}
+                                        </p>
                                     </div>
                                 </>
                             )}

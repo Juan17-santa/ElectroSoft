@@ -1,5 +1,5 @@
 import { Eye, Undo2, Ban, Wallet } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
 import Searchbar from "../../components/ui/Searchbar";
@@ -7,6 +7,7 @@ import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import Alert from "../../components/ui/Alert";
 import CancellationModal from "./components/CancellationModal";
+import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { useSalesReport } from "./hooks/useSalesReport";
 import { usePermissions } from "../../../../hooks/usePermissions";
@@ -21,6 +22,116 @@ const formatCOP = (val) => {
 };
 
 const ITEMS_PER_PAGE = 8;
+
+function validarAnulacion(sale) {
+    if (sale.estado === "Anulado" || sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") {
+        return { puedeAnularse: false, razon: "La venta ya no puede ser anulada por su estado." };
+    }
+    
+    const now = new Date();
+    
+    // Validar fecha de creación (48 horas límite)
+    if (sale.fechaCreacion) {
+        const createdAt = new Date(sale.fechaCreacion);
+        if (!Number.isNaN(createdAt.getTime())) {
+            const elapsed = (now - createdAt) / (1000 * 60 * 60);
+            if (elapsed >= 48) {
+                return { puedeAnularse: false, razon: "La venta ha superado el plazo de 48 horas desde su registro y no se puede anular." };
+            }
+        }
+    }
+    
+    // Validar fecha de venta/factura (48 horas límite desde el final del día)
+    if (sale.fecha && /^\d{4}-\d{2}-\d{2}$/.test(sale.fecha)) {
+        const [year, month, day] = sale.fecha.split("-").map(Number);
+        const fechaVentaEndOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+        if (!Number.isNaN(fechaVentaEndOfDay.getTime())) {
+            const elapsed = (now - fechaVentaEndOfDay) / (1000 * 60 * 60);
+            if (elapsed >= 48) {
+                return { puedeAnularse: false, razon: "La venta ha superado el plazo de 48 horas desde la fecha facturada y no se puede anular." };
+            }
+        }
+    } else if (sale.fecha && sale.fecha.includes("/")) {
+        // En caso de que el formato sea DD/MM/YYYY
+        const parts = sale.fecha.split("/");
+        if (parts.length === 3) {
+            const [day, month, year] = parts.map(Number);
+            const fechaVentaEndOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+            if (!Number.isNaN(fechaVentaEndOfDay.getTime())) {
+                const elapsed = (now - fechaVentaEndOfDay) / (1000 * 60 * 60);
+                if (elapsed >= 48) {
+                    return { puedeAnularse: false, razon: "La venta ha superado el plazo de 48 horas desde la fecha facturada y no se puede anular." };
+                }
+            }
+        }
+    }
+    
+    return { puedeAnularse: true };
+}
+
+// ─── Botón anular con tooltip informativo cuando no se puede anular ───────────
+function BanButton({ validacion, onClick }) {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef(null);
+
+    const handleMouseEnter = () => {
+        if (!validacion.puedeAnularse && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setTooltipPosition({
+                top: rect.top - 20,
+                left: rect.left - 270,
+            });
+            setShowTooltip(true);
+        }
+    };
+
+    return (
+        <div
+            className="relative inline-block"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={() => setShowTooltip(false)}
+        >
+            <button
+                ref={buttonRef}
+                onClick={validacion.puedeAnularse ? onClick : undefined}
+                className={`p-2 rounded-lg transition duration-300 ${validacion.puedeAnularse
+                    ? "bg-red-100 hover:bg-red-200 cursor-pointer"
+                    : "bg-red-100 opacity-40 cursor-not-allowed"
+                    }`}
+                title={validacion.puedeAnularse ? "Anular venta" : ""}
+            >
+                <Ban size={18} className="text-red-500" />
+            </button>
+
+            {showTooltip && !validacion.puedeAnularse && (
+                <div
+                    className="fixed z-50 bg-gray-50 text-gray-400 rounded-xl shadow-2xl p-4 w-64 border border-gray-400"
+                    style={{
+                        top: `${tooltipPosition.top}px`,
+                        left: `${tooltipPosition.left}px`,
+                    }}
+                >
+                    <div className="space-y-3 text-left">
+                        <div>
+                            <p className="text-xs tracking-wide text-gray-500 font-semibold">
+                                Anulación no disponible
+                            </p>
+                        </div>
+                        <div className="border-t-2 border-yellow-300 pt-3">
+                            <p className="text-xs tracking-wide text-gray-500 font-semibold">
+                                Motivo
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1 leading-relaxed wrap-break-word">
+                                {validacion.razon}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function SalesManagement() {
     const { hasPermission } = usePermissions();
@@ -104,13 +215,14 @@ export default function SalesManagement() {
 
     const confirmAnull = async (motivo) => {
         try {
-            await SalesService.anullSale(cancelModalSale.id);
+            await SalesService.anullSale(cancelModalSale.id, motivo);
             // Stock is returned by the backend (impactApplied)
             await getSales();
             showAlert("success", "Venta anulada correctamente.");
         } catch (error) {
             console.error("Error anulling sale:", error);
-            showAlert("error", "Error al anular la venta.");
+            const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || "Error al anular la venta.";
+            showAlert("error", errorMsg);
         }
         setCancelModalSale(null);
     };
@@ -119,14 +231,14 @@ export default function SalesManagement() {
         setShowReportModal(true);
     };
 
-    const getEstadoDot = (estado) => {
+    const getEstadoBadge = (estado) => {
         switch (estado) {
-            case "Finalizado": case "Finalizadas": return "bg-green-500";
-            case "Vigente": return "bg-yellow-500";
-            case "Anulado": return "bg-red-500";
-            case "Devuelto": return "bg-gray-100 text-gray-600";
-            case "Devolución Parcial": return "bg-amber-100 text-amber-600";
-            default: return "bg-gray-100 text-gray-600";
+            case "Finalizado": case "Finalizadas": return "bg-green-100 text-green-700";
+            case "Vigente": return "bg-yellow-100 text-yellow-700";
+            case "Anulado": return "bg-red-100 text-red-700";
+            case "Devuelto": return "bg-gray-100 text-gray-700";
+            case "Devolución Parcial": return "bg-amber-100 text-amber-700";
+            default: return "bg-gray-100 text-gray-700";
         }
     };
 
@@ -161,7 +273,7 @@ export default function SalesManagement() {
                                     <th className="px-3 py-3 font-semibold">Total</th>
                                     <th className="px-3 py-3 font-semibold">Monto Pagado</th>
                                     <th className="px-3 py-3 font-semibold">Monto Por Pagar</th>
-                                    <th className="px-3 py-3 font-semibold">Estado</th>
+                                    <th className="px-3 py-3 font-semibold text-center">Estado</th>
                                     <th className="px-3 py-3 font-semibold text-center">Acciones</th>
                                 </tr>
                             </thead>
@@ -191,25 +303,36 @@ export default function SalesManagement() {
                                             <td className="px-3 py-3">{formatCOP(sale.total)}</td>
                                             <td className="px-3 py-3">{formatCOP(sale.montoPagado)}</td>
                                             <td className="px-3 py-3">{formatCOP(sale.montoPorPagar)}</td>
-                                            <td className="px-3 py-3">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`w-2 h-2 rounded-full ${getEstadoDot(sale.estado)}`}></span>
-                                                    <span className="text-sm">{sale.estado}</span>
-                                                </div>
+                                            <td className="px-3 py-3 text-center">
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                    (sale.estado === "Finalizado" || sale.estado === "Finalizadas") ? "bg-green-100 text-green-700" :
+                                                    sale.estado === "Vigente" ? "bg-yellow-100 text-yellow-600" :
+                                                    (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
+                                                    "bg-red-100 text-red-600"
+                                                }`}>
+                                                    {sale.estado}
+                                                </span>
                                             </td>
                                             <td className="px-3 py-3">
                                                 <div className="flex justify-center flex-nowrap gap-1.5 h-9">
                                                     {/* DEVOLVER */}
-                                                    <Restricted scope="Ventas" action="Editar">
+                                                    <Restricted scope="Ventas" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            <button
-                                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                                                                onClick={() => handleReturn(sale)}
-                                                                title="Devolver venta"
-                                                                disabled={sale.estado === "Devuelto" || sale.estado === "Anulado"}
-                                                            >
-                                                                <Undo2 size={18} className="text-yellow-600" />
-                                                            </button>
+                                                            {sale.estado === "Devuelto" ? (
+                                                                <CancellationInfoTooltip cancelInfo={{
+                                                                    fechaAnulacion: sale.anuladaEn || sale.fecha,
+                                                                    motivo: sale.observaciones || "Devolución registrada."
+                                                                }} />
+                                                            ) : (
+                                                                <button
+                                                                    className={`p-2 rounded-lg transition duration-300 ${sale.estado === "Anulado" ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
+                                                                    onClick={() => handleReturn(sale)}
+                                                                    title={sale.estado === "Anulado" ? "" : "Devolver venta"}
+                                                                    disabled={sale.estado === "Anulado"}
+                                                                >
+                                                                    <Undo2 size={18} className={sale.estado === "Anulado" ? "text-gray-400" : "text-yellow-600"} />
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </Restricted>
 
@@ -227,28 +350,35 @@ export default function SalesManagement() {
                                                     {/* ANULAR */}
                                                     <Restricted scope="Ventas" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            <button
-                                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                                                                onClick={() => handleAnull(sale)}
-                                                                title="Anular venta"
-                                                                disabled={sale.estado === "Anulado" || sale.estado === "Devuelto"}
-                                                            >
-                                                                <Ban size={18} className="text-red-500" />
-                                                            </button>
+                                                            {sale.estado === "Anulado" ? (
+                                                                <CancellationInfoTooltip cancelInfo={{
+                                                                    fechaAnulacion: sale.anuladaEn || sale.fecha,
+                                                                    motivo: sale.observaciones || "Anulación registrada sin motivo."
+                                                                }} />
+                                                            ) : (
+                                                                <BanButton 
+                                                                    validacion={validarAnulacion(sale)}
+                                                                    onClick={() => handleAnull(sale)}
+                                                                />
+                                                            )}
                                                         </div>
                                                     </Restricted>
 
                                                     {/* CREDITO */}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                        {(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") && (sale.estado === "Vigente" || sale.estado === "Finalizado") && (
-                                                            <button
-                                                                className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                                onClick={() => handleViewCredit(sale)}
-                                                                title="Detalles del crédito"
-                                                            >
-                                                                <Wallet size={18} className="text-yellow-600" />
-                                                            </button>
-                                                        )}
+                                                        {(() => {
+                                                            const isCreditDisabled = !(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") || sale.estado === "Anulado" || sale.estado === "Devuelto";
+                                                            return (
+                                                                <button
+                                                                    className={`p-2 rounded-lg transition duration-300 ${isCreditDisabled ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
+                                                                    onClick={() => handleViewCredit(sale)}
+                                                                    title={isCreditDisabled ? "Crédito no disponible" : "Detalles del crédito"}
+                                                                    disabled={isCreditDisabled}
+                                                                >
+                                                                    <Wallet size={18} className={isCreditDisabled ? "text-gray-400" : "text-yellow-600"} />
+                                                                </button>
+                                                            );
+                                                        })()}
                                                     </div>
                                                 </div>
                                             </td>
