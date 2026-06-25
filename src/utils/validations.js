@@ -84,7 +84,7 @@ export const Validations = {
 
     validarTelefono: (value) => {
         if (!value) return { valido: false, mensaje: "El teléfono es requerido." };
-        if (!/^\d{7,14}$/.test(value)) return { valido: false, mensaje: "Debe tener entre 7 y 14 dígitos." };
+        if (!/^\d{8,14}$/.test(value)) return { valido: false, mensaje: "Debe tener entre 8 y 14 dígitos." };
         if (/^(\d)\1{6,}$/.test(value)) return { valido: false, mensaje: "Número no válido (dígitos repetidos)." };
         if (value.startsWith("0")) return { valido: false, mensaje: "El teléfono no puede comenzar con 0." };
         return { valido: true, mensaje: "" };
