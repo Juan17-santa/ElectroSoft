@@ -24,6 +24,7 @@ const mapProductFromAPI = (apiProduct) => {
         garantia: apiProduct.warranty,
         caracteristicas: mappedCharacteristics,
         estado: apiProduct.status !== undefined ? apiProduct.status : true,
+        canDelete: apiProduct.canDelete !== undefined ? apiProduct.canDelete : true,
         createdAt: apiProduct.createdAt,
         updatedAt: apiProduct.updatedAt
     };
