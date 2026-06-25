@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DollarSign, Package, ShoppingBag, TrendingUp, Calendar, RotateCcw, Users } from "lucide-react";
+import { DollarSign, Package, ShoppingBag, TrendingUp, Calendar, RotateCcw, Users, Loader2 } from "lucide-react";
 import { getAuthUser } from "../../../../auth/services/authService";
 import { StatCard } from "../components/StatCard";
 import { currentMonth, toDate, formatCOP, currentYear, MESES, MESES_FULL, parseMoney, DONUT_COLORS } from "../utils/constants";
@@ -11,6 +11,14 @@ import { CategorySalesChart } from "../components/CategorySalesChart";
 import { TotalSalesChart } from "../components/TotalSalesChart";
 import { Dropdown } from "../components/Dropdown";
 
+// Servicios importados
+import { ServicesShopping } from "../../shopping/services/ServicesShopping";
+import { SalesService } from "../../SalesManagement/services/SalesService";
+import { ServicesProducts } from "../../products/services/ServicesProducts";
+import { ClientsService } from "../../Clients/services/ClientsService";
+import { ServicesDevolutions } from "../../devolutions/services/ServicesDevolutions";
+import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
+
 export default function Dashboard() {
     const [year, setYear] = useState(currentYear);
     const [month, setMonth] = useState(currentMonth);
@@ -18,25 +26,37 @@ export default function Dashboard() {
     const [raw, setRaw] = useState({
         sales: [], compras: [], products: [], clients: [], devolutions: [], categories: [],
     });
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let mounted = true;
         const loadData = async () => {
-            let compras = [];
+            setIsLoading(true);
             try {
-                compras = await ServicesShopping.fetchAll();
-            } catch {
-                compras = [];
+                const [compras, sales, products, clients, devolutions, categories] = await Promise.all([
+                    ServicesShopping.fetchAll().catch(() => []),
+                    SalesService.get().catch(() => []),
+                    ServicesProducts.get().catch(() => []),
+                    ClientsService.get().catch(() => []),
+                    ServicesDevolutions.getAll().catch(() => []),
+                    ServiceProductCategory.get().catch(() => []),
+                ]);
+                
+                if (!mounted) return;
+                
+                setRaw({
+                    compras,
+                    sales,
+                    products,
+                    clients,
+                    devolutions,
+                    categories,
+                });
+            } catch (error) {
+                console.error("Error al cargar los datos del dashboard", error);
+            } finally {
+                if (mounted) setIsLoading(false);
             }
-            if (!mounted) return;
-            setRaw({
-                sales: JSON.parse(localStorage.getItem("sales") || "[]"),
-                compras,
-                products: JSON.parse(localStorage.getItem("products") || "[]"),
-                clients: JSON.parse(localStorage.getItem("clients") || "[]"),
-                devolutions: JSON.parse(localStorage.getItem("devolutions") || "[]"),
-                categories: JSON.parse(localStorage.getItem("productCategory") || "[]"),
-            });
         };
         loadData();
         return () => { mounted = false; };
@@ -100,7 +120,7 @@ export default function Dashboard() {
     salesNow.forEach(s => (s.productos || []).forEach(p => {
         const prod = raw.products.find(pr => pr.nombre === p.nombre);
         const cat = raw.categories.find(c => String(c.id) === String(prod?.categoriaId));
-        const lbl = cat?.nombre || "Sin categoría";
+        const lbl = cat?.name || cat?.nombre || "Sin categoría"; // Se comprueba 'name' por el mapper del frontend
         catMap[lbl] = (catMap[lbl] || 0) + Number(p.cantidad || 0);
     }));
     const donut = Object.entries(catMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -112,6 +132,15 @@ export default function Dashboard() {
 
     const yearItems = [currentYear, currentYear - 1, currentYear - 2].map(y => ({ label: `Año ${y}`, value: y }));
     const monthItems = MESES_FULL.map((m, i) => ({ label: m, value: i }));
+
+    if (isLoading) {
+        return (
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col items-center justify-center h-full shadow-inner min-h-[500px]">
+                <Loader2 className="w-10 h-10 text-yellow-500 animate-spin mb-4" />
+                <p className="text-gray-500 font-medium">Cargando datos del dashboard...</p>
+            </div>
+        );
+    }
 
     return (
         <>
