@@ -7,7 +7,8 @@ import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
 import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import StatusHistoryModal from "../devolutions/components/StatusHistoryModal";
-import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
@@ -164,26 +165,83 @@ export default function ReturnSalesPage() {
     };
 
     const handleGenerarPDF = () => {
-        generatePDFReport({
-            title: `Devolución de venta — ${String(sale.numeroVenta || "").padStart(2, '0')}`,
-            fileName: `devolucion_${String(sale.numeroVenta || "").padStart(2, '0')}.pdf`,
-            extraInfo: [
-                `ID venta: ${String(sale.numeroVenta || "").padStart(2, '0')}`,
-                `Fecha creación: ${sale.fecha ?? "—"}`,
-                `Total venta: ${formatCOP(sale.total)}`,
-                `Estado: ${sale.estado ?? "—"}`,
-                `Productos devueltos: ${devolucionesVenta.length}`,
-            ],
-            columns: ["Producto", "Cantidad", "Motivo", "Condición", "Gestión", "Estado resolución"],
-            data: devolucionesVenta.map((d) => [
-                d.producto ?? "—",
-                d.cantidad ?? "—",
-                (d.motivo ?? "—").replace(/_/g, " "),
-                (d.condicionProducto ?? "—").replace(/_/g, " "),
-                (d.gestion ?? "—").replace(/_/g, " "),
-                d.estadoResolucion ?? "—",
-            ]),
+        const doc = new jsPDF();
+        const numeroVenta = String(sale.numeroVenta || "").padStart(2, "0");
+        const fileName = `devolucion_${numeroVenta}.pdf`;
+        const headColor = [234, 179, 8];
+
+        // Título
+        doc.setFontSize(18);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Devolución de venta — ${numeroVenta}`, 14, 22);
+
+        // Fecha de generación
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 30);
+
+        // Información general
+        let currentY = 36;
+        const infoLines = [
+            `ID venta: ${numeroVenta}`,
+            `Fecha creación: ${sale.fecha ?? "—"}`,
+            `Total venta: ${formatCOP(sale.total)}`,
+            `Estado: ${sale.estado ?? "—"}`,
+            `Productos devueltos: ${devolucionesVenta.length}`,
+        ];
+        infoLines.forEach((line) => {
+            doc.text(line, 14, currentY);
+            currentY += 6;
         });
+
+        // Tabla 1: Productos de la venta
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text("Productos de la venta", 14, currentY + 4);
+        currentY += 8;
+
+        const prodColumns = ["Producto", "Precio", "Cantidad", "Subtotal"];
+        const prodData = (sale.productos || []).map((p) => [
+            p.nombre ?? "—",
+            formatCOP(p.precio),
+            String(p.cantidad ?? "—"),
+            formatCOP((p.precio || 0) * (p.cantidad || 0)),
+        ]);
+
+        autoTable(doc, {
+            startY: currentY,
+            head: [prodColumns],
+            body: prodData,
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: headColor },
+        });
+
+        // Tabla 2: Productos devueltos
+        const afterFirstTable = doc.lastAutoTable.finalY + 8;
+
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text("Productos devueltos", 14, afterFirstTable);
+
+        const devColumns = ["Producto", "Cantidad", "Motivo", "Condición", "Gestión", "Estado resolución"];
+        const devData = devolucionesVenta.map((d) => [
+            d.producto ?? "—",
+            d.cantidad ?? "—",
+            (d.motivo ?? "—").replace(/_/g, " "),
+            (d.condicionProducto ?? "—").replace(/_/g, " "),
+            (d.gestion ?? "—").replace(/_/g, " "),
+            d.estadoResolucion ?? "—",
+        ]);
+
+        autoTable(doc, {
+            startY: afterFirstTable + 4,
+            head: [devColumns],
+            body: devData,
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: headColor },
+        });
+
+        doc.save(fileName);
     };
 
     const handleVolver = () => {

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Ban, RotateCcw, Check, X } from "lucide-react";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { useDevolutionsReport } from "../hooks/useDevolutionsReport";
+import { SalesService } from "../../SalesManagement/services/SalesService";
 import { getEstadoColor } from "../helpers/devolutionsHelpers";
 import SearchBar from "../../../components/ui/Searchbar";
 import Pagination from "../../../components/ui/Pagination";
@@ -44,6 +45,15 @@ export default function Devolutions() {
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [ventasMap, setVentasMap] = useState(null);
+
+    useEffect(() => {
+        SalesService.get().then((ventas) => {
+            const map = {};
+            ventas.forEach((v) => { map[v.id] = v.numeroVenta; });
+            setVentasMap(map);
+        }).catch(() => {});
+    }, []);
 
     const { exportReport } = useDevolutionsReport(devolucionesFiltradas, setAlert);
 
@@ -191,7 +201,7 @@ export default function Devolutions() {
                                                 <td className="px-3 py-2 font-medium">
                                                     {String((paginaActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                                 </td>
-                                                <td className="px-4 py-2 font-medium">{idVenta || "—"}</td>
+                                                <td className="px-4 py-2 font-medium">{ventasMap ? (ventasMap[idVenta] ? String(ventasMap[idVenta]).padStart(2, "0") : "—") : "—"}</td>
                                                 <td className="px-4 py-2">
                                                     <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-0.5 rounded-full">
                                                         {cantidadDevuelta} producto{cantidadDevuelta !== 1 ? "s" : ""}
