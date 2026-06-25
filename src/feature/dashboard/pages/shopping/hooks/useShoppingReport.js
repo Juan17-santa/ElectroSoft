@@ -123,6 +123,22 @@ export function useShoppingReport(comprasFiltradas, setAlert) {
         excelData.push([]);
         excelData.push([]);
 
+        // ─── ANÁLISIS POR PROVEEDOR ─────────────────────────
+        excelData.push(["ANÁLISIS POR PROVEEDOR"]);
+        excelData.push(["Proveedor", "Total", "Compras", "% Participación"]);
+
+        proveedoresOrdenados.forEach(p => {
+            excelData.push([
+                p.nombre,
+                `$${p.total.toLocaleString("es-CO")}`,
+                p.cantidad,
+                `${p.porcentaje}%`
+            ]);
+        });
+
+        excelData.push([]);
+        excelData.push([]);
+
         // ─── HEADERS MANUALES (CLAVE) ───────────────────────
         excelData.push([
             "ID",
@@ -169,20 +185,6 @@ export function useShoppingReport(comprasFiltradas, setAlert) {
             }
 
             excelData.push([]);
-        });
-
-        // ─── ANÁLISIS POR PROVEEDOR ─────────────────────────
-        excelData.push([]);
-        excelData.push(["ANÁLISIS POR PROVEEDOR"]);
-        excelData.push(["Proveedor", "Total", "Compras", "% Participación"]);
-
-        proveedoresOrdenados.forEach(p => {
-            excelData.push([
-                p.nombre,
-                `$${p.total.toLocaleString("es-CO")}`,
-                p.cantidad,
-                `${p.porcentaje}%`
-            ]);
         });
 
         // ─── GENERAR EXCEL ──────────────────────────────────
