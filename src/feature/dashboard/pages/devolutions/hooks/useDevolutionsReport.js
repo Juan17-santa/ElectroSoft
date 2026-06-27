@@ -96,6 +96,33 @@ export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
         const excelData = [];
         let contadorGrupo = 0;
 
+        // ─── KPIs ───────────────────────────────────────────
+        const totalDevoluciones = filtradas.length;
+        const totalProductosDevueltos = filtradas.reduce(
+            (acc, d) => acc + Number(d.cantidad || 0), 0
+        );
+        const resueltas = filtradas.filter(d => d.estadoResolucion === "RESUELTO").length;
+        const pendientes = filtradas.filter(d =>
+            d.estadoResolucion !== "RESUELTO" && d.estadoResolucion !== "Anulada"
+        ).length;
+        const anuladas = filtradas.filter(d => d.estadoResolucion === "Anulada").length;
+        const pctResueltas = totalDevoluciones ? ((resueltas / totalDevoluciones) * 100).toFixed(1) : "0.0";
+        const pctPendientes = totalDevoluciones ? ((pendientes / totalDevoluciones) * 100).toFixed(1) : "0.0";
+
+        // ─── RESUMEN GENERAL ─────────────────────────────────
+        excelData.push(["RESUMEN GENERAL"]);
+        excelData.push(["Rango", `${fechaInicio} - ${fechaFin}`]);
+        excelData.push(["Total devoluciones", totalDevoluciones]);
+        excelData.push(["Productos devueltos", totalProductosDevueltos]);
+        excelData.push(["Resueltas", `${resueltas} (${pctResueltas}%)`]);
+        excelData.push(["Pendientes", `${pendientes} (${pctPendientes}%)`]);
+        excelData.push(["Anuladas", anuladas]);
+        excelData.push([]);
+        excelData.push([]);
+
+        // ─── LISTADO ─────────────────────────────────────────
+        excelData.push(["TIPO", "REFERENCIA", "CLIENTE / PRODUCTO", "FECHA", "CANTIDAD", "VALOR", "MOTIVO", "GESTION", "ESTADO"]);
+
         grupos.forEach((grupo) => {
             const idVenta = grupo[0].idVenta;
             const venta = ventas.find((item) => String(item.id) === String(idVenta));
@@ -140,17 +167,7 @@ export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
         generateExcelReport({
             title: "REPORTE GENERAL DE GESTION DE DEVOLUCIONES",
             fileName: `Reporte_Devoluciones_${fechaInicio}_${fechaFin}.xlsx`,
-            columns: [
-                "TIPO",
-                "REFERENCIA",
-                "CLIENTE / PRODUCTO",
-                "FECHA",
-                "CANTIDAD",
-                "VALOR",
-                "MOTIVO",
-                "GESTION",
-                "ESTADO",
-            ],
+            columns: [],
             data: excelData,
         });
 
