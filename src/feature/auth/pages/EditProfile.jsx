@@ -143,14 +143,13 @@ export default function EditProfile() {
     const [showConfirm, setShowConfirm] = useState(false);
     const [documentTypes, setDocumentTypes] = useState([]);
 
-    // Cargar tipos de documento del backend
     useEffect(() => {
         const loadDocumentTypes = async () => {
             try {
                 const response = await api.get("/documentTypes");
                 setDocumentTypes(response.data.data.map(d => ({
                     value: d._id.toString(),
-                    label: d.abbreviation,
+                    label: `${d.name} (${d.abbreviation})`, // ← igual que ProviderForm
                 })));
             } catch (error) {
                 console.error("Error cargando tipos de documento:", error);

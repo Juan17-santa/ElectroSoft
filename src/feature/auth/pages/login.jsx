@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Lightbulb, CheckCircle, AlertCircle } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Lightbulb, CheckCircle, AlertCircle, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/authService";
 import { Validations } from "../../../utils/validations";
@@ -17,6 +17,8 @@ export default function Login() {
   const [passwordTouched, setPasswordTouched] = useState(false);
 
   const navigate = useNavigate();
+
+  // ─── Lógica original intacta ───────────────────────────────────────────────
 
   const handleEmailChange = (e) => {
     const value = e.target.value;
@@ -71,7 +73,7 @@ export default function Login() {
     setLoading(true);
     const result = await login(email, password);
 
-    // ← Actualizar loading y alert en el mismo ciclo
+    // ← Actualizar loading y alert en el mismo ciclo (lógica original)
     if (!result.ok) {
       setLoading(false);
       setAlert({ type: "error", message: result.message, id: Date.now() });
@@ -87,18 +89,23 @@ export default function Login() {
     setTimeout(() => navigate("/dashboard"), 2000);
   };
 
-  const inputClass = (touched, error) =>
-    `w-full px-4 py-3.5 rounded-xl bg-gray-100 shadow-sm focus:outline-none focus:ring-2 transition
-    ${touched && error
-      ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"
-      : touched && !error
-        ? "ring-2 ring-green-400 bg-green-50 focus:ring-green-400"
-        : "focus:ring-yellow-400"
-    }`;
+  // ─── Clases de input (estilo nuevo) ───────────────────────────────────────
+
+  const getInputClass = (touched, error, value) => {
+    const base =
+      "w-full px-4 py-3.5 bg-slate-50 border rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none transition-all duration-200";
+    if (touched && error)
+      return `${base} border-red-300 bg-red-50/50 ring-2 ring-red-200 focus:ring-red-300 focus:border-red-400`;
+    if (touched && !error && value)
+      return `${base} border-green-300 bg-green-50/50 ring-2 ring-green-200 focus:ring-green-300 focus:border-green-400`;
+    return `${base} border-slate-200 focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400`;
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* Alert FUERA del grid */}
+      {/* Alert FUERA del grid (lógica original) */}
       {alert && (
         <Alert
           type={alert.type}
@@ -108,64 +115,96 @@ export default function Login() {
         />
       )}
 
-      <div className="min-h-screen grid grid-cols-1 md:grid-cols-10">
+      <div className="min-h-screen flex bg-slate-50">
 
-        {/* LADO IZQUIERDO */}
-        <div
-          className="hidden md:block md:col-span-6 relative bg-cover bg-center"
-          style={{ backgroundImage: "url('/login-bg.jpg')" }}
-        >
-          <div className="absolute inset-0 bg-black/30" />
+        {/* ── Panel Izquierdo – Imagen ── */}
+        <div className="hidden lg:flex lg:w-[55%] relative">
+          <img
+            src="/login-bg.jpg"
+            alt="ElectroSoft Store"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-linear-to-r from-black/50 via-black/30 to-transparent" />
+
+          <div className="relative z-10 flex flex-col justify-between p-10 w-full">
+            {/* Logo superior */}
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-white/95 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                <Lightbulb className="w-6 h-6 text-amber-500" />
+              </div>
+              <span className="text-2xl font-bold text-white drop-shadow-lg">
+                Electro<span className="text-amber-400">Soft</span>
+              </span>
+            </div>
+
+            
+          </div>
         </div>
 
-        {/* LADO DERECHO */}
-        <div className="col-span-1 md:col-span-4 flex flex-col bg-linear-to-b from-white to-yellow-300 relative">
+        {/* ── Panel Derecho – Formulario ── */}
+        <div className="w-full lg:w-[45%] flex flex-col items-center justify-center px-6 sm:px-10 lg:px-16 py-10">
+          <div className="w-full max-w-md">
 
-          <div className="p-8 flex items-center gap-2 text-2xl font-bold">
-            <Lightbulb className="text-yellow-500" />
-            <span>Electro<span className="text-yellow-500">Soft</span></span>
-          </div>
+            {/* Logo móvil */}
+            <div className="lg:hidden flex items-center justify-center gap-3 mb-10">
+              <div className="w-12 h-12 rounded-xl bg-amber-400 flex items-center justify-center shadow-lg shadow-amber-400/30">
+                <Lightbulb className="w-6 h-6 text-slate-800" />
+              </div>
+              <span className="text-2xl font-bold text-slate-800">
+                Electro<span className="text-amber-500">Soft</span>
+              </span>
+            </div>
 
-          <div className="flex flex-1 items-center justify-center px-6">
-            <div className="w-full max-w-sm rounded-2xl shadow-xl p-8 bg-white/90 backdrop-blur-md">
-              <h2 className="text-3xl font-semibold text-center mb-8 tracking-wide">
-                Lo<span className="text-yellow-500">gin</span>
-              </h2>
+            {/* Card formulario */}
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100">
 
-              {/* EMAIL */}
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-br from-amber-400 to-amber-500 shadow-lg shadow-amber-400/30 mb-4">
+                  <Lock className="w-8 h-8 text-slate-800" />
+                </div>
+                <h1 className="text-2xl font-bold text-slate-800">Iniciar Sesión</h1>
+                <p className="text-slate-500 mt-1 text-sm">
+                  Ingresa tus credenciales de administrador
+                </p>
+              </div>
+
+              {/* Email */}
               <div className="mb-5">
-                <label className="flex items-center gap-2 text-sm font-medium text-yellow-600 mb-1">
-                  <Mail size={16} /> Email
+                <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                  <Mail className="w-4 h-4 text-amber-500" />
+                  Correo electrónico
                 </label>
                 <input
                   type="email"
-                  placeholder="Ingrese su email"
+                  placeholder="admin@electrosoft.com"
                   value={email}
                   onChange={handleEmailChange}
-                  className={inputClass(emailTouched, emailError)}
+                  className={getInputClass(emailTouched, emailError, email)}
                 />
                 {emailTouched && emailError && (
-                  <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <p className="mt-2 text-xs text-red-500 flex items-center gap-1.5">
                     <AlertCircle size={14} /> {emailError}
                   </p>
                 )}
                 {emailTouched && !emailError && email && (
-                  <p className="mt-1.5 text-xs text-green-600 flex items-center gap-1">
+                  <p className="mt-2 text-xs text-green-600 flex items-center gap-1.5">
                     <CheckCircle size={14} /> Email válido
                   </p>
                 )}
               </div>
 
-              {/* CONTRASEÑA */}
-              <div className="mb-8">
-                <div className="flex justify-between items-center mb-1">
-                  <label className="flex items-center gap-2 text-sm font-medium text-yellow-600">
-                    <Lock size={16} /> Contraseña
+              {/* Contraseña */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <Lock className="w-4 h-4 text-amber-500" />
+                    Contraseña
                   </label>
                   <button
                     type="button"
                     onClick={() => navigate("/forgot-password")}
-                    className="text-xs text-gray-500 hover:text-yellow-500 transition"
+                    className="text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
                   >
                     ¿Olvidaste tu contraseña?
                   </button>
@@ -173,40 +212,62 @@ export default function Login() {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Ingrese su contraseña"
+                    placeholder="Ingresa tu contraseña"
                     value={password}
                     onChange={handlePasswordChange}
-                    className={inputClass(passwordTouched, passwordError)}
+                    className={`${getInputClass(passwordTouched, passwordError, password)} pr-12`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-yellow-500 transition"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-amber-500 transition-colors p-1.5 rounded-lg hover:bg-slate-100"
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
                 {passwordTouched && passwordError && (
-                  <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                  <p className="mt-2 text-xs text-red-500 flex items-center gap-1.5">
                     <AlertCircle size={14} /> {passwordError}
                   </p>
                 )}
                 {passwordTouched && !passwordError && password && (
-                  <p className="mt-1.5 text-xs text-green-600 flex items-center gap-1">
+                  <p className="mt-2 text-xs text-green-600 flex items-center gap-1.5">
                     <CheckCircle size={14} /> Contraseña válida
                   </p>
                 )}
               </div>
 
-              {/* BOTÓN */}
+              {/* Botón */}
               <button
                 onClick={handleLogin}
                 disabled={loading}
-                className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 text-black font-semibold py-3.5 rounded-xl transition shadow-md hover:shadow-lg active:scale-[0.98]"
+                className="w-full py-4 bg-amber-400 hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed text-slate-800 font-semibold rounded-xl shadow-lg shadow-amber-400/25 transition-all duration-200 hover:shadow-xl hover:shadow-amber-400/35 active:scale-[0.98]"
               >
-                {loading ? "Verificando..." : "Acceder"}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12" cy="12" r="10"
+                        stroke="currentColor" strokeWidth="4" fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      />
+                    </svg>
+                    Verificando...
+                  </span>
+                ) : (
+                  "Iniciar Sesión"
+                )}
               </button>
+
+              
             </div>
+
+            
           </div>
         </div>
       </div>
