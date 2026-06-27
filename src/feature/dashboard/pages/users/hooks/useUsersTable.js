@@ -23,7 +23,6 @@ export function useUsersTable({
         setUsers(mapped);
     };
 
-    // ELIMINAR USUARIO
     const deleteUser = (id) => {
         setConfirmData({
             type: "delete",
@@ -44,7 +43,6 @@ export function useUsersTable({
         });
     };
 
-    // CAMBIAR ESTADO
     const toggleEstado = (id) => {
         setConfirmData({
             type: "warning",
@@ -52,21 +50,28 @@ export function useUsersTable({
             message: "¿Seguro que deseas cambiar el estado de este usuario?",
             onConfirm: async () => {
                 try {
-                    await usersService.toggleEstado(id);
-                    await refreshUsers();
+                    // ── FIX: el backend devuelve el nuevo isActive,
+                    //    actualizamos solo ese usuario en el array local
+                    //    sin hacer refetch para evitar el problema de re-render ──
+                    const result = await usersService.toggleEstado(id);
+                    const nuevoEstado = result.isActive; // ← viene del backend
+
+                    setUsers(prev =>
+                        prev.map(u =>
+                            u.id === id ? { ...u, estado: nuevoEstado } : u
+                        )
+                    );
                     setConfirmData(null);
-                    showAlert("success", "Estado actualizado con éxito");
+                    showAlert("success", result.message || "Estado actualizado con éxito");
                 } catch (error) {
                     console.error(error);
                     showAlert("error", "Error al actualizar estado");
+                    setConfirmData(null);
                 }
             },
             onCancel: () => setConfirmData(null),
         });
     };
 
-    return {
-        deleteUser,
-        toggleEstado,
-    };
+    return { deleteUser, toggleEstado };
 }

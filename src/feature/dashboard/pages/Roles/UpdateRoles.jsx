@@ -11,10 +11,12 @@ export default function UpdateRoles() {
     const location  = useLocation();
     const [alert, setAlert]         = useState(null);
     const [initialData, setInitialData] = useState(null);
+    const [dataLoaded, setDataLoaded]   = useState(false); // ← controla el skeleton
 
     useEffect(() => {
         if (location.state?.role) {
             setInitialData(location.state.role);
+            setDataLoaded(true); // los datos vienen del state, no hay fetch async
         } else {
             navigate("/dashboard/roles");
         }
@@ -41,7 +43,8 @@ export default function UpdateRoles() {
 
     return (
         <>
-            <div className="bg-gray-100 p-8 rounded-2xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4">
+            <div className="bg-gray-100 p-8 rounded-2xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4 overflow-y-auto">
+
                 <div className="flex justify-between mb-0">
                     <h1 className="text-2xl font-bold text-gray-800">Editar rol</h1>
                     <button
@@ -52,16 +55,58 @@ export default function UpdateRoles() {
                     </button>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 flex-1 flex flex-col">
-                    {initialData ? (
+                <div className="bg-white rounded-3xl p-6 shadow-md border border-gray-100 flex flex-col">
+
+                    {/* ── Skeleton (igual que UpdateProvider) ── */}
+                    {!dataLoaded ? (
+                        <div className="animate-pulse flex flex-col gap-10 mt-2">
+                            {/* Fila superior: nombre/estado + descripción */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
+                                {/* Columna izquierda: nombre + estado + fecha */}
+                                <div className="flex flex-col gap-4">
+                                    <div className="h-4 bg-gray-300 rounded w-1/3" />
+                                    <div className="h-12 bg-gray-300 rounded-xl w-full" />
+                                    <div className="flex gap-4">
+                                        <div className="flex-1 flex flex-col gap-2">
+                                            <div className="h-4 bg-gray-300 rounded w-1/3" />
+                                            <div className="h-12 bg-gray-300 rounded-xl w-full" />
+                                        </div>
+                                        <div className="flex-1 flex flex-col gap-2">
+                                            <div className="h-4 bg-gray-300 rounded w-1/3" />
+                                            <div className="h-12 bg-gray-300 rounded-xl w-full" />
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Columna derecha: descripción */}
+                                <div className="flex flex-col gap-2">
+                                    <div className="h-4 bg-gray-300 rounded w-1/4" />
+                                    <div className="h-32 bg-gray-300 rounded-xl w-full" />
+                                </div>
+                            </div>
+
+                            {/* Grid de permisos */}
+                            <div className="flex flex-col gap-3">
+                                <div className="h-5 bg-gray-300 rounded w-1/4" />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                    {[...Array(9)].map((_, i) => (
+                                        <div key={i} className="h-20 bg-gray-300 rounded-xl" />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Botones */}
+                            <div className="flex justify-end gap-4 mt-auto">
+                                <div className="h-10 bg-gray-300 rounded-xl w-28" />
+                                <div className="h-10 bg-gray-300 rounded-xl w-36" />
+                            </div>
+                        </div>
+                    ) : (
                         <RoleForm
                             {...formHook}
                             buttonText="Guardar cambios"
                             onCancel={() => navigate("/dashboard/roles")}
                             isUpdate={true}
                         />
-                    ) : (
-                        <div className="text-gray-500 py-10 text-center">Cargando datos del rol...</div>
                     )}
                 </div>
             </div>

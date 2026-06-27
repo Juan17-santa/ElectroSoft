@@ -4,7 +4,7 @@ export const usersService = {
 
   async get() {
     const response = await api.get("/users");
-    return response.data.data;
+    return response.data.data.reverse();
   },
 
   async getById(id) {
@@ -42,6 +42,7 @@ export const usersService = {
 
   async toggleEstado(id) {
     const response = await api.patch(`/users/${id}/toggle-status`);
+    // ── devuelve { message, isActive } que viene de ToggleUserStatusUseCase ──
     return response.data.data;
   },
 };

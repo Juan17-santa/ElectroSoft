@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Info, X } from "lucide-react";
-import PrimaryButton from "../../../components/ui/PrimaryButton";
+import { Info, ArrowLeft } from "lucide-react";
+
+function InfoCard({ title, value }) {
+    return (
+        <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-400">{title}</p>
+            <p className="text-sm font-semibold text-gray-800 break-all">
+                {value || "No registrado"}
+            </p>
+        </div>
+    );
+}
 
 export default function UserDetail() {
     const navigate = useNavigate();
     const location = useLocation();
-
     const [user, setUser] = useState(null);
 
-    // Cambia este bloque
     useEffect(() => {
         if (location.state?.user) {
+            console.log("user recibido:", location.state.user);
             setUser(location.state.user);
         }
     }, [location.state]);
@@ -19,117 +28,101 @@ export default function UserDetail() {
     if (!user) {
         return (
             <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
-                <p className="text-gray-500 text-sm">
-                    No hay información para mostrar.
-                </p>
+                <p className="text-gray-500 text-sm">No hay información para mostrar.</p>
             </div>
         );
     }
 
+    const nombre = user.nombre || "Usuario";
+    const avatar = user.avatar || null;
+
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
+        <div
+            className="p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner relative overflow-auto"
+            style={{
+                backgroundImage: 'url("/background-details.jpg")',
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+            }}
+        >
+            {/* Capa de transparencia */}
+            <div className="absolute inset-0 bg-white/20 pointer-events-none" />
 
-            <div
-                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
-                style={{
-                    backgroundImage: 'url("/background-details.jpg")',
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat"
-                }}
-            >
-                <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
+            {/* TÍTULO */}
+            <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-2">
+                    <Info size={22} className="text-gray-800" />
+                    <h2 className="text-xl font-semibold text-gray-800">
+                        Ver información del usuario
+                    </h2>
+                </div>
+                <button
+                    onClick={() => navigate("/dashboard/users")}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200
+                    hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
+                >
+                    <ArrowLeft size={16} />
+                    Volver
+                </button>
+            </div>
 
-                <div className="relative z-10 flex flex-col gap-6">
+            {/* CARD PRINCIPAL */}
+            <div className="relative z-10 bg-white/70 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/40">
 
-                    {/* TÍTULO */}
-                    <div className="flex items-center gap-2">
-                        <Info size={22} />
-                        <h2 className="text-xl font-semibold">
-                            Ver información del usuario
-                        </h2>
-                    </div>
+                {/* HEADER */}
+                <div className="border-b border-gray-200 pb-5 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
-                    {/* CARD */}
-                    <div className="bg-gray-50 rounded-2xl p-4 md:p-6 shadow-md max-w-3xl w-full mx-auto">
+                        <div className="flex items-center gap-4">
+                            {/* Avatar */}
+                            {avatar ? (
+                                <img
+                                    src={avatar}
+                                    alt="avatar"
+                                    className="w-16 h-16 rounded-full object-cover ring-2 ring-amber-300 shadow-md"
+                                />
+                            ) : (
+                                <div className="w-16 h-16 rounded-full bg-amber-100 ring-2 ring-amber-300
+                                    flex items-center justify-center text-amber-500 font-bold text-2xl shadow-md">
+                                    {nombre.charAt(0).toUpperCase()}
+                                </div>
+                            )}
 
-                        <div className="flex flex-col gap-6">
-
-                            {/* ESTADO */}
-                            <div className="flex justify-between items-start">
-                                <h3 className="text-sm font-bold uppercase text-gray-500 py-2">
-                                    Información general
+                            <div>
+                                <h3 className="text-2xl font-bold text-gray-800 break-all">
+                                    {nombre}
                                 </h3>
-                                <div
-                                    className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md
-                                    ${user.estado
-                                            ? "bg-green-100 text-green-700"
-                                            : "bg-red-100 text-red-700"
-                                        }`}
-                                >
-                                    {user.estado ? "Activo" : "Inactivo"}
-                                </div>
-                            </div>
-
-                            {/* DATOS EN GRID */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-                                <div>
-                                    <p className="text-sm text-yellow-400 mb-1">Nombre</p>
-                                    <p className="text-sm font-semibold text-gray-800">
-                                        {user.nombre || "No registrado"}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-yellow-400 mb-1">Email</p>
-                                    <p className="text-sm font-semibold text-gray-800 break-all">
-                                        {user.email || "No registrado"}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-yellow-400 mb-1">Teléfono</p>
-                                    <p className="text-sm font-semibold text-gray-800">
-                                        {user.telefono || "No registrado"}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-yellow-400 mb-1">Tipo documento</p>
-                                    <p className="text-sm font-semibold text-gray-800">
-                                        {user.tipoDocLabel || user.tipoDoc || "No registrado"}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-yellow-400 mb-1">Documento</p>
-                                    <p className="text-sm font-semibold text-gray-800">
-                                        {user.documento || "No registrado"}
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <p className="text-sm text-yellow-400 mb-1">Rol</p>
-                                    <p className="text-sm font-semibold text-gray-800">
-                                        {user.rolLabel || user.rol || "Sin rol asignado"}
-                                    </p>
-                                </div>
-
+                                <p className="text-gray-500 mt-1 text-sm">{user.email}</p>
                             </div>
                         </div>
+
+                        <span
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm w-fit
+                            ${user.estado
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-600"
+                                }`}
+                        >
+                            {user.estado ? "ACTIVO" : "INACTIVO"}
+                        </span>
                     </div>
                 </div>
-            </div>
 
-            {/* BOTÓN VOLVER */}
-            <div className="flex justify-end">
-                <PrimaryButton type="button" onClick={() => navigate("/dashboard/users")}>
-                    <X size={18} className="inline-block mr-2" />
-                    Volver
-                </PrimaryButton>
-            </div>
+                {/* INFORMACIÓN GENERAL */}
+                <h4 className="text-sm font-bold text-gray-600 mb-3 tracking-wide uppercase">
+                    Información general
+                </h4>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <InfoCard title="Nombre" value={user.nombre} />
+                    <InfoCard title="Email" value={user.email} />
+                    <InfoCard title="Teléfono" value={user.telefono} />
+                    <InfoCard title="Tipo documento" value={user.tipoDocLabel || user.tipoDoc} />
+                    <InfoCard title="Documento" value={user.documento} />
+                    <InfoCard title="Rol" value={user.rolLabel || user.rol} />
+                </div>
+            </div>
         </div>
     );
 }
