@@ -100,17 +100,27 @@ export const useClientModal = (onSave) => {
 
         const { name, value } = e.target;
 
+        let newValue = value;
+
+        if (name === "documento") {
+            newValue = value.replace(/\D/g, "").slice(0, 12);
+        }
+
+        if (name === "telefono") {
+            newValue = value.replace(/\D/g, "").slice(0, 14);
+        }
+
         // ACTUALIZAR EL VALOR DEL CAMPO EN EL ESTADO
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: newValue
         }));
 
         // Limpiar cualquier error global del formulario cuando el usuario edita un campo
         if (formError) setFormError("");
 
         // VALIDAR EL CAMPO EN TIEMPO REAL MIENTRAS EL USUARIO ESCRIBE
-        const error = validateField(name, value);
+        const error = validateField(name, newValue);
 
         // ACTUALIZAR EL ESTADO DE ERRORES PARA EL CAMPO ESPECÍFICO
         setErrors(prev => ({
