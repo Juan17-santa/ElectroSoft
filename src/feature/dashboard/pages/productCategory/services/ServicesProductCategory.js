@@ -3,13 +3,19 @@ const API_URL = "http://localhost:4000/api/productCategory";
 // Función para mapear categoría del backend al formato del frontend
 const mapCategoryFromAPI = (apiCategory) => {
     if (!apiCategory) return null;
+
     return {
         id: apiCategory._id || apiCategory.id,
         name: apiCategory.name,
         description: apiCategory.description || "",
         status: apiCategory.status !== undefined ? apiCategory.status : true,
         createdAt: apiCategory.createdAt,
-        updatedAt: apiCategory.updatedAt
+        updatedAt: apiCategory.updatedAt,
+
+        productsCount: apiCategory.productsCount ?? 0,
+        providersCount: apiCategory.providersCount ?? 0,
+        canDelete: apiCategory.canDelete ?? true,
+        deleteReason: apiCategory.deleteReason ?? null
     };
 };
 

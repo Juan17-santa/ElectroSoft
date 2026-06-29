@@ -83,10 +83,20 @@ export default function useProductCategoryTable({
     // FILTRAR LAS CATEGORIAS
     const filteredCategories = categories.filter(cat => {
         const query = searchTerm.toLowerCase();
+
+        let matchesStatus = false;
+        if (query === "activo") {
+            matchesStatus = cat.status === true;
+        } else if (query === "inactivo") {
+            matchesStatus = cat.status === false;
+        } else {
+            matchesStatus = (cat.status ? "activo" : "inactivo").includes(query);
+        }
+
         return (
             cat.name?.toLowerCase().includes(query) ||
             cat.description?.toLowerCase().includes(query) ||
-            (cat.status ? "activo" : "inactivo").includes(query)
+            matchesStatus
         );
     });
 
