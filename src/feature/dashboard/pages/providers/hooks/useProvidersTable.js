@@ -55,7 +55,7 @@ export default function useProvidersTable({
 
                     showAlert(
                         "error",
-                        error.message || "No se pudo eliminar el 52314"
+                        error.message || "No se pudo eliminar el proveedor"
                     );
                 }
             },
