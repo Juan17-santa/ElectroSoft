@@ -13,6 +13,7 @@ export default function ConfirmModal({
     showDateFilter = false,
 }) {
 
+    const [isLoading, setIsLoading] = useState(false);
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const fmt = (d) => d.toISOString().split("T")[0];
@@ -31,11 +32,20 @@ export default function ConfirmModal({
         setFechaFin(value);
     };
 
-    const handleConfirm = () => {
-        if (type === "info" && showDateFilter) {
-            onConfirm?.({ fechaInicio, fechaFin });
-        } else {
-            onConfirm?.();
+    const handleConfirm = async () => {
+        try {
+            setIsLoading(true);
+
+            if (type === "info" && showDateFilter) {
+                await onConfirm?.({
+                    fechaInicio,
+                    fechaFin
+                });
+            } else {
+                await onConfirm?.();
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -123,12 +133,20 @@ export default function ConfirmModal({
                     <button
                         type="button"
                         onClick={handleConfirm}
-                        className={`px-4 py-2 rounded-lg text-white font-medium shadow-sm transition cursor-pointer ${current.button}`}
+                        disabled={isLoading}
+                        className={`flex items-center gap-2
+                            px-4 py-2 rounded-lg text-white font-medium shadow-sm transition
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                            ${current.button}
+                        `}
                     >
-                        {labelConfirmar}
+                        {isLoading && (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        )}
+
+                        {isLoading ? "Procesando..." : labelConfirmar}
                     </button>
                 </div>
-
             </div>
         </div>
     );
