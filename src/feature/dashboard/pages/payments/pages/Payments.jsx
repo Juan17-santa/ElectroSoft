@@ -5,7 +5,7 @@ import ClientCreditCard from "../components/ClientCreditCard";
 import SearchBar from "../../../components/ui/Searchbar";
 import Pagination from "../../../components/ui/Pagination";
 import { CreditCard } from "lucide-react";
-import { generarReporteGeneral } from "../hooks/reportesPayments";
+import { generarReporteGeneral, generarReporteGeneralPDF } from "../hooks/reportesPayments";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Alert from "../../../components/ui/Alert";
 
@@ -124,10 +124,15 @@ export default function Payments() {
                     title="Generar reporte"
                     message="Selecciona el rango de fechas para el reporte"
                     showDateFilter={true}
+                    showFormatSelector={true}
                     onCancel={() => setShowReportModal(false)}
-                    onConfirm={({ fechaInicio, fechaFin }) => {
+                    onConfirm={({ fechaInicio, fechaFin, format }) => {
                         try {
-                            generarReporteGeneral(clientes, fechaInicio, fechaFin);
+                            if (format === "pdf") {
+                                generarReporteGeneralPDF(clientes, fechaInicio, fechaFin);
+                            } else {
+                                generarReporteGeneral(clientes, fechaInicio, fechaFin);
+                            }
 
                             setAlert({
                                 type: "success",

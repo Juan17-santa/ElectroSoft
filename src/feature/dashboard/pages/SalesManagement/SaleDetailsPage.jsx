@@ -14,8 +14,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { X, FileText, ArrowLeft, RefreshCw } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { SalesService } from "./services/SalesService";
 import Alert from "../../components/ui/Alert";
@@ -89,11 +88,13 @@ export default function SaleDetailsPage() {
     }, [sale]);
 
     const calculateDeadline = () => {
-        if (!sale || !sale.fecha || sale.diasPlazo === undefined || sale.diasPlazo === null) return null;
+        if (!sale || !sale.fecha) return null;
+        if (sale.tipoVenta !== "Credito" && sale.tipoVenta !== "Crédito") return null;
 
+        const diasPlazo = sale.diasPlazo != null ? Number(sale.diasPlazo) : 0;
         const creationDate = new Date(sale.fecha + "T00:00:00");
         const deadlineDate = new Date(creationDate);
-        deadlineDate.setDate(deadlineDate.getDate() + Number(sale.diasPlazo));
+        deadlineDate.setDate(deadlineDate.getDate() + diasPlazo);
 
         // Obtener hoy en formato YYYY-MM-DD usando la hora local (evitar desfase UTC de toISOString)
         const now = new Date();
@@ -135,39 +136,47 @@ export default function SaleDetailsPage() {
             title: "Imprimir venta",
             message: "¿Deseas imprimir el reporte de esta venta?",
             onConfirm: () => {
-                const doc = new jsPDF();
-
-                doc.setFontSize(18);
-                doc.setFont("helvetica", "bold");
-                doc.text("Detalles de Venta", 14, 22);
-
-                doc.setFontSize(11);
-                doc.setFont("helvetica", "normal");
-                doc.text(`Cliente: ${sale.cliente || '-'}`, 14, 36);
-                doc.text(`Fecha creación: ${sale.fecha}`, 14, 44);
-                doc.text(`Estado: ${sale.estado}`, 14, 52);
-                doc.text(`Subtotal: $${totalesNetos.subtotal?.toLocaleString()}`, 120, 36);
-                doc.text(`IVA: $${totalesNetos.iva?.toLocaleString()}`, 120, 44);
-                doc.text(`Total: $${totalesNetos.total?.toLocaleString()}`, 120, 52);
-
-                if (productosNetos.length > 0) {
-                    autoTable(doc, {
-                        startY: 64,
-                        head: [["Producto", "Precio", "Cant.", "Dev.", "Neto", "Subtotal"]],
-                        body: productosNetos.map(p => [
-                            p.nombre,
-                            `$${p.precio?.toLocaleString()}`,
-                            p.cantOriginal,
-                            p.cantDevuelta,
-                            p.cantNeta,
-                            `$${(p.precio * p.cantNeta).toLocaleString()}`
-                        ]),
-                        styles: { fontSize: 10 },
-                        headStyles: { fillColor: [234, 179, 8] }
-                    });
+                const formatCurrency = (val) => val ? `$${val.toLocaleString('es-CO')}` : "$0";
+                
+                const extraInfo = [
+                    `Cliente: ${sale.cliente || '-'}`,
+                    `Fecha creación: ${sale.fecha}`,
+                    `Estado: ${sale.estado}`,
+                    `Tipo de Venta: ${sale.tipoVenta || "Contado"}`
+                ];
+                
+                if (sale.estado === "Anulado") {
+                    extraInfo.push(`Fecha Anulación: ${sale.anuladaEn ? new Date(sale.anuladaEn).toLocaleString('es-CO') : (sale.fecha || "N/A")}`);
+                    extraInfo.push(`Motivo Anulación: ${sale.observaciones || "Anulación registrada sin motivo."}`);
+                }
+                
+                if ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito")) {
+                    extraInfo.push(`Plazo (Crédito): ${sale.diasPlazo != null ? sale.diasPlazo : 0} días`);
+                    if (deadlineInfo) {
+                        extraInfo.push(`Fecha Límite Pago: ${deadlineInfo.fechaLimite}`);
+                    }
                 }
 
-                doc.save(`venta_${String(sale.numeroVenta || "").padStart(2, '0')}.pdf`);
+                generatePDFReport({
+                    title: `Reporte de la Venta #${String(sale.numeroVenta || "").padStart(2, '0')}`,
+                    fileName: `venta_${String(sale.numeroVenta || "").padStart(2, '0')}.pdf`,
+                    columns: ["Producto", "Precio", "Cant.", "Dev.", "Neto", "Subtotal"],
+                    data: productosNetos.map(p => [
+                        p.nombre,
+                        formatCurrency(p.precio),
+                        p.cantOriginal,
+                        p.cantDevuelta > 0 ? `-${p.cantDevuelta}` : '0',
+                        p.cantNeta,
+                        formatCurrency(p.precio * p.cantNeta)
+                    ]),
+                    extraInfo: extraInfo,
+                    totals: [
+                        `Subtotal: ${formatCurrency(totalesNetos.subtotal)}`,
+                        `IVA: ${formatCurrency(totalesNetos.iva)}`,
+                        `Total: ${formatCurrency(totalesNetos.total)}`
+                    ]
+                });
+
                 setAlert({ type: "success", message: "Reporte generado correctamente." });
                 setConfirmData(null);
             },
@@ -257,6 +266,10 @@ export default function SaleDetailsPage() {
                                     <p className="font-bold text-[15px]">{sale.estado}</p>
                                 </div>
                             </div>
+                            <div>
+                                <p className="text-xs text-gray-400 leading-none mb-1">Tipo de Venta</p>
+                                <p className="font-bold text-gray-800 text-[15px] capitalize">{sale.tipoVenta || "Contado"}</p>
+                            </div>
                             {sale.estado === "Anulado" && (
                                 <>
                                     <div className="mt-2">
@@ -271,11 +284,11 @@ export default function SaleDetailsPage() {
                                     </div>
                                 </>
                             )}
-                            {sale.tipoVenta === "Credito" && sale.diasPlazo != null && (
+                            {(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") && (
                                 <>
                                     <div className="mt-2">
                                         <p className="text-xs text-yellow-600 leading-none mb-1">Plazo (Crédito)</p>
-                                        <p className="font-bold text-yellow-700 text-[14px]">{sale.diasPlazo} días</p>
+                                        <p className="font-bold text-yellow-700 text-[14px]">{sale.diasPlazo != null ? sale.diasPlazo : 0} días</p>
                                     </div>
                                     {deadlineInfo && (
                                         <>

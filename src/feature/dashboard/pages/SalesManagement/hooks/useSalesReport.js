@@ -41,10 +41,10 @@ export function useSalesReport(data, setAlert) {
 
                     i === 0 ? formatCurrency(sale.total) : "",
                     i === 0 ? (sale.tipoVenta || "-") : "",
-                    i === 0 ? (sale.tipoVenta === "Credito" ? `${sale.diasPlazo} días` : "-") : "",
-                    i === 0 ? (sale.tipoVenta === "Credito" ? (() => {
+                    i === 0 ? ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") ? `${sale.diasPlazo || 0} días` : "-") : "",
+                    i === 0 ? ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") ? (() => {
                         const d = new Date(sale.fecha + "T00:00:00");
-                        d.setDate(d.getDate() + Number(sale.diasPlazo));
+                        d.setDate(d.getDate() + Number(sale.diasPlazo || 0));
                         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                     })() : "-") : "",
                     i === 0 ? sale.estado : ""
@@ -54,7 +54,7 @@ export function useSalesReport(data, setAlert) {
         });
 
         generateExcelReport({
-            title: "➤ REPORTE GENERAL DE VENTAS",
+            title: "REPORTE GENERAL DE VENTAS",
             fileName: `Reporte_Ventas_${fechaInicio}_${fechaFin}.xlsx`,
             columns: [
                 "# VENTA",

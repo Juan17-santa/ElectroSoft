@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { logoBase64 } from "./logoBase64";
 
 /**
  * Generador PDF reutilizable para cualquier módulo
@@ -11,40 +12,96 @@ export const generatePDFReport = ({
     data,
     extraInfo = [],
     totals = [],
-    headColor = [234, 179, 8]
+    headColor = [234, 179, 8],
+    emptyMessage = "No hay registros disponibles"
 }) => {
 
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
 
-    // Título
-    doc.setFontSize(18);
+    // --- BANNER INSTITUCIONAL ---
+    // Fondo oscuro para que el logo amarillo resalte
+    doc.setFillColor(30, 30, 30); 
+    doc.rect(0, 0, pageWidth, 26, "F");
+
+    // Logo (bombillo)
+    try {
+        doc.addImage(logoBase64, "PNG", 12, 3, 20, 20);
+    } catch(e) {}
+
+    // Nombre de Empresa
+    doc.setTextColor(234, 179, 8); // Amarillo institucional
+    doc.setFontSize(26);
     doc.setFont("helvetica", "bold");
-    doc.text(title, 14, 22);
+    doc.text("ElectroSoft", 35, 18);
 
-    // Fecha
+    // Título del Reporte (alineado a la derecha)
+    doc.setTextColor(255, 255, 255); // Blanco
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(title.toUpperCase(), pageWidth - 14, 17, { align: "right" });
+
+    // --- INFORMACIÓN DEL REPORTE ---
+    doc.setTextColor(80, 80, 80);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
+    
+    // Fecha de generación alineada a la derecha
     doc.text(
-        `Fecha de generación: ${new Date().toLocaleDateString()}`,
-        14,
-        30
+        `Fecha de emisión: ${new Date().toLocaleDateString()}`, 
+        pageWidth - 14, 
+        35, 
+        { align: "right" }
     );
 
     // INFO EXTRA
-    let currentY = 36;
-
+    let currentY = 35;
     extraInfo.forEach(info => {
         doc.text(info, 14, currentY);
         currentY += 6;
     });
 
-    // Tabla
+    // Línea separadora sutil
+    currentY += 2;
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, currentY, pageWidth - 14, currentY);
+    currentY += 5;
+
+    // Tabla principal
+    const tableBody = data.length > 0 ? data : [
+        [{ content: emptyMessage, colSpan: columns.length, styles: { halign: 'center', fontStyle: 'italic', textColor: [150, 150, 150] } }]
+    ];
+
     autoTable(doc, {
         startY: currentY + 4,
         head: [columns],
-        body: data,
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: headColor }
+        body: tableBody,
+        theme: "striped", // Diseño cebra
+        styles: { 
+            fontSize: 9,
+            cellPadding: 3,
+        },
+        headStyles: { 
+            fillColor: headColor, // Amarillo institucional
+            textColor: [30, 30, 30], // Gris oscuro/Negro para contraste
+            fontStyle: "bold"
+        },
+        alternateRowStyles: {
+            fillColor: [248, 248, 248] // Gris súper claro
+        },
+        didParseCell: function (data) {
+            // Alineación inteligente basada en el contenido de la primera fila de datos
+            const firstRowData = data.table.body[0] ? String(data.table.body[0].raw[data.column.index] || "").trim() : "";
+            
+            let align = 'left';
+            if (firstRowData.startsWith('$')) {
+                align = 'right';
+            } else if (!isNaN(firstRowData) && firstRowData !== '') {
+                align = 'center';
+            }
+
+            data.cell.styles.halign = align;
+        }
     });
 
     if (totals.length > 0) {

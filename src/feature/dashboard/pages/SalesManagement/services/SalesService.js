@@ -10,6 +10,7 @@ const mapSaleToFrontend = (sale) => {
         cliente: sale.clienteId ? `${sale.clienteId.firstName} ${sale.clienteId.lastName}` : "Cliente Desconocido",
         // ✅ FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
         tipoVenta: sale.tipoVenta === "Crédito" ? "Credito" : (sale.tipoVenta || "Contado"),
+        diasPlazo: sale.diasPlazo,
         fecha: sale.fechaVenta || new Date(sale.fechaCreacion).toISOString().split('T')[0],
         fechaCreacion: sale.fechaCreacion,
         // ✅ FIX: estado más preciso (Finalizado se calcula en paymentsService al enriquecer con pagos, pero para Contado es automático)
@@ -58,6 +59,7 @@ export const SalesService = {
                 clienteId: numeroDocumento, // ObjectId del cliente
                 // ✅ FIX: el backend solo acepta "Crédito" (con tilde) en el enum
                 tipoVenta: tipoVenta === "Credito" ? "Crédito" : (tipoVenta || "Contado"),
+                diasPlazo: diasPlazo != null ? Number(diasPlazo) : null,
                 productos: productos.map(p => ({
                     productoId: p.productoId || p.id || p.idProducto,
                     cantidad: p.cantidad,
