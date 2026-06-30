@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, AlertCircle, FileDown, Pencil, X, CreditCard } from "lucide-react";
 import paymentsService from "../services/paymentsService";
 import VentaCreditoCard from "../components/VentaCreditoCard";
-import { generarReporteCliente } from "../hooks/reportesPayments";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import { generarReporteCliente, generarReporteClientePDF } from "../hooks/reportesPayments";
 
 const fmt = (val) => new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0
@@ -19,8 +20,9 @@ export default function PaymentClientDetail() {
     const [showModal, setShowModal] = useState(false);
     const [nuevoCupo, setNuevoCupo] = useState("");
     const [errorCupo, setErrorCupo] = useState("");
-
     const [loading, setLoading] = useState(true);
+    const [alert, setAlert] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
 
     const cargarDatos = async () => {
         setLoading(true);
@@ -112,7 +114,7 @@ export default function PaymentClientDetail() {
                     </div>
 
                     <button
-                        onClick={() => generarReporteCliente(resumen, ventas)}
+                        onClick={() => setShowReportModal(true)}
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-yellow-300 hover:bg-yellow-50 text-sm font-medium text-yellow-600 shadow-sm transition cursor-pointer"
                     >
                         <FileDown size={16} />
@@ -292,6 +294,30 @@ export default function PaymentClientDetail() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showReportModal && (
+                <ConfirmModal
+                    type="info"
+                    title="Descargar Estado de Cuenta"
+                    message="Selecciona el formato en el que deseas descargar el estado de cuenta del cliente."
+                    showDateFilter={false}
+                    showFormatSelector={true}
+                    onCancel={() => setShowReportModal(false)}
+                    onConfirm={({ format }) => {
+                        try {
+                            if (format === "pdf") {
+                                generarReporteClientePDF(resumen, ventas);
+                            } else {
+                                generarReporteCliente(resumen, ventas);
+                            }
+                            setAlert({ type: "success", message: "Reporte generado correctamente" });
+                        } catch (error) {
+                            setAlert({ type: "error", message: "Error al generar el reporte" });
+                        }
+                        setShowReportModal(false);
+                    }}
+                />
             )}
         </>
     );

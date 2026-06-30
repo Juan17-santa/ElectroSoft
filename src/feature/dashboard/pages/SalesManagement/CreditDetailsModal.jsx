@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Plus, Ban, FileText, ArrowLeft, ExternalLink } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import paymentsService from "../payments/services/paymentsService";
@@ -153,37 +152,29 @@ export default function CreditDetailsPage() {
             title: "Imprimir crédito",
             message: "¿Deseas descargar el reporte de este crédito?",
             onConfirm: () => {
-                const doc = new jsPDF();
-
-                doc.setFontSize(18);
-                doc.setFont("helvetica", "bold");
-                doc.text("Detalles del Crédito", 14, 22);
-
-                doc.setFontSize(11);
-                doc.setFont("helvetica", "normal");
-                doc.text(`Cliente: ${sale.cliente || '-'}`, 14, 36);
-                doc.text(`Numero de venta: ${String(sale.numeroVenta || "").padStart(2, '0')}`, 14, 44);
-                doc.text(`Estado: ${sale.estado}`, 14, 52);
-                doc.text(`Monto Total: ${formatCOP(sale.total)}`, 120, 36);
-                doc.text(`Monto Neto: ${formatCOP(netTotal)}`, 120, 44);
-                doc.text(`Saldo Pendiente: ${formatCOP(Math.max(0, netTotal - sale.montoPagado))}`, 120, 52);
-
                 const rows = getPaymentRows();
-                if (rows.length > 0) {
-                    autoTable(doc, {
-                        startY: 62,
-                        head: [["Fecha", "Abono", "Saldo pendiente"]],
-                        body: rows.map(r => [
-                            r.fecha,
-                            formatCOP(r.monto),
-                            formatCOP(r.saldoPendiente)
-                        ]),
-                        styles: { fontSize: 10 },
-                        headStyles: { fillColor: [234, 179, 8] }
-                    });
-                }
 
-                doc.save(`credito_${String(sale.numeroVenta || "").padStart(2, '0')}.pdf`);
+                generatePDFReport({
+                    title: `Detalles del Crédito #${String(sale.numeroVenta || "").padStart(2, '0')}`,
+                    fileName: `credito_${String(sale.numeroVenta || "").padStart(2, '0')}.pdf`,
+                    columns: ["Fecha", "Abono", "Saldo Pendiente"],
+                    data: rows.map(r => [
+                        r.fecha,
+                        formatCOP(r.monto),
+                        formatCOP(r.saldoPendiente)
+                    ]),
+                    extraInfo: [
+                        `Cliente: ${sale.cliente || '-'}`,
+                        `Estado: ${sale.estado}`
+                    ],
+                    emptyMessage: "Aún no se han registrado abonos a este crédito.",
+                    totals: [
+                        `Monto Total: ${formatCOP(sale.total)}`,
+                        `Monto Neto: ${formatCOP(netTotal)}`,
+                        `Saldo Real Pendiente: ${formatCOP(Math.max(0, netTotal - sale.montoPagado))}`
+                    ]
+                });
+
                 setAlert({ type: "success", message: "Reporte generado correctamente." });
                 setConfirmData(null);
             },

@@ -134,7 +134,7 @@ export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
                     ]);
                 });
 
-            excelData.push(["", "", "", "", "", "", "", "", ""]);
+            excelData.push([]);
         });
 
         generateExcelReport({

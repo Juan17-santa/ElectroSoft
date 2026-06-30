@@ -39,11 +39,6 @@ export default function UpdateUser() {
         loadData();
     }, []);
 
-    if (!userToEdit) {
-        navigate("/dashboard/users");
-        return null;
-    }
-
     const {
         formData,
         errors,
@@ -53,7 +48,15 @@ export default function UpdateUser() {
         handleChange,
         validateForm,
         updateUser,
-    } = useUserForm({ userToEdit, navigate });
+    } = useUserForm({ userToEdit: userToEdit || {}, navigate });
+
+    useEffect(() => {
+        if (!userToEdit) {
+            navigate("/dashboard/users");
+        }
+    }, [userToEdit, navigate]);
+
+    if (!userToEdit) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();

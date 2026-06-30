@@ -2,6 +2,9 @@ import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 import { ServicesOrders } from "../services/ServicesOrders";
 
 export function useOrdersReport(data, setAlert) {
+    const fmt = (val) => new Intl.NumberFormat("es-CO", {
+        style: "currency", currency: "COP", minimumFractionDigits: 0
+    }).format(val ?? 0);
 
     const exportReport = async (fechaInicio, fechaFin) => {
 
@@ -11,8 +14,8 @@ export function useOrdersReport(data, setAlert) {
             const fecha = new Date(order.orderDate);
 
             return (
-                fecha >= fechaInicio &&
-                fecha <= fechaFin
+                fecha >= new Date(fechaInicio + "T00:00:00") &&
+                fecha <= new Date(fechaFin + "T23:59:59")
             );
         });
 
@@ -37,10 +40,10 @@ export function useOrdersReport(data, setAlert) {
 
                     prod.name,
                     prod.quantity,
-                    prod.price,
-                    prod.lineTotal,
+                    fmt(prod.price),
+                    fmt(prod.lineTotal),
 
-                    i === 0 ? order.total : "",
+                    i === 0 ? fmt(order.total) : "",
                     i === 0 ? (order.dueDate?.split("T")[0]) : "",
                     i === 0 ? (order.paymentMethod) : "",
                     i === 0 ? order.status : ""
@@ -50,7 +53,7 @@ export function useOrdersReport(data, setAlert) {
         });
 
         generateExcelReport({
-            title: "➤ REPORTE GENERAL DE CONTROL DE PEDIDOS",
+            title: "REPORTE GENERAL DE CONTROL DE PEDIDOS",
             fileName: `Reporte_Pedidos_${fechaInicio}_${fechaFin}.xlsx`,
             columns: [
                 "ID",
