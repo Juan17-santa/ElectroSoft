@@ -96,10 +96,26 @@ export default function ProductCategoryTable({
                                                 {/* BOTON ELIMINAR */}
                                                 <Restricted scope="Categoria de productos" action="Eliminar">
                                                     <button
-                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                        className={`p-2 rounded-lg transition ${category.canDelete
+                                                            ? "bg-red-100 hover:bg-red-200"
+                                                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                            }`}
                                                         onClick={() => onDelete(category.id)}
+                                                        disabled={!category.canDelete}
+                                                        title={
+                                                            category.canDelete
+                                                                ? "Eliminar categoría"
+                                                                : category.deleteReason || "No se puede eliminar esta categoría"
+                                                        }
                                                     >
-                                                        <Trash size={18} className="text-red-600" />
+                                                        <Trash
+                                                            size={18}
+                                                            className={
+                                                                category.canDelete
+                                                                    ? "text-red-600"
+                                                                    : "text-gray-400"
+                                                            }
+                                                        />
                                                     </button>
                                                 </Restricted>
                                             </div>

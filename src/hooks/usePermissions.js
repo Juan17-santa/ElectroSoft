@@ -2,10 +2,10 @@
 // import { RolesService } from "../feature/dashboard/pages/Roles/services/RolesService";
 
 // export const usePermissions = () => {
-    
+
 //     const hasPermission = (scope, action) => {
 //         const authUser = getAuthUser();
-        
+
 //         if (!authUser) return false;
 
 //         const userRoleName = authUser.role || authUser.rol || "Empleado";
@@ -75,39 +75,48 @@ export const usePermissions = () => {
   // Mapeo de nombres del frontend al formato del backend
   const scopeMap = {
     "Categoria de productos": "categorias",
-    "Productos":              "productos",
-    "Ficha tecnica":          "fichatecnica",
-    "Compras":                "compras",
-    "Proveedores":            "proveedores",
-    "Ventas":                 "ventas",
-    "Clientes":               "clientes",
-    "Pedidos":                "pedidos",
-    "Pagos y abonos":         "pagos",
-    "Devoluciones":           "devoluciones",
-    "Usuarios":               "usuarios",
-    "Roles":                  "roles",
-    "Dashboard":              "dashboard",
+    "Productos": "productos",
+    "Ficha tecnica": "fichatecnica",
+    "Compras": "compras",
+    "Proveedores": "proveedores",
+    "Ventas": "ventas",
+    "Clientes": "clientes",
+    "Pedidos": "pedidos",
+    "Pagos y abonos": "pagos",
+    "Devoluciones": "devoluciones",
+    "Usuarios": "usuarios",
+    "Roles": "roles",
+    "Dashboard": "dashboard",
   };
 
   const actionMap = {
-    "Ver":      "ver",
-    "Crear":    "crear",
-    "Editar":   "editar",
+    "Ver": "ver",
+    "Crear": "crear",
+    "Editar": "editar",
     "Eliminar": "eliminar",
-    "Estado":   "estado",
+    "Estado": "estado",
   };
+
+  // src/hooks/usePermissions.js  — solo el bloque hasPermission cambia
 
   const hasPermission = (scope, action = "ver") => {
     if (!user) return false;
-
-    // Administrador tiene acceso total
     if (user.role === "Administrador") return true;
 
-    const mappedScope  = scopeMap[scope]  || scope.toLowerCase();
+    const mappedScope = scopeMap[scope] || scope.toLowerCase();
     const mappedAction = actionMap[action] || action.toLowerCase();
-    const permission   = `${mappedScope}:${mappedAction}`;
 
-    return permissions.includes(permission);
+    // Si piden "ver" pero no tiene "ver" explícito,
+    // permitir si tiene cualquier otro permiso en ese módulo
+    if (mappedAction === "ver") {
+      const hasVer = permissions.includes(`${mappedScope}:ver`);
+      if (!hasVer) {
+        return permissions.some((p) => p.startsWith(`${mappedScope}:`));
+      }
+      return hasVer;
+    }
+
+    return permissions.includes(`${mappedScope}:${mappedAction}`);
   };
 
   const hasAccessToScope = (scope) => {

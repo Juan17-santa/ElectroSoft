@@ -13,7 +13,7 @@ export default function UpdateUser() {
 
     const [roles, setRoles] = useState([]);
     const [documentTypes, setDocumentTypes] = useState([]);
-    const [dataLoaded, setDataLoaded] = useState(false);
+    const [dataLoaded, setDataLoaded] = useState(false); // ← controla el skeleton
 
     useEffect(() => {
         const loadData = async () => {
@@ -31,7 +31,7 @@ export default function UpdateUser() {
                     nombre: d.name,
                     abbreviation: d.abbreviation,
                 })));
-                setDataLoaded(true); // ← marcar como cargado
+                setDataLoaded(true);
             } catch (error) {
                 console.error("Error cargando datos:", error);
             }
@@ -70,23 +70,37 @@ export default function UpdateUser() {
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
+
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="text-xl font-semibold mb-2">Editar usuario</p>
                         <p className="text-sm text-gray-600">Modifique los campos necesarios</p>
                     </div>
-                    <button onClick={() => navigate("/dashboard/users")}
-                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
+                    <button
+                        onClick={() => navigate("/dashboard/users")}
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
+                    >
                         <X size={20} />
                     </button>
                 </div>
 
+                {/* ── Skeleton (igual que UpdateProvider) ── */}
                 {!dataLoaded ? (
-                    <div className="flex items-center justify-center h-full">
-                        <p className="text-gray-500">Cargando datos...</p>
+                    <div className="animate-pulse flex flex-col gap-10 mt-6 px-4 md:px-20">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16">
+                            {[...Array(6)].map((_, i) => (
+                                <div key={i} className="flex flex-col gap-2">
+                                    <div className="h-4 bg-gray-300 rounded w-1/3" />
+                                    <div className="h-12 bg-gray-300 rounded-xl w-full" />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end gap-4 mt-auto">
+                            <div className="h-10 bg-gray-300 rounded-xl w-28" />
+                            <div className="h-10 bg-gray-300 rounded-xl w-36" />
+                        </div>
                     </div>
                 ) : (
-
                     <UserForm
                         formData={formData}
                         errors={errors}

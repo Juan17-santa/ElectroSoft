@@ -68,14 +68,16 @@ export const RolesService = {
 
   async get() {
     const response = await api.get("/roles");
-    return response.data.data.map(r => ({
-      id:            r._id,
-      nombre:        r.name,
-      descripcion:   r.description,
-      estado:        r.isActive,
-      fechaCreacion: new Date(r.createdAt).toLocaleDateString("es-CO"),
-      permisos:      r.permissions, // array plano: ["ventas:ver", "ventas:crear"]
-    }));
+    return response.data.data
+      .map(r => ({
+        id:            r._id,
+        nombre:        r.name,
+        descripcion:   r.description,
+        estado:        r.isActive,
+        fechaCreacion: new Date(r.createdAt).toLocaleDateString("es-CO"),
+        permisos:      r.permissions,
+      }))
+      .reverse(); // ← más reciente primero
   },
 
   async getById(id) {
@@ -95,7 +97,7 @@ export const RolesService = {
     const response = await api.post("/roles", {
       name:        nombre,
       description: descripcion,
-      permissions: permisos, // ya viene en formato correcto ["ventas:ver"]
+      permissions: permisos,
     });
     return response.data.data;
   },

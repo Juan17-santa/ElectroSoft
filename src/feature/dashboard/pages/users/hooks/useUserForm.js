@@ -18,7 +18,6 @@ export function useUserForm({ userToEdit, navigate }) {
     const [alert, setAlert] = useState(null);
     const [loading, setLoading] = useState(false);
 
-    // CARGAR USUARIO A EDITAR
     useEffect(() => {
         if (userToEdit) {
             setFormData({
@@ -34,7 +33,6 @@ export function useUserForm({ userToEdit, navigate }) {
         }
     }, [userToEdit]);
 
-    // VALIDACIONES
     const validateField = (name, value) => {
         let error = "";
         switch (name) {
@@ -70,8 +68,18 @@ export function useUserForm({ userToEdit, navigate }) {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+
+        // ── FIX 3: bloquear caracteres inválidos antes de setear el estado ──
+        let sanitized = value;
+        if (name === "documento" || name === "telefono") {
+            sanitized = value.replace(/\D/g, ""); // elimina todo lo que no sea dígito
+        }
+        if (name === "nombre") {
+            sanitized = value.replace(/[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]/g, ""); // solo letras y espacios
+        }
+
+        setFormData(prev => ({ ...prev, [name]: sanitized }));
+        setErrors(prev => ({ ...prev, [name]: validateField(name, sanitized) }));
     };
 
     const validateForm = () => {
@@ -85,7 +93,6 @@ export function useUserForm({ userToEdit, navigate }) {
         return Object.keys(newErrors).length === 0;
     };
 
-    // CREAR
     const createUser = async () => {
         try {
             setLoading(true);
@@ -101,7 +108,6 @@ export function useUserForm({ userToEdit, navigate }) {
         }
     };
 
-    // ACTUALIZAR
     const updateUser = async () => {
         try {
             setLoading(true);

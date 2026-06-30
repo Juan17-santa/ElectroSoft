@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAuthUser, logout } from "../../auth/services/authService";
 import Alert from "./ui/alert";
+import ConfirmModal from "./ui/ConfirmModal";
 import { Menu } from "lucide-react";
 
 export const Navbar = ({ setIsOpen }) => {
     const [open, setOpen] = useState(false);
     const [user, setUser] = useState(null);
     const [alert, setAlert] = useState(null);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const navigate = useNavigate();
 
     // Carga inicial
@@ -34,11 +36,25 @@ export const Navbar = ({ setIsOpen }) => {
 
     const handleLogout = () => {
         setOpen(false);
-        setAlert({ type: "success", message: "Has cerrado sesión correctamente." });
+        setShowLogoutModal(true);
+    };
+
+
+    const confirmLogout = () => {
+
+        setShowLogoutModal(false);
+        setOpen(false);
+
+        setAlert({
+            type: "success",
+            message: "Has cerrado sesión correctamente."
+        });
+
         setTimeout(() => {
             logout();
             navigate("/");
-        }, 2000);
+        }, 1500);
+
     };
 
     return (
@@ -49,6 +65,19 @@ export const Navbar = ({ setIsOpen }) => {
                     message={alert.message}
                     onClose={() => setAlert(null)}
                 />
+            )}
+
+            {showLogoutModal && (
+                <ConfirmModal
+                    type="warning"
+                    title="Cerrar sesión"
+                    message="¿Estás seguro de que deseas cerrar sesión?"
+                    labelConfirmar="Cerrar sesión"
+                    labelCancelar="Cancelar"
+                    onConfirm={confirmLogout}
+                    onCancel={() => setShowLogoutModal(false)}
+                />
+
             )}
 
             <header className="bg-white border-b-2 border-yellow-300 shadow-[0_2px_6px_rgba(234,179,8,0.15)]">

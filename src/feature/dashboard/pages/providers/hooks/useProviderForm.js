@@ -95,10 +95,21 @@ export function useProviderForm({
     // FUNCIÓN PARA MANEJAR CAMBIOS EN LOS INPUTS
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
 
-        let error = validateField(name, value);
-        setErrors(prev => ({ ...prev, [name]: error }));
+        let newValue = value;
+
+        if (name === "document") {
+            newValue = value.replace(/\D/g, "").slice(0, 12);
+        }
+
+        if (name === "contactPhone") {
+            newValue = value.replace(/\D/g, "").slice(0, 14);
+        }
+
+        setFormData(prev => ({ ...prev, [name]: newValue }));
+
+        const error = validateField(name, newValue);
+        setErrors(prev => ({ ...prev,[name]: error}));
     };
 
     // FUNCIÓN PARA VALIDAR TODO EL FORMULARIO

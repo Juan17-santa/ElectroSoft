@@ -12,11 +12,10 @@ import { usePermissions } from "../../../../../hooks/usePermissions";
 
 export default function Users() {
     const { hasPermission } = usePermissions();
-
     const navigate = useNavigate();
 
-    // ESTADOS
     const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert] = useState(null);
@@ -24,19 +23,13 @@ export default function Users() {
     const [currentPage, setCurrentPage] = useState(1);
     const recordsPerPage = 6;
 
-    // ALERTA
-    const showAlert = (type, message) => {
-        setAlert({ type, message });
-    };
+    const showAlert = (type, message) => setAlert({ type, message });
 
-    // CARGAR USUARIOS
-    useEffect(() => {
-        getUsers();
-    }, []);
-
+    useEffect(() => { getUsers(); }, []);
 
     const getUsers = async () => {
         try {
+            setLoading(true);
             const response = await usersService.get();
             const mapped = response.map(u => ({
                 id: u._id,
@@ -53,57 +46,46 @@ export default function Users() {
             setUsers(mapped);
         } catch (error) {
             console.error(error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    // RESETEAR PÁGINA AL BUSCAR
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [search]);
-
-    // FILTRO
-    const tipoDocLabel = {
-        CC: "c.c",
-        CE: "c.e",
-        NIT: "nit",
-        Pasaporte: "pasaporte",
-    };
+    useEffect(() => { setCurrentPage(1); }, [search]);
 
     const filteredUsers = users.filter(user => {
         const query = search.toLowerCase().trim();
         if (!query) return true;
 
+        // ── FIX 1: comparar estado con palabra exacta para evitar que
+        //    "activo" también traiga "inactivo" ──────────────────────
+        const estadoTexto = user.estado ? "activo" : "inactivo";
+        const estadoMatch = estadoTexto === query;
+
         return (
             user.nombre?.toLowerCase().includes(query) ||
             user.email?.toLowerCase().includes(query) ||
-            user.rol?.toLowerCase().includes(query) ||
+            user.rolLabel?.toLowerCase().includes(query) ||
             user.documento?.toString().includes(query) ||
             user.telefono?.toString().includes(query) ||
-            (tipoDocLabel[user.tipoDoc] || user.tipoDoc?.toLowerCase() || "").includes(query) ||
-            (user.estado ? "activo" : "inactivo").includes(query)
+            user.tipoDocLabel?.toLowerCase().includes(query) ||
+            estadoMatch
         );
     });
 
-    // PAGINACIÓN
     const totalPages = Math.ceil(filteredUsers.length / recordsPerPage);
     const lastIndex = currentPage * recordsPerPage;
     const firstIndex = lastIndex - recordsPerPage;
     const currentRecords = filteredUsers.slice(firstIndex, lastIndex);
 
-    // NAVEGACIÓN
     const handleEditNavigation = (user) => {
-        navigate(`/dashboard/users/${user.id}/update`, {
-            state: { user },
-        });
+        navigate(`/dashboard/users/${user.id}/update`, { state: { user } });
     };
 
     const handleDetailsNavigation = (user) => {
-        navigate(`/dashboard/users/${user.id}`, {
-            state: { user },
-        });
+        navigate(`/dashboard/users/${user.id}`, { state: { user } });
     };
 
-    // HOOK
     const { deleteUser, toggleEstado } = useUsersTable({
         setUsers,
         setConfirmData,
@@ -113,7 +95,6 @@ export default function Users() {
     return (
         <>
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
-
                 <p className="text-xl font-semibold">Control de usuarios</p>
 
                 <SearchBar
@@ -127,6 +108,8 @@ export default function Users() {
 
                 <UsersTable
                     data={currentRecords}
+                    loading={loading}
+                    startIndex={firstIndex}
                     onDetails={handleDetailsNavigation}
                     onEdit={handleEditNavigation}
                     onDelete={deleteUser}
@@ -142,7 +125,6 @@ export default function Users() {
                 </div>
             </div>
 
-            {/* MODAL */}
             {confirmData && (
                 <ConfirmModal
                     type={confirmData.type}
@@ -153,13 +135,8 @@ export default function Users() {
                 />
             )}
 
-            {/* ALERTA */}
             {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
+                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );

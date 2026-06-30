@@ -15,7 +15,8 @@ export default function UserForm({
 }) {
 
     const inputClasses = (field) =>
-        `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${errors[field] ? "focus:ring-red-500" : "focus:ring-yellow-400"
+        `bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 w-full ${
+            errors[field] ? "focus:ring-red-500" : "focus:ring-yellow-400"
         }`;
 
     return (
@@ -33,10 +34,9 @@ export default function UserForm({
                             handleChange({ target: { name: "tipoDoc", value } })
                         }
                         options={documentTypes.map(d => ({
-                            value: d._id.toString(), // ← agregar toString()
-                            label: d.abbreviation,
+                            value: d._id.toString(),
+                            label: `${d.nombre} (${d.abbreviation})`, // ← igual que ProviderForm
                         }))}
-
                         placeholder="Seleccione un tipo"
                         width="w-full"
                     />
@@ -141,7 +141,7 @@ export default function UserForm({
                             handleChange({ target: { name: "rol", value } })
                         }
                         options={roles.map(r => ({
-                            value: r._id.toString(), // ← agregar toString()
+                            value: r._id.toString(),
                             label: r.nombre,
                         }))}
                         placeholder="Seleccione un rol"

@@ -109,13 +109,28 @@ export default function ProvidersTable({
                                                 {/* BOTON ELIMINAR */}
                                                 <Restricted scope="Proveedores" action="Eliminar">
                                                     <button
-                                                        className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                        onClick={() => onDelete(provider._id)}
+                                                        disabled={!provider.canDelete}
+                                                        title={provider.deleteReason || "Eliminar proveedor"}
+                                                        className={`p-2 rounded-lg transition
+                                                            ${provider.canDelete
+                                                                ? "bg-red-100 hover:bg-red-200 cursor-pointer"
+                                                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                            }`}
+                                                        onClick={() => {
+                                                            if (!provider.canDelete) return;
+                                                            onDelete(provider._id);
+                                                        }}
                                                     >
-                                                        <Trash size={18} className="text-red-600" />
+                                                        <Trash
+                                                            size={18}
+                                                            className={
+                                                                provider.canDelete
+                                                                    ? "text-red-600"
+                                                                    : "text-gray-400"
+                                                            }
+                                                        />
                                                     </button>
                                                 </Restricted>
-
                                             </div>
                                         </td>
                                     </tr>

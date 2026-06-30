@@ -14,6 +14,7 @@ export default function ConfirmModal({
     showFormatSelector = false,
 }) {
 
+    const [isLoading, setIsLoading] = useState(false);
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const fmt = (d) => d.toISOString().split("T")[0];
@@ -34,19 +35,25 @@ export default function ConfirmModal({
 
     const [format, setFormat] = useState("pdf");
 
-    const handleConfirm = () => {
-        if (type === "info") {
-            const data = {};
-            if (showDateFilter) {
-                data.fechaInicio = fechaInicio;
-                data.fechaFin = fechaFin;
+    const handleConfirm = async () => {
+        try {
+            setIsLoading(true);
+
+            if (type === "info") {
+                const data = {};
+                if (showDateFilter) {
+                    data.fechaInicio = fechaInicio;
+                    data.fechaFin = fechaFin;
+                }
+                if (showFormatSelector) {
+                    data.format = format;
+                }
+                await onConfirm?.(data);
+            } else {
+                await onConfirm?.();
             }
-            if (showFormatSelector) {
-                data.format = format;
-            }
-            onConfirm?.(data);
-        } else {
-            onConfirm?.();
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -159,12 +166,20 @@ export default function ConfirmModal({
                     <button
                         type="button"
                         onClick={handleConfirm}
-                        className={`px-4 py-2 rounded-lg text-white font-medium shadow-sm transition cursor-pointer ${current.button}`}
+                        disabled={isLoading}
+                        className={`flex items-center gap-2
+                            px-4 py-2 rounded-lg text-white font-medium shadow-sm transition
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                            ${current.button}
+                        `}
                     >
-                        {labelConfirmar}
+                        {isLoading && (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        )}
+
+                        {isLoading ? "Procesando..." : labelConfirmar}
                     </button>
                 </div>
-
             </div>
         </div>
     );
