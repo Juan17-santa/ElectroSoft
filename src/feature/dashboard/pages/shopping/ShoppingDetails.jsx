@@ -36,8 +36,9 @@ export default function ShoppingDetails() {
 
     if (loading && !compra) {
         return (
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner items-center justify-center">
-                <p className="text-gray-500 text-sm">Cargando compra...</p>
+            <div className="flex flex-col items-center justify-center gap-3 w-full h-full">
+                <svg className="animate-spin h-6 w-6 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                <p className="text-gray-500 text-sm font-medium">Cargando compra...</p>
             </div>
         );
     }
@@ -91,7 +92,7 @@ export default function ShoppingDetails() {
                         </div>
 
                         {/* CONTENEDOR BLANCO */}
-                        <div className="bg-gray-50 rounded-2xl p-6 shadow-md">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-md">
 
                             {/* ENCABEZADO DE LA COMPRA */}
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 mb-6">
