@@ -20,6 +20,7 @@ export default function DevolutionProductDetails() {
     const { id }   = useParams();
 
     const [form, setForm] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         let active = true;
@@ -30,6 +31,9 @@ export default function DevolutionProductDetails() {
             })
             .catch(() => {
                 if (active) setForm(null);
+            })
+            .finally(() => {
+                if (active) setLoading(false);
             });
 
         return () => {
@@ -37,9 +41,18 @@ export default function DevolutionProductDetails() {
         };
     }, [id]);
 
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-3 w-full h-full">
+                <svg className="animate-spin h-6 w-6 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                <p className="text-gray-500 text-sm font-medium">Cargando devolución...</p>
+            </div>
+        );
+    }
+
     if (form === null) {
         return (
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-4 items-center justify-center shadow-inner min-h-40">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col w-full h-full gap-4 items-center justify-center shadow-inner min-h-40">
                 <p className="text-gray-500 text-sm">No se encontró la devolución solicitada.</p>
                 <button
                     onClick={() => navigate("/dashboard/devolutions")}
