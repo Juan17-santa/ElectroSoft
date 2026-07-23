@@ -402,14 +402,7 @@ export default function CreateShopping() {
                             <span>Productos</span>
                         </div>
 
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={() => setShowCreateProductModal(true)}
-                                className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 transition duration-300 px-4 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
-                            >
-                                <Plus size={16} />
-                                Crear producto
-                            </button>
+                        <div className="flex justify-end">
                             <button
                                 onClick={() => setShowModal(true)}
                                 className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-4 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
