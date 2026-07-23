@@ -6,6 +6,7 @@ import {
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import { ServicesShopping } from "../services/ServicesShopping";
+import { toTitleCase } from "../helpers/shoppingHelpers";
 
 // ─── Indicador de validación ───────────────────────────────────────────────────
 function FieldStatus({ estado }) {
@@ -184,8 +185,8 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
             const nuevoProveedor = await ServicesShopping.createProvider({
                 tipoDoc,
                 documento: documento.trim(),
-                nombreProveedor: nombreProveedor.trim(),
-                nombreContacto: nombreContacto.trim(),
+                nombreProveedor: toTitleCase(nombreProveedor.trim()),
+                nombreContacto: toTitleCase(nombreContacto.trim()),
                 telefonoContacto: telefonoContacto.trim(),
                 categoriasAsociadas,
             });
@@ -377,7 +378,7 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="bg-white border-2 border-gray-300 hover:bg-gray-50 px-5 py-2 rounded-lg text-sm font-medium transition cursor-pointer"
+                        className="bg-gray-200 hover:bg-gray-300 px-5 py-2 rounded-lg text-sm font-medium transition cursor-pointer"
                     >
                         Cancelar
                     </button>

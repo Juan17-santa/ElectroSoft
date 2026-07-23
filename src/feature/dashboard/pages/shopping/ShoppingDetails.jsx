@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { formatCOP } from "../shopping/helpers/shoppingHelpers";
 import { ServicesShopping } from "../shopping/services/ServicesShopping";
 import Pagination from "../../components/ui/Pagination";
+import { ArrowLeft } from "lucide-react";
 
 const ITEMS_PER_PAGE = 8;
 
@@ -67,7 +68,7 @@ export default function ShoppingDetails() {
 
     return (
         <>
-            <div className="bg-gray-100 rounded-2xl p-4 sm:p-6 shadow-md">
+            <div className="bg-gray-100 rounded-2xl p-4 sm:p-6 shadow-md h-full">
 
                 {/* CONTENEDOR PRINCIPAL */}
                 <div
@@ -84,11 +85,24 @@ export default function ShoppingDetails() {
                     <div className="relative z-10 flex flex-col gap-6">
 
                         {/* TÍTULO */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
                             <Info size={22} className="text-gray-800" />
                             <h2 className="text-xl font-semibold text-gray-800">
                                 Ver Información de Compra
                             </h2>
+                            </div>
+
+                            {/* BOTÓN VOLVER */}
+                            <div>
+                                <button
+                                    onClick={() => navigate("/dashboard/shopping")}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
+                                >
+                                    <ArrowLeft size={16} />
+                                    Volver
+                                </button>
+                            </div>
                         </div>
 
                         {/* CONTENEDOR BLANCO */}
@@ -201,17 +215,6 @@ export default function ShoppingDetails() {
                         </div>
                     </div>
                 </div>
-
-                {/* BOTÓN VOLVER */}
-                <div className="flex justify-end mt-4">
-                    <button
-                        onClick={() => navigate("/dashboard/shopping")}
-                        className="bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
-                    >
-                        Volver
-                    </button>
-                </div>
-
             </div>
         </>
     );

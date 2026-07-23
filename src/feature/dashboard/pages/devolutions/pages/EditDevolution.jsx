@@ -3,13 +3,14 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import DevolutionForm from "../components/DevolutionForm";
-import ConfirmModal   from "../../../components/ui/ConfirmModal";
-import Alert          from "../../../components/ui/Alert";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import Alert from "../../../components/ui/Alert";
 import {
     SUBMOTIVOS,
     getGestionesPermitidas,
     getResponsableAuto,
 } from "../helpers/devolutionsHelpers";
+import { ArrowLeft } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
@@ -175,14 +176,14 @@ export default function EditDevolution() {
     const { id } = useParams();
     const { editarDevolucion } = useDevolutions();
 
-    const [form, setForm]                   = useState(null);
-    const [loading, setLoading]             = useState(true);
-    const [tocados, setTocados]             = useState(EMPTY_TOCADOS);
+    const [form, setForm] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [tocados, setTocados] = useState(EMPTY_TOCADOS);
     const [productosList, setProductosList] = useState([]);
-    const [ventasList, setVentasList]       = useState([]);
+    const [ventasList, setVentasList] = useState([]);
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
-    const [confirmData, setConfirmData]     = useState(null);
-    const [alert, setAlert]                 = useState(null);
+    const [confirmData, setConfirmData] = useState(null);
+    const [alert, setAlert] = useState(null);
 
     useEffect(() => {
         let active = true;
@@ -228,8 +229,8 @@ export default function EditDevolution() {
 
             // ── Reglas cuando cambia el MOTIVO ──
             if (field === "motivo") {
-                next.submotivo        = "";
-                next.gestion          = "";
+                next.submotivo = "";
+                next.gestion = "";
                 next.condicionProducto = "";
                 next.garantiaProveedor = null;
 
@@ -271,18 +272,18 @@ export default function EditDevolution() {
     const estadoCampo = (campo) => {
         if (!form || !tocados[campo]) return null;
         switch (campo) {
-            case "idVenta":           return validarIdVenta(form.idVenta);
-            case "motivo":            return validarMotivo(form.motivo);
-            case "submotivo":         return validarSubmotivo(form.submotivo, form.motivo);
-            case "producto":          return validarProducto(form.producto, form.idVenta);
-            case "cantidad":          return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id, devolucionesVenta);
+            case "idVenta": return validarIdVenta(form.idVenta);
+            case "motivo": return validarMotivo(form.motivo);
+            case "submotivo": return validarSubmotivo(form.submotivo, form.motivo);
+            case "producto": return validarProducto(form.producto, form.idVenta);
+            case "cantidad": return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id, devolucionesVenta);
             case "condicionProducto": return validarCondicion(form.condicionProducto, form.motivo);
-            case "gestion":           return validarGestion(form.gestion, form.motivo, form.submotivo);
-            case "responsable":       return validarResponsable(form.responsable, form.motivo, form.garantiaProveedor);
+            case "gestion": return validarGestion(form.gestion, form.motivo, form.submotivo);
+            case "responsable": return validarResponsable(form.responsable, form.motivo, form.garantiaProveedor);
             case "garantiaProveedor": return validarGarantia(form.garantiaProveedor, form.motivo);
-            case "descripcion":       return validarDescripcion(form.descripcion);
-            case "observaciones":     return validarObservaciones(form.observaciones);
-            default:                  return null;
+            case "descripcion": return validarDescripcion(form.descripcion);
+            case "observaciones": return validarObservaciones(form.observaciones);
+            default: return null;
         }
     };
 
@@ -317,17 +318,17 @@ export default function EditDevolution() {
             onConfirm: async () => {
                 try {
                     await editarDevolucion(form);
-                setConfirmData(null);
-                setAlert({ type: "success", message: "Devolución actualizada correctamente." });
-                const idVenta = location.state?.idVenta ?? form.idVenta;
-                const mode    = location.state?.mode    ?? "from-sales";
-                setTimeout(() => {
-                    if (idVenta) {
-                        navigate("/dashboard/sales-management/return", { state: { idVenta, mode } });
-                    } else {
-                        navigate("/dashboard/devolutions");
-                    }
-                }, 1500);
+                    setConfirmData(null);
+                    setAlert({ type: "success", message: "Devolución actualizada correctamente." });
+                    const idVenta = location.state?.idVenta ?? form.idVenta;
+                    const mode = location.state?.mode ?? "from-sales";
+                    setTimeout(() => {
+                        if (idVenta) {
+                            navigate("/dashboard/sales-management/return", { state: { idVenta, mode } });
+                        } else {
+                            navigate("/dashboard/devolutions");
+                        }
+                    }, 1500);
                 } catch (err) {
                     setConfirmData(null);
                     setAlert({ type: "error", message: err.message });
@@ -338,7 +339,7 @@ export default function EditDevolution() {
 
     const handleCancel = () => {
         const idVenta = location.state?.idVenta ?? form?.idVenta;
-        const mode    = location.state?.mode    ?? "from-sales";
+        const mode = location.state?.mode ?? "from-sales";
         setConfirmData({
             type: "warning",
             title: "¿Cancelar edición?",
@@ -368,8 +369,9 @@ export default function EditDevolution() {
                 <p className="text-gray-500 text-sm">No se encontró la devolución solicitada.</p>
                 <button
                     onClick={() => navigate("/dashboard/devolutions")}
-                    className="bg-linear-to-r from-white to-yellow-300 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
                 >
+                    <ArrowLeft size={16} />
                     Volver
                 </button>
             </div>

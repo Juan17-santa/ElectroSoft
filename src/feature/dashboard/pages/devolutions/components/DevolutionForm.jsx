@@ -13,6 +13,7 @@ import {
     RESPONSABLES, ESTADOS_RESOLUCION,
     getGestionesPermitidas, getCondicionesPermitidas,
 } from "../helpers/devolutionsHelpers";
+import { ArrowLeft } from "lucide-react";
 
 // ─── Definidos FUERA del componente para evitar remontaje y scroll reset ──────
 
@@ -57,6 +58,11 @@ function FieldStatus({ estado }) {
 function ring(estado) {
     if (!estado) return "focus:ring-gray-400";
     return estado.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300";
+}
+
+/** Bloquea caracteres no numéricos (e, -, +, .) en campos tipo number */
+function blockInvalidKeys(e) {
+    if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
 }
 
 function formatFechaDisplay(fechaISO) {
@@ -218,6 +224,7 @@ export default function DevolutionForm({
                         max="9999"
                         value={form.cantidad}
                         onChange={(e) => onChange("cantidad", e.target.value)}
+                        onKeyDown={blockInvalidKeys}
                         onBlur={() => onFieldBlur("cantidad")}
                         readOnly={esReadOnly("cantidad")}
                         placeholder="Ingresa cantidad..."
@@ -301,6 +308,7 @@ export default function DevolutionForm({
                                         step="100"
                                         value={form.montoReembolso || ""}
                                         onChange={(e) => onChange("montoReembolso", e.target.value)}
+                                        onKeyDown={blockInvalidKeys}
                                         onBlur={() => onFieldBlur("montoReembolso")}
                                         readOnly={esReadOnly("montoReembolso")}
                                         placeholder="Monto"
@@ -452,9 +460,9 @@ export default function DevolutionForm({
             <div className="flex justify-end gap-3 mt-auto">
                 <button
                     onClick={onCancel}
-                    className="flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-100 transition px-5 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
                 >
-                    <span>✕</span>
+                    <ArrowLeft size={16}/>
                     {readOnly ? "Volver" : "Cancelar"}
                 </button>
 

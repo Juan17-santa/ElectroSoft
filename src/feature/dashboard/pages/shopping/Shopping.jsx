@@ -133,7 +133,7 @@ export default function Shopping() {
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
-                                    <th className="px-4 py-2 font-semibold">ID</th>
+                                    <th className="px-4 py-2 font-semibold">#</th>
                                     <th className="px-4 py-2 font-semibold">Número de Factura</th>
                                     <th className="px-4 py-2 font-semibold">Fecha de compra</th>
                                     <th className="px-4 py-2 font-semibold">Proveedor</th>

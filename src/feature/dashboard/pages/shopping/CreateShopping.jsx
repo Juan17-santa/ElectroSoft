@@ -375,6 +375,7 @@ export default function CreateShopping() {
                                     setNumeroFactura(valor);
                                     setNumeroFacturaTocado(true);
                                 }}
+                                maxLength="10"
                                 onBlur={() => setNumeroFacturaTocado(true)}
                                 placeholder="Ej: 12345"
                                 className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300
@@ -564,6 +565,7 @@ export default function CreateShopping() {
                 <CreateProductModal
                     onClose={() => setShowCreateProductModal(false)}
                     onSuccess={() => { }}
+                    onAlert={setAlertData}
                 />
             )}
 
