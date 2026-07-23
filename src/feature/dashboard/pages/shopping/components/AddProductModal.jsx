@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { X, Box, Boxes, DollarSign, Plus, AlertCircle, CheckCircle2, TrendingUp, Tag, Info } from "lucide-react";
-import { formatCOP, parseCOP } from "../helpers/shoppingHelpers";
+import { formatCOP, parseCOP, blockInvalidKeys } from "../helpers/shoppingHelpers";
 import CreateProductModal from "./CreateProductModal";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import CustomSelect from "../../../components/ui/CustomSelect";
@@ -101,7 +101,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
     };
 
     const validarProducto      = (v) => !v ? { valido: false, mensaje: "Selecciona un producto." } : { valido: true, mensaje: "" };
-    const validarCantidad      = (v) => { if (!v) return { valido: false, mensaje: "Ingresa la cantidad." }; if (isNaN(parseInt(v)) || parseInt(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; return { valido: true, mensaje: "" }; };
+    const validarCantidad      = (v) => { if (!v) return { valido: false, mensaje: "Ingresa la cantidad." }; if (isNaN(parseInt(v)) || parseInt(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; if (parseInt(v) > 9999) return { valido: false, mensaje: "Máximo 9999." }; return { valido: true, mensaje: "" }; };
     const validarPrecio        = (v) => { if (!v) return { valido: false, mensaje: "El precio es obligatorio." }; if (parseCOP(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; return { valido: true, mensaje: "" }; };
     const validarCosteProducto = (v) => { if (!v) return { valido: false, mensaje: "El coste es obligatorio." }; if (parseCOP(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; return { valido: true, mensaje: "" }; };
     const validarPrecioVenta   = (v) => { if (!v) return { valido: false, mensaje: "El precio de venta es obligatorio." }; if (parseCOP(v) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; if (parseCOP(v) <= parseCOP(modalCosteProducto)) return { valido: false, mensaje: "Debe ser mayor al coste." }; return { valido: true, mensaje: "" }; };
@@ -196,6 +196,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><Boxes size={18} /><span>Cantidad *</span></div>
                             <input type="number" min="1" placeholder="Unidades a comprar" value={modalCantidad}
                                 onChange={(e) => { setModalCantidad(e.target.value); setTocados((t) => ({ ...t, cantidad: true })); }}
+                                onKeyDown={blockInvalidKeys}
                                 onBlur={() => setTocados((t) => ({ ...t, cantidad: true }))}
                                 className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${ring(estadoCantidad)}`} />
                             {productoSeleccionado && (
@@ -223,7 +224,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         {/* COSTE COMPRA */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={16} /><span>Coste de compra *</span></div>
-                            <input type="text" min="1" placeholder="precio proveedor"
+                            <input type="text" min="1" placeholder="precio proveedor" maxLength="15"
                                 value={focusedField === "costeProducto" ? modalCosteProducto : (modalCosteProducto ? formatCOP(parseCOP(modalCosteProducto)) : "")}
                                 onFocus={() => setFocusedField("costeProducto")}
                                 onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); setModalCosteProducto(raw); setTocados((t) => ({ ...t, costeProducto: true })); }}
@@ -235,7 +236,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                         {/* PRECIO VENTA */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2 text-sm font-medium"><DollarSign size={16} className="text-blue-400" /><span className="text-blue-400">Precio de venta *</span></div>
-                            <input type="text" min="0" placeholder="Mayor al coste"
+                            <input type="text" min="0" placeholder="Mayor al coste" maxLength="15"
                                 value={focusedField === "precioVenta" ? modalPrecioVenta : (modalPrecioVenta ? formatCOP(parseCOP(modalPrecioVenta)) : "")}
                                 onFocus={() => setFocusedField("precioVenta")}
                                 onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); setModalPrecioVenta(raw); setTocados((t) => ({ ...t, precioVenta: true })); }}

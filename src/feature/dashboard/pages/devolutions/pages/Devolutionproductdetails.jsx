@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import DevolutionForm from "../components/DevolutionForm";
+import { ArrowLeft } from "lucide-react";
 
 /**
  * DevolutionProductDetails
@@ -17,7 +18,7 @@ import DevolutionForm from "../components/DevolutionForm";
 export default function DevolutionProductDetails() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { id }   = useParams();
+    const { id } = useParams();
 
     const [form, setForm] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -56,8 +57,9 @@ export default function DevolutionProductDetails() {
                 <p className="text-gray-500 text-sm">No se encontró la devolución solicitada.</p>
                 <button
                     onClick={() => navigate("/dashboard/devolutions")}
-                    className="bg-linear-to-r from-white to-yellow-300 px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
                 >
+                    <ArrowLeft size={16} />
                     Volver
                 </button>
             </div>
@@ -66,7 +68,7 @@ export default function DevolutionProductDetails() {
 
     const handleVolver = () => {
         const idVenta = location.state?.idVenta ?? form.idVenta;
-        const mode    = location.state?.mode    ?? "from-sales";
+        const mode = location.state?.mode ?? "from-sales";
         navigate("/dashboard/sales-management/return", {
             state: { idVenta, mode },
         });
@@ -75,8 +77,8 @@ export default function DevolutionProductDetails() {
     return (
         <DevolutionForm
             form={form}
-            onChange={() => {}}
-            onSubmit={() => {}}
+            onChange={() => { }}
+            onSubmit={() => { }}
             onCancel={handleVolver}
             readOnly={true}
             title="Detalle de devolución de producto"
