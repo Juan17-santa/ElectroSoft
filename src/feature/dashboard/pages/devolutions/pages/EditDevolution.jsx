@@ -33,10 +33,10 @@ function normalizeSale(sale) {
             [sale.clienteId?.firstName, sale.clienteId?.lastName].filter(Boolean).join(" "),
         productos: (sale.productos || []).map((producto) => ({
             ...producto,
-            id: producto.id || producto.productoId || producto.producto?._id,
-            productoId: producto.productoId || producto.id || producto.producto?._id,
-            nombre: producto.nombre || producto.producto?.name || producto.name,
-            precio: producto.precio || producto.precioUnitario || producto.producto?.price || 0,
+            id: producto.id || producto.productoId?._id || producto.productoId || producto.producto?._id,
+            productoId: producto.productoId?._id || producto.productoId || producto.id || producto.producto?._id,
+            nombre: producto.nombre || producto.productoId?.name || producto.producto?.name || producto.name,
+            precio: producto.precio || producto.precioUnitario || producto.productoId?.price || producto.producto?.price || 0,
         })),
     };
 }
