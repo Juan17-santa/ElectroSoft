@@ -5,7 +5,7 @@ import {
     Plus, Trash, Tag, ChevronDown
 } from "lucide-react";
 import CustomSelect from "../../../components/ui/CustomSelect";
-import { parseCOP } from "../helpers/shoppingHelpers";
+import { parseCOP, toTitleCase, blockInvalidKeys } from "../helpers/shoppingHelpers";
 import { ServicesCharacteristics } from "../../products/services/ServicesCharacteristics";
 import CategorySelect from "../../../components/ui/CategorySelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
@@ -29,7 +29,7 @@ function FieldStatus({ estado }) {
     );
 }
 
-export default function CreateProductModal({ onClose, onSuccess }) {
+export default function CreateProductModal({ onClose, onSuccess, onAlert }) {
 
     // ─── Campos principales ────────────────────────────────────────────────────
     const [categoriasList,    setCategoriasList]    = useState([]);
@@ -109,8 +109,8 @@ export default function CreateProductModal({ onClose, onSuccess }) {
         return { valido: true, mensaje: "" };
     };
     const validarCategoria = (val) => !val ? { valido: false, mensaje: "Selecciona una categoría." } : { valido: true, mensaje: "" };
-    const validarPrecio    = (val) => { if (!val) return { valido: false, mensaje: "El precio es obligatorio." }; if (parseCOP(val) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; return { valido: true, mensaje: "" }; };
-    const validarStock     = (val) => { if (val === "" || val === null || val === undefined) return { valido: false, mensaje: "El stock es obligatorio." }; if (parseInt(val) < 0) return { valido: false, mensaje: "No puede ser negativo." }; if (!Number.isInteger(Number(val))) return { valido: false, mensaje: "Debe ser un número entero." }; return { valido: true, mensaje: "" }; };
+    const validarPrecio    = (val) => { if (!val) return { valido: false, mensaje: "El precio es obligatorio." }; if (parseCOP(val) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; if (String(val).length > 15) return { valido: false, mensaje: "Máximo 15 dígitos." }; return { valido: true, mensaje: "" }; };
+    const validarStock     = (val) => { if (val === "" || val === null || val === undefined) return { valido: false, mensaje: "El stock es obligatorio." }; if (parseInt(val) < 0) return { valido: false, mensaje: "No puede ser negativo." }; if (!Number.isInteger(Number(val))) return { valido: false, mensaje: "Debe ser un número entero." }; if (parseInt(val) > 9999) return { valido: false, mensaje: "Máximo 9999." }; return { valido: true, mensaje: "" }; };
     const validarSerial    = (val) => { if (!val || val.trim() === "") return { valido: false, mensaje: "El serial es obligatorio." }; if (val.trim().length < 2) return { valido: false, mensaje: "Mínimo 2 caracteres." }; if (val.trim().length > 50) return { valido: false, mensaje: "Máximo 50 caracteres." }; if (!/^[a-zA-Z0-9_-]+$/.test(val.trim())) return { valido: false, mensaje: "Solo letras, números, guiones y guiones bajos." }; return { valido: true, mensaje: "" }; };
     const validarGarantia  = (val) => { if (!val) return { valido: false, mensaje: "Selecciona una garantía." }; if (!["3 meses", "6 meses", "12 meses"].includes(val)) return { valido: false, mensaje: "Garantía no válida." }; return { valido: true, mensaje: "" }; };
     const validarTipoStock  = (val) => { if (!val) return { valido: false, mensaje: "Selecciona tipo de stock." }; if (!["unidad", "metros"].includes(val)) return { valido: false, mensaje: "Tipo de stock no válido." }; return { valido: true, mensaje: "" }; };
@@ -194,7 +194,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
         setApiError("");
         try {
             const nuevoProducto = await ServicesShopping.createProduct({
-                nombre: nombre.trim(),
+                nombre: toTitleCase(nombre.trim()),
                 categoriaId,
                 precio: parseCOP(precio),
                 stock: parseInt(stock),
@@ -204,6 +204,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                 caracteristicas,
             });
             if (onSuccess) onSuccess(nuevoProducto);
+            if (onAlert) onAlert({ type: "success", message: "Producto creado exitosamente." });
             onClose();
         } catch (err) {
             setApiError(err.message || "No se pudo crear el producto.");
@@ -265,6 +266,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={18} /><span>Precio *</span></div>
                             <input type="number" min="1" placeholder="Ej: 100000" value={precio}
                                 onChange={(e) => { setPrecio(e.target.value); tocar("precio"); }}
+                                onKeyDown={blockInvalidKeys}
                                 onBlur={() => tocar("precio")}
                                 className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${estadoPrecio === null ? "focus:ring-gray-400" : estadoPrecio.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300"}`} />
                             <FieldStatus estado={estadoPrecio} />
@@ -275,6 +277,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><Box size={18} /><span>Stock *</span></div>
                             <input type="number" min="0" placeholder="Ej: 10" value={stock}
                                 onChange={(e) => { setStock(e.target.value); tocar("stock"); }}
+                                onKeyDown={blockInvalidKeys}
                                 onBlur={() => tocar("stock")}
                                 className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${estadoStock === null ? "focus:ring-gray-400" : estadoStock.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300"}`} />
                             <FieldStatus estado={estadoStock} />
