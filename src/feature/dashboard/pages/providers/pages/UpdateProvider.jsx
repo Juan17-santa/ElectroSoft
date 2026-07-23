@@ -8,14 +8,14 @@ import { ServicesProviders } from "../services/ServicesProviders";
 
 export default function UpdateProvider() {
     // CAPTURA DE PARÁMETROS Y NAVEGACIÓN
-    const { id } = useParams(); 
-    const navigate = useNavigate(); 
+    const { id } = useParams();
+    const navigate = useNavigate();
 
     // ESTADOS LOCALES PARA LA DATA DE LOS SELECTS Y CONTROL
-    const [alert, setAlert] = useState(null); 
-    const [documentTypes, setDocumentTypes] = useState([]); 
-    const [categoriasActivas, setCategoriasActivas] = useState([]); 
-    const [loading, setLoading] = useState(true); 
+    const [alert, setAlert] = useState(null);
+    const [documentTypes, setDocumentTypes] = useState([]);
+    const [categoriasActivas, setCategoriasActivas] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     // INSTANCIAMOS EL HOOK DIRECTAMENTE AL INICIO
     const {
@@ -24,13 +24,21 @@ export default function UpdateProvider() {
         handleChange,
         handleSubmit,
         setCategoriasAsociadas,
-        setFormData
+        setFormData,
+        isNatural,
+        isJuridica
     } = useProviderForm({
         mode: "update",
         initialData: {},
         onSuccess: () => {
             setAlert({ type: "success", message: "Proveedor actualizado con éxito." });
             setTimeout(() => navigate("/dashboard/providers"), 2000);
+        },
+        onError: (message) => {
+            setAlert({
+                type: "error",
+                message
+            });
         }
     });
 
@@ -38,9 +46,9 @@ export default function UpdateProvider() {
         const loadUpdateData = async () => {
             try {
                 const [docsData, catsData, provider] = await Promise.all([
-                    ServicesProviders.getDocumentTypes(), 
-                    ServicesProviders.getCategories(),     
-                    ServicesProviders.getById(id)          
+                    ServicesProviders.getDocumentTypes(),
+                    ServicesProviders.getCategories(),
+                    ServicesProviders.getById(id)
                 ]);
 
                 setDocumentTypes(docsData);
@@ -49,11 +57,14 @@ export default function UpdateProvider() {
                 if (provider && setFormData) {
                     setFormData({
                         _id: provider._id,
+                        providerType: provider.providerType || "NATURAL",
                         documentType: provider.documentType?._id || provider.documentType || "",
                         document: provider.document || "",
                         providerName: provider.providerName || "",
                         contactName: provider.contactName || "",
                         contactPhone: provider.contactPhone || "",
+                        email: provider.email || "",
+                        address: provider.address || "",
                         categoriesAssociated: provider.categoriesAssociated?.map(cat => cat._id || cat) || [],
                         status: provider.status
                     });
@@ -116,6 +127,8 @@ export default function UpdateProvider() {
                         handleSubmit={handleSubmit}
                         onCancel={() => navigate("/dashboard/providers")}
                         buttonText="Actualizar proveedor"
+                        isNatural={isNatural}
+                        isJuridica={isJuridica}
                     />
                 )}
             </div>

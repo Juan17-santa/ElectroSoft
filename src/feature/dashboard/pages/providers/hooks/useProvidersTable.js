@@ -104,6 +104,10 @@ export default function useProvidersTable({
             return String(catName).toLowerCase().includes(query);
         }) || false;
 
+        const providerType = pro.providerType?.toLowerCase() || "";
+        const email = pro.email?.toLowerCase() || "";
+        const address = pro.address?.toLowerCase() || "";
+
         let matchesStatus = false;
         if (query === "activo") {
             matchesStatus = pro.status === true;
@@ -119,6 +123,9 @@ export default function useProvidersTable({
             docTypeAbbreviation.includes(query) ||
             docTypeName.includes(query) ||
             pro.contactName?.toLowerCase().includes(query) ||
+            providerType.includes(query) ||
+            email.includes(query) ||
+            address.includes(query) ||
             phone.includes(query) ||
             matchesCategory ||
             matchesStatus
