@@ -43,6 +43,8 @@ export function useOrdersForm({ onSuccess }) {
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
+    // DOCUMENTO CON RETARDO PARA EVITAR PETICIONES EN CADA TECLA
+    const [documentoBusqueda, setDocumentoBusqueda] = useState("");
 
     // OPCIONES DE PAGO DISPONIBLES
     const paymentOptions = [
@@ -69,10 +71,19 @@ export function useOrdersForm({ onSuccess }) {
         }
     }, [formData.productos, totalPages]);
 
+    // ESPERA 500ms DESPUÉS DE QUE EL USUARIO DEJA DE ESCRIBIR
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDocumentoBusqueda(formData.documento);
+        }, 600);
+
+        return () => clearTimeout(timer);
+    }, [formData.documento]);
+
     // BUSCAR CLIENTE POR MEDIO DEL DOCUMENTO
     useEffect(() => {
         const buscarCliente = async () => {
-            if (!formData.documento) {
+            if (!documentoBusqueda) {
                 setFormData(prev => ({
                     ...prev,
                     clienteId: null,
@@ -85,8 +96,12 @@ export function useOrdersForm({ onSuccess }) {
                 return;
             }
 
+            if (documentoBusqueda.length < 8) {
+                return;
+            }
+
             try {
-                const clienteEncontrado = await ClientsService.getByDocument(formData.documento);
+                const clienteEncontrado = await ClientsService.getByDocument(documentoBusqueda);
 
                 if (clienteEncontrado?.estado) {
                     setFormData(prev => ({
@@ -126,7 +141,7 @@ export function useOrdersForm({ onSuccess }) {
             }
         };
         buscarCliente();
-    }, [formData.documento]);
+    }, [documentoBusqueda]);
 
     // CARGAR SÓLO PRODUCTOS ACTIVOS Y CON STOCK AL INICIAR
     useEffect(() => {
@@ -209,21 +224,26 @@ export function useOrdersForm({ onSuccess }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // SI LA FECHA PEDIDO SE CAMBIA, LA FECHA DE VENCIMIENTO SE ACTUALIZA AUTOMATICAMENTE
+        let newValue = value;
+
+        if (name === "documento") {
+            newValue = value.replace(/\D/g, "").slice(0, 12);
+        }
+
         if (name === "fechaPedido") {
             setFormData(prev => ({
                 ...prev,
-                fechaPedido: value,
-                fechaVencimiento: calculateVencimiento(value)
+                fechaPedido: newValue,
+                fechaVencimiento: calculateVencimiento(newValue)
             }));
         } else {
             setFormData(prev => ({
                 ...prev,
-                [name]: value
+                [name]: newValue
             }));
         }
 
-        const error = validateField(name, value);
+        const error = validateField(name, newValue);
 
         setErrors(prev => ({
             ...prev,
@@ -334,7 +354,7 @@ export function useOrdersForm({ onSuccess }) {
 
         } catch (error) {
             console.error(error);
-            setErrors(prev => ({...prev, submit: error.message || "Error al crear el pedido" }));
+            setErrors(prev => ({ ...prev, submit: error.message || "Error al crear el pedido" }));
         }
     };
 

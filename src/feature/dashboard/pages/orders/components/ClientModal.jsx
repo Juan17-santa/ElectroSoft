@@ -135,6 +135,7 @@ export default function ClientModal({ onClose, onSave }) {
                                     name="nombres"
                                     value={formData.nombres}
                                     onChange={handleChange}
+                                    maxLength={40}
                                     placeholder="Ingrese nombres"
                                     className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
                                     ${errors.nombres ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
@@ -158,6 +159,7 @@ export default function ClientModal({ onClose, onSave }) {
                                     name="apellidos"
                                     value={formData.apellidos}
                                     onChange={handleChange}
+                                    maxLength={40}
                                     placeholder="Ingrese apellidos"
                                     className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
                                     ${errors.apellidos ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
