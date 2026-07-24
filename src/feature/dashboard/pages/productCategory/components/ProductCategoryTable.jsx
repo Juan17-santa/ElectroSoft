@@ -16,7 +16,7 @@ export default function ProductCategoryTable({
                 <table className="min-w-175 w-full text-sm table-fixed">
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
-                            <th className="px-4 py-2 font-semibold w-12">ID</th>
+                            <th className="px-4 py-2 font-semibold w-12">#</th>
                             <th className="px-4 py-2 font-semibold w-56">Nombre</th>
                             <th className="px-4 py-2 font-semibold">Descripción</th>
                             <th className="px-4 py-2 font-semibold w-28 text-center">Estado</th>
