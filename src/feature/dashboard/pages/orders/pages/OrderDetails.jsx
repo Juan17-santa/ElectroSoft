@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Info, X, Package, Calendar as CalendarIcon, User, FileText } from "lucide-react";
+import { Info, X, Package, Calendar as CalendarIcon, User, FileText, ArrowLeft } from "lucide-react";
 import { generatePDFReport } from "../../../../../utils/PDFReportGenerator";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Pagination from "../../../components/ui/Pagination";
@@ -109,9 +109,18 @@ export default function OrderDetails() {
                                 <Info size={22} className="text-gray-700" />
                                 <h2 className="text-base sm:text-xl font-semibold text-gray-800 break-all">Ver información del Pedido #{visualId}</h2>
                             </div>
-                            <button onClick={() => setShowPrintModal(true)} className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 hover:bg-gray-100 text-gray-600 transition shadow-sm cursor-pointer w-fit">
+                            <div className="flex gap-2">
+                                <button onClick={() => setShowPrintModal(true)} className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-xl text-sm font-medium bg-white hover:bg-gray-50 text-gray-600 transition shadow-sm hover:shadow-md cursor-pointer w-fit">
                                 <FileText size={18} className="text-gray-500" /> Imprimir
                             </button>
+                            <button
+                                onClick={handleBack}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm hover:shadow-md transition cursor-pointer"
+                            >
+                                <ArrowLeft size={16} />
+                                Volver
+                            </button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -139,14 +148,14 @@ export default function OrderDetails() {
                                         <div className="col-span-2">
                                             <div
                                                 className={`rounded-xl shadow-sm overflow-hidden ${status === "Pendiente"
-                                                        ? "bg-yellow-100"
-                                                        : "bg-red-100"
+                                                    ? "bg-yellow-100"
+                                                    : "bg-red-100"
                                                     }`}
                                             >
                                                 <div
                                                     className={`px-4 py-2 font-semibold text-center uppercase ${status === "Pendiente"
-                                                            ? "bg-yellow-200 text-yellow-800"
-                                                            : "bg-red-200 text-red-800"
+                                                        ? "bg-yellow-200 text-yellow-800"
+                                                        : "bg-red-200 text-red-800"
                                                         }`}
                                                 >
                                                     {status}
@@ -226,10 +235,6 @@ export default function OrderDetails() {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div className="flex justify-end">
-                    <PrimaryButton type="button" onClick={handleBack}><X size={18} className="inline-block mr-2" /> Volver</PrimaryButton>
                 </div>
             </div>
 

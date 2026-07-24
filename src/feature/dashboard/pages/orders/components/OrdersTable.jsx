@@ -27,7 +27,7 @@ export default function OrdersTable({
 
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
-                            <th className="px-4 py-2 w-14 font-semibold">ID</th>
+                            <th className="px-4 py-2 w-14 font-semibold">#</th>
                             <th className="px-4 py-2 w-52 font-semibold">Nombre cliente</th>
                             <th className="px-4 py-2 w-32 font-semibold">Fecha creación</th>
                             <th className="px-4 py-2 w-28 font-semibold">Total</th>

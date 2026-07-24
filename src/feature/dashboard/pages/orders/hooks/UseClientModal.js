@@ -158,10 +158,7 @@ export const useClientModal = (onSave) => {
         try {
             const existingClient = await ClientsService.getByDocument(formData.documento);
             if (existingClient) {
-                setErrors(prev => ({
-                    ...prev,
-                    documento: "Este documento ya está registrado."
-                }));
+                setFormError("Este documento ya está registrado.");
                 return;
             }
         } catch (error) {
@@ -177,17 +174,12 @@ export const useClientModal = (onSave) => {
             setFormError("");
             onSave(clienteCreado);
         } catch (error) {
-            console.error(error);
-            const backendMessage = error.response?.data?.error || error.response?.data?.message || "Error al crear el cliente.";
+            const backendMessage =
+                error.response?.data?.error ||
+                error.response?.data?.message ||
+                "Error al crear el cliente.";
 
-            if (/documento|document/i.test(backendMessage)) {
-                setErrors(prev => ({
-                    ...prev,
-                    documento: backendMessage
-                }));
-            } else {
-                setFormError(backendMessage);
-            }
+            setFormError(backendMessage);
         }
     };
 

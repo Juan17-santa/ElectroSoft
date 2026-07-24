@@ -38,8 +38,11 @@ export default function CreateProvider() {
         handleChange,
         handleSubmit,
         setCategoriasAsociadas,
+        isNatural,
+        isJuridica
     } = useProviderForm({
         mode: "create",
+        documentTypes,
         onSuccess: () => {
             setAlert({
                 type: "success",
@@ -49,7 +52,13 @@ export default function CreateProvider() {
             setTimeout(() => {
                 navigate("/dashboard/providers");
             }, 2000);
-        }
+        },
+        onError: (message) => {
+            setAlert({
+                type: "error",
+                message
+            });
+        },
     });
 
     return (
@@ -81,6 +90,8 @@ export default function CreateProvider() {
                     documentTypes={documentTypes}
                     handleChange={handleChange}
                     setCategoriasAsociadas={setCategoriasAsociadas}
+                    isNatural={isNatural}
+                    isJuridica={isJuridica}
                     handleSubmit={handleSubmit}
                     onCancel={() => navigate("/dashboard/providers")}
                     buttonText="Crear proveedor"

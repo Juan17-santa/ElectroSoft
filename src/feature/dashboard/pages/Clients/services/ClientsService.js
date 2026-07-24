@@ -74,7 +74,6 @@ export const ClientsService = {
             const data = response.data.data || response.data.client || response.data;
             return mapClientToFrontend(data);
         } catch (error) {
-            console.error("Error creating client:", error);
             throw error;
         }
     },
