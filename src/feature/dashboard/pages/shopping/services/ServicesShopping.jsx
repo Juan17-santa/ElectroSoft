@@ -203,15 +203,21 @@ function toShoppingPayload({ numeroFactura, fechaFactura, proveedorId, productos
         invoiceNumber: String(numeroFactura || "").trim(),
         purchaseDate: fechaFactura,
         providerId: proveedorId,
-        products: productos.map((product) => ({
-            productId: product.productoId ?? product.id,
-            quantity: Number(product.cantidad),
-            purchasePrice: Number(product.precioCompra ?? product.costeProducto),
-            // salePrice siempre debe ser el precio original ingresado por el usuario,
-            // ya que el Backend lo usa en la fórmula de costo promedio ponderado (WAC).
-            salePrice: Number(product.precioVentaOriginal ?? product.precioVenta),
-            useSuggestedPrice: product.usarPrecioSugerido === true || product.sobreescribirConSugerido === true,
-        })),
+        products: productos.map((product) => {
+            const entry = {
+                productId: product.productoId ?? product.id,
+                quantity: Number(product.cantidad),
+                purchasePrice: Number(product.precioCompra ?? product.costeProducto),
+                // salePrice siempre debe ser el precio original ingresado por el usuario,
+                // ya que el Backend lo usa en la fórmula de costo promedio ponderado (WAC).
+                salePrice: Number(product.precioVentaOriginal ?? product.precioVenta),
+                useSuggestedPrice: product.usarPrecioSugerido === true || product.sobreescribirConSugerido === true,
+            };
+            if (product.isNew && product.newProduct) {
+                entry.newProduct = product.newProduct;
+            }
+            return entry;
+        }),
     };
 }
 

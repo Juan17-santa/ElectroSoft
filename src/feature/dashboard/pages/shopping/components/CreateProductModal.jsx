@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import {
-    X, Package, Layers, DollarSign, Box, Ruler,
+    X, Package, Layers, Ruler,
     AlertCircle, CheckCircle2, Hash, ShieldCheck,
     Plus, Trash, Tag, ChevronDown
 } from "lucide-react";
 import CustomSelect from "../../../components/ui/CustomSelect";
-import { parseCOP, toTitleCase, blockInvalidKeys } from "../helpers/shoppingHelpers";
+import { toTitleCase } from "../helpers/shoppingHelpers";
 import { ServicesCharacteristics } from "../../products/services/ServicesCharacteristics";
 import CategorySelect from "../../../components/ui/CategorySelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
@@ -29,19 +29,16 @@ function FieldStatus({ estado }) {
     );
 }
 
-export default function CreateProductModal({ onClose, onSuccess, onAlert }) {
+export default function CreateProductModal({ onClose, onSuccess }) {
 
     // ─── Campos principales ────────────────────────────────────────────────────
     const [categoriasList,    setCategoriasList]    = useState([]);
     const [nombre,            setNombre]            = useState("");
     const [categoriaId,       setCategoriaId]       = useState("");
-    const [precio,            setPrecio]            = useState("");
-    const [stock,             setStock]             = useState("");
     const [serial,            setSerial]            = useState("");
     const [garantia,          setGarantia]          = useState("");
     const [tipoStock,         setTipoStock]         = useState("unidad");
     const [nombresExistentes, setNombresExistentes] = useState([]);
-    const [saving,            setSaving]            = useState(false);
     const [apiError,          setApiError]          = useState("");
 
     // ─── Características ───────────────────────────────────────────────────────
@@ -54,8 +51,8 @@ export default function CreateProductModal({ onClose, onSuccess, onAlert }) {
 
     // ─── Tocados ──────────────────────────────────────────────────────────────
     const [tocados, setTocados] = useState({
-        nombre: false, categoriaId: false, precio: false,
-        stock: false, serial: false, garantia: false, tipoStock: false,
+        nombre: false, categoriaId: false,
+        serial: false, garantia: false, tipoStock: false,
     });
 
     // ─── Carga inicial ─────────────────────────────────────────────────────────
@@ -109,16 +106,12 @@ export default function CreateProductModal({ onClose, onSuccess, onAlert }) {
         return { valido: true, mensaje: "" };
     };
     const validarCategoria = (val) => !val ? { valido: false, mensaje: "Selecciona una categoría." } : { valido: true, mensaje: "" };
-    const validarPrecio    = (val) => { if (!val) return { valido: false, mensaje: "El precio es obligatorio." }; if (parseCOP(val) <= 0) return { valido: false, mensaje: "Debe ser mayor a 0." }; if (String(val).length > 15) return { valido: false, mensaje: "Máximo 15 dígitos." }; return { valido: true, mensaje: "" }; };
-    const validarStock     = (val) => { if (val === "" || val === null || val === undefined) return { valido: false, mensaje: "El stock es obligatorio." }; if (parseInt(val) < 0) return { valido: false, mensaje: "No puede ser negativo." }; if (!Number.isInteger(Number(val))) return { valido: false, mensaje: "Debe ser un número entero." }; if (parseInt(val) > 9999) return { valido: false, mensaje: "Máximo 9999." }; return { valido: true, mensaje: "" }; };
     const validarSerial    = (val) => { if (!val || val.trim() === "") return { valido: false, mensaje: "El serial es obligatorio." }; if (val.trim().length < 2) return { valido: false, mensaje: "Mínimo 2 caracteres." }; if (val.trim().length > 50) return { valido: false, mensaje: "Máximo 50 caracteres." }; if (!/^[a-zA-Z0-9_-]+$/.test(val.trim())) return { valido: false, mensaje: "Solo letras, números, guiones y guiones bajos." }; return { valido: true, mensaje: "" }; };
     const validarGarantia  = (val) => { if (!val) return { valido: false, mensaje: "Selecciona una garantía." }; if (!["3 meses", "6 meses", "12 meses"].includes(val)) return { valido: false, mensaje: "Garantía no válida." }; return { valido: true, mensaje: "" }; };
     const validarTipoStock  = (val) => { if (!val) return { valido: false, mensaje: "Selecciona tipo de stock." }; if (!["unidad", "metros"].includes(val)) return { valido: false, mensaje: "Tipo de stock no válido." }; return { valido: true, mensaje: "" }; };
 
     const estadoNombre    = tocados.nombre      ? validarNombre(nombre)         : null;
     const estadoCategoria = tocados.categoriaId ? validarCategoria(categoriaId) : null;
-    const estadoPrecio    = tocados.precio      ? validarPrecio(precio)         : null;
-    const estadoStock     = tocados.stock       ? validarStock(stock)           : null;
     const estadoSerial    = tocados.serial      ? validarSerial(serial)         : null;
     const estadoGarantia  = tocados.garantia    ? validarGarantia(garantia)     : null;
     const estadoTipoStock = tocados.tipoStock   ? validarTipoStock(tipoStock)   : null;
@@ -186,31 +179,25 @@ export default function CreateProductModal({ onClose, onSuccess, onAlert }) {
     const toggleVisibilidad = (id) => setCaracteristicas((prev) => prev.map((c) => c.id === id ? { ...c, visible: !c.visible } : c));
 
     // ─── Submit ───────────────────────────────────────────────────────────────
-    const handleSubmit = async () => {
-        setTocados({ nombre: true, categoriaId: true, precio: true, stock: true, serial: true, garantia: true, tipoStock: true });
-        const ok = validarNombre(nombre).valido && validarCategoria(categoriaId).valido && validarPrecio(precio).valido && validarStock(stock).valido && validarSerial(serial).valido && validarGarantia(garantia).valido;
+    const handleSubmit = () => {
+        setTocados({ nombre: true, categoriaId: true, serial: true, garantia: true, tipoStock: true });
+        const ok = validarNombre(nombre).valido && validarCategoria(categoriaId).valido && validarSerial(serial).valido && validarGarantia(garantia).valido && validarTipoStock(tipoStock).valido;
         if (!ok) return;
-        setSaving(true);
         setApiError("");
-        try {
-            const nuevoProducto = await ServicesShopping.createProduct({
-                nombre: toTitleCase(nombre.trim()),
-                categoriaId,
-                precio: parseCOP(precio),
-                stock: parseInt(stock),
-                tipoStock: tipoStock,
-                serial: serial.trim(),
-                garantia,
-                caracteristicas,
-            });
-            if (onSuccess) onSuccess(nuevoProducto);
-            if (onAlert) onAlert({ type: "success", message: "Producto creado exitosamente." });
-            onClose();
-        } catch (err) {
-            setApiError(err.message || "No se pudo crear el producto.");
-        } finally {
-            setSaving(false);
-        }
+        const nuevoProducto = {
+            id: Date.now(),
+            nombre: toTitleCase(nombre.trim()),
+            categoriaId,
+            serial: serial.trim(),
+            garantia,
+            tipoStock,
+            caracteristicas,
+            isNew: true,
+            precio: 0,
+            stock: 0,
+        };
+        if (onSuccess) onSuccess(nuevoProducto);
+        onClose();
     };
 
     // ─── Render ───────────────────────────────────────────────────────────────
@@ -259,28 +246,6 @@ export default function CreateProductModal({ onClose, onSuccess, onAlert }) {
                                 hasError={estadoCategoria !== null && !estadoCategoria.valido}
                             />
                             <FieldStatus estado={estadoCategoria} />
-                        </div>
-
-                        {/* PRECIO */}
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={18} /><span>Precio *</span></div>
-                            <input type="number" min="1" placeholder="Ej: 100000" value={precio}
-                                onChange={(e) => { setPrecio(e.target.value); tocar("precio"); }}
-                                onKeyDown={blockInvalidKeys}
-                                onBlur={() => tocar("precio")}
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${estadoPrecio === null ? "focus:ring-gray-400" : estadoPrecio.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300"}`} />
-                            <FieldStatus estado={estadoPrecio} />
-                        </div>
-
-                        {/* STOCK */}
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><Box size={18} /><span>Stock *</span></div>
-                            <input type="number" min="0" placeholder="Ej: 10" value={stock}
-                                onChange={(e) => { setStock(e.target.value); tocar("stock"); }}
-                                onKeyDown={blockInvalidKeys}
-                                onBlur={() => tocar("stock")}
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all ${estadoStock === null ? "focus:ring-gray-400" : estadoStock.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300"}`} />
-                            <FieldStatus estado={estadoStock} />
                         </div>
 
                         {/* SERIAL */}
@@ -477,8 +442,8 @@ export default function CreateProductModal({ onClose, onSuccess, onAlert }) {
                     {/* BOTONES */}
                     <div className="flex justify-between mt-6">
                         <button onClick={onClose} className="bg-gray-200 hover:bg-gray-300 transition px-6 py-2 rounded-xl text-sm font-medium shadow cursor-pointer">Cancelar</button>
-                        <PrimaryButton onClick={handleSubmit} disabled={saving}>
-                            {saving ? "Creando..." : "Crear Producto"}
+                        <PrimaryButton onClick={handleSubmit}>
+                            Crear y añadir
                         </PrimaryButton>
                     </div>
 

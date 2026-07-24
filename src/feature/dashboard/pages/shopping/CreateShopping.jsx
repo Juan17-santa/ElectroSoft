@@ -170,8 +170,8 @@ export default function CreateShopping() {
     };
 
     const handleAnadirProducto = (nuevoProducto) => {
-        const { esActualizacion, sobreescribirConSugerido, ...producto } = nuevoProducto;
-        const productoConEstado = { ...producto, anulado: false, sobreescribirConSugerido };
+        const { esActualizacion, sobreescribirConSugerido, isNew, nombre, categoriaId, serial, garantia, tipoStock, caracteristicas, ...producto } = nuevoProducto;
+        const productoConEstado = { ...producto, anulado: false, sobreescribirConSugerido, isNew: !!isNew, nombre, categoriaId, serial, garantia, tipoStock, caracteristicas };
 
         if (esActualizacion) {
             // Actualizar el producto ya existente en la tabla
@@ -246,15 +246,34 @@ export default function CreateShopping() {
         }
 
         const productosParaGuardar = productosActuales.map(
-            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, precioVentaOriginal, subtotal, sobreescribirConSugerido, usarPrecioSugerido }) => ({
-                id, nombre, cantidad, precio,
-                costeProducto: costeProducto || precio,
-                precioVenta: precioVenta || precio,
-                precioVentaOriginal: precioVentaOriginal || precioVenta || precio,
-                subtotal,
-                sobreescribirConSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
-                usarPrecioSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
-            })
+            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, precioVentaOriginal, subtotal, sobreescribirConSugerido, usarPrecioSugerido, isNew, categoriaId, serial, garantia, tipoStock, caracteristicas }) => {
+                const base = {
+                    id, nombre, cantidad, precio,
+                    costeProducto: costeProducto || precio,
+                    precioVenta: precioVenta || precio,
+                    precioVentaOriginal: precioVentaOriginal || precioVenta || precio,
+                    subtotal,
+                    sobreescribirConSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
+                    usarPrecioSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
+                };
+                if (isNew) {
+                    base.isNew = true;
+                    base.newProduct = {
+                        name: nombre,
+                        categoryId: categoriaId,
+                        serial: serial || "",
+                        warranty: garantia || "",
+                        typeStock: tipoStock || "unidad",
+                        characteristics: (caracteristicas || []).map((c) => ({
+                            name: c.nombre ?? c.name,
+                            unit: c.medida ?? c.unit ?? "-",
+                            value: c.valor ?? c.value ?? "",
+                            visible: c.visible !== false,
+                        })),
+                    };
+                }
+                return base;
+            }
         );
 
         // Confirmar antes de guardar
@@ -558,7 +577,6 @@ export default function CreateShopping() {
                 <CreateProductModal
                     onClose={() => setShowCreateProductModal(false)}
                     onSuccess={() => { }}
-                    onAlert={setAlertData}
                 />
             )}
 
