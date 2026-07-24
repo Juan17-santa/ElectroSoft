@@ -9,7 +9,7 @@ export function useProviderForm({
     onError,
     mode
 }) {
-
+    
     const formatInitialData = () => {
         if (!initialData || Object.keys(initialData).length === 0) return {};
 
@@ -19,9 +19,11 @@ export function useProviderForm({
             document: initialData.document || "",
             providerName: initialData.providerName || "",
             providerType: initialData.providerType || "NATURAL",
-            email: initialData.email || "",
+            providerEmail: initialData.providerEmail || "",
             address: initialData.address || "",
             contactName: initialData.contactName || "",
+            providerPhone: initialData.providerPhone || "",
+            contactEmail: initialData.contactEmail || "",
             contactPhone: initialData.contactPhone || "",
             categoriesAssociated: initialData.categoriesAssociated?.map(cat => cat._id || cat) || [],
             status: initialData.status
@@ -37,9 +39,11 @@ export function useProviderForm({
             document: formatted.document || "",
             providerName: formatted.providerName || "",
             contactName: formatted.contactName || "",
-            contactPhone: formatted.contactPhone || "",
-            email: formatted.email || "",
+            providerPhone: formatted.providerPhone || "",
+            providerEmail: formatted.providerEmail || "",
             address: formatted.address || "",
+            contactEmail: formatted.contactEmail || "",
+            contactPhone: formatted.contactPhone || "",
             categoriesAssociated: formatted.categoriesAssociated || [],
             _id: formatted._id || null,
             status: formatted.status !== undefined ? formatted.status : true
@@ -86,7 +90,15 @@ export function useProviderForm({
             case "providerName":
                 if (!value) {
                     error = "El nombre del proveedor es obligatorio";
-                } else if (!Validations.alfanumericoNombre(value)) {
+                } else if (
+                    formData.providerType === "NATURAL" &&
+                    !Validations.soloLetras(value)
+                ) {
+                    error = "Solo se permiten letras";
+                } else if (
+                    formData.providerType === "JURIDICA" &&
+                    !Validations.alfanumericoNombre(value)
+                ) {
                     error = "Solo letras, números y símbolos permitidos";
                 }
                 break;
@@ -99,7 +111,7 @@ export function useProviderForm({
                 }
                 break;
 
-            case "contactPhone":
+            case "providerPhone":
                 if (!value) {
                     error = "El teléfono es obligatorio";
                 } else if (!Validations.soloNumeros(value)) {
@@ -109,12 +121,34 @@ export function useProviderForm({
                 }
                 break;
 
-            case "email":
+            case "providerEmail":
                 if (!value) {
                     error = "El correo es obligatorio";
                 }
                 else if (!Validations.formatoEmail(value)) {
                     error = "Correo no válido";
+                }
+                break;
+
+            case "contactEmail":
+                if (isJuridica) {
+                    if (!value) {
+                        error = "El correo de la empresa es obligatorio";
+                    } else if (!Validations.formatoEmail(value)) {
+                        error = "Correo no válido";
+                    }
+                }
+                break;
+
+            case "contactPhone":
+                if (isJuridica) {
+                    if (!value) {
+                        error = "El teléfono de la empresa es obligatorio";
+                    } else if (!Validations.soloNumeros(value)) {
+                        error = "Solo números permitidos";
+                    } else if (value.length < 8 || value.length > 14) {
+                        error = "Debe tener entre 8 y 14 dígitos";
+                    }
                 }
                 break;
 
@@ -140,11 +174,17 @@ export function useProviderForm({
                 ...prev,
                 providerType: value,
                 contactName: value === "NATURAL" ? "" : prev.contactName,
-
                 documentType:
                     value === "JURIDICA"
                         ? nitDocumentType?._id || ""
-                        : ""
+                        : "",
+                contactEmail: value === "NATURAL" ? "" : prev.contactEmail,
+                contactPhone: value === "NATURAL" ? "" : prev.contactPhone
+            }));
+
+            setErrors(prev => ({
+                ...prev,
+                documentType: ""
             }));
 
             return;
@@ -154,8 +194,20 @@ export function useProviderForm({
             newValue = value.replace(/\D/g, "").slice(0, 12);
         }
 
-        if (name === "contactPhone") {
+        if (name === "providerPhone" || name === "contactPhone") {
             newValue = value.replace(/\D/g, "").slice(0, 14);
+        }
+
+        if (name === "providerName") {
+            if (formData.providerType === "NATURAL") {
+                newValue = value.replace(/[0-9]/g, "");
+            }
+            newValue = newValue.slice(0, 100);
+        }
+
+        if (name === "contactName") {
+            newValue = value.replace(/[0-9]/g, "");
+            newValue = newValue.slice(0, 100);
         }
 
         setFormData(prev => ({ ...prev, [name]: newValue }));
@@ -172,8 +224,14 @@ export function useProviderForm({
             if (field === "_id" || field === "status" || field === "categoriesAssociated") return;
 
             if (
-                isNatural &&
-                field === "contactName"
+                (isNatural &&
+                    (
+                        field === "contactName" ||
+                        field === "contactEmail" ||
+                        field === "contactPhone"
+                    )
+                ) ||
+                (isJuridica && field === "documentType")
             ) {
                 return;
             }
@@ -198,6 +256,12 @@ export function useProviderForm({
 
         if (isNatural) {
             delete providerData.contactName;
+            delete providerData.contactEmail;
+            delete providerData.contactPhone;
+        }
+
+        if (isJuridica) {
+            providerData.documentType = nitDocumentType?._id;
         }
 
         try {

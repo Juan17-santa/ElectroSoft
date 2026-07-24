@@ -30,6 +30,7 @@ export default function UpdateProvider() {
     } = useProviderForm({
         mode: "update",
         initialData: {},
+        documentTypes,
         onSuccess: () => {
             setAlert({ type: "success", message: "Proveedor actualizado con éxito." });
             setTimeout(() => navigate("/dashboard/providers"), 2000);
@@ -62,9 +63,11 @@ export default function UpdateProvider() {
                         document: provider.document || "",
                         providerName: provider.providerName || "",
                         contactName: provider.contactName || "",
-                        contactPhone: provider.contactPhone || "",
-                        email: provider.email || "",
+                        providerPhone: provider.providerPhone || "",
+                        providerEmail: provider.providerEmail || "",
                         address: provider.address || "",
+                        contactEmail: provider.contactEmail || "",
+                        contactPhone: provider.contactPhone || "",
                         categoriesAssociated: provider.categoriesAssociated?.map(cat => cat._id || cat) || [],
                         status: provider.status
                     });
