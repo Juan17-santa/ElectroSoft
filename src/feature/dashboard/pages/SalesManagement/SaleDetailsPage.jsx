@@ -245,7 +245,7 @@ export default function SaleDetailsPage() {
                 </div>
 
                 {/* Tarjeta info */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 px-8 py-6 mb-8"
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 px-8 py-6 mb-8"
                     style={{ borderLeft: '4px solid #fbbf24' }}
                 >
                     {/* Nombre cliente */}
@@ -342,52 +342,61 @@ export default function SaleDetailsPage() {
                         Productos en esta venta
                     </p>
                     {productos.length > 0 ? (
-                        <div className="border border-gray-200 rounded-sm overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="bg-gray-50/70 border-b border-gray-200">
-                                        <th className="px-5 py-3 text-left font-bold text-gray-700 uppercase text-xs tracking-wider">Producto</th>
-                                        <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-xs tracking-wider">Cant. Original</th>
-                                        <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-xs tracking-wider">Devuelto</th>
-                                        <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-xs tracking-wider">Cant. Neta</th>
-                                        <th className="px-5 py-3 text-right font-bold text-gray-700 uppercase text-xs tracking-wider">Precio Unit.</th>
-                                        <th className="px-5 py-3 text-right font-bold text-gray-700 uppercase text-xs tracking-wider">Subtotal Neto</th>
-                                        <th className="px-5 py-3 text-right font-bold text-gray-700 uppercase text-xs tracking-wider">Total Línea</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {productosNetos.map((prod, index) => (
-                                        <tr key={index} className="border-b border-gray-100 last:border-b-0 bg-gray-50/30 hover:bg-gray-50/60 transition">
-                                            <td className="px-5 py-4 text-gray-800 font-medium">{prod.nombre}</td>
-                                            <td className="px-5 py-4 text-center text-gray-600">{prod.cantOriginal}</td>
-                                            <td className={`px-5 py-4 text-center font-bold ${prod.cantDevuelta > 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                                                {prod.cantDevuelta > 0 ? `-${prod.cantDevuelta}` : '0'}
-                                            </td>
-                                            <td className="px-5 py-4 text-center text-gray-600">{prod.cantNeta}</td>
-                                            <td className="px-5 py-4 text-right text-gray-600">${prod.precio?.toLocaleString()}</td>
-                                            <td className="px-5 py-4 text-right text-gray-800 font-bold">
-                                                ${(prod.precio * prod.cantNeta).toLocaleString()}
-                                            </td>
-                                            <td className="px-5 py-4 text-right text-gray-800 font-bold">
-                                                ${((prod.precio * prod.cantNeta) * 1.19).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                                            </td>
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+                            <div className="overflow-x-auto flex-1">
+                                <table className="min-w-96 w-full text-left text-sm">
+                                    <thead className="text-gray-500 bg-white border-b border-gray-100">
+                                        <tr>
+                                            <th className="px-4 py-3 font-semibold">Producto</th>
+                                            <th className="px-4 py-3 font-semibold text-center w-28">Cant. Original</th>
+                                            <th className="px-4 py-3 font-semibold text-center w-24">Devuelto</th>
+                                            <th className="px-4 py-3 font-semibold text-center w-24">Cant. Neta</th>
+                                            <th className="px-4 py-3 font-semibold text-center w-32">Precio Unit.</th>
+                                            <th className="px-4 py-3 font-semibold text-center w-32">Subtotal</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot className="bg-gray-200 border-t-2 border-gray-300 font-bold text-gray-900 shadow-sm">
-                                    <tr>
-                                        <td colSpan="5" className="px-5 py-4 text-right uppercase text-xs tracking-wider font-extrabold text-gray-700">
-                                            Total General de la Venta:
-                                        </td>
-                                        <td className="px-5 py-4 text-right text-[15px] text-gray-900 font-extrabold">
-                                            ${sale.subtotal?.toLocaleString()}
-                                        </td>
-                                        <td className="px-5 py-4 text-right text-[17px] text-gray-950 font-black">
-                                            ${sale.total?.toLocaleString()}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        {productosNetos.map((prod, index) => (
+                                            <tr key={index}>
+                                                <td className="px-4 py-3 font-medium text-gray-800">{prod.nombre}</td>
+                                                <td className="px-4 py-3 text-center">{prod.cantOriginal}</td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {prod.cantDevuelta > 0 ? (
+                                                        <span className="text-red-600 font-semibold">
+                                                            -{prod.cantDevuelta}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-400">0</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center">{prod.cantNeta}</td>
+                                                <td className="px-4 py-3 text-center">${prod.precio?.toLocaleString()}</td>
+                                                <td className="px-4 py-3 text-center font-semibold">
+                                                    ${(prod.precio * prod.cantNeta).toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* TOTALES (Estilo idéntico a Pedidos - OrderDetails.jsx) */}
+                            <div className="bg-gray-50 border-t border-gray-200 p-4 mt-auto">
+                                <div className="flex flex-wrap justify-end items-center gap-4 md:gap-10 text-xs md:text-sm">
+                                    <div className="flex gap-2">
+                                        <span className="text-gray-500 uppercase">Subtotal:</span>
+                                        <span className="text-gray-800 font-semibold">${sale.subtotal?.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-gray-500 uppercase">IVA (19%):</span>
+                                        <span className="text-blue-600 font-semibold">${(sale.iva || (sale.total * 0.19)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <span className="text-gray-700 uppercase font-bold">Total:</span>
+                                        <span className="text-green-600 font-bold">${sale.total?.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <div className="text-center py-6 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">

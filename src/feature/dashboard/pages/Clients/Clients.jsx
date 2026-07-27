@@ -93,7 +93,8 @@ export default function Clients() {
             showAlert("success", `Cupo de $${amount.toLocaleString("es-CO")} asignado exitosamente.`);
         } catch (error) {
             console.error("Error asignando cupo:", error);
-            showAlert("error", "Error al asignar cupo.");
+            const msg = error?.response?.data?.error || error?.message || "Error al asignar cupo.";
+            showAlert("error", msg);
         }
         setAssignQuotaClient(null);
     };
