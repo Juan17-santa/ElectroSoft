@@ -4,7 +4,7 @@ import ValidationMessage from "../../../components/ui/ValidationMessage";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import paymentsService from "../services/paymentsService";
 
-const METODOS_PAGO = ["Efectivo", "Transferencia", "Tarjeta Débito", "Tarjeta Crédito", "Cheque"];
+const METODOS_PAGO = ["Efectivo", "Transferencia"];
 const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
 export default function PaymentForm({

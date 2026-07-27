@@ -19,10 +19,11 @@ const mapSaleToFrontend = (sale) => {
             productoId: p.productoId?._id || p.productoId,
             nombre: p.productoId?.name || p.nombre || "Producto",
             precio: p.precioUnitario,
-            cantidad: p.cantidad
+            cantidad: p.cantidad,
+            garantia: p.productoId?.garantia || 0
         })),
-        subtotal: sale.total,
-        iva: 0,
+        subtotal: sale.subtotal || sale.total,
+        iva: sale.iva || 0,
         total: sale.total,
         // montoPagado y montoPorPagar los enriquece paymentsService al consultar /payments/venta/:id para ventas a Crédito.
         // Para Contado, se pagan inmediatamente al crear la venta.
@@ -47,7 +48,7 @@ export const SalesService = {
         }
     },
 
-    async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos, subtotal, iva, total }) {
+    async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos, subtotal, iva, total, montoPagado, montoPorPagar, montoCredito, montoContado }) {
         try {
             const allSalesRes = await api.get('/sales');
             const allSalesData = allSalesRes.data.data || allSalesRes.data;
@@ -65,25 +66,36 @@ export const SalesService = {
                     cantidad: p.cantidad,
                     precioUnitario: p.precio
                 })),
-                fechaVenta: fecha
+                fechaVenta: fecha,
+                montoPagado: montoPagado != null ? Number(montoPagado) : (tipoVenta === "Contado" ? total : 0),
+                montoPorPagar: montoPorPagar != null ? Number(montoPorPagar) : (tipoVenta === "Contado" ? 0 : total),
+                montoCredito: montoCredito != null ? Number(montoCredito) : ((tipoVenta === "Credito" || tipoVenta === "Crédito") ? total : 0),
+                montoContado: montoContado != null ? Number(montoContado) : (tipoVenta === "Contado" ? total : 0)
             };
 
             const response = await api.post('/sales', payload);
             const newSale = response.data.data || response.data;
             const mappedSale = mapSaleToFrontend(newSale);
 
-            // ✅ FIX: si el pago inicial de contado falla, lanzar warning pero no silenciar
-            if (tipoVenta === 'Contado' || tipoVenta === "Contado") {
+            // ✅ FIX: Registrar el pago inicial si la venta es de Contado o Mixta
+            const pagoInicial = (tipoVenta === 'Contado' || tipoVenta === "Contado")
+                ? mappedSale.total
+                : (tipoVenta === 'Mixto' || tipoVenta === "Mixto")
+                    ? Number(montoPagado || mappedSale.montoContado || 0)
+                    : 0;
+
+            if (pagoInicial > 0) {
                 try {
                     await api.post('/payments', {
                         ventaId: mappedSale.id,
-                        monto: mappedSale.total,
+                        monto: pagoInicial,
                         metodoPago: "EFECTIVO",
-                        notas: "Pago automático de contado"
+                        notas: (tipoVenta === 'Contado' || tipoVenta === "Contado")
+                            ? "Pago automático de contado"
+                            : "Pago inicial en efectivo (Venta Mixta)"
                     });
                 } catch (paymentErr) {
-                    // No bloquea la venta, pero avisa en consola con detalle
-                    console.warn("[SalesService] Venta creada pero el pago inicial de contado falló:", paymentErr?.response?.data || paymentErr.message);
+                    console.warn("[SalesService] Venta creada pero el pago inicial falló:", paymentErr?.response?.data || paymentErr.message);
                 }
             }
 

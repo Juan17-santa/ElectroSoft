@@ -5,7 +5,7 @@ import { ClientsService } from "../../Clients/services/ClientsService";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
 
 // HOOK PERSONALIZADO PARA GESTIONAR LA LÓGICA DEL FORMULARIO DE PEDIDOS
-export function useOrdersForm({ onSuccess }) {
+export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     // FECHA ACTUAL
     const today = new Date();
@@ -39,6 +39,7 @@ export function useOrdersForm({ onSuccess }) {
 
     // ESTADO PARA LOS PRODUCTOS DISPONIBLES
     const [products, setProducts] = useState([]);
+    const [clients, setClients] = useState([]);
 
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
@@ -71,53 +72,61 @@ export function useOrdersForm({ onSuccess }) {
         }
     }, [formData.productos, totalPages]);
 
-    // ESPERA 500ms DESPUÉS DE QUE EL USUARIO DEJA DE ESCRIBIR
+    // BUSCAR CLIENTE POR MEDIO DEL DOCUMENTO EN TIEMPO REAL
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDocumentoBusqueda(formData.documento);
-        }, 600);
+        if (!formData.documento) {
+            setFormData(prev => ({
+                ...prev,
+                clienteId: null,
+                clienteNombre: "",
+                clienteTipoDocumento: "",
+                formaPago: "",
+                clienteCupoActivo: false,
+                clienteCupoTotal: 0,
+            }));
+            return;
+        }
 
-        return () => clearTimeout(timer);
-    }, [formData.documento]);
-
-    // BUSCAR CLIENTE POR MEDIO DEL DOCUMENTO
-    useEffect(() => {
-        const buscarCliente = async () => {
-            if (!documentoBusqueda) {
-                setFormData(prev => ({
-                    ...prev,
-                    clienteId: null,
-                    clienteNombre: "",
-                    clienteTipoDocumento: "",
-                    formaPago: "",
-                    clienteCupoActivo: false,
-                    clienteCupoTotal: 0,
-                }));
-                return;
-            }
-
-            if (documentoBusqueda.length < 8) {
-                return;
-            }
-
-            try {
-                const clienteEncontrado = await ClientsService.getByDocument(documentoBusqueda);
-
-                if (clienteEncontrado?.estado) {
-                    setFormData(prev => ({
-                        ...prev,
-                        clienteId: clienteEncontrado.id,
-                        clienteNombre: `${clienteEncontrado.nombres} ${clienteEncontrado.apellidos}`,
-                        clienteTipoDocumento: clienteEncontrado.tipoDocumento,
-                        clienteCupoActivo: clienteEncontrado.cupoActivo,
-                        clienteCupoTotal: clienteEncontrado.cupoTotal || 0,
-                    }));
-
-                    setErrors(prev => ({
-                        ...prev,
-                        documento: ""
-                    }));
-                } else {
+        const found = clients.find(c => 
+            c.documento === formData.documento || 
+            `${c.nombres} ${c.apellidos}`.toLowerCase() === formData.documento.toLowerCase()
+        );
+        if (found && found.estado) {
+            setFormData(prev => ({
+                ...prev,
+                clienteId: found.id,
+                clienteNombre: `${found.nombres} ${found.apellidos}`,
+                clienteTipoDocumento: found.tipoDocumento,
+                clienteCupoActivo: found.cupoActivo,
+                clienteCupoTotal: found.cupoTotal || 0,
+            }));
+            setErrors(prev => ({ ...prev, documento: "" }));
+        } else if (formData.documento.length >= 8) {
+            const timer = setTimeout(async () => {
+                try {
+                    const clienteEncontrado = await ClientsService.getByDocument(formData.documento);
+                    if (clienteEncontrado?.estado) {
+                        setFormData(prev => ({
+                            ...prev,
+                            clienteId: clienteEncontrado.id,
+                            clienteNombre: `${clienteEncontrado.nombres} ${clienteEncontrado.apellidos}`,
+                            clienteTipoDocumento: clienteEncontrado.tipoDocumento,
+                            clienteCupoActivo: clienteEncontrado.cupoActivo,
+                            clienteCupoTotal: clienteEncontrado.cupoTotal || 0,
+                        }));
+                        setErrors(prev => ({ ...prev, documento: "" }));
+                    } else {
+                        setFormData(prev => ({
+                            ...prev,
+                            clienteId: null,
+                            clienteNombre: "",
+                            clienteTipoDocumento: "",
+                            formaPago: "",
+                            clienteCupoActivo: false,
+                            clienteCupoTotal: 0,
+                        }));
+                    }
+                } catch (error) {
                     setFormData(prev => ({
                         ...prev,
                         clienteId: null,
@@ -128,20 +137,20 @@ export function useOrdersForm({ onSuccess }) {
                         clienteCupoTotal: 0,
                     }));
                 }
-            } catch (error) {
-                setFormData(prev => ({
-                    ...prev,
-                    clienteId: null,
-                    clienteNombre: "",
-                    clienteTipoDocumento: "",
-                    formaPago: "",
-                    clienteCupoActivo: false,
-                    clienteCupoTotal: 0,
-                }));
-            }
-        };
-        buscarCliente();
-    }, [documentoBusqueda]);
+            }, 500);
+            return () => clearTimeout(timer);
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                clienteId: null,
+                clienteNombre: "",
+                clienteTipoDocumento: "",
+                formaPago: "",
+                clienteCupoActivo: false,
+                clienteCupoTotal: 0,
+            }));
+        }
+    }, [formData.documento, clients]);
 
     // CARGAR SÓLO PRODUCTOS ACTIVOS Y CON STOCK AL INICIAR
     useEffect(() => {
@@ -160,6 +169,7 @@ export function useOrdersForm({ onSuccess }) {
         };
 
         loadProducts();
+        ClientsService.get().then(setClients).catch(console.error);
     }, []);
 
     // FUNCIÓN DE VALIDACIÓN PARA CAMPOS INDIVIDUALES
@@ -170,14 +180,10 @@ export function useOrdersForm({ onSuccess }) {
         switch (name) {
 
             case "documento":
-                if (!value) {
-                    error = "El documento es obligatorio";
-                } else if (!Validations.soloNumeros(value)) {
-                    error = "Solo números permitidos";
-                } else if (value.length < 8 || value.length > 12) {
-                    error = "Debe tener entre 8 y 12 dígitos";
+                if (!value || !value.trim()) {
+                    error = "El documento o cliente es obligatorio";
                 } else if (!formData.clienteId) {
-                    error = "Cliente no encontrado";
+                    error = "Seleccione un cliente de la lista o verifique la cédula";
                 }
                 break;
 
@@ -189,6 +195,8 @@ export function useOrdersForm({ onSuccess }) {
                         error = "Este cliente no tiene cupo de crédito asignado. Asígnale uno desde el módulo de Clientes para poder fiarle.";
                     } else if (formData.clienteCupoTotal <= 0) {
                         error = "El cliente no tiene cupo disponible.";
+                    } else if (formData.total > 0 && formData.total < 10000) {
+                        error = "El total es inferior a $10.000. No se permiten pedidos a crédito por montos tan bajos; cóbralo de Contado.";
                     } else if (formData.total > formData.clienteCupoTotal) {
                         const formatCOP = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val || 0);
                         error = `El total del pedido (${formatCOP(formData.total)}) supera el cupo de crédito del cliente (${formatCOP(formData.clienteCupoTotal)}).`;
@@ -227,7 +235,7 @@ export function useOrdersForm({ onSuccess }) {
         let newValue = value;
 
         if (name === "documento") {
-            newValue = value.replace(/\D/g, "").slice(0, 12);
+            newValue = value.slice(0, 50);
         }
 
         if (name === "fechaPedido") {
@@ -288,6 +296,62 @@ export function useOrdersForm({ onSuccess }) {
         });
 
         setErrors(prev => ({ ...prev, productos: "" }));
+    };
+
+    const handleQuantityChange = (productId, newQuantity) => {
+        const productInfo = products.find(p => (p.id || p._id) === productId);
+        const maxStock = productInfo ? (productInfo.stock || 999999) : 999999;
+        
+        if (newQuantity === "") {
+            setFormData(prev => {
+                const up = prev.productos.map(p => p.id === productId ? { ...p, cantidad: "", subtotal: 0 } : p);
+                const total = up.reduce((acc, p) => acc + (Number(p.subtotal) || 0), 0);
+                const iva = total * 0.19;
+                const subtotal = total - iva;
+                return { ...prev, productos: up, subtotal, iva, total };
+            });
+            return;
+        }
+        
+        let validQuantity = parseInt(newQuantity, 10);
+        if (isNaN(validQuantity)) return;
+        
+        if (validQuantity > maxStock) {
+            validQuantity = maxStock;
+            if (onShowAlert) {
+                onShowAlert(`La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}`);
+            }
+        }
+        
+        setFormData(prev => {
+            const up = prev.productos.map(p => p.id === productId ? { 
+                ...p, 
+                cantidad: validQuantity, 
+                subtotal: validQuantity * p.precio 
+            } : p);
+            const total = up.reduce((acc, p) => acc + (Number(p.subtotal) || 0), 0);
+            const iva = total * 0.19;
+            const subtotal = total - iva;
+            return { ...prev, productos: up, subtotal, iva, total };
+        });
+    };
+
+    const handleQuantityBlur = (productId) => {
+        setFormData(prev => {
+            const up = prev.productos.map(p => {
+                if (p.id === productId) {
+                    const num = parseInt(p.cantidad, 10);
+                    if (isNaN(num) || num < 1) {
+                        return { ...p, cantidad: 1, subtotal: 1 * p.precio };
+                    }
+                }
+                return p;
+            });
+            const total = up.reduce((acc, p) => acc + (Number(p.subtotal) || 0), 0);
+            const iva = total * 0.19;
+            const subtotal = total - iva;
+            return { ...prev, productos: up, subtotal, iva, total };
+        });
     };
 
     // FUNCION PARA QUE CAMBIEN LOS VALORES SUBTOTAL, IVA Y TOTAL AL ELIMINAR UN PRODUCTO DE LA TABLA
@@ -366,7 +430,10 @@ export function useOrdersForm({ onSuccess }) {
         handleSubmit,
         setFormData,
         products,
+        clients,
         addProduct,
+        handleQuantityChange,
+        handleQuantityBlur,
         currentPage,
         setCurrentPage,
         totalPages,

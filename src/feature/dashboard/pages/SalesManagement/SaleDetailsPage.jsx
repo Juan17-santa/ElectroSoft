@@ -89,7 +89,7 @@ export default function SaleDetailsPage() {
 
     const calculateDeadline = () => {
         if (!sale || !sale.fecha) return null;
-        if (sale.tipoVenta !== "Credito" && sale.tipoVenta !== "Crédito") return null;
+        if (sale.tipoVenta !== "Credito" && sale.tipoVenta !== "Crédito" && sale.tipoVenta !== "Mixto") return null;
 
         const diasPlazo = sale.diasPlazo != null ? Number(sale.diasPlazo) : 0;
         const creationDate = new Date(sale.fecha + "T00:00:00");
@@ -150,7 +150,7 @@ export default function SaleDetailsPage() {
                     extraInfo.push(`Motivo Anulación: ${sale.observaciones || "Anulación registrada sin motivo."}`);
                 }
                 
-                if ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito")) {
+                if ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto")) {
                     extraInfo.push(`Plazo (Crédito): ${sale.diasPlazo != null ? sale.diasPlazo : 0} días`);
                     if (deadlineInfo) {
                         extraInfo.push(`Fecha Límite Pago: ${deadlineInfo.fechaLimite}`);
@@ -284,7 +284,7 @@ export default function SaleDetailsPage() {
                                     </div>
                                 </>
                             )}
-                            {(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") && (
+                            {(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto") && (
                                 <>
                                     <div className="mt-2">
                                         <p className="text-xs text-yellow-600 leading-none mb-1">Plazo (Crédito)</p>
@@ -320,7 +320,7 @@ export default function SaleDetailsPage() {
                             </div>
                             <div>
                                 <p className="text-xs text-gray-400 leading-none mb-1">IVA</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${sale.iva?.toLocaleString()}</p>
+                                <p className="font-bold text-gray-800 text-[17px]">${(sale.iva || (sale.total * 0.19)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-gray-400 leading-none mb-1">Total</p>
@@ -347,29 +347,46 @@ export default function SaleDetailsPage() {
                                 <thead>
                                     <tr className="bg-gray-50/70 border-b border-gray-200">
                                         <th className="px-5 py-3 text-left font-bold text-gray-700 uppercase text-xs tracking-wider">Producto</th>
-                                        <th className="px-5 py-3 text-left font-bold text-gray-700 uppercase text-xs tracking-wider">Precio Unit.</th>
                                         <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-xs tracking-wider">Cant. Original</th>
                                         <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-xs tracking-wider">Devuelto</th>
                                         <th className="px-5 py-3 text-center font-bold text-gray-700 uppercase text-xs tracking-wider">Cant. Neta</th>
+                                        <th className="px-5 py-3 text-right font-bold text-gray-700 uppercase text-xs tracking-wider">Precio Unit.</th>
                                         <th className="px-5 py-3 text-right font-bold text-gray-700 uppercase text-xs tracking-wider">Subtotal Neto</th>
+                                        <th className="px-5 py-3 text-right font-bold text-gray-700 uppercase text-xs tracking-wider">Total Línea</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {productosNetos.map((prod, index) => (
                                         <tr key={index} className="border-b border-gray-100 last:border-b-0 bg-gray-50/30 hover:bg-gray-50/60 transition">
                                             <td className="px-5 py-4 text-gray-800 font-medium">{prod.nombre}</td>
-                                            <td className="px-5 py-4 text-gray-600">${prod.precio?.toLocaleString()}</td>
                                             <td className="px-5 py-4 text-center text-gray-600">{prod.cantOriginal}</td>
                                             <td className={`px-5 py-4 text-center font-bold ${prod.cantDevuelta > 0 ? 'text-red-500' : 'text-gray-400'}`}>
                                                 {prod.cantDevuelta > 0 ? `-${prod.cantDevuelta}` : '0'}
                                             </td>
                                             <td className="px-5 py-4 text-center text-gray-600">{prod.cantNeta}</td>
+                                            <td className="px-5 py-4 text-right text-gray-600">${prod.precio?.toLocaleString()}</td>
                                             <td className="px-5 py-4 text-right text-gray-800 font-bold">
                                                 ${(prod.precio * prod.cantNeta).toLocaleString()}
+                                            </td>
+                                            <td className="px-5 py-4 text-right text-gray-800 font-bold">
+                                                ${((prod.precio * prod.cantNeta) * 1.19).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
+                                <tfoot className="bg-gray-200 border-t-2 border-gray-300 font-bold text-gray-900 shadow-sm">
+                                    <tr>
+                                        <td colSpan="5" className="px-5 py-4 text-right uppercase text-xs tracking-wider font-extrabold text-gray-700">
+                                            Total General de la Venta:
+                                        </td>
+                                        <td className="px-5 py-4 text-right text-[15px] text-gray-900 font-extrabold">
+                                            ${sale.subtotal?.toLocaleString()}
+                                        </td>
+                                        <td className="px-5 py-4 text-right text-[17px] text-gray-950 font-black">
+                                            ${sale.total?.toLocaleString()}
+                                        </td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     ) : (

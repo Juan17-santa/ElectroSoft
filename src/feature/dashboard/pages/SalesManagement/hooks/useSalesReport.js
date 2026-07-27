@@ -41,8 +41,8 @@ export function useSalesReport(data, setAlert) {
 
                     i === 0 ? formatCurrency(sale.total) : "",
                     i === 0 ? (sale.tipoVenta || "-") : "",
-                    i === 0 ? ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") ? `${sale.diasPlazo || 0} días` : "-") : "",
-                    i === 0 ? ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") ? (() => {
+                    i === 0 ? ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto") ? `${sale.diasPlazo || 0} días` : "-") : "",
+                    i === 0 ? ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto") ? (() => {
                         const d = new Date(sale.fecha + "T00:00:00");
                         d.setDate(d.getDate() + Number(sale.diasPlazo || 0));
                         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
