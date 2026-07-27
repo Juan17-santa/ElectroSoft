@@ -67,7 +67,7 @@ const enriquecerVenta = (venta) => {
 };
 
 const esCredito = (tipoVenta) =>
-    tipoVenta === "Crédito" || tipoVenta === "Credito";
+    tipoVenta === "Crédito" || tipoVenta === "Credito" || tipoVenta === "Mixto";
 
 const esAnulada = (estado) =>
     estado === "Anulada" || estado === "Anulado" || estado === "ANULADA";
@@ -237,7 +237,9 @@ const paymentsService = {
                 console.error(`Error fetching abonos for sale ${venta.id}:`, e);
             }
 
-            const totalAbonado = abonos.filter(a => !a.anulado).reduce((acc, a) => acc + Number(a.monto), 0);
+            const sumaAbonos = abonos.filter(a => !a.anulado).reduce((acc, a) => acc + Number(a.monto), 0);
+            const pagoInicial = (venta.tipoVenta === 'Mixto') ? ((venta.montoContado != null) ? Number(venta.montoContado) : ((venta.montoCredito != null && Number(venta.montoCredito) > 0) ? Math.max(0, Number(venta.total) - Number(venta.montoCredito)) : 0)) : 0;
+            const totalAbonado = sumaAbonos < pagoInicial ? pagoInicial + sumaAbonos : sumaAbonos;
             const montoPorPagar = venta.total - totalAbonado > 0 ? venta.total - totalAbonado : 0;
             const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : venta.estado;
             return enriquecerVenta({

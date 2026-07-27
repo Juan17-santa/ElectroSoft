@@ -59,6 +59,15 @@ export default function PaymentClientDetail() {
         setErrorCupo("");
     };
 
+    useEffect(() => {
+        const monto = Number(nuevoCupo);
+        if (nuevoCupo !== "" && monto < resumen?.cupoOcupado) {
+            setErrorCupo(`El cupo no puede ser menor al monto ya ocupado (${fmt(resumen.cupoOcupado)}).`);
+        } else {
+            setErrorCupo("");
+        }
+    }, [nuevoCupo, resumen]);
+
     const handleConfirmarCupo = async () => {
         const monto = Number(nuevoCupo);
         if (!monto || monto <= 0) {
@@ -100,26 +109,29 @@ export default function PaymentClientDetail() {
             <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
 
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => navigate("/dashboard/payments")}
-                            className="p-2 rounded-xl hover:bg-gray-200 transition cursor-pointer"
-                        >
-                            <ArrowLeft size={18} />
-                        </button>
                         <p className="text-xl font-semibold">
                             Cuenta de crédito
                         </p>
                     </div>
 
-                    <button
-                        onClick={() => setShowReportModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-yellow-300 hover:bg-yellow-50 text-sm font-medium text-yellow-600 shadow-sm transition cursor-pointer"
-                    >
-                        <FileDown size={16} />
-                        <span className="hidden sm:inline">Descargar estado de cuenta</span>
-                    </button>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => setShowReportModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-yellow-300 hover:bg-yellow-50 text-sm font-medium text-yellow-600 shadow-sm transition cursor-pointer"
+                        >
+                            <FileDown size={16} />
+                            <span className="hidden sm:inline">Descargar estado</span>
+                        </button>
+                        <button
+                            onClick={() => navigate("/dashboard/payments")}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm hover:shadow-md transition cursor-pointer"
+                        >
+                            <ArrowLeft size={16} />
+                            Volver
+                        </button>
+                    </div>
                 </div>
 
                 {/* Card resumen cliente */}

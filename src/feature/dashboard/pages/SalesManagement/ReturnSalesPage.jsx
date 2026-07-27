@@ -328,11 +328,12 @@ export default function ReturnSalesPage() {
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200 text-left">
                                     <th className="px-4 py-2.5 font-semibold">Producto</th>
-                                    <th className="px-4 py-2.5 font-semibold">Precio</th>
                                     <th className="px-4 py-2.5 font-semibold">Cantidad</th>
                                     <th className="px-4 py-2.5 font-semibold">Subtotal</th>
                                     <th className="px-4 py-2.5 font-semibold text-center">Estado</th>
-                                    {isFromSales && <th className="px-4 py-2.5 w-10"></th>}
+                                    <th className="px-4 py-2.5 font-semibold text-center">Garantía</th>
+                                    <th className="px-4 py-2.5 font-semibold">Precio</th>
+                                    {isFromSales && <th className="px-4 py-2.5 font-semibold text-center">Acciones</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -340,10 +341,16 @@ export default function ReturnSalesPage() {
                                     const devuelto = cantidadDevueltaPor(prod.nombre);
                                     const restante = prod.cantidad - devuelto;
                                     const totalDevuelto = devuelto >= prod.cantidad;
+                                    
+                                    const mesesGarantia = prod.garantia || 0;
+                                    const fechaVenta = new Date(sale.fechaCreacion || sale.fecha);
+                                    const fechaVencimiento = new Date(fechaVenta);
+                                    fechaVencimiento.setMonth(fechaVencimiento.getMonth() + mesesGarantia);
+                                    const garantiaValida = new Date() <= fechaVencimiento;
+
                                     return (
                                         <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                                             <td className="px-4 py-2.5">{prod.nombre}</td>
-                                            <td className="px-4 py-2.5">{formatCOP(prod.precio)}</td>
                                             <td className="px-4 py-2.5">
                                                 <span>{prod.cantidad}</span>
                                                 {devuelto > 0 && (
@@ -361,6 +368,16 @@ export default function ReturnSalesPage() {
                                                         : <span className="text-xs bg-green-100 text-green-600 font-medium px-2 py-0.5 rounded-full">Disponible</span>
                                                 }
                                             </td>
+                                            <td className="px-4 py-2.5 text-center">
+                                                {mesesGarantia === 0 ? (
+                                                    <span className="text-xs text-gray-500">Sin garantía</span>
+                                                ) : garantiaValida ? (
+                                                    <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">Aplica ({mesesGarantia}m)</span>
+                                                ) : (
+                                                    <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full font-medium">Vencida</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-2.5">{formatCOP(prod.precio)}</td>
                                             {isFromSales && (
                                                 <td className="px-4 py-2.5 text-center">
                                                     {!totalDevuelto

@@ -151,6 +151,7 @@ export default function SalesManagement() {
 
     const filteredSales = sales.filter(sale =>
         (sale.numeroDocumento?.toLowerCase() || '').includes(search.toLowerCase()) ||
+        (sale.numeroVenta?.toString() || '').includes(search) ||
         (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase()) ||
         (sale.fecha?.includes(search)) ||
         (sale.tipoVenta?.toLowerCase().includes(search.toLowerCase())) ||
@@ -266,7 +267,8 @@ export default function SalesManagement() {
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
-                                    <th className="px-3 py-3 font-semibold">ID</th>
+                                    <th className="px-3 py-3 font-semibold">#</th>
+                                    <th className="px-3 py-3 font-semibold">Documento</th>
                                     <th className="px-3 py-3 font-semibold">Cliente</th>
                                     <th className="px-3 py-3 font-semibold">Fecha</th>
                                     <th className="px-3 py-3 font-semibold">Tipo de venta</th>
@@ -280,7 +282,7 @@ export default function SalesManagement() {
                             <tbody className="bg-white text-gray-700">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={9} className="px-4 py-4 text-center text-gray-400">
+                                        <td colSpan={10} className="px-4 py-4 text-center text-gray-400">
                                             <div className="flex items-center justify-center gap-2">
                                                 <svg className="animate-spin h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
                                                 Cargando ventas...
@@ -289,7 +291,7 @@ export default function SalesManagement() {
                                     </tr>
                                 ) : paginatedSales.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="px-4 py-4 text-center text-gray-400">
+                                        <td colSpan={10} className="px-4 py-4 text-center text-gray-400">
                                             No hay ventas registradas.
                                         </td>
                                     </tr>
@@ -297,6 +299,7 @@ export default function SalesManagement() {
                                     paginatedSales.map((sale) => (
                                         <tr key={sale.id} className="border-b border-gray-200 hover:bg-gray-50">
                                             <td className="px-3 py-3 font-medium">{String(sale.numeroVenta || "").padStart(2, '0') || '-'}</td>
+                                            <td className="px-3 py-3">{sale.numeroDocumento || "-"}</td>
                                             <td className="px-3 py-3">{sale.cliente || "-"}</td>
                                             <td className="px-3 py-3">{sale.fecha}</td>
                                             <td className="px-3 py-3">{sale.tipoVenta}</td>
@@ -367,7 +370,7 @@ export default function SalesManagement() {
                                                     {/* CREDITO */}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
                                                         {(() => {
-                                                            const isCreditDisabled = !(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito") || sale.estado === "Anulado" || sale.estado === "Devuelto";
+                                                            const isCreditDisabled = !(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto") || sale.estado === "Anulado" || sale.estado === "Devuelto";
                                                             return (
                                                                 <button
                                                                     className={`p-2 rounded-lg transition duration-300 ${isCreditDisabled ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}

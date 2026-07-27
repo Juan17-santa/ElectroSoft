@@ -29,7 +29,10 @@ export default function CreateOrder() {
         handleSubmit,
         setFormData,
         products,
+        clients,
         addProduct,
+        handleQuantityChange,
+        handleQuantityBlur,
         currentProducts,
         currentPage,
         setCurrentPage,
@@ -46,7 +49,8 @@ export default function CreateOrder() {
             setTimeout(() => {
                 navigate("/dashboard/orders");
             }, 2000);
-        }
+        },
+        onShowAlert: (msg) => setAlert({ type: "error", message: msg })
     });
 
     // FUNCIÓN PARA GUARDAR UN NUEVO CLIENTE DESDE LA MODAL
@@ -105,7 +109,10 @@ export default function CreateOrder() {
                     onCancel={() => setShowCancelModal(true)}
                     onOpenClientModal={() => setShowClientModal(true)}
                     products={products}
+                    clients={clients}
                     addProduct={addProduct}
+                    handleQuantityChange={handleQuantityChange}
+                    handleQuantityBlur={handleQuantityBlur}
                     currentProducts={currentProducts}
                     currentPage={currentPage}
                     setCurrentPage={setCurrentPage}
