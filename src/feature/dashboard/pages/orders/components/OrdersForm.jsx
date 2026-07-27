@@ -1,5 +1,5 @@
-import { Boxes, CircleUser, FileText, Plus, X, Trash, CreditCard, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Boxes, CircleUser, FileText, Plus, Minus, X, Trash, CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Calendar from "../../../components/ui/Calendar";
 import AddProductModal from "../../../components/ui/AddProductModal";
@@ -17,7 +17,10 @@ export default function OrdersForm({
     onCancel,
     onOpenClientModal,
     products,
+    clients,
     addProduct,
+    handleQuantityChange,
+    handleQuantityBlur,
     currentProducts,
     currentPage,
     setCurrentPage,
@@ -26,6 +29,19 @@ export default function OrdersForm({
     itemsPerPage,
     paymentOptions
 }) {
+
+    const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+    const clientDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (clientDropdownRef.current && !clientDropdownRef.current.contains(e.target)) {
+                setIsClientDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
     const [openProductModal, setOpenProductModal] = useState(false);
@@ -80,31 +96,86 @@ export default function OrdersForm({
                     {/* ================= PRIMERA FILA ================= */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 w-full">
 
-                        {/* DOCUMENTO */}
-                        <div className="flex flex-col gap-3 w-full">
+                        {/* BUSCAR CLIENTE */}
+                        <div className="flex flex-col gap-2 w-full relative" ref={clientDropdownRef}>
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <FileText size={16} />
-                                <span>Documento *</span>
+                                <span>Buscar cliente *</span>
                             </div>
 
-                            <input
-                                type="text"
-                                name="documento"
-                                value={formData.documento}
-                                onChange={handleChange}
-                                placeholder="Ingrese documento"
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 
-                                ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
-                            />
+                            <div className="relative w-full">
+                                <input
+                                    type="text"
+                                    name="documento"
+                                    value={formData.documento}
+                                    onChange={(e) => {
+                                        handleChange(e);
+                                        setIsClientDropdownOpen(true);
+                                    }}
+                                    onFocus={(e) => {
+                                        setIsClientDropdownOpen(true);
+                                        e.target.select();
+                                    }}
+                                    onClick={(e) => {
+                                        setIsClientDropdownOpen(true);
+                                        e.target.select();
+                                    }}
+                                    placeholder="Buscar por cédula o nombre..."
+                                    className={`w-full bg-gray-200 rounded-xl px-4 py-3 pr-10 text-sm shadow-md focus:outline-none focus:ring-2 
+                                    ${errors.documento ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
+                                />
+                                {formData.documento && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            handleChange({ target: { name: "documento", value: "" } });
+                                            setIsClientDropdownOpen(true);
+                                        }}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition cursor-pointer"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                )}
+                            </div>
+
+                            {isClientDropdownOpen && formData.documento && (
+                                <div className="absolute top-[75px] w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-60 overflow-y-auto">
+                                    {clients?.filter(c => 
+                                        (c.documento?.toLowerCase() || "").includes(formData.documento.toLowerCase()) || 
+                                        (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.documento.toLowerCase())
+                                    ).map(c => (
+                                        <div 
+                                            key={c.id} 
+                                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0"
+                                            onClick={() => {
+                                                handleChange({ target: { name: "documento", value: c.documento } });
+                                                setIsClientDropdownOpen(false);
+                                            }}
+                                        >
+                                            <p className="text-sm font-medium text-gray-800">{c.nombres} {c.apellidos}</p>
+                                            <p className="text-xs text-gray-500">C.C. {c.documento}</p>
+                                        </div>
+                                    ))}
+                                    {clients?.filter(c => 
+                                        (c.documento?.toLowerCase() || "").includes(formData.documento.toLowerCase()) || 
+                                        (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.documento.toLowerCase())
+                                    ).length === 0 && (
+                                        <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                                            No se encontraron resultados
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <ValidationMessage
                                 error={errors.documento}
                                 success={formData.clienteId}
-                                successMessage="Cliente válido"
+                                successMessage="Listo"
                             />
                         </div>
 
                         {/* CLIENTE (AUTOMATICO) */}
-                        <div className="flex flex-col gap-3 w-full">
+                        <div className="flex flex-col gap-2 w-full">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                                 <CircleUser size={16} />
                                 <span>Cliente</span>
@@ -114,19 +185,30 @@ export default function OrdersForm({
                                 <input
                                     type="text"
                                     value={formData.clienteNombre || ""}
-                                    disabled
-                                    className="bg-gray-200/70 rounded-xl px-4 py-3 text-sm shadow-md w-full text-gray-500"
-                                    placeholder="Se llena automaticamente"
+                                    readOnly
+                                    className="bg-gray-200/70 rounded-xl px-4 py-3 text-sm shadow-md w-full text-gray-500 cursor-default outline-none"
+                                    placeholder={formData.documento ? "No encontrado" : "Se llena automáticamente"}
                                 />
 
                                 {/* BOTON + PARA CREAR CLIENTE */}
                                 <button
                                     type="button"
                                     onClick={onOpenClientModal}
-                                    className="bg-yellow-400 hover:bg-yellow-500 transition-all rounded-xl px-4 shadow-md cursor-pointer">
+                                    className="bg-yellow-400 hover:bg-yellow-500 transition-all rounded-xl px-4 shadow-md cursor-pointer"
+                                    title="Crear cliente">
                                     +
                                 </button>
                             </div>
+                            {formData.documento && !formData.clienteNombre && (
+                                <div className="flex items-center gap-1 text-xs mt-1 text-red-500">
+                                    <AlertCircle size={12} /><span>Cliente no encontrado</span>
+                                </div>
+                            )}
+                            {formData.clienteNombre && (
+                                <div className="flex items-center gap-1 text-xs mt-1 text-green-500">
+                                    <CheckCircle2 size={12} /><span>Cliente encontrado</span>
+                                </div>
+                            )}
                         </div>
 
                     </div>
@@ -236,7 +318,7 @@ export default function OrdersForm({
                                 <thead className="bg-gray-100">
                                     <tr className="text-left border-b border-gray-200">
                                         <th className="px-4 py-2 font-semibold">Producto</th>
-                                        <th className="px-4 py-2 font-semibold text-center w-24">Cantidad</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-36">Cantidad</th>
                                         <th className="px-4 py-2 font-semibold text-center w-28">Precio Unit</th>
                                         <th className="px-4 py-2 font-semibold text-center w-32">Subtotal</th>
                                         <th className="px-4 py-2 font-semibold text-center w-16"></th>
@@ -256,7 +338,33 @@ export default function OrdersForm({
                                             return (
                                                 <tr key={producto.id || index} className="border-b border-gray-200">
                                                     <td className="px-4 py-2 ">{producto.nombre}</td>
-                                                    <td className="px-4 py-2 text-center">{producto.cantidad}</td>
+                                                    <td className="px-4 py-2 text-center">
+                                                        <div className="inline-flex items-center justify-center bg-gray-100 border border-gray-300 rounded-lg p-0.5 shadow-inner">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleQuantityChange(producto.id, Math.max(1, (parseInt(producto.cantidad, 10) || 1) - 1))}
+                                                                className="p-1 hover:bg-white rounded-md text-gray-600 hover:text-gray-900 transition-all cursor-pointer shadow-sm active:scale-95"
+                                                                title="Disminuir cantidad"
+                                                            >
+                                                                <Minus size={14} />
+                                                            </button>
+                                                            <input
+                                                                type="text"
+                                                                value={producto.cantidad}
+                                                                onChange={(e) => handleQuantityChange(producto.id, e.target.value)}
+                                                                onBlur={() => handleQuantityBlur(producto.id)}
+                                                                className="w-12 text-center bg-transparent font-semibold text-sm focus:outline-none focus:bg-white rounded px-1 transition-all"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleQuantityChange(producto.id, (parseInt(producto.cantidad, 10) || 0) + 1)}
+                                                                className="p-1 hover:bg-white rounded-md text-gray-600 hover:text-gray-900 transition-all cursor-pointer shadow-sm active:scale-95"
+                                                                title="Aumentar cantidad"
+                                                            >
+                                                                <Plus size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
                                                     <td className="px-4 py-2 text-center">{formatCurrency(producto.precio)}</td>
                                                     <td className="px-4 py-2 text-center">{formatCurrency(producto.subtotal)}</td>
                                                     <td className="px-4 py-2 text-center">

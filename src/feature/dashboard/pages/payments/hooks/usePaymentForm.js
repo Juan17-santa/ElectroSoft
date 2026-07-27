@@ -124,7 +124,12 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
             case "monto": {
                 const raw = parseFloat(String(value).replace(/\./g, "").replace(",", ".")) || 0;
                 if (!raw || raw <= 0) return "Ingresa un monto válido";
+                
+                const minAbono = Math.min(10000, formData.montoPorPagar);
+                if (raw < minAbono) return `El abono mínimo es de $${fmt(minAbono)}`;
+                if (raw % 50 !== 0 && raw !== formData.montoPorPagar) return "El abono debe ser múltiplo de 50";
                 if (raw > formData.montoPorPagar) return `El monto no puede superar $${fmt(formData.montoPorPagar)}`;
+                
                 return "";
             }
             default:

@@ -1,5 +1,5 @@
-import { User, FileText, X, Plus, Trash, AlertCircle, CheckCircle2, ChevronDown, Boxes } from "lucide-react";
-import { useState, useEffect } from "react";
+import { User, FileText, X, Plus, Minus, Trash, AlertCircle, CheckCircle2, ChevronDown, Boxes } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { SalesService } from "./services/SalesService";
@@ -24,6 +24,20 @@ const formatCOP = (val) => {
 export default function CreateSales() {
     const navigate = useNavigate();
     const [alert, setAlert] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
+    const clientDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (clientDropdownRef.current && !clientDropdownRef.current.contains(e.target)) {
+                setIsClientDropdownOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
     const now = new Date();
     const hoy = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -41,7 +55,7 @@ export default function CreateSales() {
         estado: "Vigente"
     });
 
-    const [tocado, setTocado] = useState({ numeroDocumento: false, fecha: false, tipoVenta: false, diasPlazo: false });
+    const [tocado, setTocado] = useState({ numeroDocumento: false, fecha: false, tipoVenta: false, diasPlazo: false, montoCredito: false });
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
 
     const [productos, setProductos] = useState([]);
@@ -68,32 +82,63 @@ export default function CreateSales() {
     const resultadoDoc = validarDocumentoCliente(formData.numeroDocumento);
     const estadoNumDoc = tocado.numeroDocumento ? resultadoDoc : null;
 
-    // Siempre se muestran ambas opciones — las validaciones de crédito son inline
-    const opcionesTipoVenta = [
-        { value: "Contado", label: "Contado" },
-        { value: "Credito", label: "Crédito" }
-    ];
+    const [montoCredito, setMontoCredito] = useState("");
 
+    // Opciones siempre visibles — el bloqueo se hace con alerta inline
     const clienteTieneCupo = resultadoDoc.cliente?.cupoActivo && (resultadoDoc.cliente?.cupoTotal || 0) > 0;
+    const cupoDisponible = clienteTieneCupo
+        ? Math.max(0, (resultadoDoc.cliente?.cupoTotal || 0) - (resultadoDoc.cliente?.cupoOcupado || 0))
+        : 0;
     const cupoTotal = resultadoDoc.cliente?.cupoTotal || 0;
 
+    const opcionesTipoVenta = [
+        { value: "Contado", label: "Contado" },
+        { value: "Credito", label: "Crédito" },
+        { value: "Mixto", label: "Mixto" }
+    ];
+
     const calcularTotales = () => {
-        const t = productos.reduce((acc, p) => acc + (p.cantidad * p.precio),0);
-        const i = t * 0.19;
-        const s = t - i;
-        return { subtotal: s, iva: i, total: t };
+        const sub = productos.reduce((acc, p) => acc + (p.cantidad * p.precio), 0);
+        const iv = sub * 0.19;
+        const tot = sub + iv;
+        return { subtotal: sub, iva: iv, total: tot };
     };
     const { subtotal, iva, total } = calcularTotales();
 
-    const isCreditBlocked = formData.tipoVenta === "Credito" && resultadoDoc.valido && !clienteTieneCupo;
-    const isQuotaExceeded = formData.tipoVenta === "Credito" && resultadoDoc.valido && clienteTieneCupo && total > cupoTotal;
+    const isCreditBlocked = (formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") && resultadoDoc.valido && !clienteTieneCupo;
+    const isQuotaExceeded = formData.tipoVenta === "Credito" && resultadoDoc.valido && clienteTieneCupo && total > cupoDisponible;
+    const isLowCreditAmount = (formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") && total > 0 && total < 10000;
 
-    // Error de crédito: se calcula si eligieron Crédito y hay un problema
+    // Validación de montoCredito para tipo Mixto
+    const montoCreditoNum = parseFloat(String(montoCredito).replace(/\D/g, "")) || 0;
+    const montoContado = total > 0 ? Math.max(0, total - montoCreditoNum) : 0;
+    const errorMontoCredito = formData.tipoVenta === "Mixto"
+        ? (!montoCreditoNum || montoCreditoNum < 10000)
+            ? "El monto a crédito debe ser mínimo de $ 10.000"
+            : montoCreditoNum % 50 !== 0
+                ? "El monto debe ser en múltiplos de $ 50"
+                : montoCreditoNum > cupoDisponible
+                    ? `No puede superar el cupo disponible (${formatCOP(cupoDisponible)})`
+                    : (total > 0 && montoCreditoNum >= total)
+                        ? "Si paga todo a crédito, selecciona tipo Crédito"
+                        : (total > 0 && (total - montoCreditoNum) < 10000)
+                            ? "La parte de contado debe ser mínimo de $ 10.000"
+                            : null
+        : null;
+
+    useEffect(() => {
+        // Limpiar montoCredito si cambia el tipo de venta
+        if (formData.tipoVenta !== "Mixto") setMontoCredito("");
+        setTocado(prev => ({ ...prev, diasPlazo: false, montoCredito: false }));
+    }, [formData.tipoVenta]);
+
     const errorCredito = isCreditBlocked
-        ? "Este cliente no tiene cupo de crédito asignado. Asígnale uno desde el módulo de Clientes para poder fiarle."
+        ? "Este cliente no tiene cupo de crédito asignado. Asígnale uno desde el módulo de Clientes."
         : isQuotaExceeded
-            ? `El total de la venta (${formatCOP(total)}) supera el cupo de crédito del cliente (${formatCOP(cupoTotal)}).`
-            : null;
+            ? `El total (${formatCOP(total)}) supera el cupo disponible (${formatCOP(cupoDisponible)}). Reduce los productos o usa tipo Mixto.`
+            : isLowCreditAmount
+                ? `El monto total (${formatCOP(total)}) es inferior a $10.000. No se otorgan créditos por montos tan bajos; cóbralo de Contado.`
+                : null;
 
     const validarTipoVenta = () => {
         if (!formData.tipoVenta) return { valido: false, mensaje: "Seleccione un tipo de venta." };
@@ -103,15 +148,18 @@ export default function CreateSales() {
     const validarDiasPlazo = () => {
         if (formData.tipoVenta === "Contado") return { valido: true };
         const dias = Number(formData.diasPlazo);
-        if (formData.diasPlazo === "" || isNaN(dias) || dias < 0 || dias > 60) {
-            return { valido: false, mensaje: "Ingrese un valor entre 0 y 60." };
+        if (formData.diasPlazo === "" || isNaN(dias)) {
+            return { valido: false, mensaje: "Ingresa el plazo en días" };
+        }
+        if (dias < 0 || dias > 60) {
+            return { valido: false, mensaje: "El plazo máximo es de 60 días" };
         }
         return { valido: true };
     };
 
     const estadoTipoVenta = tocado.tipoVenta ? validarTipoVenta() : null;
     const estadoDiasPlazo = tocado.diasPlazo ? validarDiasPlazo() : null;
-    const estadoFecha = tocado.fecha ? (Validations.campoRequerido(formData.fecha) ? { valido: true } : { valido: false, mensaje: "La fecha es requerida." }) : null;
+    const estadoFecha = { valido: true };
 
     const ringClass = () => "focus:ring-yellow-400";
 
@@ -146,7 +194,7 @@ export default function CreateSales() {
 
     const handleChange = (e) => {
         let { name, value } = e.target;
-        if (name === "numeroDocumento") value = value.replace(/\D/g, "").slice(0, 10);
+        if (name === "numeroDocumento") value = value.slice(0, 50);
         if (name === "diasPlazo") {
             value = value.replace(/\D/g, "");
             if (value !== "" && Number(value) > 60) value = "60";
@@ -155,13 +203,34 @@ export default function CreateSales() {
         tocar(name);
     };
 
-    const handleProductChange = (productId, field, value) => {
-        const newProductos = [...productos];
-        const index = newProductos.findIndex(p => p.id === productId);
-        if (index !== -1) {
-            newProductos[index][field] = field === "cantidad" ? parseFloat(value) || 0 : value;
-            setProductos(newProductos);
+    const handleQuantityChange = (productId, newQuantity) => {
+        const productInfo = availableProducts.find(p => (p.id || p._id) === productId);
+        const maxStock = productInfo ? (productInfo.stock || 999999) : 999999;
+        
+        if (newQuantity === "") {
+            setProductos(prev => prev.map(p => p.id === productId ? { ...p, cantidad: "" } : p));
+            return;
         }
+        
+        let validQuantity = parseInt(newQuantity, 10);
+        if (isNaN(validQuantity)) return;
+        
+        if (validQuantity > maxStock) {
+            validQuantity = maxStock;
+            setAlert({ type: "error", message: `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}` });
+        }
+        
+        setProductos(prev => prev.map(p => p.id === productId ? { ...p, cantidad: validQuantity } : p));
+    };
+
+    const handleQuantityBlur = (productId) => {
+        setProductos(prev => prev.map(p => {
+            if (p.id === productId) {
+                const num = parseInt(p.cantidad, 10);
+                if (isNaN(num) || num < 1) return { ...p, cantidad: 1 };
+            }
+            return p;
+        }));
     };
 
     const getAvailableStock = (product) => {
@@ -235,7 +304,7 @@ export default function CreateSales() {
 
     const handleForm = async (e) => {
         e.preventDefault();
-        setTocado({ numeroDocumento: true, fecha: true, tipoVenta: true, diasPlazo: true });
+        setTocado({ numeroDocumento: true, fecha: true, tipoVenta: true, diasPlazo: true, montoCredito: true });
 
         const vDoc = validarDocumentoCliente(formData.numeroDocumento);
         const vTipoVenta = validarTipoVenta();
@@ -250,17 +319,23 @@ export default function CreateSales() {
 
         if (!vDoc.valido || !vFech.valido || !vTipoVenta.valido || !vDiasPlazo.valido || productos.length === 0) return;
 
-        // Bloquear si hay error de crédito (sin cupo o total supera cupo)
+        // Bloquear si hay error de crédito (sin cupo)
         if (errorCredito) {
             setAlert({ type: "error", message: errorCredito });
             return;
         }
 
+        // Bloquear si tipo Mixto con montoCredito inválido
+        if (formData.tipoVenta === "Mixto" && errorMontoCredito) {
+            setAlert({ type: "error", message: errorMontoCredito });
+            return;
+        }
+
         try {
             const datosVenta = {
-                numeroDocumento: resultadoDoc.cliente?.id, // clienteId ObjectId para el backend
-                tipoVenta: formData.tipoVenta === "Credito" ? "Crédito" : "Contado",
-                diasPlazo: formData.tipoVenta === "Credito" ? Number(formData.diasPlazo) : null,
+                numeroDocumento: resultadoDoc.cliente?.id,
+                tipoVenta: formData.tipoVenta === "Credito" ? "Crédito" : formData.tipoVenta,
+                diasPlazo: (formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") ? Number(formData.diasPlazo) : null,
                 cliente: clienteNombre,
                 fecha: formData.fecha,
                 estado: formData.estado,
@@ -268,8 +343,10 @@ export default function CreateSales() {
                 subtotal,
                 iva,
                 total,
-                montoPagado: formData.tipoVenta === "Contado" ? total : 0,
-                montoPorPagar: formData.tipoVenta === "Contado" ? 0 : total
+                montoPagado: formData.tipoVenta === "Contado" ? total : formData.tipoVenta === "Mixto" ? montoContado : 0,
+                montoPorPagar: formData.tipoVenta === "Contado" ? 0 : formData.tipoVenta === "Mixto" ? montoCreditoNum : total,
+                montoCredito: formData.tipoVenta === "Mixto" ? montoCreditoNum : (formData.tipoVenta === "Credito" ? total : 0),
+                montoContado: formData.tipoVenta === "Mixto" ? montoContado : (formData.tipoVenta === "Contado" ? total : 0)
             };
             await SalesService.create(datosVenta);
             setAlert({ type: "success", message: "Venta registrada correctamente." });
@@ -309,17 +386,73 @@ export default function CreateSales() {
                     {/* FILA 1 — 3 columnas */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Número Documento */}
-                        <div className="flex flex-col gap-0">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium mb-2"><FileText size={14} /><span>Nº Documento *</span></div>
-                            <input
-                                type="text"
-                                name="numeroDocumento"
-                                value={formData.numeroDocumento}
-                                onChange={handleChange}
-                                onBlur={() => tocar("numeroDocumento")}
-                                placeholder="Ej: 1234567890"
-                                className={`bg-gray-200 rounded-xl px-3 py-3 text-sm shadow-md focus:outline-none transition-all duration-300 ${ringClass(estadoNumDoc)}`}
-                            />
+                        <div className="flex flex-col gap-0 relative" ref={clientDropdownRef}>
+                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium mb-2"><FileText size={14} /><span>Buscar cliente *</span></div>
+                            <div className="relative w-full">
+                                <input
+                                    type="text"
+                                    name="numeroDocumento"
+                                    value={formData.numeroDocumento}
+                                    onChange={(e) => {
+                                        handleChange(e);
+                                        setIsClientDropdownOpen(true);
+                                    }}
+                                    onFocus={(e) => {
+                                        setIsClientDropdownOpen(true);
+                                        e.target.select();
+                                    }}
+                                    onClick={(e) => {
+                                        setIsClientDropdownOpen(true);
+                                        e.target.select();
+                                    }}
+                                    onBlur={() => tocar("numeroDocumento")}
+                                    placeholder="Buscar por cédula o nombre..."
+                                    className={`w-full bg-gray-200 rounded-xl px-3 py-3 pr-8 text-sm shadow-md focus:outline-none transition-all duration-300 ${ringClass(estadoNumDoc)}`}
+                                />
+                                {formData.numeroDocumento && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setFormData(prev => ({ ...prev, numeroDocumento: "" }));
+                                            setClienteNombre("");
+                                            setIsClientDropdownOpen(true);
+                                        }}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition cursor-pointer"
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                )}
+                            </div>
+                            
+                            {isClientDropdownOpen && formData.numeroDocumento && (
+                                <div className="absolute top-[75px] w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-60 overflow-y-auto">
+                                    {clients.filter(c => 
+                                        (c.documento?.toLowerCase() || "").includes(formData.numeroDocumento.toLowerCase()) || 
+                                        (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.numeroDocumento.toLowerCase())
+                                    ).map(c => (
+                                        <div 
+                                            key={c.id} 
+                                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0"
+                                            onClick={() => {
+                                                setFormData(prev => ({ ...prev, numeroDocumento: c.documento }));
+                                                setClienteNombre(`${c.nombres} ${c.apellidos}`);
+                                                setIsClientDropdownOpen(false);
+                                            }}
+                                        >
+                                            <p className="text-sm font-medium text-gray-800">{c.nombres} {c.apellidos}</p>
+                                            <p className="text-xs text-gray-500">C.C. {c.documento}</p>
+                                        </div>
+                                    ))}
+                                    {clients.filter(c => 
+                                        (c.documento?.toLowerCase() || "").includes(formData.numeroDocumento.toLowerCase()) || 
+                                        (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.numeroDocumento.toLowerCase())
+                                    ).length === 0 && (
+                                        <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                                            No se encontraron resultados
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                             {tocado.numeroDocumento && (
                                 <ValidationMessage
                                     error={!estadoNumDoc?.valido ? estadoNumDoc?.mensaje : null}
@@ -382,23 +515,31 @@ export default function CreateSales() {
                     </div>
 
                     {/* FILA 2 */}
-                    <div className={`grid gap-6 ${formData.tipoVenta === "Credito" ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
-                        <Calendar
-                            fechaISO={formData.fecha}
-                            onFechaChange={(val) => {
-                                setFormData(prev => ({ ...prev, fecha: val }));
-                                tocar("fecha");
-                            }}
-                            label="Fecha"
-                            required={true}
-                            minDate={hoy}
-                            maxDate={hoy}
-                            className="gap-3"
-                        />
+                    <div className={`grid gap-6 ${(formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
+                        <div className="flex flex-col gap-0">
+                            <Calendar
+                                fechaISO={formData.fecha}
+                                onFechaChange={(val) => {
+                                    setFormData(prev => ({ ...prev, fecha: val }));
+                                    tocar("fecha");
+                                }}
+                                label="Fecha"
+                                required={true}
+                                minDate={hoy}
+                                maxDate={hoy}
+                                className="gap-3"
+                            />
+                            <div className="mt-1">
+                                <ValidationMessage
+                                    success={true}
+                                    successMessage="Listo"
+                                />
+                            </div>
+                        </div>
 
-                        {formData.tipoVenta === "Credito" && (
+                        {(formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") && (
                             <div className="flex flex-col gap-0">
-                                <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Plazo días (Crédito) *</span></div>
+                                <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Plazo días *</span></div>
                                 <input
                                     type="text"
                                     name="diasPlazo"
@@ -409,7 +550,7 @@ export default function CreateSales() {
                                     placeholder={isCreditBlocked ? "No disponible sin cupo" : "Ej: 45 (Máx 60)"}
                                     className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-inner focus:outline-none focus:ring-2 transition-all duration-300 ${ringClass(estadoDiasPlazo)} ${isCreditBlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 />
-                                {tocado.diasPlazo && !isCreditBlocked && (
+                                {!isCreditBlocked && (
                                     <div className="mt-1">
                                         <ValidationMessage
                                             error={!estadoDiasPlazo?.valido ? estadoDiasPlazo?.mensaje : null}
@@ -421,6 +562,45 @@ export default function CreateSales() {
                             </div>
                         )}
 
+                        {formData.tipoVenta === "Mixto" && (
+                            <div className="flex flex-col gap-0">
+                                <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Monto a crédito *</span></div>
+                                <input
+                                    type="text"
+                                    value={montoCredito}
+                                    onChange={(e) => {
+                                        const raw = e.target.value.replace(/\D/g, "");
+                                        if (!raw) {
+                                            setMontoCredito("");
+                                        } else {
+                                            let num = parseInt(raw, 10);
+                                            if (num > cupoDisponible) {
+                                                num = cupoDisponible;
+                                            }
+                                            setMontoCredito(new Intl.NumberFormat("es-CO").format(num));
+                                        }
+                                    }}
+                                    disabled={isCreditBlocked}
+                                    placeholder={isCreditBlocked ? "No disponible sin cupo" : `Máx. cupo: ${formatCOP(cupoDisponible)}`}
+                                    onBlur={() => tocar("montoCredito")}
+                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-inner focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 ${isCreditBlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                />
+                                {!isCreditBlocked && montoCreditoNum > 0 && !errorMontoCredito && total > 0 && (
+                                    <div className="mt-1.5 px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-xl">
+                                        <p className="text-xs text-yellow-700">Crédito: <span className="font-bold">{formatCOP(montoCreditoNum)}</span> · Paga ahora: <span className="font-bold">{formatCOP(montoContado)}</span></p>
+                                    </div>
+                                )}
+                                {!isCreditBlocked && tocado.montoCredito && errorMontoCredito && (
+                                    <div className="flex items-center gap-1.5 mt-1 px-3 py-1.5 bg-red-50 border border-red-200 rounded-xl">
+                                        <AlertCircle size={12} className="text-red-500 shrink-0" />
+                                        <span className="text-xs text-red-600">{errorMontoCredito}</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+
+
                         <div className="flex flex-col gap-0">
                             <div className="flex items-center text-yellow-400 gap-2 text-md font-medium mb-2"><FileText size={16} /><span>Estado</span></div>
                             <input
@@ -429,6 +609,12 @@ export default function CreateSales() {
                                 value={formData.estado}
                                 className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-inner text-gray-500 cursor-default outline-none"
                             />
+                            <div className="mt-1">
+                                <ValidationMessage
+                                    success={true}
+                                    successMessage="Listo"
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -459,7 +645,7 @@ export default function CreateSales() {
                                 <thead className="bg-gray-100">
                                     <tr className="text-left border-b border-gray-200">
                                         <th className="px-4 py-2 font-semibold">Producto</th>
-                                        <th className="px-4 py-2 font-semibold text-center w-24">Cantidad</th>
+                                        <th className="px-4 py-2 font-semibold text-center w-36">Cantidad</th>
                                         <th className="px-4 py-2 font-semibold text-center w-28">Precio Unit</th>
                                         <th className="px-4 py-2 font-semibold text-center w-32">Subtotal</th>
                                         <th className="px-4 py-2 font-semibold text-center w-16"></th>
@@ -476,9 +662,35 @@ export default function CreateSales() {
                                         paginatedProducts.map((producto) => (
                                             <tr key={producto.id} className="border-b border-gray-200">
                                                 <td className="px-4 py-2">{producto.nombre}</td>
-                                                <td className="px-4 py-2 text-center">{producto.cantidad}</td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <div className="inline-flex items-center justify-center bg-gray-100 border border-gray-300 rounded-lg p-0.5 shadow-inner">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleQuantityChange(producto.id, Math.max(1, (parseInt(producto.cantidad, 10) || 1) - 1))}
+                                                            className="p-1 hover:bg-white rounded-md text-gray-600 hover:text-gray-900 transition-all cursor-pointer shadow-sm active:scale-95"
+                                                            title="Disminuir cantidad"
+                                                        >
+                                                            <Minus size={14} />
+                                                        </button>
+                                                        <input
+                                                            type="text"
+                                                            value={producto.cantidad}
+                                                            onChange={(e) => handleQuantityChange(producto.id, e.target.value)}
+                                                            onBlur={() => handleQuantityBlur(producto.id)}
+                                                            className="w-12 text-center bg-transparent font-semibold text-sm focus:outline-none focus:bg-white rounded px-1 transition-all"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleQuantityChange(producto.id, (parseInt(producto.cantidad, 10) || 0) + 1)}
+                                                            className="p-1 hover:bg-white rounded-md text-gray-600 hover:text-gray-900 transition-all cursor-pointer shadow-sm active:scale-95"
+                                                            title="Aumentar cantidad"
+                                                        >
+                                                            <Plus size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
                                                 <td className="px-4 py-2 text-center">{formatCOP(producto.precio)}</td>
-                                                <td className="px-4 py-2 text-center font-semibold">{formatCOP(producto.cantidad * producto.precio)}</td>
+                                                <td className="px-4 py-2 text-center font-semibold">{formatCOP((parseInt(producto.cantidad, 10) || 0) * producto.precio)}</td>
                                                 <td className="px-4 py-2 text-center">
                                                     <button
                                                         type="button"
@@ -512,10 +724,18 @@ export default function CreateSales() {
                                     </div>
                                 )}
                             </div>
-                            <div className="flex flex-wrap gap-4 md:gap-6 items-center">
-                                <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formatCOP(subtotal)}</span></span>
-                                <span className="text-gray-600 text-sm">IVA (19%): <span className="font-bold text-blue-600">{formatCOP(iva)}</span></span>
-                                <span className="text-gray-600 text-sm">Total: <span className="font-bold text-green-600 text-lg">{formatCOP(total)}</span></span>
+                            <div className="flex flex-col items-end gap-2">
+                                <div className="flex flex-wrap gap-4 md:gap-6 items-center justify-end">
+                                    <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formatCOP(subtotal)}</span></span>
+                                    <span className="text-gray-600 text-sm">IVA (19%): <span className="font-bold text-blue-600">{formatCOP(iva)}</span></span>
+                                    <span className="text-gray-600 text-sm">Total: <span className="font-bold text-green-600 text-lg">{formatCOP(total)}</span></span>
+                                </div>
+                                {errorCredito && (
+                                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-3.5 py-1.5 rounded-xl text-xs font-medium shadow-2xs max-w-lg text-right animate-pulse">
+                                        <AlertCircle size={15} className="text-red-500 shrink-0" />
+                                        <span><strong>Venta no permitida:</strong> {errorCredito}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -528,9 +748,9 @@ export default function CreateSales() {
                             Cancelar
                         </button>
                         <button type="submit"
-                            disabled={!!errorCredito}
+                            disabled={!!errorCredito || !!errorMontoCredito || isSubmitting}
                             className="px-5 py-2.5 text-sm rounded-lg bg-linear-to-r from-white to-yellow-300 shadow-md hover:shadow-lg transition font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
-                            Crear Venta
+                            {isSubmitting ? "Creando..." : "Crear Venta"}
                         </button>
                     </div>
                 </form>

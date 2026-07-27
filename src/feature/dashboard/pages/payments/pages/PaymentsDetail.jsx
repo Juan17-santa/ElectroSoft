@@ -61,18 +61,27 @@ export default function PaymentDetail() {
                 <div className="relative z-10 flex flex-col gap-6">
 
                     {/* Título + botón reporte */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                             <FileText size={22} />
                             <h2 className="text-xl font-semibold">Detalles del Crédito</h2>
                         </div>
-                        <button
-                            onClick={() => generarReporteVenta(venta, abonosTable)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
-                        >
-                            <FileDown size={16} />
-                            <span className="hidden sm:inline">Descargar detalle</span>
-                        </button>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => generarReporteVenta(venta, abonosTable)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-300 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
+                            >
+                                <FileDown size={16} />
+                                <span className="hidden sm:inline">Descargar detalle</span>
+                            </button>
+                            <button
+                                onClick={() => navigate(-1)}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm hover:shadow-md transition cursor-pointer"
+                            >
+                                <ArrowLeft size={16} />
+                                Volver
+                            </button>
+                        </div>
                     </div>
 
                     <div className="bg-white rounded-2xl p-4 md:p-8 shadow-xl max-w-4xl w-full mx-auto">
@@ -216,16 +225,7 @@ export default function PaymentDetail() {
                 </div>
             </div>
 
-            {/* Botón volver */}
-            <div className="flex justify-end gap-3">
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
-                >
-                    <ArrowLeft size={16} />
-                    Volver
-                </button>
-            </div>
+
         </div>
     );
 }

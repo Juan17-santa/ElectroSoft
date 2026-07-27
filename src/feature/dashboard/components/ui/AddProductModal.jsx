@@ -52,7 +52,7 @@ export default function AddProductModal({
         if (!product) return 0;
         const base = getAvailableStock?.(product) ?? 0;
         const inQueue = queue.find((q) => String(q.id) === String(product.id));
-        return base - (inQueue?.cantidad ?? 0);
+        return base - (Number(inQueue?.cantidad) || 0);
     };
 
     // ── PRODUCTOS FILTRADOS + PAGINADOS ──────────────────────────────────────
@@ -155,26 +155,73 @@ export default function AddProductModal({
         const qty = Number(quantity);
         const existing = queue.find((q) => String(q.id) === String(selectedProduct.id));
         setQueue(existing
-            ? queue.map((q) => String(q.id) === String(selectedProduct.id) ? { ...q, cantidad: q.cantidad + qty } : q)
+            ? queue.map((q) => String(q.id) === String(selectedProduct.id) ? { ...q, cantidad: (Number(q.cantidad) || 0) + qty } : q)
             : [...queue, { ...selectedProduct, cantidad: qty }]
         );
         setSelectedProduct(null); setSearchTerm(""); setQuantity("");
         setProductError(""); setQuantityError("");
     };
 
-    const handleRemoveFromQueue = (productId) => {
-        setQueue(queue.filter((q) => String(q.id) !== String(productId)));
+    const handleRemoveFromQueue = (id) => {
+        setQueue((prev) => prev.filter((q) => q.id !== id));
+    };
+
+    const handleUpdateQuantity = (id, change) => {
+        setQueue((prev) => prev.map((q) => {
+            if (q.id === id) {
+                const currentQty = Number(q.cantidad) || 0;
+                const newQty = currentQty + change;
+                if (newQty <= 0) return q;
+                const base = getAvailableStock?.(q) ?? Infinity;
+                if (change > 0 && newQty > base) return q;
+                return { ...q, cantidad: newQty };
+            }
+            return q;
+        }));
+    };
+
+    const handleSetQuantity = (id, value) => {
+        if (value === "") {
+            setQueue((prev) => prev.map((q) => q.id === id ? { ...q, cantidad: "" } : q));
+            return;
+        }
+        const newQty = parseInt(value, 10);
+        if (isNaN(newQty) || newQty < 0) return;
+        
+        setQueue((prev) => prev.map((q) => {
+            if (q.id === id) {
+                const base = getAvailableStock?.(q) ?? Infinity;
+                if (newQty > base) return { ...q, cantidad: base };
+                return { ...q, cantidad: newQty };
+            }
+            return q;
+        }));
+    };
+
+    const handleBlurQuantity = (id) => {
+        setQueue((prev) => prev.map((q) => {
+            if (q.id === id) {
+                if (!q.cantidad || Number(q.cantidad) <= 0) {
+                    return { ...q, cantidad: 1 };
+                }
+            }
+            return q;
+        }));
     };
 
     const handleConfirm = () => {
         if (queue.length === 0) return;
-        onConfirm(queue);
+        const validQueue = queue
+            .map(q => ({ ...q, cantidad: Number(q.cantidad) || 1 }))
+            .filter(q => q.cantidad > 0);
+        if (validQueue.length === 0) return;
+        onConfirm(validQueue);
         onClose();
     };
 
     // ── TOTALES ──────────────────────────────────────────────────────────────
-    const totalItems = queue.reduce((acc, p) => acc + p.cantidad, 0);
-    const totalValue = queue.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
+    const totalItems = queue.reduce((acc, p) => acc + (Number(p.cantidad) || 0), 0);
+    const totalValue = queue.reduce((acc, p) => acc + p.precio * (Number(p.cantidad) || 0), 0);
 
     const totalQueueWithIva = totalValue * 1.19;
     const isExceedingQuota = isCredit && (currentSaleTotal + totalQueueWithIva > quotaAmount);
@@ -509,11 +556,22 @@ export default function AddProductModal({
                                             </p>
                                         </div>
 
-                                        <div className="flex justify-end">
-                                            <span className="text-sm font-semibold px-3 py-0.5 rounded-lg"
-                                                style={{ backgroundColor: "#fef9c3", color: "#a16207" }}>
-                                                {item.cantidad}
-                                            </span>
+                                        <div className="flex justify-end items-center gap-2">
+                                            <button type="button" onClick={() => handleUpdateQuantity(item.id, -1)} className="text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full w-5 h-5 flex items-center justify-center cursor-pointer transition">
+                                                -
+                                            </button>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={item.cantidad}
+                                                onChange={(e) => handleSetQuantity(item.id, e.target.value)}
+                                                onBlur={() => handleBlurQuantity(item.id)}
+                                                className="text-sm font-semibold text-center w-12 py-0.5 rounded-lg border border-transparent focus:border-yellow-400 focus:bg-white focus:outline-none transition"
+                                                style={{ backgroundColor: "#fef9c3", color: "#a16207" }}
+                                            />
+                                            <button type="button" onClick={() => handleUpdateQuantity(item.id, 1)} className="text-gray-400 hover:text-gray-700 bg-gray-100 rounded-full w-5 h-5 flex items-center justify-center cursor-pointer transition">
+                                                +
+                                            </button>
                                         </div>
 
                                         <p className="text-sm text-gray-400 text-right">
@@ -521,7 +579,7 @@ export default function AddProductModal({
                                         </p>
 
                                         <p className="text-sm font-semibold text-gray-700 text-right">
-                                            {fmt(item.precio * item.cantidad)}
+                                            {fmt(item.precio * (Number(item.cantidad) || 0))}
                                         </p>
 
                                         <div className="flex justify-end">

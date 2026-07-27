@@ -21,13 +21,13 @@ export default function ProvidersTable({
 
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
-                            <th className="px-3 py-2 font-semibold w-12">ID</th>
-                            <th className="px-3 py-2 font-semibold w-28">Documento</th>
-                            <th className="px-3 py-2 font-semibold w-56">Nombre proveedor</th>
-                            <th className="px-3 py-2 font-semibold w-48">Nombre contacto</th>
-                            <th className="px-3 py-2 font-semibold w-32">Telefono contacto</th>
+                            <th className="px-3 py-2 font-semibold w-12">#</th>
+                            <th className="px-3 py-2 font-semibold w-24">Tipo</th>
+                            <th className="px-3 py-2 font-semibold w-44">Documento</th>
+                            <th className="px-3 py-2 font-semibold w-64">Proveedor</th>
+                            <th className="px-3 py-2 font-semibold w-40">Teléfono</th>
                             <th className="px-3 py-2 font-semibold w-28 text-center">Estado</th>
-                            <th className="px-3 py-2 font-semibold w-48 text-center">Acciones</th>
+                            <th className="px-3 py-2 font-semibold w-44 text-center">Acciones</th>
                         </tr>
                     </thead>
 
@@ -55,14 +55,13 @@ export default function ProvidersTable({
 
                                 return (
                                     <tr key={provider._id} className="border-b border-gray-300">
-                                        <td className="px-3 py-2 ">{idFormateado}</td>
-                                        <td className="px-3 py-2 ">
-                                            {provider.documentType?.abbreviation}<br />
-                                            {provider.document}
+                                        <td className="px-3 py-2">{idFormateado}</td>
+                                        <td className="px-3 py-2">{provider.providerType === "NATURAL" ? "Natural" : "jurídica"}</td>
+                                        <td className="px-3 py-2">
+                                            {provider.documentType?.abbreviation} - {provider.document}
                                         </td>
                                         <td className="px-3 py-2">{provider.providerName}</td>
-                                        <td className="px-3 py-2">{provider.contactName}</td>
-                                        <td className="px-3 py-2">{provider.contactPhone}</td>
+                                        <td className="px-3 py-2">{provider.providerType === "NATURAL" ? provider.providerPhone : provider.contactPhone}</td>
                                         <td className="px-4 py-2">
                                             <div className="flex flex-col items-center gap-1">
                                                 <div
