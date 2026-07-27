@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import {
-    X, IdCard, FileText, User, Phone,
+    X, IdCard, FileText, User, Phone, Mail, MapPin, Building2,
     AlertCircle, CheckCircle2, Truck, Tag, ChevronDown,
 } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
@@ -36,30 +36,45 @@ function ring(estado) {
 
 export default function CreateProviderModal({ onClose, onSuccess }) {
     // ─── Campos ────────────────────────────────────────────────────────────────
-    const [tipoDoc,            setTipoDoc]            = useState("");
-    const [documento,          setDocumento]          = useState("");
-    const [nombreProveedor,    setNombreProveedor]    = useState("");
-    const [nombreContacto,     setNombreContacto]     = useState("");
-    const [telefonoContacto,   setTelefonoContacto]   = useState("");
-    const [categoriasAsociadas, setCategoriasAsociadas] = useState([]);
-    const [open,               setOpen]               = useState(false);
-    const [saving,             setSaving]             = useState(false);
-    const [apiError,           setApiError]           = useState("");
+    const [providerType,      setProviderType]      = useState("NATURAL");
+    const [documentType,      setDocumentType]      = useState("");
+    const [docNumber,         setDocNumber]         = useState("");
+    const [providerName,      setProviderName]      = useState("");
+    const [providerEmail,     setProviderEmail]     = useState("");
+    const [providerPhone,     setProviderPhone]     = useState("");
+    const [address,           setAddress]           = useState("");
+    const [contactName,       setContactName]       = useState("");
+    const [contactEmail,      setContactEmail]      = useState("");
+    const [contactPhone,      setContactPhone]      = useState("");
+    const [categoriesAssociated, setCategoriesAssociated] = useState([]);
+    const [open,              setOpen]              = useState(false);
+    const [saving,            setSaving]            = useState(false);
+    const [apiError,          setApiError]          = useState("");
 
     // ─── Datos auxiliares ──────────────────────────────────────────────────────
-    const [categoriasList,       setCategoriasList]       = useState([]);
+    const [categoriesList,       setCategoriesList]       = useState([]);
     const [documentTypes,        setDocumentTypes]        = useState([]);
-    const [documentosExistentes, setDocumentosExistentes] = useState([]);
-    const [nombresExistentes,    setNombresExistentes]    = useState([]);
+    const [existingDocuments,    setExistingDocuments]    = useState([]);
+    const [existingNames,        setExistingNames]        = useState([]);
 
     // ─── Ref para dropdown ─────────────────────────────────────────────────────
     const dropdownRef = useRef(null);
 
+    const isNatural  = providerType === "NATURAL";
+    const isJuridica = providerType === "JURIDICA";
+
     // ─── Tocados ───────────────────────────────────────────────────────────────
     const [tocados, setTocados] = useState({
-        tipoDoc: false, documento: false, nombreProveedor: false,
-        nombreContacto: false, telefonoContacto: false,
+        providerType: false, documentType: false, docNumber: false,
+        providerName: false, providerEmail: false, providerPhone: false,
+        address: false, contactName: false, contactEmail: false,
+        contactPhone: false,
     });
+
+    // ─── Tipo de documento NIT ─────────────────────────────────────────────────
+    const nitDocumentType = documentTypes.find(
+        (doc) => doc.abbreviation === "NIT"
+    );
 
     // ─── Carga inicial ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -71,17 +86,15 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
         ])
             .then(([categories, providers, docs]) => {
                 if (!mounted) return;
-                setCategoriasList(categories.filter((category) => category.estado));
+                setCategoriesList(categories.filter((c) => c.estado));
                 setDocumentTypes(docs);
-                setDocumentosExistentes(providers.map((p) => p.documento.trim().toLowerCase()));
-                setNombresExistentes(providers.map((p) => p.nombreProveedor.trim().toLowerCase()));
+                setExistingDocuments(providers.map((p) => (p.document || "").trim().toLowerCase()));
+                setExistingNames(providers.map((p) => (p.providerName || "").trim().toLowerCase()));
             })
             .catch((err) => {
-                if (mounted) setApiError(err.message || "No se pudieron cargar los catalogos.");
+                if (mounted) setApiError(err.message || "No se pudieron cargar los catálogos.");
             });
-        return () => {
-            mounted = false;
-        };
+        return () => { mounted = false; };
     }, []);
 
     // ─── Cerrar dropdown al clickear afuera ────────────────────────────────────
@@ -92,104 +105,157 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
             }
         }
         document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    // ─── Cuando cambia el tipo, resetear campos dependientes ───────────────────
+    useEffect(() => {
+        if (isJuridica) {
+            setDocumentType(nitDocumentType?._id || "");
+            setContactName("");
+            setContactEmail("");
+            setContactPhone("");
+        } else {
+            setDocumentType("");
+            setContactName("");
+            setContactEmail("");
+            setContactPhone("");
+        }
+        setTocados((t) => ({ ...t, documentType: false }));
+    }, [providerType]);
 
     const tocar = (campo) => setTocados((t) => ({ ...t, [campo]: true }));
 
-    const handleToggleCategoria = (categoriaId) => {
-        setCategoriasAsociadas((prev) =>
-            prev.includes(categoriaId)
-                ? prev.filter((id) => id !== categoriaId)
-                : [...prev, categoriaId]
+    const handleToggleCategory = (categoryId) => {
+        setCategoriesAssociated((prev) =>
+            prev.includes(categoryId)
+                ? prev.filter((id) => id !== categoryId)
+                : [...prev, categoryId]
         );
     };
 
     // ─── Validaciones ─────────────────────────────────────────────────────────
-    const validarTipoDoc = (val) => {
+    const validarDocumentType = (val) => {
         if (!val) return { valido: false, mensaje: "Selecciona un tipo de documento." };
         return { valido: true, mensaje: "" };
     };
 
-    const validarDocumento = (val) => {
-        if (!val || !val.trim())
-            return { valido: false, mensaje: "El documento es obligatorio." };
-        if (!/^\d+$/.test(val))
-            return { valido: false, mensaje: "Solo se permiten números." };
-        if (val.length < 8 || val.length > 12)
-            return { valido: false, mensaje: "Debe tener entre 8 y 12 dígitos." };
-        if (documentosExistentes.includes(val.trim().toLowerCase()))
-            return { valido: false, mensaje: "Ya existe un proveedor con ese documento." };
+    const validarDocument = (val) => {
+        if (!val || !val.trim()) return { valido: false, mensaje: "El documento es obligatorio." };
+        if (!/^\d+$/.test(val)) return { valido: false, mensaje: "Solo se permiten números." };
+        if (val.length < 8 || val.length > 12) return { valido: false, mensaje: "Debe tener entre 8 y 12 dígitos." };
+        if (existingDocuments.includes(val.trim().toLowerCase())) return { valido: false, mensaje: "Ya existe un proveedor con ese documento." };
         return { valido: true, mensaje: "" };
     };
 
-    const validarNombreProveedor = (val) => {
-        if (!val || !val.trim())
-            return { valido: false, mensaje: "El nombre del proveedor es obligatorio." };
-        if (val.trim().length < 3)
-            return { valido: false, mensaje: "Mínimo 3 caracteres." };
-        if (!/^(?=.*[a-zA-ZáéíóúÁÉÍÓÚñÑ])[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,&-]+$/.test(val.trim()))
-            return { valido: false, mensaje: "Solo letras, números y símbolos (., &, -)." };
-        if (nombresExistentes.includes(val.trim().toLowerCase()))
-            return { valido: false, mensaje: "Ya existe un proveedor con ese nombre." };
+    const validarProviderName = (val) => {
+        if (!val || !val.trim()) return { valido: false, mensaje: "El nombre del proveedor es obligatorio." };
+        if (val.trim().length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
+        if (isNatural && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val.trim())) return { valido: false, mensaje: "Solo se permiten letras." };
+        if (isJuridica && !/^(?=.*[a-zA-ZáéíóúÁÉÍÓÚñÑ])[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,&-]+$/.test(val.trim())) return { valido: false, mensaje: "Solo letras, números y símbolos (., &, -)." };
+        if (existingNames.includes(val.trim().toLowerCase())) return { valido: false, mensaje: "Ya existe un proveedor con ese nombre." };
         return { valido: true, mensaje: "" };
     };
 
-    const validarNombreContacto = (val) => {
-        if (!val || !val.trim())
-            return { valido: false, mensaje: "El nombre de contacto es obligatorio." };
-        if (val.trim().length < 3)
-            return { valido: false, mensaje: "Mínimo 3 caracteres." };
-        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val.trim()))
-            return { valido: false, mensaje: "Solo se permiten letras." };
+    const validarProviderEmail = (val) => {
+        if (!val || !val.trim()) return { valido: false, mensaje: "El correo es obligatorio." };
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) return { valido: false, mensaje: "Correo no válido." };
         return { valido: true, mensaje: "" };
     };
 
-    const validarTelefono = (val) => {
-        if (!val || !val.trim())
-            return { valido: false, mensaje: "El teléfono es obligatorio." };
-        if (!/^\d+$/.test(val))
-            return { valido: false, mensaje: "Solo se permiten números." };
-        if (val.length < 8 || val.length > 14)
-            return { valido: false, mensaje: "Debe tener entre 8 y 14 dígitos." };
+    const validarProviderPhone = (val) => {
+        if (!val || !val.trim()) return { valido: false, mensaje: "El teléfono es obligatorio." };
+        if (!/^\d+$/.test(val)) return { valido: false, mensaje: "Solo se permiten números." };
+        if (val.length < 8 || val.length > 14) return { valido: false, mensaje: "Debe tener entre 8 y 14 dígitos." };
         return { valido: true, mensaje: "" };
     };
 
-    const estadoTipoDoc   = tocados.tipoDoc          ? validarTipoDoc(tipoDoc)                : null;
-    const estadoDocumento = tocados.documento        ? validarDocumento(documento)             : null;
-    const estadoNombre    = tocados.nombreProveedor  ? validarNombreProveedor(nombreProveedor) : null;
-    const estadoContacto  = tocados.nombreContacto   ? validarNombreContacto(nombreContacto)   : null;
-    const estadoTelefono  = tocados.telefonoContacto ? validarTelefono(telefonoContacto)       : null;
+    const validarAddress = (val) => {
+        if (!val || !val.trim()) return { valido: false, mensaje: "La dirección es obligatoria." };
+        if (val.trim().length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
+        return { valido: true, mensaje: "" };
+    };
+
+    const validarContactName = (val) => {
+        if (!val || !val.trim()) return { valido: false, mensaje: "El nombre del contacto es obligatorio." };
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(val.trim())) return { valido: false, mensaje: "Solo se permiten letras." };
+        return { valido: true, mensaje: "" };
+    };
+
+    const validarContactEmail = (val) => {
+        if (!val || !val.trim()) return { valido: false, mensaje: "El correo del contacto es obligatorio." };
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) return { valido: false, mensaje: "Correo no válido." };
+        return { valido: true, mensaje: "" };
+    };
+
+    const validarContactPhone = (val) => {
+        if (!val || !val.trim()) return { valido: false, mensaje: "El teléfono del contacto es obligatorio." };
+        if (!/^\d+$/.test(val)) return { valido: false, mensaje: "Solo se permiten números." };
+        if (val.length < 8 || val.length > 14) return { valido: false, mensaje: "Debe tener entre 8 y 14 dígitos." };
+        return { valido: true, mensaje: "" };
+    };
+
+    // ─── Estados de validación ────────────────────────────────────────────────
+    const estadoDocumentType = tocados.documentType   ? validarDocumentType(documentType)       : null;
+    const estadoDocument      = tocados.docNumber  ? validarDocument(docNumber)                : null;
+    const estadoProviderName  = tocados.providerName   ? validarProviderName(providerName)        : null;
+    const estadoProviderEmail = tocados.providerEmail  ? validarProviderEmail(providerEmail)      : null;
+    const estadoProviderPhone = tocados.providerPhone  ? validarProviderPhone(providerPhone)      : null;
+    const estadoAddress       = tocados.address        ? validarAddress(address)                  : null;
+    const estadoContactName   = tocados.contactName    ? validarContactName(contactName)          : null;
+    const estadoContactEmail  = tocados.contactEmail   ? validarContactEmail(contactEmail)        : null;
+    const estadoContactPhone  = tocados.contactPhone   ? validarContactPhone(contactPhone)        : null;
 
     // ─── Submit ───────────────────────────────────────────────────────────────
     const handleSubmit = async () => {
         setTocados({
-            tipoDoc: true, documento: true, nombreProveedor: true,
-            nombreContacto: true, telefonoContacto: true,
+            documentType: true, docNumber: true, providerName: true,
+            providerEmail: true, providerPhone: true, address: true,
+            contactName: true, contactEmail: true, contactPhone: true,
         });
 
-        const ok =
-            validarTipoDoc(tipoDoc).valido               &&
-            validarDocumento(documento).valido            &&
-            validarNombreProveedor(nombreProveedor).valido &&
-            validarNombreContacto(nombreContacto).valido   &&
-            validarTelefono(telefonoContacto).valido;
+        const validations = [
+            validarDocumentType(isJuridica ? nitDocumentType?._id : documentType).valido,
+            validarDocument(docNumber).valido,
+            validarProviderName(providerName).valido,
+            validarProviderEmail(providerEmail).valido,
+            validarProviderPhone(providerPhone).valido,
+            validarAddress(address).valido,
+        ];
 
-        if (!ok) return;
+        if (isJuridica) {
+            validations.push(
+                validarContactName(contactName).valido,
+                validarContactEmail(contactEmail).valido,
+                validarContactPhone(contactPhone).valido
+            );
+        }
+
+        if (!validations.every(Boolean)) return;
 
         setSaving(true);
         setApiError("");
         try {
-            const nuevoProveedor = await ServicesShopping.createProvider({
-                tipoDoc,
-                documento: documento.trim(),
-                nombreProveedor: toTitleCase(nombreProveedor.trim()),
-                nombreContacto: toTitleCase(nombreContacto.trim()),
-                telefonoContacto: telefonoContacto.trim(),
-                categoriasAsociadas,
-            });
+            const payload = {
+                providerType,
+                documentType: isJuridica ? nitDocumentType?._id : documentType,
+                document: docNumber.trim(),
+                providerName: toTitleCase(providerName.trim()),
+                providerEmail: providerEmail.trim().toLowerCase(),
+                providerPhone: providerPhone.trim(),
+                address: address.trim(),
+                categoriesAssociated,
+            };
+
+            if (isJuridica) {
+                payload.contactName  = toTitleCase(contactName.trim());
+                payload.contactEmail = contactEmail.trim().toLowerCase();
+                payload.contactPhone = contactPhone.trim();
+            } else {
+                payload.contactName = toTitleCase(providerName.trim());
+            }
+
+            const nuevoProveedor = await ServicesShopping.createProvider(payload);
 
             if (onSuccess) onSuccess(nuevoProveedor);
             onClose();
@@ -207,7 +273,7 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
             style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
         >
             <div
-                className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl border border-gray-200 max-h-screen overflow-y-auto"
+                className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-2xl border border-gray-200 max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* HEADER */}
@@ -230,66 +296,234 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                     </button>
                 </div>
 
-                {/* CAMPOS */}
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4 mt-4">
-
-                    {/* TIPO DOCUMENTO */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                            <IdCard size={18} />
-                            <span>Tipo de documento *</span>
+                {/* TIPO DE PROVEEDOR */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    <button
+                        type="button"
+                        onClick={() => { setProviderType("NATURAL"); tocar("providerType"); }}
+                        className={`rounded-2xl border-2 p-4 bg-white text-left transition-all duration-300 cursor-pointer ${
+                            isNatural ? "border-yellow-400 shadow-lg" : "border-gray-200 hover:border-yellow-300"
+                        }`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isNatural ? "border-yellow-400" : "border-gray-300"}`}>
+                                <span className={`w-2.5 h-2.5 rounded-full transition-transform duration-300 ${isNatural ? "bg-yellow-400 scale-100" : "scale-0"}`} />
+                            </span>
+                            <User size={18} className="text-yellow-400 shrink-0" />
+                            <div className="flex flex-col">
+                                <h3 className="font-bold text-sm leading-tight">Persona Natural</h3>
+                                <p className="text-xs text-gray-500 leading-tight mt-0.5">A título personal.</p>
+                            </div>
                         </div>
-                        <CustomSelect
-                            value={tipoDoc}
-                            onChange={(val) => { setTipoDoc(val); tocar("tipoDoc"); }}
-                            options={documentTypes.map((doc) => ({
-                                value: doc._id ?? String(doc.id ?? doc.id),
-                                label: doc.name
-                                    ? (doc.abbreviation ? `${doc.name} (${doc.abbreviation})` : doc.name)
-                                    : (doc.abbreviation || doc.nombre || "")
-                            }))}
-                            placeholder="Selecciona tipo de documento"
-                            width="w-full"
-                        />
-                        <FieldStatus estado={estadoTipoDoc} />
-                    </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => { setProviderType("JURIDICA"); tocar("providerType"); }}
+                        className={`rounded-2xl border-2 p-4 bg-white text-left transition-all duration-300 cursor-pointer ${
+                            isJuridica ? "border-yellow-400 shadow-lg" : "border-gray-200 hover:border-yellow-300"
+                        }`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <span className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isJuridica ? "border-yellow-400" : "border-gray-300"}`}>
+                                <span className={`w-2.5 h-2.5 rounded-full transition-transform duration-300 ${isJuridica ? "bg-yellow-400 scale-100" : "scale-0"}`} />
+                            </span>
+                            <Building2 size={18} className="text-yellow-400 shrink-0" />
+                            <div className="flex flex-col">
+                                <h3 className="font-bold text-sm leading-tight">Persona Jurídica</h3>
+                                <p className="text-xs text-gray-500 leading-tight mt-0.5">Empresas con NIT.</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+
+                {/* SEPARADOR */}
+                <div className="mt-4 mb-2 border-b border-gray-200 pb-2">
+                    <h3 className="text-sm font-semibold text-gray-800">Datos del proveedor</h3>
+                </div>
+
+                {/* CAMPOS */}
+                <div className="grid grid-cols-2 gap-x-6 gap-y-4 mt-2">
+
+                    {/* TIPO DOCUMENTO — solo para NATURAL */}
+                    {isNatural && (
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                                <IdCard size={18} />
+                                <span>Tipo de documento *</span>
+                            </div>
+                            <CustomSelect
+                                value={documentType}
+                                onChange={(val) => { setDocumentType(val); tocar("documentType"); }}
+                                options={documentTypes
+                                    .filter((doc) => !doc.abbreviation?.includes("NIT"))
+                                    .map((doc) => ({
+                                        value: doc._id ?? String(doc.id),
+                                        label: doc.name
+                                            ? (doc.abbreviation ? `${doc.name} (${doc.abbreviation})` : doc.name)
+                                            : (doc.abbreviation || "")
+                                    }))}
+                                placeholder="Selecciona tipo de documento"
+                                width="w-full"
+                            />
+                            <FieldStatus estado={estadoDocumentType} />
+                        </div>
+                    )}
 
                     {/* DOCUMENTO */}
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <FileText size={18} />
-                            <span>Documento *</span>
+                            <span>{isNatural ? "Documento *" : "NIT *"}</span>
                         </div>
                         <input
                             type="text"
-                            placeholder="Ej: 900123456"
-                            value={documento}
-                            onChange={(e) => { setDocumento(e.target.value.replace(/\D/g, "")); tocar("documento"); }}
-                            onBlur={() => tocar("documento")}
+                            placeholder={isNatural ? "Ingrese el documento" : "Ingrese el NIT"}
+                            value={docNumber}
+                            onChange={(e) => { setDocNumber(e.target.value.replace(/\D/g, "")); tocar("docNumber"); }}
+                            onBlur={() => tocar("docNumber")}
                             maxLength={12}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoDocumento)}`}
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoDocument)}`}
                         />
-                        <FieldStatus estado={estadoDocumento} />
+                        <FieldStatus estado={estadoDocument} />
                     </div>
 
                     {/* NOMBRE PROVEEDOR */}
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <User size={18} />
-                            <span>Nombre proveedor *</span>
+                            <span>{isNatural ? "Nombre completo *" : "Razón social *"}</span>
                         </div>
                         <input
                             type="text"
-                            placeholder="Ej: Distribuidora ABC S.A."
-                            value={nombreProveedor}
-                            onChange={(e) => { setNombreProveedor(e.target.value); tocar("nombreProveedor"); }}
-                            onBlur={() => tocar("nombreProveedor")}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoNombre)}`}
+                            placeholder={isNatural ? "Ingrese el nombre completo" : "Ingrese la razón social"}
+                            value={providerName}
+                            onChange={(e) => {
+                                let val = e.target.value;
+                                if (isNatural) val = val.replace(/[0-9]/g, "");
+                                setProviderName(val.slice(0, 100));
+                                tocar("providerName");
+                            }}
+                            onBlur={() => tocar("providerName")}
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoProviderName)}`}
                         />
-                        <FieldStatus estado={estadoNombre} />
+                        <FieldStatus estado={estadoProviderName} />
                     </div>
 
-                    {/* CATEGORÍA ASOCIADA */}
+                    {/* EMAIL PROVEEDOR */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                            <Mail size={18} />
+                            <span>{isNatural ? "Correo electrónico *" : "Correo de la empresa *"}</span>
+                        </div>
+                        <input
+                            type="email"
+                            placeholder={isNatural ? "correo@ejemplo.com" : "correo@empresa.com"}
+                            value={providerEmail}
+                            onChange={(e) => { setProviderEmail(e.target.value); tocar("providerEmail"); }}
+                            onBlur={() => tocar("providerEmail")}
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoProviderEmail)}`}
+                        />
+                        <FieldStatus estado={estadoProviderEmail} />
+                    </div>
+
+                    {/* TELÉFONO PROVEEDOR */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                            <Phone size={18} />
+                            <span>{isNatural ? "Teléfono *" : "Teléfono de la empresa *"}</span>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Ej: 3001234567"
+                            value={providerPhone}
+                            onChange={(e) => { setProviderPhone(e.target.value.replace(/\D/g, "").slice(0, 14)); tocar("providerPhone"); }}
+                            onBlur={() => tocar("providerPhone")}
+                            maxLength={14}
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoProviderPhone)}`}
+                        />
+                        <FieldStatus estado={estadoProviderPhone} />
+                    </div>
+
+                    {/* DIRECCIÓN */}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                            <MapPin size={18} />
+                            <span>Dirección *</span>
+                        </div>
+                        <input
+                            type="text"
+                            placeholder={isNatural ? "Ingrese su dirección" : "Ingrese la dirección de la empresa"}
+                            value={address}
+                            onChange={(e) => { setAddress(e.target.value); tocar("address"); }}
+                            onBlur={() => tocar("address")}
+                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoAddress)}`}
+                        />
+                        <FieldStatus estado={estadoAddress} />
+                    </div>
+
+                    {/* ── DATOS DE CONTACTO — solo JURIDICA ──────────────────────── */}
+                    {isJuridica && (
+                        <>
+                            <div className="col-span-2 mt-2 mb-0 border-b border-gray-200 pb-2">
+                                <h3 className="text-sm font-semibold text-gray-800">Datos de contacto</h3>
+                            </div>
+
+                            {/* NOMBRE CONTACTO */}
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                                    <User size={18} />
+                                    <span>Nombre contacto *</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Carlos Rodríguez"
+                                    value={contactName}
+                                    onChange={(e) => { setContactName(e.target.value.replace(/[0-9]/g, "").slice(0, 100)); tocar("contactName"); }}
+                                    onBlur={() => tocar("contactName")}
+                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoContactName)}`}
+                                />
+                                <FieldStatus estado={estadoContactName} />
+                            </div>
+
+                            {/* EMAIL CONTACTO */}
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                                    <Mail size={18} />
+                                    <span>Correo del contacto *</span>
+                                </div>
+                                <input
+                                    type="email"
+                                    placeholder="correo@contacto.com"
+                                    value={contactEmail}
+                                    onChange={(e) => { setContactEmail(e.target.value); tocar("contactEmail"); }}
+                                    onBlur={() => tocar("contactEmail")}
+                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoContactEmail)}`}
+                                />
+                                <FieldStatus estado={estadoContactEmail} />
+                            </div>
+
+                            {/* TELÉFONO CONTACTO */}
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
+                                    <Phone size={18} />
+                                    <span>Teléfono del contacto *</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Ej: 3009876543"
+                                    value={contactPhone}
+                                    onChange={(e) => { setContactPhone(e.target.value.replace(/\D/g, "").slice(0, 14)); tocar("contactPhone"); }}
+                                    onBlur={() => tocar("contactPhone")}
+                                    maxLength={14}
+                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoContactPhone)}`}
+                                />
+                                <FieldStatus estado={estadoContactPhone} />
+                            </div>
+                        </>
+                    )}
+
+                    {/* ── CATEGORÍAS ───────────────────────────────────────────── */}
                     <div ref={dropdownRef} className="flex flex-col gap-2 relative">
                         <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
                             <Tag size={18} />
@@ -302,8 +536,8 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                             className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all duration-300 cursor-pointer"
                         >
                             <span className="text-gray-500">
-                                {categoriasAsociadas.length > 0
-                                    ? `${categoriasAsociadas.length} seleccionada(s)`
+                                {categoriesAssociated.length > 0
+                                    ? `${categoriesAssociated.length} seleccionada(s)`
                                     : "Seleccionar categorías"}
                             </span>
                             <ChevronDown
@@ -312,18 +546,17 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                             />
                         </button>
 
-                        {/* Dropdown de categorías */}
                         {open && (
                             <div className="absolute top-full -mt-5 w-full bg-white shadow-lg rounded-xl p-3 max-h-48 overflow-y-auto z-20">
-                                {categoriasList.map(cat => (
+                                {categoriesList.map((cat) => (
                                     <label
                                         key={cat.id}
                                         className="flex items-center gap-2 py-1 cursor-pointer hover:bg-gray-100 px-2 rounded"
                                     >
                                         <input
                                             type="checkbox"
-                                            checked={categoriasAsociadas.includes(cat.id)}
-                                            onChange={() => handleToggleCategoria(cat.id)}
+                                            checked={categoriesAssociated.includes(cat.id)}
+                                            onChange={() => handleToggleCategory(cat.id)}
                                             className="accent-yellow-400"
                                         />
                                         {cat.nombre}
@@ -332,41 +565,6 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
                             </div>
                         )}
                         <div style={{ minHeight: "16px" }} />
-                    </div>
-
-                    {/* NOMBRE CONTACTO */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                            <User size={18} />
-                            <span>Nombre contacto *</span>
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Ej: Carlos Rodríguez"
-                            value={nombreContacto}
-                            onChange={(e) => { setNombreContacto(e.target.value); tocar("nombreContacto"); }}
-                            onBlur={() => tocar("nombreContacto")}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoContacto)}`}
-                        />
-                        <FieldStatus estado={estadoContacto} />
-                    </div>
-
-                    {/* TELÉFONO CONTACTO */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                            <Phone size={18} />
-                            <span>Teléfono contacto *</span>
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Ej: 3001234567"
-                            value={telefonoContacto}
-                            onChange={(e) => { setTelefonoContacto(e.target.value.replace(/\D/g, "")); tocar("telefonoContacto"); }}
-                            onBlur={() => tocar("telefonoContacto")}
-                            maxLength={14}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 transition-all duration-300 ${ring(estadoTelefono)}`}
-                        />
-                        <FieldStatus estado={estadoTelefono} />
                     </div>
 
                 </div>

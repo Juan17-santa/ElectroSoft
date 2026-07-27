@@ -49,7 +49,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
     }, []);
 
     const productoSeleccionado = productosList.find((p) => String(p.id) === String(modalProducto));
-    const productoYaAgregado   = productosYaAgregados.find((p) => String(p.id) === String(modalProducto) && !p.anulado);
+    const productoYaAgregado   = productosYaAgregados.find((p) => String(p.id) === String(modalProducto));
 
     const wacCalculado = useMemo(() => {
         if (!productoSeleccionado || !modalPrecioVenta || !modalCantidad) return null;
@@ -74,7 +74,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
         setModalProducto(id);
         setTocados((t) => ({ ...t, producto: true }));
         const found    = productosList.find((p) => String(p.id) === String(id));
-        const yaExiste = productosYaAgregados.find((p) => String(p.id) === String(id) && !p.anulado);
+        const yaExiste = productosYaAgregados.find((p) => String(p.id) === String(id));
         if (yaExiste) {
             setModalPrecio(String(found?.precio ?? ""));
             setModalCantidad(String(yaExiste.cantidad));
@@ -91,7 +91,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
             setTocados((t) => ({ ...t, producto: true }));
         } else if (found) {
             setModalPrecio(String(found.precio));
-            setModalCosteProducto(String(found.precio));
+            setModalCosteProducto("0");
             setModalPrecioVenta("");
             setModalCantidad("");
             setTocados((t) => ({ ...t, producto: true }));
@@ -144,6 +144,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
             sobreescribirConSugerido,
             esActualizacion:       !!productoYaAgregado,
             isNew:                 found?.isNew || false,
+            stock:                 found?.stock ?? 0,
             categoriaId:           found?.categoriaId,
             serial:                found?.serial,
             garantia:              found?.garantia,
