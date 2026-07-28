@@ -49,6 +49,9 @@ export default function useProductEditForm({
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
+    //ESTADO DE CARGA
+    const [loading, setLoading] = useState(false);
+
     // ESTADO PARA ALMACENAR PRODUCTOS EXISTENTES (para validar serial)
     const [existingProducts, setExistingProducts] = useState([]);
     
@@ -117,17 +120,19 @@ export default function useProductEditForm({
 
             case "precio":
                 if (!strValue) {
-                    error = "El precio es obligatorio";
+                    error = "";
                 } else if (!/^[0-9]+$/.test(strValue)) {
                     error = "El precio solo debe contener números";
-                } else if (Number(strValue) <= 0) {
-                    error = "El precio debe ser mayor a 0";
+                } else if (Number(strValue) < 0) {
+                    error = "El precio no puede ser negativo";
+                } else if (!Number.isInteger(Number(strValue))) {
+                    error = "El precio debe ser un número entero";
                 }
                 break;
 
             case "stock":
                 if (!strValue) {
-                    error = "El stock es obligatorio";
+                    error = "";
                 } else if (!/^[0-9]+$/.test(strValue)) {
                     error = "El stock solo debe contener números";
                 } else if (Number(strValue) < 0) {
@@ -176,13 +181,16 @@ export default function useProductEditForm({
     const handleChange = (e) => {
 
         const { name, value } = e.target;
+        const normalizedValue = (name === "precio" || name === "stock")
+            ? String(value).replace(/\D/g, "").slice(0, 15)
+            : value;
 
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: normalizedValue
         }));
 
-        const error = validateField(name, value);
+        const error = validateField(name, normalizedValue);
 
         setErrors(prev => ({
             ...prev,
@@ -241,6 +249,8 @@ export default function useProductEditForm({
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (loading) return; 
+
         const isValid = validateForm();
         if (!isValid) {
             alert("Por favor, corrija los errores antes de guardar");
@@ -251,13 +261,14 @@ export default function useProductEditForm({
             alert("Error: ID del producto no encontrado");
             return;
         }
+        setLoading(true);
 
         try {
             const productoActualizado = {
                 nombre: formData.nombre,
                 categoriaId: formData.categoriaId,
-                precio: Number(formData.precio),
-                stock: Number(formData.stock),
+                precio: Number(formData.precio || 0),
+                stock: Number(formData.stock || 0),
                 tipoStock: formData.tipoStock,
                 serial: formData.serial,
                 garantia: formData.garantia,
@@ -269,6 +280,8 @@ export default function useProductEditForm({
             onSuccess();
         } catch (error) {
             alert(error.message || "Error al actualizar el producto");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -278,6 +291,7 @@ export default function useProductEditForm({
         errors,
         handleChange,
         handleSubmit,
-        setFormData
+        setFormData,
+        loading
     };
 }
