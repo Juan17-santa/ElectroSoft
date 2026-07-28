@@ -15,6 +15,7 @@ export default function PaymentForm({
     handleSubmit,
     ventasDelDocumento,
     onCancel,
+    isSubmitting
 }) {
 
     const [showMetodo, setShowMetodo] = useState(false);
@@ -40,7 +41,7 @@ export default function PaymentForm({
         });
     };
 
-    // ✅ corregido: montoPorPagar y a.monto
+    // corregido: montoPorPagar y a.monto
     const abonosTable = formData.ventaId
         ? paymentsService.buildAbonosTable({
             ...formData,
@@ -51,7 +52,7 @@ export default function PaymentForm({
         })
         : [];
 
-    const isVencida = formData.estadoVenta === "Anulada"; // ✅
+    const isVencida = formData.estadoVenta === "Anulada"; //  
 
     return (
         <form onSubmit={handleSubmit}>
@@ -135,7 +136,7 @@ export default function PaymentForm({
                                 <option value="" disabled>Seleccionar</option>
                                 {ventasDelDocumento.map((v) => (
                                     <option key={v.id} value={v.id}>
-                                        {v.numeroVenta || `V-${v.id}`} — ${fmt(v.montoPorPagar)} {/* ✅ */}
+                                        {v.numeroVenta || `V-${v.id}`} — ${fmt(v.montoPorPagar)} {/*   */}
                                         {v.estado === "Anulada" ? " ⚠ Vencida" : ""}
                                     </option>
                                 ))}
@@ -148,7 +149,7 @@ export default function PaymentForm({
                                 placeholder="—"
                                 className={`rounded-xl px-4 py-3 text-sm shadow-md text-gray-500
                                     ${isVencida
-                                        ? "bg-red-50 border border-red-200"  // ✅ rojo si vencida
+                                        ? "bg-red-50 border border-red-200"  //   rojo si vencida
                                         : "bg-gray-200"
                                     }`}
                             />
@@ -220,7 +221,7 @@ export default function PaymentForm({
                                 Monto *
                                 {formData.ventaId && (
                                     <span className="text-xs text-gray-400 font-normal ml-1">
-                                        {/* ✅ si vencida muestra "exacto", si no muestra "máx" */}
+                                        {/*   si vencida muestra "exacto", si no muestra "máx" */}
                                         {isVencida
                                             ? `exacto: $${fmt(formData.montoPorPagar)}`
                                             : `máx: $${fmt(formData.montoPorPagar)}`
@@ -256,7 +257,7 @@ export default function PaymentForm({
                         {formData.ventaId && (
                             <span className="text-gray-400 text-sm font-normal ml-2">
                                 Saldo pendiente:{" "}
-                                {/* ✅ montoPorPagar */}
+                                {/*   montoPorPagar */}
                                 <span className={`font-bold ${isVencida ? "text-red-600" : "text-gray-700"}`}>
                                     ${fmt(formData.montoPorPagar)}
                                 </span>
@@ -292,8 +293,8 @@ export default function PaymentForm({
                                         <tr
                                             key={i}
                                             className={`border-b border-gray-100 ${row.tipo === "inicio" ? "text-red-500 font-medium" :
-                                                    row.tipo === "ultimo" ? "text-blue-500 font-medium" :
-                                                        "text-gray-600"
+                                                row.tipo === "ultimo" ? "text-blue-500 font-medium" :
+                                                    "text-gray-600"
                                                 }`}
                                         >
                                             <td className="px-4 py-2">{row.fecha}</td>
@@ -325,9 +326,11 @@ export default function PaymentForm({
 
                     <PrimaryButton
                         type="submit"
-                        disabled={Object.values(errors).some(Boolean)}
+                        disabled={
+                            Object.values(errors).some(Boolean) || isSubmitting
+                        }
                     >
-                        Crear abono
+                        {isSubmitting ? "Guardando..." : "Crear abono"}
                     </PrimaryButton>
                 </div>
             </div>

@@ -19,6 +19,7 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
     const [errors, setErrors] = useState({});
     const [formError, setFormError] = useState("");
     const [initialized, setInitialized] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
@@ -124,12 +125,12 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
             case "monto": {
                 const raw = parseFloat(String(value).replace(/\./g, "").replace(",", ".")) || 0;
                 if (!raw || raw <= 0) return "Ingresa un monto válido";
-                
+
                 const minAbono = Math.min(10000, formData.montoPorPagar);
                 if (raw < minAbono) return `El abono mínimo es de $${fmt(minAbono)}`;
                 if (raw % 50 !== 0 && raw !== formData.montoPorPagar) return "El abono debe ser múltiplo de 50";
                 if (raw > formData.montoPorPagar) return `El monto no puede superar $${fmt(formData.montoPorPagar)}`;
-                
+
                 return "";
             }
             default:
@@ -175,22 +176,32 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
         const raw = parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0;
 
         setFormError("");
+        setIsSubmitting(true);
         try {
             const resultado = await paymentsService.createAbono(
                 formData.documento,
                 formData.ventaId,
-                { paymentMethod: formData.metodoPago, amount: raw }
+                {
+                    paymentMethod: formData.metodoPago,
+                    amount: raw
+                }
             );
 
             if (!resultado) {
                 setFormError("No se pudo crear el abono.");
+                setIsSubmitting(false);
                 return;
             }
+
             onSuccess();
         } catch (e) {
-            console.error("Error creating abono:", e);
-            const msg = e.response?.data?.error || e.message || "Error al procesar el abono en el servidor";
+            const msg =
+                e.response?.data?.error ||
+                e.message ||
+                "Error al procesar el abono en el servidor";
+
             setFormError(msg);
+            setIsSubmitting(false);
         }
     };
 
@@ -203,5 +214,6 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
         handleSelectVenta,
         handleSubmit,
         ventasDelDocumento,
+        isSubmitting,
     };
 }

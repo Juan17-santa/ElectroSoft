@@ -39,7 +39,8 @@ export default function CreateOrder() {
         totalPages,
         indexOfFirstItem,
         itemsPerPage,
-        paymentOptions
+        paymentOptions,
+        loading
     } = useOrdersForm({
         onSuccess: () => {
             setAlert({
@@ -120,6 +121,7 @@ export default function CreateOrder() {
                     indexOfFirstItem={indexOfFirstItem}
                     itemsPerPage={itemsPerPage}
                     paymentOptions={paymentOptions}
+                    loading={loading}
                 />
             </div>
 

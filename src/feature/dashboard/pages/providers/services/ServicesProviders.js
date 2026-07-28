@@ -45,6 +45,28 @@ export const ServicesProviders = {
         }
     },
 
+    // VALIDAR SI UN CAMPO YA EXISTE
+    async checkUnique(data) {
+        try {
+            const response = await fetch(`${API_URL}/check-unique`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+            const resJson = await response.json();
+
+            if (!response.ok) {
+                throw new Error(resJson.error || "Error al validar");
+            }
+            return resJson;
+        } catch (error) {
+            console.error("Error en checkUnique:", error);
+            throw error;
+        }
+    },
+
     // MODIFICAR UN PROVEEDOR
     async update(id, providerData) {
         try {

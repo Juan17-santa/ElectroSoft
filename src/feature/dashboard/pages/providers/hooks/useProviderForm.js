@@ -9,7 +9,7 @@ export function useProviderForm({
     onError,
     mode
 }) {
-    
+
     const formatInitialData = () => {
         if (!initialData || Object.keys(initialData).length === 0) return {};
 
@@ -52,6 +52,9 @@ export function useProviderForm({
 
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
+
+    // ESTADO DE CARGA
+    const [loading, setLoading] = useState(false);
 
     const isNatural = formData.providerType === "NATURAL";
     const isJuridica = formData.providerType === "JURIDICA";
@@ -216,6 +219,40 @@ export function useProviderForm({
         setErrors(prev => ({ ...prev, [name]: error }));
     };
 
+    // FUNCIÓN PARA VALIDAR CAMPOS ÚNICOS AL SALIR DEL INPUT
+    const handleBlur = async (e) => {
+        const { name, value } = e.target;
+
+        // Solo validar estos campos
+        if (
+            name !== "document" &&
+            name !== "providerEmail" &&
+            name !== "contactEmail"
+        ) {
+            return;
+        }
+
+        // Si el campo ya tiene un error de formato, no consultar el backend
+        const formatError = validateField(name, value);
+        if (formatError || !value.trim()) {
+            return;
+        }
+
+        try {
+            const result = await ServicesProviders.checkUnique({
+    _id: formData._id,
+    [name]: value
+});
+
+            setErrors(prev => ({
+                ...prev,
+                [name]: result.exists ? result.message : ""
+            }));
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     // FUNCIÓN PARA VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
         let newErrors = {};
@@ -248,6 +285,8 @@ export function useProviderForm({
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (loading) return;
+
         if (!validateForm()) return;
 
         const providerData = {
@@ -264,6 +303,8 @@ export function useProviderForm({
             providerData.documentType = nitDocumentType?._id;
         }
 
+        setLoading(true);
+
         try {
             if (mode === "create") {
                 await ServicesProviders.create(providerData);
@@ -276,6 +317,8 @@ export function useProviderForm({
 
             onSuccess();
         } catch (error) {
+            setLoading(false);
+
             if (onError) {
                 onError(error.message);
             }
@@ -294,9 +337,11 @@ export function useProviderForm({
         formData,
         errors,
         handleChange,
+        handleBlur,
         handleSubmit,
         setCategoriasAsociadas,
         setFormData,
+        loading,
         isNatural,
         isJuridica,
         isCreate,

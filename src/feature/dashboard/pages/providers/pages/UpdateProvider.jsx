@@ -15,16 +15,17 @@ export default function UpdateProvider() {
     const [alert, setAlert] = useState(null);
     const [documentTypes, setDocumentTypes] = useState([]);
     const [categoriasActivas, setCategoriasActivas] = useState([]);
-    const [loading, setLoading] = useState(true);
 
     // INSTANCIAMOS EL HOOK DIRECTAMENTE AL INICIO
     const {
         formData,
         errors,
         handleChange,
+        handleBlur,
         handleSubmit,
         setCategoriasAsociadas,
         setFormData,
+        loading,
         isNatural,
         isJuridica
     } = useProviderForm({
@@ -77,8 +78,6 @@ export default function UpdateProvider() {
             } catch (error) {
                 console.error("Error al cargar los datos de edición:", error);
                 setAlert({ type: "error", message: "Error al conectar con el servidor." });
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -104,36 +103,21 @@ export default function UpdateProvider() {
                     </button>
                 </div>
 
-                {loading ? (
-                    <div className="animate-pulse flex flex-col gap-10 mt-6 px-4 md:px-20">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16">
-                            {[...Array(6)].map((_, i) => (
-                                <div key={i} className="flex flex-col gap-2">
-                                    <div className="h-4 bg-gray-300 rounded w-1/3"></div>
-                                    <div className="h-12 bg-gray-300 rounded-xl w-full"></div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex justify-end gap-4 mt-auto">
-                            <div className="h-10 bg-gray-300 rounded-xl w-28"></div>
-                            <div className="h-10 bg-gray-300 rounded-xl w-36"></div>
-                        </div>
-                    </div>
-                ) : (
-                    <ProviderForm
-                        formData={formData}
-                        errors={errors}
-                        categorias={categoriasActivas}
-                        documentTypes={documentTypes}
-                        handleChange={handleChange}
-                        setCategoriasAsociadas={setCategoriasAsociadas}
-                        handleSubmit={handleSubmit}
-                        onCancel={() => navigate("/dashboard/providers")}
-                        buttonText="Actualizar proveedor"
-                        isNatural={isNatural}
-                        isJuridica={isJuridica}
-                    />
-                )}
+                <ProviderForm
+                    formData={formData}
+                    errors={errors}
+                    categorias={categoriasActivas}
+                    documentTypes={documentTypes}
+                    handleChange={handleChange}
+                    handleBlur={handleBlur}
+                    setCategoriasAsociadas={setCategoriasAsociadas}
+                    handleSubmit={handleSubmit}
+                    onCancel={() => navigate("/dashboard/providers")}
+                    buttonText="Actualizar proveedor"
+                    isNatural={isNatural}
+                    isJuridica={isJuridica}
+                    loading={loading}
+                />
             </div>
 
             {/* ALERTAS */}

@@ -30,7 +30,7 @@ export default function PaymentDetail() {
     }
 
     const esPendiente = venta.estado === "Vigente";
-    // ✅ FIX: "Anulada" y "Vencida" son conceptos distintos
+    //   FIX: "Anulada" y "Vencida" son conceptos distintos
     const isAnulada = venta.estado === "Anulado" || venta.estado === "Anulada";
     const estadoLabel = isAnulada ? "Anulada" : esPendiente ? "Pendiente" : "Finalizado";
     const montoPagado = (venta.abonos || [])
@@ -203,7 +203,7 @@ export default function PaymentDetail() {
                                                     </td>
                                                     <td className="px-5 py-2.5">{fmt(row.saldoPendiente)}</td>
                                                     <td className="px-5 py-2.5">
-                                                        {/* ✅ Solo en el último abono real y no anulado */}
+                                                        {/*   Solo en el último abono real y no anulado */}
                                                         {row.esUltimoReal && !isAnulado && !isInicio && (
                                                             <button
                                                                 onClick={handleAnularAbono}

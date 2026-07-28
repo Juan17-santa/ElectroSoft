@@ -195,7 +195,7 @@ export default function SalesManagement() {
 
     useEffect(() => { getSales(); }, [getSales]);
 
-    // ✅ Refresca la tabla automáticamente cuando se registra un abono desde el módulo de Pagos
+    //   Refresca la tabla automáticamente cuando se registra un abono desde el módulo de Pagos
     useEffect(() => {
         window.addEventListener("payments-updated", getSales);
         return () => window.removeEventListener("payments-updated", getSales);

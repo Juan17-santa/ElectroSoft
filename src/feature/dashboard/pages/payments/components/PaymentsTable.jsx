@@ -38,14 +38,14 @@ export default function PaymentsTable({ data, onDetails }) {
                                     : null;
 
                                 const isPendiente = payment.estado === "Vigente";
-                                const isVencida  = payment.estado === "Anulada"; // ✅ nuevo
+                                const isVencida  = payment.estado === "Anulada"; //   nuevo
                                 const esPedido   = payment.fuente === "pedido";
 
                                 return (
                                     <tr
                                         key={payment.id}
                                         className={`border-b border-gray-200 ${
-                                            isVencida ? "bg-red-50" : ""  // ✅ fila roja si vencida
+                                            isVencida ? "bg-red-50" : ""  //   fila roja si vencida
                                         }`}
                                     >
 

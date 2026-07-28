@@ -27,7 +27,8 @@ export default function OrdersForm({
     totalPages,
     indexOfFirstItem,
     itemsPerPage,
-    paymentOptions
+    paymentOptions,
+    loading
 }) {
 
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
@@ -139,13 +140,13 @@ export default function OrdersForm({
                             </div>
 
                             {isClientDropdownOpen && formData.documento && (
-                                <div className="absolute top-[75px] w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-60 overflow-y-auto">
-                                    {clients?.filter(c => 
-                                        (c.documento?.toLowerCase() || "").includes(formData.documento.toLowerCase()) || 
+                                <div className="absolute top-18.75 w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-60 overflow-y-auto">
+                                    {clients?.filter(c =>
+                                        (c.documento?.toLowerCase() || "").includes(formData.documento.toLowerCase()) ||
                                         (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.documento.toLowerCase())
                                     ).map(c => (
-                                        <div 
-                                            key={c.id} 
+                                        <div
+                                            key={c.id}
                                             className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0"
                                             onClick={() => {
                                                 handleChange({ target: { name: "documento", value: c.documento } });
@@ -156,14 +157,14 @@ export default function OrdersForm({
                                             <p className="text-xs text-gray-500">C.C. {c.documento}</p>
                                         </div>
                                     ))}
-                                    {clients?.filter(c => 
-                                        (c.documento?.toLowerCase() || "").includes(formData.documento.toLowerCase()) || 
+                                    {clients?.filter(c =>
+                                        (c.documento?.toLowerCase() || "").includes(formData.documento.toLowerCase()) ||
                                         (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.documento.toLowerCase())
                                     ).length === 0 && (
-                                        <div className="px-4 py-3 text-sm text-gray-400 text-center">
-                                            No se encontraron resultados
-                                        </div>
-                                    )}
+                                            <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                                                No se encontraron resultados
+                                            </div>
+                                        )}
                                 </div>
                             )}
 
@@ -425,7 +426,8 @@ export default function OrdersForm({
 
                         <PrimaryButton
                             type="submit"
-                            disabled={Object.values(errors).some(error => error)}
+                            loading={loading}
+                            disabled={loading || Object.values(errors).some(error => error)}
                         >
                             {buttonText}
                         </PrimaryButton>

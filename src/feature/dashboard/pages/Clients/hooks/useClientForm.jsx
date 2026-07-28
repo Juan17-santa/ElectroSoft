@@ -9,6 +9,7 @@ export function useClientForm({ initialData = null, onSubmit }) {
     };
 
     const [formData, setFormData] = useState(defaultData);
+    const [loading, setLoading] = useState(false);
 
     const [tocado, setTocado] = useState({
         tipoDocumento: false, documento: false, nombres: false,
@@ -67,14 +68,29 @@ export function useClientForm({ initialData = null, onSubmit }) {
         tocar(name);
     };
 
-    const handleForm = (e) => {
+    const handleForm = async (e) => {
         e.preventDefault();
-        setTocado({ tipoDocumento: true, documento: true, nombres: true, apellidos: true, email: true, telefono: true });
+
+        setTocado({
+            tipoDocumento: true,
+            documento: true,
+            nombres: true,
+            apellidos: true,
+            email: true,
+            telefono: true
+        });
 
         const currentErrors = validate();
+
         if (Object.values(currentErrors).some(err => err !== null)) return;
 
-        onSubmit(formData);
+        setLoading(true);
+
+        try {
+            await onSubmit(formData);
+        } catch (error) {
+            setLoading(false);
+        }
     };
 
     const resetForm = () => {
@@ -92,6 +108,7 @@ export function useClientForm({ initialData = null, onSubmit }) {
         handleChange,
         handleSelectChange,
         handleForm,
-        resetForm
+        resetForm,
+        loading
     };
 }
