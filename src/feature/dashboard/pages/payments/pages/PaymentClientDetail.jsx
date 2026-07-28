@@ -47,6 +47,10 @@ export default function PaymentClientDetail() {
     }, [documento]);
 
     const handleAbrirModal = () => {
+        if (resumen?.cupoOcupado > 0) {
+            alert(`No se puede modificar el cupo hasta que el cliente libere su saldo pendiente (Cupo ocupado: ${fmt(resumen.cupoOcupado)}).`);
+            return;
+        }
         // Precarga el cupo actual
         setNuevoCupo(resumen?.cupoCredito ? String(resumen.cupoCredito) : "");
         setErrorCupo("");
@@ -61,7 +65,9 @@ export default function PaymentClientDetail() {
 
     useEffect(() => {
         const monto = Number(nuevoCupo);
-        if (nuevoCupo !== "" && monto < resumen?.cupoOcupado) {
+        if (resumen?.cupoOcupado > 0) {
+            setErrorCupo(`No se puede modificar el cupo hasta liberar el saldo ocupado (${fmt(resumen.cupoOcupado)}).`);
+        } else if (nuevoCupo !== "" && monto < resumen?.cupoOcupado) {
             setErrorCupo(`El cupo no puede ser menor al monto ya ocupado (${fmt(resumen.cupoOcupado)}).`);
         } else {
             setErrorCupo("");
@@ -69,6 +75,10 @@ export default function PaymentClientDetail() {
     }, [nuevoCupo, resumen]);
 
     const handleConfirmarCupo = async () => {
+        if (resumen?.cupoOcupado > 0) {
+            setErrorCupo(`No se puede modificar el cupo hasta liberar el saldo ocupado (${fmt(resumen.cupoOcupado)}).`);
+            return;
+        }
         const monto = Number(nuevoCupo);
         if (!monto || monto <= 0) {
             setErrorCupo("Ingresa un monto válido mayor a 0.");
@@ -168,10 +178,10 @@ export default function PaymentClientDetail() {
                                 <p className="text-sm font-bold text-gray-800">{fmt(resumen.cupoCredito)}</p>
                                 <button
                                     onClick={handleAbrirModal}
-                                    className="p-1 rounded-lg hover:bg-gray-200 transition cursor-pointer"
-                                    title="Editar cupo"
+                                    className={`p-1 rounded-lg transition cursor-pointer ${resumen.cupoOcupado > 0 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-200"}`}
+                                    title={resumen.cupoOcupado > 0 ? `No se puede modificar hasta liberar el cupo ocupado (${fmt(resumen.cupoOcupado)})` : "Editar cupo"}
                                 >
-                                    <Pencil size={13} className="text-gray-400 hover:text-yellow-500" />
+                                    <Pencil size={13} className={resumen.cupoOcupado > 0 ? "text-gray-300" : "text-gray-400 hover:text-yellow-500"} />
                                 </button>
                             </div>
                         </div>
