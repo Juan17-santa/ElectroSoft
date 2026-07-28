@@ -95,6 +95,7 @@ export const usePermissions = () => {
     "Editar": "editar",
     "Eliminar": "eliminar",
     "Estado": "estado",
+    "acceso": "acceso",
   };
 
   // src/hooks/usePermissions.js  — solo el bloque hasPermission cambia
@@ -125,7 +126,11 @@ export const usePermissions = () => {
 
     const mappedScope = scopeMap[scope] || scope.toLowerCase();
 
-    // Tiene acceso al módulo si tiene al menos un permiso de ese módulo
+    // Para dashboard y roles que usan :acceso
+    if (mappedScope === "dashboard" || mappedScope === "roles") {
+      return permissions.includes(`${mappedScope}:acceso`);
+    }
+
     return permissions.some((p) => p.startsWith(`${mappedScope}:`));
   };
 

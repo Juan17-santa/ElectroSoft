@@ -170,16 +170,14 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                             <div className='flex flex-col gap-1 px-3'>
 
                                 {/* DASHBOARD */}
-                                <NavLink
-                                    to="/dashboard"
-                                    className={activeLink("/dashboard", true)}
-                                    onClick={handleNavigate}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <ChartNoAxesCombined size={18} />
-                                        <span>Dashboard</span>
-                                    </div>
-                                </NavLink>
+                                {hasAccessToScope("Dashboard") && (
+                                    <NavLink to="/dashboard" className={activeLink("/dashboard", true)} onClick={handleNavigate}>
+                                        <div className="flex items-center gap-3">
+                                            <ChartNoAxesCombined size={18} />
+                                            <span>Dashboard</span>
+                                        </div>
+                                    </NavLink>
+                                )}
 
                                 {/* COMPRAS */}
                                 {hasCompras && (
