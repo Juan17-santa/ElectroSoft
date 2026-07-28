@@ -86,8 +86,10 @@ export default function Login() {
       message: `Bienvenid@, ${result.user?.fullName}.`,
       id: Date.now(),
     });
-    setTimeout(() => navigate("/dashboard"), 2000);
+    const firstRoute = getFirstAllowedRoute(result.user?.permissions || []);
+    setTimeout(() => navigate(firstRoute), 2000);
   };
+  
 
   // ─── Clases de input (estilo nuevo) ───────────────────────────────────────
 
@@ -99,6 +101,26 @@ export default function Login() {
     if (touched && !error && value)
       return `${base} border-green-300 bg-green-50/50 ring-2 ring-green-200 focus:ring-green-300 focus:border-green-400`;
     return `${base} border-slate-200 focus:ring-2 focus:ring-amber-400/40 focus:border-amber-400`;
+  };
+
+  const getFirstAllowedRoute = (permissions) => {
+    const routeMap = [
+      { permission: "dashboard:acceso", path: "/dashboard" },
+      { permission: "categorias:ver", path: "/dashboard/productCategory" },
+      { permission: "productos:ver", path: "/dashboard/products" },
+      { permission: "proveedores:ver", path: "/dashboard/providers" },
+      { permission: "compras:ver", path: "/dashboard/shopping" },
+      { permission: "clientes:ver", path: "/dashboard/clients" },
+      { permission: "pedidos:ver", path: "/dashboard/orders" },
+      { permission: "ventas:ver", path: "/dashboard/salesManagement" },
+      { permission: "pagos:ver", path: "/dashboard/payments" },
+      { permission: "devoluciones:ver", path: "/dashboard/devolutions" },
+      { permission: "usuarios:ver", path: "/dashboard/users" },
+      { permission: "roles:acceso", path: "/dashboard/roles" },
+    ];
+
+    const found = routeMap.find(r => permissions.includes(r.permission));
+    return found ? found.path : "/";
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -137,7 +159,7 @@ export default function Login() {
               </span>
             </div>
 
-            
+
           </div>
         </div>
 
@@ -264,10 +286,10 @@ export default function Login() {
                 )}
               </button>
 
-              
+
             </div>
 
-            
+
           </div>
         </div>
       </div>

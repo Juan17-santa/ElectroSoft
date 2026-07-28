@@ -1,3 +1,4 @@
+import api from "../../../utils/api.js";
 import { useState, useEffect, useRef } from "react";
 import { getAuthUser, updateProfile, changePassword } from "../services/authService";
 import { Validations } from "../../../utils/validations";
@@ -35,13 +36,16 @@ export default function useEditProfile() {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [alert, setAlert] = useState(null);
-    const [success, setSuccess] = useState(false); // 🔥 NUEVO
+    const [success, setSuccess] = useState(false);
     const fileRef = useRef();
+    const debounceRef = useRef(null);
 
     useEffect(() => {
         const user = getAuthUser();
+
         if (user) {
             setFormData({
+                id: user._id || user.id,
                 tipoDoc: user.documentType?._id?.toString() || "",
                 documento: user.documentNumber || "",
                 nombre: user.fullName || "",
@@ -59,30 +63,36 @@ export default function useEditProfile() {
         switch (name) {
             case "tipoDoc":
                 return !value ? "Selecciona un tipo de documento." : "";
+
             case "documento":
                 if (!value) return "El documento es obligatorio.";
                 if (!Validations.soloNumeros(value)) return "Solo se permiten números.";
                 if (value.length < 8) return "Mínimo 8 dígitos.";
+                if (value.length > 12) return "Máximo 12 dígitos.";
                 return "";
+
             case "nombre":
                 if (!value) return "El nombre es obligatorio.";
                 if (!Validations.soloLetras(value)) return "Solo se permiten letras.";
                 if (value.trim().length < 3) return "Mínimo 3 caracteres.";
                 return "";
+
             case "email":
                 if (!value) return "El email es obligatorio.";
                 if (!Validations.formatoEmail(value)) return "Ingresa un email válido.";
                 return "";
+
             case "telefono":
                 if (!value) return "El teléfono es obligatorio.";
                 if (!Validations.soloNumeros(value)) return "Solo se permiten números.";
                 if (value.length < 7) return "Mínimo 7 dígitos.";
+                if (value.length > 14) return "Máximo 14 dígitos.";
                 return "";
+
             default:
                 return "";
         }
     };
-
     const validatePasswordField = (name, value, currentData) => {
         switch (name) {
             case "currentPassword":
@@ -101,12 +111,98 @@ export default function useEditProfile() {
                 return "";
         }
     };
+    const checkEmailExists = async (email) => {
+        try {
+            const response = await api.get("/users/check-email", {
+                params: {
+                    email,
+                    excludeId: formData.id
+                }
+            });
+
+            return response.data.exists;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    };
+
+    const checkDocumentExists = async (document) => {
+        try {
+            const response = await api.get("/users/check-document", {
+                params: {
+                    document,
+                    excludeId: formData.id
+                }
+            });
+
+            return response.data.exists;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-        setTouched((prev) => ({ ...prev, [name]: true }));
-        setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
+
+        let sanitized = value;
+
+        if (name === "documento") {
+            sanitized = value.replace(/\D/g, "").slice(0, 12);
+        }
+
+        if (name === "telefono") {
+            sanitized = value.replace(/\D/g, "").slice(0, 14);
+        }
+
+        if (name === "nombre") {
+            sanitized = value.replace(/[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]/g, "");
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            [name]: sanitized,
+        }));
+
+        setTouched(prev => ({
+            ...prev,
+            [name]: true,
+        }));
+
+        const syncError = validateField(name, sanitized);
+
+        setErrors(prev => ({
+            ...prev,
+            [name]: syncError,
+        }));
+
+        if ((name === "email" || name === "documento") && !syncError) {
+
+            clearTimeout(debounceRef.current);
+
+            debounceRef.current = setTimeout(async () => {
+
+                if (name === "email") {
+                    const exists = await checkEmailExists(sanitized);
+
+                    setErrors(prev => ({
+                        ...prev,
+                        email: exists ? "Este correo ya está registrado." : "",
+                    }));
+                }
+
+                if (name === "documento") {
+                    const exists = await checkDocumentExists(sanitized);
+
+                    setErrors(prev => ({
+                        ...prev,
+                        documento: exists ? "Este documento ya está registrado." : "",
+                    }));
+                }
+
+            }, 600);
+        }
     };
 
     const handlePasswordChange = (e) => {
@@ -160,7 +256,23 @@ export default function useEditProfile() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if (!validate()) return;
+
+        // Validación final contra la BD
+        const emailExists = await checkEmailExists(formData.email);
+        const documentExists = await checkDocumentExists(formData.documento);
+
+        if (emailExists || documentExists) {
+            setErrors(prev => ({
+                ...prev,
+                email: emailExists ? "Este correo ya está registrado." : "",
+                documento: documentExists ? "Este documento ya está registrado." : "",
+            }));
+
+            return;
+        }
+
         setLoading(true);
 
         const result = await updateProfile({
@@ -175,10 +287,17 @@ export default function useEditProfile() {
         setLoading(false);
 
         if (result.ok) {
-            setAlert({ type: "success", message: "Tu perfil fue actualizado correctamente." });
+            setAlert({
+                type: "success",
+                message: "Tu perfil fue actualizado correctamente."
+            });
+
             setTimeout(() => setSuccess(true), 2500);
         } else {
-            setAlert({ type: "error", message: result.message || "No se pudo actualizar el perfil." });
+            setAlert({
+                type: "error",
+                message: result.message || "No se pudo actualizar el perfil."
+            });
         }
     };
 

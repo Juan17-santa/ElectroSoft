@@ -1,4 +1,4 @@
-import { User, Check, Info, X } from "lucide-react";
+import { User, Check, Info, X, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { PERMISSION_SCOPES } from "../Roles/services/RolesService";
@@ -109,7 +109,7 @@ export default function RoleDetailsPage() {
                                             <div className="flex flex-row flex-wrap gap-1.5 justify-center">
                                                 {scope.actions.map(action => {
                                                     const permission = `${scope.name}:${action}`;
-                                                    const isChecked  = scopePermisos.includes(permission);
+                                                    const isChecked = scopePermisos.includes(permission);
                                                     return (
                                                         <div key={action}
                                                             className={`flex items-center gap-1.5 px-2 py-1 rounded-md border
@@ -133,14 +133,15 @@ export default function RoleDetailsPage() {
                 </div>
 
                 {/* BOTÓN VOLVER */}
-                <div className="flex justify-center shrink-0">
+                <div className="flex justify-end shrink-0">
                     <button
                         type="button"
                         onClick={() => navigate("/dashboard/roles")}
-                        className="px-5 py-2.5 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer hover:shadow-lg bg-gray-200 hover:bg-gray-300 text-gray-700 transition"
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200
+                         hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
                     >
-                        <X size={16} />
-                        Volver a la lista
+                        <ArrowLeft size={16} />
+                        Volver
                     </button>
                 </div>
             </div>

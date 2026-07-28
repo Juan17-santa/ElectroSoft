@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usersService } from "../services/usersService";
 import { Validations } from "../../../../../utils/validations";
+import api from "../../../../../utils/api.js";
 
 export function useUserForm({ userToEdit, navigate }) {
 
@@ -17,6 +18,7 @@ export function useUserForm({ userToEdit, navigate }) {
     const [errors, setErrors] = useState({});
     const [alert, setAlert] = useState(null);
     const [loading, setLoading] = useState(false);
+    const debounceRef = useRef(null);
 
     useEffect(() => {
         if (userToEdit) {
@@ -33,6 +35,30 @@ export function useUserForm({ userToEdit, navigate }) {
         }
     }, [userToEdit]);
 
+    // VALIDACIÓN EN TIEMPO REAL CON DEBOUNCE
+    const checkEmailExists = async (email, excludeId) => {
+        try {
+            const params = { email };
+            if (excludeId) params.excludeId = excludeId;
+            const response = await api.get("/users/check-email", { params });
+            return response.data.exists;
+        } catch {
+            return false;
+        }
+    };
+
+    const checkDocumentExists = async (document, excludeId) => {
+        try {
+            const params = { document };
+            if (excludeId) params.excludeId = excludeId;
+            const response = await api.get("/users/check-document", { params });
+            return response.data.exists;
+        } catch {
+            return false;
+        }
+    };
+
+    // VALIDACIONES SÍNCRONAS
     const validateField = (name, value) => {
         let error = "";
         switch (name) {
@@ -42,7 +68,8 @@ export function useUserForm({ userToEdit, navigate }) {
             case "documento":
                 if (!value) error = "El documento es obligatorio";
                 else if (!Validations.soloNumeros(value)) error = "Solo números permitidos";
-                else if (value.length < 8 || value.length > 12) error = "Debe tener entre 8 y 12 dígitos";
+                else if (value.length < 8) error = "Mínimo 8 dígitos";
+                else if (value.length > 12) error = "Máximo 12 dígitos";
                 break;
             case "nombre":
                 if (!value) error = "El nombre es obligatorio";
@@ -55,7 +82,8 @@ export function useUserForm({ userToEdit, navigate }) {
             case "telefono":
                 if (!value) error = "El teléfono es obligatorio";
                 else if (!Validations.soloNumeros(value)) error = "Solo números";
-                else if (value.length < 8 || value.length > 14) error = "Debe tener entre 8 y 14 dígitos";
+                else if (value.length < 7) error = "Mínimo 7 dígitos";
+                else if (value.length > 14) error = "Máximo 14 dígitos";
                 break;
             case "rol":
                 if (!value) error = "Seleccione un rol";
@@ -69,17 +97,44 @@ export function useUserForm({ userToEdit, navigate }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        // ── FIX 3: bloquear caracteres inválidos antes de setear el estado ──
+        // Sanitizar campos numéricos
         let sanitized = value;
-        if (name === "documento" || name === "telefono") {
-            sanitized = value.replace(/\D/g, ""); // elimina todo lo que no sea dígito
+        if (name === "documento") {
+            sanitized = value.replace(/\D/g, "").slice(0, 12);
         }
-        if (name === "nombre") {
-            sanitized = value.replace(/[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]/g, ""); // solo letras y espacios
+        if (name === "telefono") {
+            sanitized = value.replace(/\D/g, "").slice(0, 14);
         }
 
         setFormData(prev => ({ ...prev, [name]: sanitized }));
-        setErrors(prev => ({ ...prev, [name]: validateField(name, sanitized) }));
+
+        // Validación síncrona inmediata
+        const syncError = validateField(name, sanitized);
+        setErrors(prev => ({ ...prev, [name]: syncError }));
+
+        // Validación asíncrona con debounce para email y documento
+        if ((name === "email" || name === "documento") && !syncError) {
+            clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(async () => {
+                if (name === "email") {
+                    const exists = await checkEmailExists(sanitized, formData.id);
+
+                    setErrors(prev => ({
+                        ...prev,
+                        email: exists ? "Este email ya está registrado" : ""
+                    }));
+                }
+
+                if (name === "documento") {
+                    const exists = await checkDocumentExists(sanitized, formData.id);
+
+                    setErrors(prev => ({
+                        ...prev,
+                        documento: exists ? "Este documento ya está registrado" : ""
+                    }));
+                }
+            }, 600); // espera 600ms después de que el usuario deje de escribir
+        }
     };
 
     const validateForm = () => {
@@ -93,6 +148,7 @@ export function useUserForm({ userToEdit, navigate }) {
         return Object.keys(newErrors).length === 0;
     };
 
+    // CREAR
     const createUser = async () => {
         try {
             setLoading(true);
@@ -108,6 +164,7 @@ export function useUserForm({ userToEdit, navigate }) {
         }
     };
 
+    // ACTUALIZAR
     const updateUser = async () => {
         try {
             setLoading(true);

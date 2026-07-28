@@ -139,7 +139,7 @@ export default function EditProfile() {
     const navigate = useNavigate();
 
     const [showCurrent, setShowCurrent] = useState(false);
-    const [showNew,     setShowNew]     = useState(false);
+    const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
     const [documentTypes, setDocumentTypes] = useState([]);
 
@@ -253,7 +253,7 @@ export default function EditProfile() {
             )}
 
             {/* FORMULARIO */}
-            <div className="w-full max-w-4xl bg-white rounded-3xl shadow-lg p-4 sm:p-8 md:p-12 flex flex-col gap-4 sm:gap-6 overflow-hidden mx-auto">
+            <div className="w-full max-w-4xl bg-white rounded-3xl shadow-lg p-4 sm:p-8 md:p-12 flex flex-col gap-4 sm:gap-6 overflow-visible mx-auto">
 
                 {/* Header */}
                 <div className="flex justify-between items-center">
@@ -285,7 +285,7 @@ export default function EditProfile() {
                 </div>
 
                 {/* FORM */}
-                <form onSubmit={handleSubmit} className="flex flex-col gap-5 sm:gap-8 w-full">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5 sm:gap-8 w-full pb-16">
 
                     {/* FILA 1 — Tipo doc y Documento */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-8">
@@ -350,17 +350,18 @@ export default function EditProfile() {
                         />
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => setShowPasswordSection(true)}
-                        className="text-sm font-semibold text-blue-600 hover:underline self-start"
-                    >
-                        ¿Deseas cambiar tu contraseña?
-                    </button>
+                    {/* BOTÓN FIJO AL FONDO */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-2 pt-6 border-t border-gray-100 mb-2">
+                        <button
+                            type="button"
+                            onClick={() => setShowPasswordSection(true)}
+                            className="text-sm font-semibold text-blue-600 hover:underline text-left"
+                        >
+                            ¿Deseas cambiar tu contraseña?
+                        </button>
 
-                    <div className="flex justify-end gap-4 w-full">
                         <PrimaryButton type="submit" disabled={loading}>
-                            {loading ? "Guardando..." : "Editar Perfil"}
+                            {loading ? "Guardando..." : "Guardar cambios"}
                         </PrimaryButton>
                     </div>
                 </form>

@@ -20,7 +20,6 @@ export default function UserDetail() {
 
     useEffect(() => {
         if (location.state?.user) {
-            console.log("user recibido:", location.state.user);
             setUser(location.state.user);
         }
     }, [location.state]);

@@ -59,6 +59,7 @@ export default function UserForm({
                         value={formData.documento}
                         onChange={handleChange}
                         placeholder="Ingrese el documento"
+                        maxLength={12} // ← agregar
                         className={inputClasses("documento")}
                     />
                     <ValidationMessage
@@ -122,6 +123,7 @@ export default function UserForm({
                         value={formData.telefono}
                         onChange={handleChange}
                         placeholder="Ingrese el teléfono"
+                        maxLength={14} // ← agregar
                         className={inputClasses("telefono")}
                     />
                     <ValidationMessage
