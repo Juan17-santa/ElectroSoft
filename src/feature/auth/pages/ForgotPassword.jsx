@@ -6,7 +6,7 @@ import { Validations } from "../../../utils/validations";
 import Alert from "../../dashboard/components/ui/alert";
 import emailjs from "@emailjs/browser";
 
-const EMAILJS_SERVICE_ID = "service_owxmc0p";
+const EMAILJS_SERVICE_ID = "service_ysdyl1c";
 const EMAILJS_TEMPLATE_ID = "template_a23pxva";
 const EMAILJS_PUBLIC_KEY = "WXWGLAjiTmbUXWdlK";
 
