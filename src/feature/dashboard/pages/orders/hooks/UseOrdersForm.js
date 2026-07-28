@@ -44,6 +44,8 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
+    const [loading, setLoading] = useState(false);
+
     // DOCUMENTO CON RETARDO PARA EVITAR PETICIONES EN CADA TECLA
     const [documentoBusqueda, setDocumentoBusqueda] = useState("");
 
@@ -87,8 +89,8 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             return;
         }
 
-        const found = clients.find(c => 
-            c.documento === formData.documento || 
+        const found = clients.find(c =>
+            c.documento === formData.documento ||
             `${c.nombres} ${c.apellidos}`.toLowerCase() === formData.documento.toLowerCase()
         );
         if (found && found.estado) {
@@ -301,7 +303,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
     const handleQuantityChange = (productId, newQuantity) => {
         const productInfo = products.find(p => (p.id || p._id) === productId);
         const maxStock = productInfo ? (productInfo.stock || 999999) : 999999;
-        
+
         if (newQuantity === "") {
             setFormData(prev => {
                 const up = prev.productos.map(p => p.id === productId ? { ...p, cantidad: "", subtotal: 0 } : p);
@@ -312,22 +314,22 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             });
             return;
         }
-        
+
         let validQuantity = parseInt(newQuantity, 10);
         if (isNaN(validQuantity)) return;
-        
+
         if (validQuantity > maxStock) {
             validQuantity = maxStock;
             if (onShowAlert) {
                 onShowAlert(`La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}`);
             }
         }
-        
+
         setFormData(prev => {
-            const up = prev.productos.map(p => p.id === productId ? { 
-                ...p, 
-                cantidad: validQuantity, 
-                subtotal: validQuantity * p.precio 
+            const up = prev.productos.map(p => p.id === productId ? {
+                ...p,
+                cantidad: validQuantity,
+                subtotal: validQuantity * p.precio
             } : p);
             const total = up.reduce((acc, p) => acc + (Number(p.subtotal) || 0), 0);
             const iva = total * 0.19;
@@ -394,10 +396,14 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        if (loading) return;
+
         // DETENER LA EJECUCIÓN SI EL FORMULARIO NO ES VÁLIDO
         if (!validateForm()) return;
 
         try {
+            setLoading(true);
+
             // PREPARAR LOS DATOS EN EL FORMATO QUE ESPERA EL BACKEND
             const orderData = {
                 documentNumber: formData.documento,
@@ -440,6 +446,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
         currentProducts,
         indexOfFirstItem,
         itemsPerPage,
-        paymentOptions
+        paymentOptions,
+        loading
     };
 }

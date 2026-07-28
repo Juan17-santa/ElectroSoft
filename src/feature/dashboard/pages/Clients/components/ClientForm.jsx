@@ -16,7 +16,8 @@ export default function ClientForm({
     formError,
     setFormError,
     onCancel,
-    buttonText
+    buttonText,
+    loading
 }) {
     const ringClass = (campo) => {
         return errors[campo], "focus:ring-yellow-400 bg-gray-200";
@@ -181,8 +182,11 @@ export default function ClientForm({
                     <X size={16} />
                     Cancelar
                 </button>
-                <PrimaryButton type="submit">
-                    {buttonText}
+                <PrimaryButton
+                    type="submit"
+                    disabled={loading}
+                >
+                    {loading ? "Guardando..." : buttonText}
                 </PrimaryButton>
             </div>
         </form>

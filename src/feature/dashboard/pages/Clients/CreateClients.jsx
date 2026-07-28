@@ -16,15 +16,13 @@ export default function CreateClients() {
             try {
                 await ClientsService.create(formData);
                 setAlert({ type: "success", message: "Cliente creado correctamente." });
-                formHook.resetForm();
                 setTimeout(() => navigate("/dashboard/clients"), 1500);
             } catch (error) {
-                console.error(error);
-
                 setFormError(
                     error.response?.data?.error ||
                     "Error al crear el cliente."
                 );
+                throw error;
             }
         }
     });

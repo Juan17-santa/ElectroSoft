@@ -41,7 +41,7 @@ export default function CreditDetailsPage() {
                 }).catch(e => console.error("Error al cargar devoluciones:", e));
 
 
-                // ✅ FIX: Cargar abonos reales desde el backend
+                //   FIX: Cargar abonos reales desde el backend
                 paymentsService.getById(parsed.id).then(ventaEnriquecida => {
                     if (ventaEnriquecida) {
                         setSale(prev => ({
@@ -66,7 +66,7 @@ export default function CreditDetailsPage() {
         if (!sale) return [];
         let saldoPendiente = sale.total || 0;
         
-        // ✅ FIX: Ordenar cronológicamente (más antiguos primero)
+        //   FIX: Ordenar cronológicamente (más antiguos primero)
         // El backend envía los abonos en orden descendente, lo que causa un cálculo visual inverso
         // si no se ordenan primero cronológicamente.
         const abonosCronologicos = [...(sale.abonos || [])].sort((a, b) => {

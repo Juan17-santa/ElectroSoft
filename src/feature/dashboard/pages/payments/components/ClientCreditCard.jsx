@@ -4,7 +4,7 @@ const fmt = (val) => new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0
 }).format(val ?? 0);
 
-// ✅ Deriva el estado de pago a partir de los datos del cliente
+//   Deriva el estado de pago a partir de los datos del cliente
 const getEstadoPago = (cliente) => {
     if (cliente.estado === false) {
         return {

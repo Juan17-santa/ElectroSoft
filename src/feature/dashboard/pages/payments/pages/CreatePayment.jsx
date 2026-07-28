@@ -21,6 +21,7 @@ export default function CreatePayment() {
         handleSelectVenta,
         handleSubmit,
         ventasDelDocumento,
+        isSubmitting,
     } = usePaymentForm({
         ventaIdPreseleccionada: ventaId,
         documentoPreseleccionado: documento,
@@ -65,6 +66,7 @@ export default function CreatePayment() {
                     handleSelectVenta={handleSelectVenta}
                     handleSubmit={handleSubmit}
                     ventasDelDocumento={ventasDelDocumento}
+                    isSubmitting={isSubmitting}
                     onCancel={() => navigate(-1)}
                 />
             </div>
