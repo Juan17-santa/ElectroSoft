@@ -10,6 +10,9 @@ export default function UsersTable({
     onToggleEstado,
     onDelete,
 }) {
+    const GLOBAL_USER_EMAIL = "administrador@gmail.com";
+
+    
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
             <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
@@ -18,7 +21,7 @@ export default function UsersTable({
 
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
-                            <th className="px-3 py-2 font-semibold w-12">ID</th>
+                            <th className="px-3 py-2 font-semibold w-12">#</th>
                             <th className="px-3 py-2 font-semibold w-28">Documento</th>
                             <th className="px-3 py-2 font-semibold w-44">Nombre</th>
                             <th className="px-3 py-2 font-semibold w-44">Email</th>
@@ -69,7 +72,7 @@ export default function UsersTable({
                                 <tr key={user.id} className="border-b border-gray-300">
 
                                     <td className="px-3 py-2">
-                                        {startIndex + index + 1} {/* ← número continuo entre páginas */}
+                                        {String(startIndex + index + 1).padStart(2, "0")} {/* ← número continuo entre páginas */}
                                     </td>
 
                                     <td className="px-3 py-2 truncate">
@@ -94,25 +97,28 @@ export default function UsersTable({
                                     </td>
 
                                     <td className="px-3 py-2">
-                                            <div className="flex flex-col items-center gap-1">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div
+                                                onClick={() => user.email !== GLOBAL_USER_EMAIL && onToggleEstado(user.id)}
+                                                className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-all duration-300
+                                                    ${user.email === GLOBAL_USER_EMAIL
+                                                        ? "cursor-not-allowed opacity-50 bg-green-500"
+                                                        : `cursor-pointer ${user.estado ? "bg-green-500" : "bg-red-500"}`
+                                                    }`}
+                                            >
                                                 <div
-                                                    onClick={() => onToggleEstado(user.id)}
-                                                    className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
-                                                        ${user.estado ? "bg-green-500" : "bg-red-500"}`}
-                                                >
-                                                    <div
-                                                        className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
+                                                    className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
                                                         ${user.estado ? "translate-x-5" : "translate-x-0"}`}
-                                                    />
-                                                </div>
-                                                <span
-                                                    className={`text-xs font-semibold
-                                                    ${user.estado ? "text-green-600" : "text-red-600"}`}
-                                                >
-                                                    {user.estado ? "Activo" : "Inactivo"}
-                                                </span>
+                                                />
                                             </div>
-                                        </td>
+                                            <span
+                                                className={`text-xs font-semibold
+                                                    ${user.estado ? "text-green-600" : "text-red-600"}`}
+                                            >
+                                                {user.estado ? "Activo" : "Inactivo"}
+                                            </span>
+                                        </div>
+                                    </td>
 
                                     <td className="px-1 py-1">
                                         <div className="flex justify-center gap-2">
@@ -126,20 +132,27 @@ export default function UsersTable({
 
                                             <Restricted scope="Usuarios" action="Editar">
                                                 <button
-                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                    onClick={() => onEdit(user)}
+                                                    onClick={() => user.estado && onEdit(user)}
+                                                    disabled={!user.estado}
+                                                    className={`p-2 rounded-lg transition
+                                                        ${!user.estado
+                                                            ? "bg-gray-100 cursor-not-allowed opacity-40"
+                                                            : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
                                                 >
-                                                    <Pencil size={18} className="text-yellow-600" />
+                                                    <Pencil size={18} className={!user.estado ? "text-gray-400" : "text-yellow-600"} />
                                                 </button>
                                             </Restricted>
 
-                                        
                                             <Restricted scope="Usuarios" action="Eliminar">
                                                 <button
-                                                    className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                    onClick={() => onDelete(user.id)}
+                                                    onClick={() => user.email !== GLOBAL_USER_EMAIL && user.estado && onDelete(user.id)}
+                                                    disabled={user.email === GLOBAL_USER_EMAIL || !user.estado}
+                                                    className={`p-2 rounded-lg transition
+                                                        ${user.email === GLOBAL_USER_EMAIL || !user.estado
+                                                            ? "bg-gray-100 cursor-not-allowed opacity-40"
+                                                            : "bg-red-100 hover:bg-red-200 cursor-pointer"}`}
                                                 >
-                                                    <Trash size={18} className="text-red-600" />
+                                                    <Trash size={18} className={user.email === GLOBAL_USER_EMAIL || !user.estado ? "text-gray-400" : "text-red-600"} />
                                                 </button>
                                             </Restricted>
 
