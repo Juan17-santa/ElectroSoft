@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
@@ -36,6 +36,7 @@ function normalizeSale(sale) {
             productoId: producto.productoId?._id || producto.productoId || producto.id || producto.producto?._id,
             nombre: producto.nombre || producto.productoId?.name || producto.producto?.name || producto.name,
             precio: producto.precio || producto.precioUnitario || producto.productoId?.price || producto.producto?.price || 0,
+            garantia: producto.garantia || producto.productoId?.warranty || 0,
         })),
     };
 }
@@ -188,6 +189,7 @@ export default function CreateDevolution() {
         idVenta: idVentaPreCargado  ?? "",
         producto: productoPreCargado ?? "",
     });
+    const initialFormRef = useRef({ ...EMPTY_FORM, idVenta: idVentaPreCargado ?? "", producto: productoPreCargado ?? "" });
     const [tocados, setTocados]             = useState(EMPTY_TOCADOS);
     const [ventasList, setVentasList]       = useState([]);
     const [productosList, setProductosList] = useState([]);
@@ -195,6 +197,7 @@ export default function CreateDevolution() {
     const [sinProductos, setSinProductos]   = useState(false);
     const [confirmData, setConfirmData]     = useState(null);
     const [alert, setAlert]                 = useState(null);
+    const [garantiaVencidaMap, setGarantiaVencidaMap] = useState({});
 
     useEffect(() => {
         let active = true;
@@ -216,6 +219,21 @@ export default function CreateDevolution() {
         if (!form.idVenta) { setProductosList([]); setSinProductos(false); return; }
         const venta   = ventasList.find((v) => String(v.id) === String(form.idVenta));
         if (!venta?.productos) { setProductosList([]); setSinProductos(false); return; }
+
+        // Calcular estado de garantía para cada producto
+        const map = {};
+        venta.productos.forEach((p) => {
+            const meses = parseInt(p.garantia) || 0;
+            if (meses > 0) {
+                const fechaVenta = new Date(venta.fechaCreacion || venta.fecha);
+                const fechaVencimiento = new Date(fechaVenta);
+                fechaVencimiento.setMonth(fechaVencimiento.getMonth() + meses);
+                map[p.nombre] = new Date() > fechaVencimiento;
+            } else {
+                map[p.nombre] = false;
+            }
+        });
+        setGarantiaVencidaMap(map);
 
         // Solo mostrar productos con cantidad aún disponible para devolver
         ServicesDevolutions.getBySaleId(form.idVenta)
@@ -350,6 +368,22 @@ export default function CreateDevolution() {
     };
 
     const handleCancel = () => {
+        const initialForm = initialFormRef.current;
+        const hasChanges = Object.keys(form).some(
+            (key) => form[key] !== initialForm[key]
+        );
+
+        if (!hasChanges) {
+            if (fromReturn) {
+                navigate("/dashboard/sales-management/return", {
+                    state: { idVenta: form.idVenta, mode: modeOrigen },
+                });
+            } else {
+                navigate("/dashboard/devolutions");
+            }
+            return;
+        }
+
         setConfirmData({
             type: "info",
             title: "¿Cancelar?",
@@ -387,6 +421,7 @@ export default function CreateDevolution() {
                 onFieldBlur={tocarCampo}
                 sinProductos={sinProductos}
                 readOnlyFields={readOnlyFields}
+                garantiaVencidaMap={garantiaVencidaMap}
             />
 
             {confirmData && (

@@ -21,7 +21,7 @@ const formatCOP = (val) => {
     }).format(val || 0);
 };
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 6;
 
 function validarAnulacion(sale) {
     if (sale.estado === "Anulado" || sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") {

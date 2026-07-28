@@ -1,4 +1,4 @@
-import { Plus, Ban, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2, X } from "lucide-react";
+import { Plus, Trash2, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2, X, Minus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
@@ -116,9 +116,26 @@ export default function CreateShopping() {
     // con batching de React 18 y closures stale.
     useEffect(() => {
         if (!navegarACompras) return;
-        const timer = setTimeout(() => navigate("/dashboard/shopping"), 1500);
+        const timer = setTimeout(() => {
+            setProveedorId("");
+            setProveedor("");
+            setFechaISO("");
+            setNumeroFactura("");
+            setProductos([]);
+            navigate("/dashboard/shopping");
+        }, 1500);
         return () => clearTimeout(timer);
     }, [navegarACompras, navigate]);
+
+    // ─── Protección de navegación ─────────────────────────────────────────────
+    // Protección contra cierre de pestaña / refresh del navegador
+    useEffect(() => {
+        const tieneDatos = proveedorId || fechaISO || numeroFactura || productos.length > 0;
+        if (!tieneDatos) return;
+        const handler = (e) => { e.preventDefault(); e.returnValue = ""; };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [proveedorId, fechaISO, numeroFactura, productos]);
 
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
     const estadoProveedor = proveedorTocado ? validarProveedor(proveedorId) : null;
@@ -126,7 +143,7 @@ export default function CreateShopping() {
     const estadoNumeroFactura = numeroFacturaTocado ? validarNumeroFactura(numeroFactura, compras) : null;
 
     // ─── Cálculos ─────────────────────────────────────────────────────────────
-    const productosActivos = productos.filter((p) => !p.anulado);
+    const productosActivos = productos;
 
     /**
      * #3: El subtotal de la compra se calcula sobre costeProducto, que es lo que
@@ -170,14 +187,14 @@ export default function CreateShopping() {
     };
 
     const handleAnadirProducto = (nuevoProducto) => {
-        const { esActualizacion, sobreescribirConSugerido, ...producto } = nuevoProducto;
-        const productoConEstado = { ...producto, anulado: false, sobreescribirConSugerido };
+        const { esActualizacion, sobreescribirConSugerido, isNew, nombre, categoriaId, serial, garantia, tipoStock, caracteristicas, ...producto } = nuevoProducto;
+        const productoConEstado = { ...producto, sobreescribirConSugerido, isNew: !!isNew, nombre, categoriaId, serial, garantia, tipoStock, caracteristicas };
 
         if (esActualizacion) {
             // Actualizar el producto ya existente en la tabla
             setProductos((prev) =>
                 prev.map((p) =>
-                    String(p.id) === String(producto.id) && !p.anulado
+                    String(p.id) === String(producto.id)
                         ? productoConEstado
                         : p
                 )
@@ -190,11 +207,42 @@ export default function CreateShopping() {
         setShowModal(false);
     };
 
-    const handleAnularProducto = (id) => {
-        const updated = productos.map((p) =>
-            p.id === id ? { ...p, anulado: true } : p
-        );
-        setProductos(updated);
+    const handleEliminarProducto = (id) => {
+        setProductos((prev) => prev.filter((p) => p.id !== id));
+    };
+
+    const handleQuantityChange = (productId, newQuantity) => {
+        const productInfo = productos.find(p => p.id === productId);
+        const maxStock = 9999;
+
+        if (newQuantity === "") {
+            setProductos(prev => prev.map(p => p.id === productId ? { ...p, cantidad: "" } : p));
+            return;
+        }
+
+        let validQuantity = parseInt(newQuantity, 10);
+        if (isNaN(validQuantity)) return;
+
+        if (validQuantity > maxStock) {
+            validQuantity = maxStock;
+            setAlertData({ type: "error", message: `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}` });
+        }
+
+        setProductos(prev => prev.map(p =>
+            p.id === productId
+                ? { ...p, cantidad: validQuantity, subtotal: validQuantity * p.costeProducto }
+                : p
+        ));
+    };
+
+    const handleQuantityBlur = (productId) => {
+        setProductos(prev => prev.map(p => {
+            if (p.id === productId) {
+                const num = parseInt(p.cantidad, 10);
+                if (isNaN(num) || num < 1) return { ...p, cantidad: 1, subtotal: 1 * p.costeProducto };
+            }
+            return p;
+        }));
     };
 
     const finalizarCompra = async (productosParaGuardar) => {
@@ -234,7 +282,7 @@ export default function CreateShopping() {
 
         if (!vProv.valido || !vFech.valido || !vNumFact.valido) return;
 
-        const productosActuales = productos.filter((p) => !p.anulado);
+        const productosActuales = productos;
         if (productosActuales.length === 0) {
             setConfirmData({
                 type: "warning",
@@ -246,15 +294,34 @@ export default function CreateShopping() {
         }
 
         const productosParaGuardar = productosActuales.map(
-            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, precioVentaOriginal, subtotal, sobreescribirConSugerido, usarPrecioSugerido }) => ({
-                id, nombre, cantidad, precio,
-                costeProducto: costeProducto || precio,
-                precioVenta: precioVenta || precio,
-                precioVentaOriginal: precioVentaOriginal || precioVenta || precio,
-                subtotal,
-                sobreescribirConSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
-                usarPrecioSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
-            })
+            ({ id, nombre, cantidad, precio, costeProducto, precioVenta, precioVentaOriginal, subtotal, sobreescribirConSugerido, usarPrecioSugerido, isNew, categoriaId, serial, garantia, tipoStock, caracteristicas }) => {
+                const base = {
+                    id, nombre, cantidad, precio,
+                    costeProducto: costeProducto || precio,
+                    precioVenta: precioVenta || precio,
+                    precioVentaOriginal: precioVentaOriginal || precioVenta || precio,
+                    subtotal,
+                    sobreescribirConSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
+                    usarPrecioSugerido: !!(usarPrecioSugerido ?? sobreescribirConSugerido),
+                };
+                if (isNew) {
+                    base.isNew = true;
+                    base.newProduct = {
+                        name: nombre,
+                        categoryId: categoriaId,
+                        serial: serial || "",
+                        warranty: garantia || "",
+                        typeStock: tipoStock || "unidad",
+                        characteristics: (caracteristicas || []).map((c) => ({
+                            name: c.nombre ?? c.name,
+                            unit: c.medida ?? c.unit ?? "-",
+                            value: c.valor ?? c.value ?? "",
+                            visible: c.visible !== false,
+                        })),
+                    };
+                }
+                return base;
+            }
         );
 
         // Confirmar antes de guardar
@@ -280,7 +347,19 @@ export default function CreateShopping() {
                     </p>
 
                     <button
-                        onClick={() => navigate("/dashboard/shopping")}
+                        onClick={() => {
+                            const tieneDatos = proveedorId || fechaISO || numeroFactura || productos.length > 0;
+                            if (tieneDatos) {
+                                setConfirmData({
+                                    type: "info",
+                                    title: "¿Salir sin guardar?",
+                                    message: "Tienes datos sin guardar en la compra. Si sales ahora perderás el progreso.",
+                                    onConfirm: () => navigate("/dashboard/shopping"),
+                                });
+                            } else {
+                                navigate("/dashboard/shopping");
+                            }
+                        }}
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
                     >
                         <X size={20} />
@@ -402,14 +481,7 @@ export default function CreateShopping() {
                             <span>Productos</span>
                         </div>
 
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={() => setShowCreateProductModal(true)}
-                                className="flex items-center gap-2 bg-gray-200 hover:bg-gray-300 transition duration-300 px-4 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
-                            >
-                                <Plus size={16} />
-                                Crear producto
-                            </button>
+                        <div className="flex justify-end">
                             <button
                                 onClick={() => setShowModal(true)}
                                 className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 hover:shadow-lg transition duration-500 px-4 py-2 rounded-xl text-sm font-medium shadow cursor-pointer"
@@ -443,18 +515,39 @@ export default function CreateShopping() {
                                     </tr>
                                 ) : (
                                     productosPagina.map((producto) => (
-                                        <tr key={producto.id} className={producto.anulado ? "opacity-50 bg-gray-50" : ""}>
+                                        <tr key={producto.id}>
                                             <td className="px-4 py-2 border-b border-gray-200">
                                                 <span className="flex items-center gap-2">
                                                     {producto.nombre}
-                                                    {producto.anulado && (
-                                                        <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">
-                                                            Anulado
-                                                        </span>
-                                                    )}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-2 border-b border-gray-200 text-center">{producto.cantidad}</td>
+                                            <td className="px-4 py-2 text-center">
+                                                <div className="inline-flex items-center justify-center bg-gray-100 border border-gray-300 rounded-lg p-0.5 shadow-inner">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleQuantityChange(producto.id, Math.max(1, (parseInt(producto.cantidad, 10) || 1) - 1))}
+                                                        className="p-1 hover:bg-white rounded-md text-gray-600 hover:text-gray-900 transition-all cursor-pointer shadow-sm active:scale-95"
+                                                        title="Disminuir cantidad"
+                                                    >
+                                                        <Minus size={14} />
+                                                    </button>
+                                                    <input
+                                                        type="text"
+                                                        value={producto.cantidad}
+                                                        onChange={(e) => handleQuantityChange(producto.id, e.target.value)}
+                                                        onBlur={() => handleQuantityBlur(producto.id)}
+                                                        className="w-12 text-center bg-transparent font-semibold text-sm focus:outline-none focus:bg-white rounded px-1 transition-all"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleQuantityChange(producto.id, (parseInt(producto.cantidad, 10) || 0) + 1)}
+                                                        className="p-1 hover:bg-white rounded-md text-gray-600 hover:text-gray-900 transition-all cursor-pointer shadow-sm active:scale-95"
+                                                        title="Aumentar cantidad"
+                                                    >
+                                                        <Plus size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center text-gray-400">
                                                 {formatCOP(producto.precio)}
                                             </td>
@@ -468,23 +561,22 @@ export default function CreateShopping() {
                                                 {formatCOP(producto.subtotal)}
                                             </td>
                                             <td className="px-4 py-2 border-b border-gray-200 text-center">
-                                                {!producto.anulado && (
-                                                    <button
-                                                        onClick={() => setConfirmData({
-                                                            type: "delete",
-                                                            title: "Anular producto",
-                                                            message: `¿Seguro que deseas anular "${producto.nombre}"? Se excluirá de los totales pero seguirá registrado.`,
-                                                            onConfirm: () => {
-                                                                handleAnularProducto(producto.id);
-                                                                setConfirmData(null);
-                                                            }
-                                                        })}
-                                                        className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition duration-300 cursor-pointer"
-                                                        title="Anular producto"
-                                                    >
-                                                        <Ban size={16} className="text-red-600" />
-                                                    </button>
-                                                )}
+                                                <button
+                                                    onClick={() => setConfirmData({
+                                                        type: "delete",
+                                                        title: "Eliminar producto",
+                                                        message: `¿Seguro que deseas eliminar "${producto.nombre}"? Esta acción no se puede deshacer.`,
+                                                        onConfirm: () => {
+                                                            handleEliminarProducto(producto.id);
+                                                            setConfirmData(null);
+                                                            setAlertData({ type: "success", message: "El producto fue eliminado de la compra." });
+                                                        }
+                                                    })}
+                                                    className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition duration-300 cursor-pointer"
+                                                    title="Eliminar producto"
+                                                >
+                                                    <Trash2 size={16} className="text-red-600" />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))
@@ -565,7 +657,6 @@ export default function CreateShopping() {
                 <CreateProductModal
                     onClose={() => setShowCreateProductModal(false)}
                     onSuccess={() => { }}
-                    onAlert={setAlertData}
                 />
             )}
 

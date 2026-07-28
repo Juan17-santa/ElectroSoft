@@ -17,7 +17,6 @@ function FieldStatus({ estado }) {
 
 export default function AddProductModal({ onClose, onAnadir, productosYaAgregados = [] }) {
     const [productosList, setProductosList] = useState([]);
-    const [loadingProducts, setLoadingProducts] = useState(false);
     const [productsError, setProductsError] = useState("");
     const [showCreateProductModal, setShowCreateProductModal] = useState(false);
 
@@ -33,7 +32,6 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
     useEffect(() => {
         let mounted = true;
-        setLoadingProducts(true);
         setProductsError("");
         ServicesShopping.fetchProducts()
             .then((data) => {
@@ -44,17 +42,14 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                     setProductosList([]);
                     setProductsError(err.message || "No se pudieron cargar los productos.");
                 }
-            })
-            .finally(() => {
-                if (mounted) setLoadingProducts(false);
             });
         return () => {
             mounted = false;
         };
-    }, [showCreateProductModal]);
+    }, []);
 
     const productoSeleccionado = productosList.find((p) => String(p.id) === String(modalProducto));
-    const productoYaAgregado   = productosYaAgregados.find((p) => String(p.id) === String(modalProducto) && !p.anulado);
+    const productoYaAgregado   = productosYaAgregados.find((p) => String(p.id) === String(modalProducto));
 
     const wacCalculado = useMemo(() => {
         if (!productoSeleccionado || !modalPrecioVenta || !modalCantidad) return null;
@@ -62,7 +57,6 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
         const cantidad    = parseInt(modalCantidad) || 0;
         const stockAnt    = productoSeleccionado.stock ?? 0;
         const precioAct   = productoSeleccionado.precio ?? 0;
-        const stockNuevo  = stockAnt + cantidad;
         if (precioVenta <= 0 || cantidad <= 0) return null;
         return ServicesShopping.calculateWac({
             stockAnterior: stockAnt,
@@ -80,7 +74,7 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
         setModalProducto(id);
         setTocados((t) => ({ ...t, producto: true }));
         const found    = productosList.find((p) => String(p.id) === String(id));
-        const yaExiste = productosYaAgregados.find((p) => String(p.id) === String(id) && !p.anulado);
+        const yaExiste = productosYaAgregados.find((p) => String(p.id) === String(id));
         if (yaExiste) {
             setModalPrecio(String(found?.precio ?? ""));
             setModalCantidad(String(yaExiste.cantidad));
@@ -89,9 +83,15 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
             // ya que el modal necesita el valor real para recalcular el WAC correctamente.
             setModalPrecioVenta(String(yaExiste.precioVentaOriginal ?? yaExiste.precioVenta));
             setTocados({ producto: true, cantidad: true, precio: true, costeProducto: true, precioVenta: true });
+        } else if (found?.isNew) {
+            setModalPrecio("0");
+            setModalCosteProducto("");
+            setModalPrecioVenta("");
+            setModalCantidad("");
+            setTocados((t) => ({ ...t, producto: true }));
         } else if (found) {
             setModalPrecio(String(found.precio));
-            setModalCosteProducto(String(found.precio));
+            setModalCosteProducto("0");
             setModalPrecioVenta("");
             setModalCantidad("");
             setTocados((t) => ({ ...t, producto: true }));
@@ -108,7 +108,6 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
     const estadoProducto      = tocados.producto      ? validarProducto(modalProducto)           : null;
     const estadoCantidad      = tocados.cantidad      ? validarCantidad(modalCantidad)            : null;
-    const estadoPrecio        = tocados.precio        ? validarPrecio(modalPrecio)                : null;
     const estadoCosteProducto = tocados.costeProducto ? validarCosteProducto(modalCosteProducto) : null;
     const estadoPrecioVenta   = tocados.precioVenta   ? validarPrecioVenta(modalPrecioVenta)      : null;
 
@@ -121,7 +120,8 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
     const handleSubmit = () => {
         setTocados({ producto: true, cantidad: true, precio: true, costeProducto: true, precioVenta: true });
-        if (!validarProducto(modalProducto).valido || !validarCantidad(modalCantidad).valido || !validarPrecio(modalPrecio).valido || !validarCosteProducto(modalCosteProducto).valido || !validarPrecioVenta(modalPrecioVenta).valido) return;
+        const esNuevo = productoSeleccionado?.isNew;
+        if (!validarProducto(modalProducto).valido || !validarCantidad(modalCantidad).valido || (!esNuevo && !validarPrecio(modalPrecio).valido) || !validarCosteProducto(modalCosteProducto).valido || !validarPrecioVenta(modalPrecioVenta).valido) return;
         const found         = productosList.find((p) => String(p.id) === String(modalProducto));
         const sobreescribirConSugerido = mostrarSeleccionPrecio && seleccionPrecio === "sugerido";
         const precioVentaOriginal = parseCOP(modalPrecioVenta);
@@ -143,6 +143,13 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
             subtotal:              parseInt(modalCantidad) * parseCOP(modalCosteProducto),
             sobreescribirConSugerido,
             esActualizacion:       !!productoYaAgregado,
+            isNew:                 found?.isNew || false,
+            stock:                 found?.stock ?? 0,
+            categoriaId:           found?.categoriaId,
+            serial:                found?.serial,
+            garantia:              found?.garantia,
+            tipoStock:             found?.tipoStock,
+            caracteristicas:       found?.caracteristicas,
         });
     };
 
@@ -210,16 +217,18 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
                     </div>
 
-                    {/* FILA 2 — 3 campos de precio en grid de 3 columnas */}
-                    <div className="grid grid-cols-3 gap-x-5 gap-y-4 mt-4">
+                    {/* FILA 2 — campos de precio */}
+                    <div className={`grid gap-x-5 gap-y-4 mt-4 ${productoSeleccionado?.isNew ? "grid-cols-2" : "grid-cols-3"}`}>
 
-                        {/* PRECIO INVENTARIO */}
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={16} /><span>Precio inventario</span></div>
-                            <input type="text" readOnly value={modalPrecio ? formatCOP(Number(modalPrecio)) : ""} placeholder="carga automatica"
-                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm cursor-not-allowed opacity-75" />
-                            <p className="text-xs text-gray-400 -mt-1">Precio actual (referencia)</p>
-                        </div>
+                        {/* PRECIO INVENTARIO — solo para productos existentes */}
+                        {!productoSeleccionado?.isNew && (
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><DollarSign size={16} /><span>Precio inventario</span></div>
+                                <input type="text" readOnly value={modalPrecio ? formatCOP(Number(modalPrecio)) : ""} placeholder="carga automatica"
+                                    className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm cursor-not-allowed opacity-75" />
+                                <p className="text-xs text-gray-400 -mt-1">Precio actual (referencia)</p>
+                            </div>
+                        )}
 
                         {/* COSTE COMPRA */}
                         <div className="flex flex-col gap-2">
@@ -247,8 +256,8 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
 
                     </div>
 
-                    {/* SELECCIÓN WAC — aparece cuando WAC ≠ precioVenta */}
-                    {mostrarSeleccionPrecio && (
+                    {/* SELECCIÓN WAC — aparece cuando WAC ≠ precioVenta y el producto ya existe */}
+                    {mostrarSeleccionPrecio && !productoSeleccionado?.isNew && (
                         <div className="mt-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <TrendingUp size={14} className="text-yellow-500" />
@@ -298,12 +307,12 @@ export default function AddProductModal({ onClose, onAnadir, productosYaAgregado
                 <CreateProductModal
                     onClose={() => setShowCreateProductModal(false)}
                     onSuccess={(nuevoProducto) => {
-                        ServicesShopping.fetchProducts().then((data) => {
-                            setProductosList(data.filter((p) => p.estado !== false));
-                        });
+                        setProductosList((prev) => [...prev, nuevoProducto]);
                         setModalProducto(String(nuevoProducto.id));
-                        setModalPrecio(String(nuevoProducto.precio));
-                        setModalCosteProducto(String(nuevoProducto.precio));
+                        setModalPrecio("0");
+                        setModalCosteProducto("");
+                        setModalPrecioVenta("");
+                        setModalCantidad("");
                     }}
                 />
             )}

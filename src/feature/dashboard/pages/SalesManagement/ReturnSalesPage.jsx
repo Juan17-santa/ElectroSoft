@@ -83,8 +83,13 @@ export default function ReturnSalesPage() {
 
     // Pasa productoNombre para que CreateDevolution lo pre-cargue como read-only
     const handleDevolver = (producto) => {
+        const meses = parseInt(producto.garantia) || 0;
+        const fechaVenta = new Date(sale.fechaCreacion || sale.fecha);
+        const fechaVencimiento = new Date(fechaVenta);
+        fechaVencimiento.setMonth(fechaVencimiento.getMonth() + meses);
+        const garantiaVencida = meses > 0 && new Date() > fechaVencimiento;
         navigate("/dashboard/devolutions/create", {
-            state: { idVenta: sale.id, productoNombre: producto.nombre, mode },
+            state: { idVenta: sale.id, productoNombre: producto.nombre, mode, garantiaVencida },
         });
     };
 
@@ -328,11 +333,11 @@ export default function ReturnSalesPage() {
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200 text-left">
                                     <th className="px-4 py-2.5 font-semibold">Producto</th>
-                                    <th className="px-4 py-2.5 font-semibold">Cantidad</th>
-                                    <th className="px-4 py-2.5 font-semibold">Subtotal</th>
                                     <th className="px-4 py-2.5 font-semibold text-center">Estado</th>
                                     <th className="px-4 py-2.5 font-semibold text-center">Garantía</th>
+                                    <th className="px-4 py-2.5 font-semibold text-center">Cantidad</th>
                                     <th className="px-4 py-2.5 font-semibold">Precio</th>
+                                    <th className="px-4 py-2.5 font-semibold">Subtotal</th>
                                     {isFromSales && <th className="px-4 py-2.5 font-semibold text-center">Acciones</th>}
                                 </tr>
                             </thead>
@@ -342,7 +347,7 @@ export default function ReturnSalesPage() {
                                     const restante = prod.cantidad - devuelto;
                                     const totalDevuelto = devuelto >= prod.cantidad;
                                     
-                                    const mesesGarantia = prod.garantia || 0;
+                                    const mesesGarantia = parseInt(prod.garantia) || 0;
                                     const fechaVenta = new Date(sale.fechaCreacion || sale.fecha);
                                     const fechaVencimiento = new Date(fechaVenta);
                                     fechaVencimiento.setMonth(fechaVencimiento.getMonth() + mesesGarantia);
@@ -351,15 +356,6 @@ export default function ReturnSalesPage() {
                                     return (
                                         <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                                             <td className="px-4 py-2.5">{prod.nombre}</td>
-                                            <td className="px-4 py-2.5">
-                                                <span>{prod.cantidad}</span>
-                                                {devuelto > 0 && (
-                                                    <span className="ml-1.5 text-xs text-orange-500 font-medium">
-                                                        ({restante > 0 ? `${restante} disp.` : "agotado"})
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-2.5">{formatCOP(prod.precio * prod.cantidad)}</td>
                                             <td className="px-4 py-2.5 text-center">
                                                 {totalDevuelto
                                                     ? <span className="text-xs bg-orange-100 text-orange-600 font-medium px-2 py-0.5 rounded-full">Devuelto</span>
@@ -372,17 +368,26 @@ export default function ReturnSalesPage() {
                                                 {mesesGarantia === 0 ? (
                                                     <span className="text-xs text-gray-500">Sin garantía</span>
                                                 ) : garantiaValida ? (
-                                                    <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">Aplica ({mesesGarantia}m)</span>
+                                                    <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">Vigente</span>
                                                 ) : (
-                                                    <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full font-medium">Vencida</span>
+                                                    <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full font-medium">Expiró</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-2.5 text-center">
+                                                <span>{prod.cantidad}</span>
+                                                {devuelto > 0 && (
+                                                    <span className="ml-1.5 text-xs text-orange-500 font-medium">
+                                                        ({restante > 0 ? `${restante} disp.` : "agotado"})
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-2.5">{formatCOP(prod.precio)}</td>
+                                            <td className="px-4 py-2.5">{formatCOP(prod.precio * prod.cantidad)}</td>
                                             {isFromSales && (
                                                 <td className="px-4 py-2.5 text-center">
                                                     {!totalDevuelto
                                                         ? <button onClick={() => handleDevolver(prod)} title="Devolver este producto" className="text-yellow-600 hover:text-yellow-800 transition cursor-pointer"><Undo2 size={16} /></button>
-                                                        : <span className="text-gray-300 cursor-not-allowed" title="Stock completamente devuelto"><Undo2 size={16} /></span>
+                                                        : <button disabled title="Stock completamente devuelto" className="text-gray-300 cursor-not-allowed"><Undo2 size={16} /></button>
                                                     }
                                                 </td>
                                             )}

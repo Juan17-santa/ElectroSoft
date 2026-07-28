@@ -70,19 +70,21 @@ function normalizeProvider(provider = {}) {
         ...provider,
         id,
         _id: provider._id ?? id,
-        tipoDoc: provider.tipoDoc ?? provider.documentType ?? "",
-        documentType: provider.documentType ?? provider.tipoDoc ?? "",
-        documento: provider.documento ?? provider.document ?? "",
+        providerType: provider.providerType ?? "NATURAL",
+        documentType: provider.documentType ?? "",
+        documento: provider.document ?? provider.documento ?? "",
         document: provider.document ?? provider.documento ?? "",
-        nombreProveedor: provider.nombreProveedor ?? provider.providerName ?? "",
+        nombreProveedor: provider.providerName ?? provider.nombreProveedor ?? "",
         providerName: provider.providerName ?? provider.nombreProveedor ?? "",
-        nombreContacto: provider.nombreContacto ?? provider.contactName ?? "",
-        contactName: provider.contactName ?? provider.nombreContacto ?? "",
-        telefonoContacto: provider.telefonoContacto ?? provider.contactPhone ?? "",
-        contactPhone: provider.contactPhone ?? provider.telefonoContacto ?? "",
-        categoriasAsociadas: provider.categoriasAsociadas ?? provider.categoriesAssociated ?? [],
+        providerPhone: provider.providerPhone ?? "",
+        providerEmail: provider.providerEmail ?? "",
+        address: provider.address ?? "",
+        contactName: provider.contactName ?? "",
+        contactEmail: provider.contactEmail ?? "",
+        contactPhone: provider.contactPhone ?? "",
+        categoriasAsociadas: provider.categoriesAssociated ?? provider.categoriasAsociadas ?? [],
         categoriesAssociated: provider.categoriesAssociated ?? provider.categoriasAsociadas ?? [],
-        estado: provider.estado ?? provider.status ?? true,
+        estado: provider.status ?? provider.estado ?? true,
         status: provider.status ?? provider.estado ?? true,
     };
 }
@@ -203,15 +205,21 @@ function toShoppingPayload({ numeroFactura, fechaFactura, proveedorId, productos
         invoiceNumber: String(numeroFactura || "").trim(),
         purchaseDate: fechaFactura,
         providerId: proveedorId,
-        products: productos.map((product) => ({
-            productId: product.productoId ?? product.id,
-            quantity: Number(product.cantidad),
-            purchasePrice: Number(product.precioCompra ?? product.costeProducto),
-            // salePrice siempre debe ser el precio original ingresado por el usuario,
-            // ya que el Backend lo usa en la fórmula de costo promedio ponderado (WAC).
-            salePrice: Number(product.precioVentaOriginal ?? product.precioVenta),
-            useSuggestedPrice: product.usarPrecioSugerido === true || product.sobreescribirConSugerido === true,
-        })),
+        products: productos.map((product) => {
+            const entry = {
+                productId: product.productoId ?? product.id,
+                quantity: Number(product.cantidad),
+                purchasePrice: Number(product.precioCompra ?? product.costeProducto),
+                // salePrice siempre debe ser el precio original ingresado por el usuario,
+                // ya que el Backend lo usa en la fórmula de costo promedio ponderado (WAC).
+                salePrice: Number(product.precioVentaOriginal ?? product.precioVenta),
+                useSuggestedPrice: product.usarPrecioSugerido === true || product.sobreescribirConSugerido === true,
+            };
+            if (product.isNew && product.newProduct) {
+                entry.newProduct = product.newProduct;
+            }
+            return entry;
+        }),
     };
 }
 
@@ -295,12 +303,17 @@ export const ServicesShopping = {
         const payload = await request("/providers", {
             method: "POST",
             body: JSON.stringify({
-                documentType: provider.tipoDoc,
-                document: provider.documento,
-                providerName: provider.nombreProveedor,
-                contactName: provider.nombreContacto,
-                contactPhone: provider.telefonoContacto,
-                categoriesAssociated: provider.categoriasAsociadas || [],
+                providerType: provider.providerType,
+                documentType: provider.documentType,
+                document: provider.document,
+                providerName: provider.providerName,
+                providerPhone: provider.providerPhone,
+                providerEmail: provider.providerEmail,
+                address: provider.address,
+                contactName: provider.contactName || undefined,
+                contactEmail: provider.contactEmail || undefined,
+                contactPhone: provider.contactPhone || undefined,
+                categoriesAssociated: provider.categoriesAssociated || [],
             }),
         });
         return normalizeProvider(payload?.data);
