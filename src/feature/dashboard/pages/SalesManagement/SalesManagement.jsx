@@ -132,6 +132,15 @@ function BanButton({ validacion, onClick }) {
         </div>
     );
 }
+const formatFechaConSlash = (fechaStr) => {
+    if (!fechaStr) return "";
+    if (fechaStr.includes("/")) return fechaStr;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+        const [year, month, day] = fechaStr.split("-");
+        return `${day}/${month}/${year}`;
+    }
+    return fechaStr.replaceAll("-", "/");
+};
 
 export default function SalesManagement() {
     const { hasPermission } = usePermissions();
@@ -149,17 +158,19 @@ export default function SalesManagement() {
 
     const showAlert = (type, message) => setAlert({ type, message });
 
-    const filteredSales = sales.filter(sale =>
-        (sale.numeroDocumento?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (sale.numeroVenta?.toString() || '').includes(search) ||
-        (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase()) ||
-        (sale.fecha?.includes(search)) ||
-        (sale.tipoVenta?.toLowerCase().includes(search.toLowerCase())) ||
-        (sale.total?.toString().includes(search)) ||
-        (sale.montoPagado?.toString().includes(search)) ||
-        (sale.montoPorPagar?.toString().includes(search)) ||
-        (sale.estado?.toLowerCase().includes(search.toLowerCase()))
-    );
+    const filteredSales = sales.filter(sale => {
+        const fechaSlash = formatFechaConSlash(sale.fecha);
+        return (sale.numeroDocumento?.toLowerCase() || '').includes(search.toLowerCase()) ||
+            (sale.numeroVenta?.toString() || '').includes(search) ||
+            (sale.cliente?.toLowerCase() || '').includes(search.toLowerCase()) ||
+            (sale.fecha?.includes(search)) ||
+            (fechaSlash?.includes(search)) ||
+            (sale.tipoVenta?.toLowerCase().includes(search.toLowerCase())) ||
+            (sale.total?.toString().includes(search)) ||
+            (sale.montoPagado?.toString().includes(search)) ||
+            (sale.montoPorPagar?.toString().includes(search)) ||
+            (sale.estado?.toLowerCase().includes(search.toLowerCase()));
+    });
 
     const totalPages = Math.max(1, Math.ceil(filteredSales.length / ITEMS_PER_PAGE));
     const pageActual = Math.min(currentPage, totalPages);
@@ -301,7 +312,7 @@ export default function SalesManagement() {
                                             <td className="px-3 py-3 font-medium">{String(sale.numeroVenta || "").padStart(2, '0') || '-'}</td>
                                             <td className="px-3 py-3">{sale.numeroDocumento || "-"}</td>
                                             <td className="px-3 py-3">{sale.cliente || "-"}</td>
-                                            <td className="px-3 py-3">{sale.fecha}</td>
+                                            <td className="px-3 py-3">{formatFechaConSlash(sale.fecha)}</td>
                                             <td className="px-3 py-3">{sale.tipoVenta}</td>
                                             <td className="px-3 py-3">{formatCOP(sale.total)}</td>
                                             <td className="px-3 py-3">{formatCOP(sale.montoPagado)}</td>

@@ -602,31 +602,39 @@ export default function AddProductModal({
                 </div>
 
                 {/* ── FOOTER ─────────────────────────────────────────────── */}
-                <div className="flex gap-3 px-7 py-5" style={{ borderTop: "1px solid #f3f4f6" }}>
-                    <button type="button" onClick={onClose}
-                        className="flex-1 py-3 text-sm font-medium rounded-xl transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                        style={{ backgroundColor: "#f3f4f6", border: "none" }}>
-                        Cancelar
-                    </button>
+                <div className="px-7 py-4 flex flex-col gap-3" style={{ borderTop: "1px solid #f3f4f6", backgroundColor: "#fafafa" }}>
+                    {queue.length > 0 && (
+                        <div className="flex items-center justify-between px-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-xs">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total en cola ({totalItems} {totalItems === 1 ? "ítem" : "ítems"}):</span>
+                            <span className="text-base font-extrabold text-gray-900">{fmt(totalValue)}</span>
+                        </div>
+                    )}
+                    <div className="flex gap-3">
+                        <button type="button" onClick={onClose}
+                            className="flex-1 py-3 text-sm font-medium rounded-xl transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                            style={{ backgroundColor: "#f3f4f6", border: "none" }}>
+                            Cancelar
+                        </button>
 
-                    <button type="button" onClick={handleConfirm} disabled={queue.length === 0 || isExceedingQuota}
-                        className="flex-[2.5] flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-xl transition-all btn-confirm"
-                        style={{
-                            backgroundColor: (queue.length === 0 || isExceedingQuota) ? "#e5e7eb" : "#facc15",
-                            color: (queue.length === 0 || isExceedingQuota) ? "#9ca3af" : "#1f2937",
-                            cursor: (queue.length === 0 || isExceedingQuota) ? "not-allowed" : "pointer",
-                            border: "none",
-                            boxShadow: (queue.length > 0 && !isExceedingQuota) ? "0 4px 14px rgba(250,204,21,0.35)" : "none",
-                        }}>
-                        <CheckCircle size={15} />
-                        {isExceedingQuota ? "Cupo excedido" : confirmText}
-                        {queue.length > 0 && !isExceedingQuota && (
-                            <span className="ml-1 px-2 py-0.5 rounded-md text-xs font-bold"
-                                style={{ backgroundColor: "rgba(0,0,0,0.1)", color: "#1f2937" }}>
-                                {queue.length}
-                            </span>
-                        )}
-                    </button>
+                        <button type="button" onClick={handleConfirm} disabled={queue.length === 0 || isExceedingQuota}
+                            className="flex-[2.5] flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-xl transition-all btn-confirm"
+                            style={{
+                                backgroundColor: (queue.length === 0 || isExceedingQuota) ? "#e5e7eb" : "#facc15",
+                                color: (queue.length === 0 || isExceedingQuota) ? "#9ca3af" : "#1f2937",
+                                cursor: (queue.length === 0 || isExceedingQuota) ? "not-allowed" : "pointer",
+                                border: "none",
+                                boxShadow: (queue.length > 0 && !isExceedingQuota) ? "0 4px 14px rgba(250,204,21,0.35)" : "none",
+                            }}>
+                            <CheckCircle size={15} />
+                            {isExceedingQuota ? "Cupo excedido" : confirmText}
+                            {queue.length > 0 && !isExceedingQuota && (
+                                <span className="ml-1 px-2 py-0.5 rounded-md text-xs font-bold"
+                                    style={{ backgroundColor: "rgba(0,0,0,0.1)", color: "#1f2937" }}>
+                                    {queue.length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
