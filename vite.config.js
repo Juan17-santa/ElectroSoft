@@ -13,6 +13,9 @@ export default defineConfig({
       workbox: {
         navigateFallback: "/index.html",
         globPatterns: ["**/*.{js,jsx,css,html,png,jpg,svg}"],
+        clientsClaim: true,
+        skipWaiting: true,
+        navigateFallback: "/index.html",
       },
       manifest: {
         name: 'ElectroSoft',

@@ -100,8 +100,13 @@ export default function CustomSelect({
                                 <button
                                     key={option.value}
                                     type="button"
-                                    onClick={() => handleSelect(option.value)}
-                                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-yellow-100 text-sm transition"
+                                    onClick={() => !option.disabled && handleSelect(option.value)}
+                                    disabled={option.disabled}
+                                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                                        option.disabled
+                                            ? "text-gray-400 cursor-not-allowed line-through"
+                                            : "hover:bg-yellow-100 cursor-pointer"
+                                    }`}
                                 >
                                     {option.label}
                                 </button>

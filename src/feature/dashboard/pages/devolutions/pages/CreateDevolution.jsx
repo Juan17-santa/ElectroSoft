@@ -36,6 +36,7 @@ function normalizeSale(sale) {
             productoId: producto.productoId?._id || producto.productoId || producto.id || producto.producto?._id,
             nombre: producto.nombre || producto.productoId?.name || producto.producto?.name || producto.name,
             precio: producto.precio || producto.precioUnitario || producto.productoId?.price || producto.producto?.price || 0,
+            garantia: producto.garantia || producto.productoId?.garantia || 0,
         })),
     };
 }
@@ -195,6 +196,7 @@ export default function CreateDevolution() {
     const [sinProductos, setSinProductos]   = useState(false);
     const [confirmData, setConfirmData]     = useState(null);
     const [alert, setAlert]                 = useState(null);
+    const [garantiaVencidaMap, setGarantiaVencidaMap] = useState({});
 
     useEffect(() => {
         let active = true;
@@ -216,6 +218,21 @@ export default function CreateDevolution() {
         if (!form.idVenta) { setProductosList([]); setSinProductos(false); return; }
         const venta   = ventasList.find((v) => String(v.id) === String(form.idVenta));
         if (!venta?.productos) { setProductosList([]); setSinProductos(false); return; }
+
+        // Calcular estado de garantía para cada producto
+        const map = {};
+        venta.productos.forEach((p) => {
+            const meses = parseInt(p.garantia) || 0;
+            if (meses > 0) {
+                const fechaVenta = new Date(venta.fechaCreacion || venta.fecha);
+                const fechaVencimiento = new Date(fechaVenta);
+                fechaVencimiento.setMonth(fechaVencimiento.getMonth() + meses);
+                map[p.nombre] = new Date() > fechaVencimiento;
+            } else {
+                map[p.nombre] = false;
+            }
+        });
+        setGarantiaVencidaMap(map);
 
         // Solo mostrar productos con cantidad aún disponible para devolver
         ServicesDevolutions.getBySaleId(form.idVenta)
@@ -387,6 +404,7 @@ export default function CreateDevolution() {
                 onFieldBlur={tocarCampo}
                 sinProductos={sinProductos}
                 readOnlyFields={readOnlyFields}
+                garantiaVencidaMap={garantiaVencidaMap}
             />
 
             {confirmData && (

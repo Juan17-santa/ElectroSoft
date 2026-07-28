@@ -81,15 +81,16 @@ function formatFechaDisplay(fechaISO) {
  *  onChange         — (field, value) => void
  *  onSubmit         — () => void
  *  onCancel         — () => void
- *  readOnly         — boolean: deshabilita campos y oculta botón guardar
- *  title            — string
- *  submitText       — string
- *  productosList    — array de productos disponibles para el select
- *  ventasList       — array de ventas para VentaSearchSelect
- *  estadoCampo      — (campo) => { valido, mensaje } | null  (validación)
- *  onFieldBlur      — (campo) => void  (marcar campo como tocado al salir)
- *  sinProductos     — boolean: muestra aviso "sin productos disponibles"
- *  readOnlyFields   — array: campos que no pueden editarse (ej: ["idVenta", "producto"])
+ *  readOnly             — boolean: deshabilita campos y oculta botón guardar
+ *  title                — string
+ *  submitText           — string
+ *  productosList        — array de productos disponibles para el select
+ *  ventasList           — array de ventas para VentaSearchSelect
+ *  estadoCampo          — (campo) => { valido, mensaje } | null  (validación)
+ *  onFieldBlur          — (campo) => void  (marcar campo como tocado al salir)
+ *  sinProductos         — boolean: muestra aviso "sin productos disponibles"
+ *  readOnlyFields       — array: campos que no pueden editarse (ej: ["idVenta", "producto"])
+ *  garantiaVencidaMap   — Record<string, boolean>: producto → true si garantía vencida
  */
 export default function DevolutionForm({
     form,
@@ -105,6 +106,7 @@ export default function DevolutionForm({
     onFieldBlur      = () => {},
     sinProductos     = false,
     readOnlyFields   = [],
+    garantiaVencidaMap = {},
 }) {
     // Helper para verificar si un campo debe estar readonly
     const esReadOnly = (campo) => readOnly || readOnlyFields.includes(campo);
@@ -184,7 +186,13 @@ export default function DevolutionForm({
                     <CustomSelect
                         value={form.motivo}
                         onChange={(val) => { onChange("motivo", val); onFieldBlur("motivo"); }}
-                        options={MOTIVOS.map((m) => ({ value: m, label: m }))}
+                        options={MOTIVOS.map((m) => ({
+                            value: m,
+                            label: m === "GARANTIA" && garantiaVencidaMap[form.producto]
+                                ? "Garantía (no aplica)"
+                                : m,
+                            disabled: m === "GARANTIA" && garantiaVencidaMap[form.producto],
+                        }))}
                         placeholder="Seleccionar..."
                         width="w-full"
                         disabled={esReadOnly("motivo")}
