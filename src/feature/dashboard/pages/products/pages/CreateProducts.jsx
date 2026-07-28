@@ -36,7 +36,8 @@ export default function CreateProducts() {
         formData,
         errors,
         handleChange,
-        handleSubmit: submitForm
+        handleSubmit: submitForm,
+        loading
     } = useProductForm({
         onSuccess: () => {
             setAlert({
@@ -136,12 +137,29 @@ export default function CreateProducts() {
         validateCharacteristicField("medida", name);
     };
 
+    const refreshCharacteristicLists = async () => {
+        try {
+            const [chars, measures] = await Promise.all([
+                ServicesCharacteristics.getCharacteristics(),
+                ServicesCharacteristics.getMeasures()
+            ]);
+            setCharacteristicOptions(Array.isArray(chars) ? chars : []);
+            setMeasureOptions(Array.isArray(measures) ? measures : []);
+        } catch (error) {
+            setAlert({
+                type: "error",
+                message: error.message || "Error al recargar las opciones"
+            });
+        }
+    };
+
     const addCharacteristicOption = async (name) => {
         try {
             const added = await ServicesCharacteristics.addCharacteristic(name);
             setCharacteristicOptions(prev => [...prev, added]);
             setModalForm(prev => ({ ...prev, nombre: added.nombre }));
             setCharDropdownOpen(false);
+            await refreshCharacteristicLists();
         } catch (error) {
             setAlert({
                 type: "error",
@@ -153,7 +171,7 @@ export default function CreateProducts() {
     const removeCharacteristicOption = async (id) => {
         try {
             const updated = await ServicesCharacteristics.removeCharacteristic(id);
-            setCharacteristicOptions(updated);
+            setCharacteristicOptions(Array.isArray(updated) ? updated : []);
         } catch (error) {
             setAlert({
                 type: "error",
@@ -168,6 +186,7 @@ export default function CreateProducts() {
             setMeasureOptions(prev => [...prev, added]);
             setModalForm(prev => ({ ...prev, medida: added.nombre }));
             setMeasDropdownOpen(false);
+            await refreshCharacteristicLists();
         } catch (error) {
             setAlert({
                 type: "error",
@@ -179,7 +198,7 @@ export default function CreateProducts() {
     const removeMeasureOption = async (id) => {
         try {
             const updated = await ServicesCharacteristics.removeMeasure(id);
-            setMeasureOptions(updated);
+            setMeasureOptions(Array.isArray(updated) ? updated : []);
         } catch (error) {
             setAlert({
                 type: "error",
@@ -334,7 +353,7 @@ export default function CreateProducts() {
 
                     <div className="flex flex-col gap-3">
                         <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                            <DollarSign size={16} /> Precio *
+                            <DollarSign size={16} /> Precio 
                         </label>
                         <input
                             name="precio"
@@ -344,6 +363,11 @@ export default function CreateProducts() {
                             inputMode="numeric"
                             pattern="[0-9]*"
                             placeholder="Digite el precio"
+                            onKeyDown={(e) => {
+                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            }}
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.precio ? 'border-red-500' : 'border-transparent'
                                 }`}
                         />
@@ -356,7 +380,7 @@ export default function CreateProducts() {
 
                     <div className="flex flex-col gap-3">
                         <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                            <Boxes size={16} /> Stock *
+                            <Boxes size={16} /> Stock
                         </label>
                         <input
                             name="stock"
@@ -366,6 +390,11 @@ export default function CreateProducts() {
                             inputMode="numeric"
                             pattern="[0-9]*"
                             placeholder="Digite el stock"
+                            onKeyDown={(e) => {
+                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            }}
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.stock ? 'border-red-500' : 'border-transparent'
                                 }`}
                         />
@@ -565,8 +594,6 @@ export default function CreateProducts() {
                                 type="button"
                                 onClick={() => {
                                     agregarCaracteristica();
-                                    setCharacteristicOptions(ServicesCharacteristics.getCharacteristics());
-                                    setMeasureOptions(ServicesCharacteristics.getMeasures());
                                 }}
                                 className="flex items-center gap-2 bg-linear-to-r from-white to-yellow-300 px-6 py-2.5 rounded-lg font-medium transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={!modalForm.nombre || !modalForm.valor || !!characteristicErrors.nombre || !!characteristicErrors.medida || !!characteristicErrors.valor}
@@ -661,6 +688,7 @@ export default function CreateProducts() {
                     </button>
                     <PrimaryButton
                         type="submit"
+                        loading={loading}
                         disabled={Object.values(errors).some(error => error)}
                     >
                         Crear Producto
