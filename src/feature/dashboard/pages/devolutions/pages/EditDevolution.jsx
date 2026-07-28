@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
@@ -62,7 +62,7 @@ function validarMotivo(val) {
 }
 
 function validarSubmotivo(val, motivo) {
-    if (!motivo) return null;                      // aún no se puede validar
+    if (!motivo) return null;
     if (!val) return { valido: false, mensaje: "Selecciona el submotivo correspondiente." };
     const opciones = SUBMOTIVOS[motivo] || [];
     if (!opciones.includes(val))
@@ -71,7 +71,7 @@ function validarSubmotivo(val, motivo) {
 }
 
 function validarProducto(val, idVenta) {
-    if (!idVenta) return null;                     // esperar a que elijan venta
+    if (!idVenta) return null;
     if (!val) return { valido: false, mensaje: "Selecciona el producto a devolver." };
     return { valido: true, mensaje: "" };
 }
@@ -139,7 +139,7 @@ function validarResponsable(val, motivo, garantiaProveedor) {
 }
 
 function validarGarantia(val, motivo) {
-    if (motivo !== "GARANTIA") return null;         // no aplica
+    if (motivo !== "GARANTIA") return null;
     if (val === null || val === undefined || val === "")
         return { valido: false, mensaje: "Indica si aplica garantía de proveedor." };
     return { valido: true, mensaje: "" };
@@ -170,6 +170,18 @@ function validarFecha(fechaDevolucion, idVenta, ventasList) {
     return { valido: true, mensaje: "" };
 }
 
+function buscarEnLocalStorage(id) {
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("pendingDevs_")) {
+            const devs = JSON.parse(localStorage.getItem(key) || "[]");
+            const found = devs.find((d) => String(d.id) === String(id));
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
 export default function EditDevolution() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -184,28 +196,50 @@ export default function EditDevolution() {
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
     const [confirmData, setConfirmData] = useState(null);
     const [alert, setAlert] = useState(null);
+    const initialFormRef = useRef(null);
+    const isTemporal = String(id).startsWith("temp-");
 
     useEffect(() => {
         let active = true;
 
         async function loadData() {
             try {
-                const [ventas, found] = await Promise.all([
-                    fetchSales(),
-                    ServicesDevolutions.getById(id),
-                ]);
+                if (isTemporal) {
+                    // Buscar en localStorage (devolución aún no registrada)
+                    const tempDev = buscarEnLocalStorage(id);
+                    if (!active) return;
 
-                if (!active) return;
+                    if (tempDev) {
+                        const ventas = await fetchSales();
+                        if (!active) return;
+                        const ventasActivas = ventas.filter((v) => v.estado !== "Anulado");
+                        setVentasList(ventasActivas);
+                        const venta = ventasActivas.find((v) => String(v.id) === String(tempDev.idVenta));
+                        if (venta?.productos) setProductosList(venta.productos);
+                        const formData = { ...tempDev, fechaDevolucion: tempDev.fechaDevolucion ?? "" };
+                        setForm(formData);
+                        initialFormRef.current = { ...formData };
+                    }
+                } else {
+                    const [ventas, found] = await Promise.all([
+                        fetchSales(),
+                        ServicesDevolutions.getById(id),
+                    ]);
 
-                const ventasActivas = ventas.filter((v) => v.estado !== "Anulado");
-                setVentasList(ventasActivas);
+                    if (!active) return;
 
-                if (found) {
-                    setForm({ ...found, fechaDevolucion: found.fechaDevolucion ?? "" });
-                    const venta = ventasActivas.find((v) => String(v.id) === String(found.idVenta));
-                    setProductosList(venta?.productos ?? []);
-                    const devoluciones = await ServicesDevolutions.getBySaleId(found.idVenta);
-                    if (active) setDevolucionesVenta(devoluciones);
+                    const ventasActivas = ventas.filter((v) => v.estado !== "Anulado");
+                    setVentasList(ventasActivas);
+
+                    if (found) {
+                        const formData = { ...found, fechaDevolucion: found.fechaDevolucion ?? "" };
+                        setForm(formData);
+                        initialFormRef.current = { ...formData };
+                        const venta = ventasActivas.find((v) => String(v.id) === String(found.idVenta));
+                        setProductosList(venta?.productos ?? []);
+                        const devoluciones = await ServicesDevolutions.getBySaleId(found.idVenta);
+                        if (active) setDevolucionesVenta(devoluciones);
+                    }
                 }
             } catch (err) {
                 if (active) setAlert({ type: "error", message: err.message });
@@ -219,7 +253,7 @@ export default function EditDevolution() {
         return () => {
             active = false;
         };
-    }, [id]);
+    }, [id, isTemporal]);
 
     const handleChange = (field, value) => {
         let autoTouched = {};
@@ -227,14 +261,12 @@ export default function EditDevolution() {
         setForm((prev) => {
             const next = { ...prev, [field]: value };
 
-            // ── Reglas cuando cambia el MOTIVO ──
             if (field === "motivo") {
                 next.submotivo = "";
                 next.gestion = "";
                 next.condicionProducto = "";
                 next.garantiaProveedor = null;
 
-                // LOGISTICA y CLIENTE → responsable siempre EMPRESA
                 if (value === "LOGISTICA" || value === "CLIENTE") {
                     next.responsable = "EMPRESA";
                     autoTouched.responsable = true;
@@ -243,12 +275,10 @@ export default function EditDevolution() {
                 }
             }
 
-            // ── Reglas cuando cambia el SUBMOTIVO ──
             if (field === "submotivo") {
-                next.gestion = ""; // limpiar gestión al cambiar submotivo
+                next.gestion = "";
             }
 
-            // ── Auto-set responsable cuando cambia garantiaProveedor (solo GARANTIA) ──
             if (field === "garantiaProveedor" && prev.motivo === "GARANTIA") {
                 next.responsable = getResponsableAuto("GARANTIA", value);
                 autoTouched.responsable = true;
@@ -260,15 +290,12 @@ export default function EditDevolution() {
         setTocados((prev) => ({ ...prev, [field]: true, ...autoTouched }));
     };
 
-    // Marcar campo como tocado al salir (onBlur)
     const tocarCampo = (campo) =>
         setTocados((prev) => ({ ...prev, [campo]: true }));
 
-    // Marcar TODOS los campos como tocados (al intentar guardar con errores)
     const tocarTodo = () =>
         setTocados(Object.fromEntries(Object.keys(EMPTY_TOCADOS).map((k) => [k, true])));
 
-    // ─── estadoCampo: retorna el estado de validación si el campo fue tocado ─
     const estadoCampo = (campo) => {
         if (!form || !tocados[campo]) return null;
         switch (campo) {
@@ -287,7 +314,6 @@ export default function EditDevolution() {
         }
     };
 
-    // ─── Verificar si el formulario es válido en su totalidad ────────────────
     const formularioEsValido = () => {
         const validaciones = [
             validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id, devolucionesVenta),
@@ -317,7 +343,21 @@ export default function EditDevolution() {
             message: "¿Deseas guardar los cambios realizados en esta devolución?",
             onConfirm: async () => {
                 try {
-                    await editarDevolucion(form);
+                    if (isTemporal) {
+                        // Guardar en localStorage
+                        const key = `pendingDevs_${form.idVenta}`;
+                        const devsStr = localStorage.getItem(key);
+                        if (devsStr) {
+                            const devs = JSON.parse(devsStr);
+                            const idx = devs.findIndex((d) => String(d.id) === String(id));
+                            if (idx !== -1) {
+                                devs[idx] = form;
+                                localStorage.setItem(key, JSON.stringify(devs));
+                            }
+                        }
+                    } else {
+                        await editarDevolucion(form);
+                    }
                     setConfirmData(null);
                     setAlert({ type: "success", message: "Devolución actualizada correctamente." });
                     const idVenta = location.state?.idVenta ?? form.idVenta;
@@ -338,6 +378,22 @@ export default function EditDevolution() {
     };
 
     const handleCancel = () => {
+        const initialForm = initialFormRef.current;
+        const hasChanges = form && initialForm
+            ? Object.keys(form).some((key) => form[key] !== initialForm[key])
+            : false;
+
+        if (!hasChanges) {
+            const idVenta = location.state?.idVenta ?? form?.idVenta;
+            const mode = location.state?.mode ?? "from-sales";
+            if (idVenta) {
+                navigate("/dashboard/sales-management/return", { state: { idVenta, mode } });
+            } else {
+                navigate("/dashboard/devolutions");
+            }
+            return;
+        }
+
         const idVenta = location.state?.idVenta ?? form?.idVenta;
         const mode = location.state?.mode ?? "from-sales";
         setConfirmData({

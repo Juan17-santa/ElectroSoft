@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
@@ -36,7 +36,7 @@ function normalizeSale(sale) {
             productoId: producto.productoId?._id || producto.productoId || producto.id || producto.producto?._id,
             nombre: producto.nombre || producto.productoId?.name || producto.producto?.name || producto.name,
             precio: producto.precio || producto.precioUnitario || producto.productoId?.price || producto.producto?.price || 0,
-            garantia: producto.garantia || producto.productoId?.garantia || 0,
+            garantia: producto.garantia || producto.productoId?.warranty || 0,
         })),
     };
 }
@@ -189,6 +189,7 @@ export default function CreateDevolution() {
         idVenta: idVentaPreCargado  ?? "",
         producto: productoPreCargado ?? "",
     });
+    const initialFormRef = useRef({ ...EMPTY_FORM, idVenta: idVentaPreCargado ?? "", producto: productoPreCargado ?? "" });
     const [tocados, setTocados]             = useState(EMPTY_TOCADOS);
     const [ventasList, setVentasList]       = useState([]);
     const [productosList, setProductosList] = useState([]);
@@ -367,6 +368,22 @@ export default function CreateDevolution() {
     };
 
     const handleCancel = () => {
+        const initialForm = initialFormRef.current;
+        const hasChanges = Object.keys(form).some(
+            (key) => form[key] !== initialForm[key]
+        );
+
+        if (!hasChanges) {
+            if (fromReturn) {
+                navigate("/dashboard/sales-management/return", {
+                    state: { idVenta: form.idVenta, mode: modeOrigen },
+                });
+            } else {
+                navigate("/dashboard/devolutions");
+            }
+            return;
+        }
+
         setConfirmData({
             type: "info",
             title: "¿Cancelar?",

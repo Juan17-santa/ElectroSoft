@@ -20,7 +20,7 @@ const mapSaleToFrontend = (sale) => {
             nombre: p.productoId?.name || p.nombre || "Producto",
             precio: p.precioUnitario,
             cantidad: p.cantidad,
-            garantia: p.productoId?.garantia || 0
+            garantia: p.productoId?.warranty || 0
         })),
         subtotal: sale.subtotal || sale.total,
         iva: sale.iva || 0,

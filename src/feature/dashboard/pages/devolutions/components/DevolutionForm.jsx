@@ -15,12 +15,6 @@ import {
 } from "../helpers/devolutionsHelpers";
 import { ArrowLeft } from "lucide-react";
 
-// ─── Definidos FUERA del componente para evitar remontaje y scroll reset ──────
-
-/**
- * Wrapper de campo con ícono + label amarillo.
- * ⚠️ NUNCA mover esto dentro de DevolutionForm.
- */
 function Field({ icon: Icon, label, children, className = "" }) {
     return (
         <div className={`flex flex-col ${className}`}>
@@ -33,12 +27,6 @@ function Field({ icon: Icon, label, children, className = "" }) {
     );
 }
 
-/**
- * Indicador visual de validación, idéntico al patrón de CreateShopping.
- * estado = null                → no renderiza nada (campo sin tocar)
- * estado = { valido: true }    → ícono verde + "Listo"
- * estado = { valido: false }   → ícono rojo + mensaje de error
- */
 function FieldStatus({ estado }) {
     if (estado === null || estado === undefined) return null;
     return (
@@ -54,13 +42,11 @@ function FieldStatus({ estado }) {
     );
 }
 
-/** Clase dinámica del ring según estado de validación */
 function ring(estado) {
     if (!estado) return "focus:ring-gray-400";
     return estado.valido ? "ring-1 ring-green-300" : "ring-1 ring-red-300";
 }
 
-/** Bloquea caracteres no numéricos (e, -, +, .) en campos tipo number */
 function blockInvalidKeys(e) {
     if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
 }
@@ -71,27 +57,6 @@ function formatFechaDisplay(fechaISO) {
     return `${d}/${m}/${y}`;
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
-
-/**
- * Formulario reutilizable de devolución.
- *
- * Props:
- *  form             — objeto con todos los valores
- *  onChange         — (field, value) => void
- *  onSubmit         — () => void
- *  onCancel         — () => void
- *  readOnly             — boolean: deshabilita campos y oculta botón guardar
- *  title                — string
- *  submitText           — string
- *  productosList        — array de productos disponibles para el select
- *  ventasList           — array de ventas para VentaSearchSelect
- *  estadoCampo          — (campo) => { valido, mensaje } | null  (validación)
- *  onFieldBlur          — (campo) => void  (marcar campo como tocado al salir)
- *  sinProductos         — boolean: muestra aviso "sin productos disponibles"
- *  readOnlyFields       — array: campos que no pueden editarse (ej: ["idVenta", "producto"])
- *  garantiaVencidaMap   — Record<string, boolean>: producto → true si garantía vencida
- */
 export default function DevolutionForm({
     form,
     onChange,
@@ -108,23 +73,17 @@ export default function DevolutionForm({
     readOnlyFields   = [],
     garantiaVencidaMap = {},
 }) {
-    // Helper para verificar si un campo debe estar readonly
     const esReadOnly = (campo) => readOnly || readOnlyFields.includes(campo);
-    
-    // Opciones filtradas según reglas de negocio
+
     const gestionesDisponibles   = getGestionesPermitidas(form.motivo, form.submotivo);
     const condicionesDisponibles = getCondicionesPermitidas(form.motivo);
     const submotivosDisponibles  = SUBMOTIVOS[form.motivo] || [];
 
-    // La garantía solo aplica cuando motivo = GARANTIA
     const garantiaAplica   = form.motivo === "GARANTIA";
     const garantiaNoAplica = !readOnly && form.motivo && !garantiaAplica;
 
-    // Determina si el campo de monto parcial debe mostrarse
     const mostrarMontoParcial = form.gestion === "REEMBOLSO_PARCIAL";
 
-    // Calcula el valor total de referencia para el badge
-    // (cantidad × precio del producto seleccionado)
     const productoSeleccionado = productosList.find(p => p.nombre === form.producto);
     const valorTotalReferencia = productoSeleccionado?.precio
         ? (parseFloat(productoSeleccionado.precio) * (parseInt(form.cantidad) || 0))
@@ -138,14 +97,12 @@ export default function DevolutionForm({
         ${ring(estadoCampo(campo))}
     `;
 
-    // Clase para el input de monto parcial cuando excede el total
     const montoExcedeTotal = form.montoReembolso && valorTotalReferencia > 0
         && parseFloat(form.montoReembolso) > valorTotalReferencia;
 
     return (
         <div className="bg-gray-100 p-6 rounded-2xl flex flex-col h-full gap-6 shadow-inner overflow-auto">
 
-            {/* TÍTULO */}
             <div>
                 <p className="text-xl font-semibold flex items-center gap-2">
                     {title}
@@ -153,10 +110,8 @@ export default function DevolutionForm({
                 <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent mt-3" />
             </div>
 
-            {/* ── FILA 1: Producto · Motivo · Submotivo ────────────────────────── */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 px-10 gap-y-6">
 
-                {/* PRODUCTO — primero */}
                 <Field icon={Box} label="Producto *">
                     {esReadOnly("producto") ? (
                             <input type="text" value={form.producto} readOnly className={fieldBase("producto")} />
@@ -181,7 +136,6 @@ export default function DevolutionForm({
                     )}
                 </Field>
 
-                {/* MOTIVO */}
                 <Field icon={AlertTriangle} label="Motivo *">
                     <CustomSelect
                         value={form.motivo}
@@ -200,7 +154,6 @@ export default function DevolutionForm({
                     <FieldStatus estado={estadoCampo("motivo")} />
                 </Field>
 
-                {/* SUBMOTIVO — depende del motivo */}
                 <Field icon={GitBranch} label="Submotivo *">
                     {esReadOnly("submotivo") ? (
                         <input type="text" value={form.submotivo || "—"} readOnly className={fieldBase("submotivo")} />
@@ -221,10 +174,8 @@ export default function DevolutionForm({
 
             </div>
 
-            {/* ── FILA 2: Cantidad · Condición producto · Responsable · Fecha devolución ── */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 px-10 gap-y-6">
 
-                {/* CANTIDAD */}
                 <Field icon={Boxes} label="Cantidad *">
                     <input
                         type="number"
@@ -241,7 +192,6 @@ export default function DevolutionForm({
                     <FieldStatus estado={estadoCampo("cantidad")} />
                 </Field>
 
-                {/* CONDICIÓN PRODUCTO — filtrada por motivo */}
                 <Field icon={Wrench} label="Condición producto *">
                     <CustomSelect
                         value={form.condicionProducto}
@@ -254,7 +204,6 @@ export default function DevolutionForm({
                     <FieldStatus estado={estadoCampo("condicionProducto")} />
                 </Field>
 
-                {/* RESPONSABLE — auto-set por reglas de negocio */}
                 <Field icon={User} label="Responsable *">
                     <CustomSelect
                         value={form.responsable}
@@ -267,7 +216,6 @@ export default function DevolutionForm({
                     <FieldStatus estado={estadoCampo("responsable")} />
                 </Field>
 
-                {/* FECHA — siempre automática, no editable */}
                 <Field icon={CalendarDays} label="Fecha de devolución">
                     <input
                         type="text"
@@ -280,13 +228,10 @@ export default function DevolutionForm({
 
             </div>
 
-            {/* ── FILA 3: Gestión (con REEMBOLSO PARCIAL inline) · Estado resolución · Garantía proveedor ── */}
             <div className={`grid grid-cols-1 ${mostrarMontoParcial ? 'md:grid-cols-[1fr_1fr]' : 'md:grid-cols-3'} gap-x-8 px-10 gap-y-6 transition-all duration-300`}>
 
-                {/* GESTIÓN — con monto parcial inline (Field propio con label) cuando aplica */}
                 <div className={`${mostrarMontoParcial ? 'flex gap-2 items-start' : ''}`}>
 
-                    {/* Campo de gestión */}
                     <div className={mostrarMontoParcial ? 'flex-[0_0_45%] min-w-0' : 'w-full'}>
                         <Field icon={ClipboardList} label="Gestión *">
                             {(!form.motivo || gestionesDisponibles.length === 0) ? (
@@ -305,7 +250,6 @@ export default function DevolutionForm({
                         </Field>
                     </div>
 
-                    {/* Campo de monto parcial — visible solo con REEMBOLSO_PARCIAL */}
                     {mostrarMontoParcial && (
                         <div className="flex-1 min-w-0">
                             <Field icon={DollarSign} label="Monto reembolso *">
@@ -324,7 +268,6 @@ export default function DevolutionForm({
                                             montoExcedeTotal ? 'ring-1 ring-red-300 bg-red-50' : ''
                                         }`}
                                     />
-                                    {/* Badge del valor total de referencia */}
                                     {valorTotalReferencia > 0 && (
                                         <div className={`absolute right-1.5 top-1/2 -translate-y-1/2 text-[0.65rem] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap pointer-events-none ${
                                             montoExcedeTotal 
@@ -336,7 +279,6 @@ export default function DevolutionForm({
                                     )}
                                 </div>
 
-                                {/* Hint de monto máximo o error de validación */}
                                 {valorTotalReferencia > 0 && (
                                     <div className={`flex items-center gap-1 text-xs mt-1 ${
                                         montoExcedeTotal ? 'text-red-500' : 'text-amber-600'
@@ -359,9 +301,7 @@ export default function DevolutionForm({
                     )}
                 </div>
 
-                {/* ESTADO RESOLUCIÓN y GARANTÍA — se reagrupan en la segunda columna cuando hay split */}
                 {mostrarMontoParcial ? (
-                    /* Lado a lado dentro de la segunda mitad */
                     <div className="grid grid-cols-2 gap-x-4 gap-y-6 min-w-0">
                         <Field icon={Tag} label="Estado resolución" className="min-w-0">
                             <CustomSelect
@@ -396,7 +336,6 @@ export default function DevolutionForm({
                         </Field>
                     </div>
                 ) : (
-                    /* Layout normal de 3 columnas cuando NO es REEMBOLSO PARCIAL */
                     <>
                         <Field icon={Tag} label="Estado resolución">
                             <CustomSelect
@@ -433,21 +372,7 @@ export default function DevolutionForm({
                 )}
             </div>
 
-            {/* ── FILA 4: Observaciones · Descripción ────────────────────────── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 px-10 gap-y-6">
-
-                <Field icon={ClipboardList} label="Observaciones *">
-                    <textarea
-                        value={form.observaciones}
-                        onChange={(e) => onChange("observaciones", e.target.value)}
-                        onBlur={() => onFieldBlur("observaciones")}
-                        readOnly={esReadOnly("observaciones")}
-                        rows={4}
-                        placeholder="Observaciones adicionales sobre la devolución..."
-                        className={`${fieldBase("observaciones")} resize-none`}
-                    />
-                    <FieldStatus estado={estadoCampo("observaciones")} />
-                </Field>
 
                 <Field icon={FileText} label="Descripción *">
                     <textarea
@@ -462,9 +387,21 @@ export default function DevolutionForm({
                     <FieldStatus estado={estadoCampo("descripcion")} />
                 </Field>
 
+                <Field icon={ClipboardList} label="Observaciones *">
+                    <textarea
+                        value={form.observaciones}
+                        onChange={(e) => onChange("observaciones", e.target.value)}
+                        onBlur={() => onFieldBlur("observaciones")}
+                        readOnly={esReadOnly("observaciones")}
+                        rows={4}
+                        placeholder="Ej: El proveedor dijó que en 1 semana mandaba el producto, 02/03/2027."
+                        className={`${fieldBase("observaciones")} resize-none`}
+                    />
+                    <FieldStatus estado={estadoCampo("observaciones")} />
+                </Field>
+
             </div>
 
-            {/* BOTONES */}
             <div className="flex justify-end gap-3 mt-auto">
                 <button
                     onClick={onCancel}
