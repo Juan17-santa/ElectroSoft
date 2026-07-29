@@ -2,6 +2,7 @@ import { Eye, Undo2, Ban, Wallet } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
+import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
@@ -22,9 +23,15 @@ const formatCOP = (val) => {
 };
 
 const ITEMS_PER_PAGE = 6;
+const ESTADOS_DEVOLUCION_VENTA = ["Devuelto", "Devolución Parcial", "Devolucion Parcial", "DevoluciÃ³n Parcial"];
+const ESTADOS_DEVOLUCION_FINALES = ["RESUELTO", "RECHAZADA"];
+
+function esVentaConDevolucion(estado) {
+    return ESTADOS_DEVOLUCION_VENTA.includes(estado);
+}
 
 function validarAnulacion(sale) {
-    if (sale.estado === "Anulado" || sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") {
+    if (sale.estado === "Anulado" || esVentaConDevolucion(sale.estado)) {
         return { puedeAnularse: false, razon: "La venta ya no puede ser anulada por su estado." };
     }
     
@@ -216,9 +223,40 @@ export default function SalesManagement() {
         navigate("/dashboard/sales-management/credit-details");
     };
 
-    const handleReturn = (sale) => {
+    const handleReturn = async (sale) => {
         localStorage.setItem("saleToReturn", JSON.stringify(sale));
-        navigate("/dashboard/sales-management/return");
+
+        if (!esVentaConDevolucion(sale.estado)) {
+            navigate("/dashboard/sales-management/return", {
+                state: { idVenta: sale.id, mode: "from-sales", origin: "sales" },
+            });
+            return;
+        }
+
+        try {
+            const devoluciones = await ServicesDevolutions.getBySaleId(sale.id);
+            const activas = devoluciones.filter((dev) => dev.estadoResolucion !== "Anulada");
+
+            if (activas.length === 0) {
+                showAlert("error", "La venta figura con devolución, pero no se encontró una devolución activa asociada.");
+                return;
+            }
+
+            const todasFinalizadas = activas.every((dev) =>
+                ESTADOS_DEVOLUCION_FINALES.includes(dev.estadoResolucion),
+            );
+
+            navigate("/dashboard/sales-management/return", {
+                state: {
+                    idVenta: sale.id,
+                    mode: todasFinalizadas ? "view-only" : "editable",
+                    origin: "sales",
+                },
+            });
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || error.message || "No se pudo abrir la devolución existente.";
+            showAlert("error", errorMsg);
+        }
     };
 
     const handleAnull = (sale) => {
@@ -332,19 +370,18 @@ export default function SalesManagement() {
                                                     {/* DEVOLVER */}
                                                     <Restricted scope="Ventas" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            {sale.estado === "Devuelto" ? (
+                                                            {sale.estado === "Anulado" ? (
                                                                 <CancellationInfoTooltip cancelInfo={{
                                                                     fechaAnulacion: sale.anuladaEn || sale.fecha,
-                                                                    motivo: sale.observaciones || "Devolución registrada."
+                                                                    motivo: sale.observaciones || "Anulación registrada sin motivo."
                                                                 }} />
                                                             ) : (
                                                                 <button
-                                                                    className={`p-2 rounded-lg transition duration-300 ${sale.estado === "Anulado" ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
+                                                                    className={`p-2 rounded-lg transition duration-300 cursor-pointer ${sale.estado === "Devuelto" ? "bg-gray-100 hover:bg-gray-200" : "bg-yellow-100 hover:bg-yellow-200"}`}
                                                                     onClick={() => handleReturn(sale)}
-                                                                    title={sale.estado === "Anulado" ? "" : "Devolver venta"}
-                                                                    disabled={sale.estado === "Anulado"}
+                                                                    title={sale.estado === "Devuelto" ? "Ver devolución" : "Devolver venta"}
                                                                 >
-                                                                    <Undo2 size={18} className={sale.estado === "Anulado" ? "text-gray-400" : "text-yellow-600"} />
+                                                                    <Undo2 size={18} className={sale.estado === "Devuelto" ? "text-gray-500" : "text-yellow-600"} />
                                                                 </button>
                                                             )}
                                                         </div>

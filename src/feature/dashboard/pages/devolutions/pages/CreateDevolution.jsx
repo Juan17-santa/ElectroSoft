@@ -95,7 +95,7 @@ function validarCantidad(val, producto, idVenta, ventasList, devolucionesVenta =
         const productoEnVenta = venta?.productos?.find((p) => p.nombre === producto);
         if (productoEnVenta) {
             const yaDevuelto = devolucionesVenta
-                .filter((d) => d.estadoResolucion !== "Anulada" && d.producto === producto)
+                .filter((d) => d.estadoResolucion !== "Anulada" && d.productoId === productoEnVenta.productoId)
                 .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
             const disponible = productoEnVenta.cantidad - yaDevuelto;
             if (cantidad > disponible)
@@ -244,7 +244,7 @@ export default function CreateDevolution() {
                 setDevolucionesVenta(todasLasDevoluciones);
         const conDisponible = venta.productos.filter((p) => {
             const devuelto = todasLasDevoluciones
-                .filter((d) => d.estadoResolucion !== "Anulada" && d.producto === p.nombre)
+                .filter((d) => d.estadoResolucion !== "Anulada" && d.productoId === p.productoId)
                 .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
             return devuelto < p.cantidad;
         });

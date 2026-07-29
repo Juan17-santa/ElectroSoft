@@ -127,10 +127,6 @@ export const SalesService = {
         }
     },
 
-    async returnSale(id, esParcial = false) {
-        console.warn("returnSale called. Not implemented in backend.");
-    },
-
     async getById(id) {
         try {
             const response = await api.get(`/sales/${id}`);

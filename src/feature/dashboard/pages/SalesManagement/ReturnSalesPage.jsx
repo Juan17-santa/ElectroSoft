@@ -65,12 +65,13 @@ export default function ReturnSalesPage() {
 
     const productos = sale.productos || [];
 
-    const cantidadDevueltaPor = (nombreProd) =>
+    const cantidadDevueltaPorProductoId = (productoId) =>
         devolucionesVenta
-            .filter((d) => d.estadoResolucion !== "Anulada" && d.producto === nombreProd)
+            .filter((d) => d.estadoResolucion !== "Anulada" && d.productoId === productoId)
             .reduce((s, d) => s + Number(d.cantidad || 0), 0);
 
     const isYaDevuelto = sale.estado === "Devuelto";
+    const esDevolucionParcial = sale.estado === "Devolución Parcial";
 
     // ─── Paginación ───────────────────────────────────────────────────────────
     const totalProdPages = Math.max(1, Math.ceil(productos.length / PROD_PER_PAGE));
@@ -81,8 +82,27 @@ export default function ReturnSalesPage() {
     const devActual = Math.min(devPage, totalDevPages);
     const paginatedDevs = devolucionesVenta.slice((devActual - 1) * DEV_PER_PAGE, devActual * DEV_PER_PAGE);
 
-    // Pasa productoNombre para que CreateDevolution lo pre-cargue como read-only
     const handleDevolver = (producto) => {
+        const devuelto = cantidadDevueltaPorProductoId(producto.productoId);
+
+        if (devuelto > 0 || isYaDevuelto || esDevolucionParcial) {
+            const devolucion = devolucionesVenta.find(
+                d => d.productoId === producto.productoId && d.estadoResolucion !== "Anulada"
+            );
+            if (devolucion) {
+                if (ESTADOS_BLOQUEADOS.includes(devolucion.estadoResolucion)) {
+                    navigate(`/dashboard/devolutions/product-details/${devolucion.id}`, {
+                        state: { mode: "view-only", idVenta: sale.id },
+                    });
+                } else {
+                    navigate(`/dashboard/devolutions/edit/${devolucion.id}`, {
+                        state: { idVenta: sale.id, mode: "from-sales" },
+                    });
+                }
+                return;
+            }
+        }
+
         const meses = parseInt(producto.garantia) || 0;
         const fechaVenta = new Date(sale.fechaCreacion || sale.fecha);
         const fechaVencimiento = new Date(fechaVenta);
@@ -138,24 +158,23 @@ export default function ReturnSalesPage() {
         setConfirmData({
             type: "warning",
             title: "Registrar devolución",
-            message: "¿Estás seguro? El estado de la venta cambiará a 'Devuelto'.",
+            message: devolucionesVenta.length < productos.length
+                ? "¿Estás seguro? El estado de la venta cambiará a 'Devolución Parcial'."
+                : "¿Estás seguro? El estado de la venta cambiará a 'Devuelto'.",
             onConfirm: async () => {
                 try {
                     const key = `pendingDevs_${sale.id}`;
                     const localDevsStr = localStorage.getItem(key);
                     const localDevs = localDevsStr ? JSON.parse(localDevsStr) : [];
-                    
-                    // Enviar devoluciones pendientes al backend
+
                     if (localDevs.length > 0) {
-                        for (const dev of localDevs) {
-                            const payload = { ...dev };
-                            delete payload.id; // Remover ID temporal
-                            await ServicesDevolutions.create(payload);
-                        }
+                        const payloads = localDevs.map((dev) => {
+                            const { id, ...rest } = dev;
+                            return rest;
+                        });
+                        await ServicesDevolutions.createBatch(sale.id, payloads);
                     }
 
-                    const esParcial = devolucionesVenta.length < productos.length;
-                    SalesService.returnSale(sale.id, esParcial);
                     localStorage.removeItem(key);
                     localStorage.removeItem("saleToReturn");
                     setAlertMsg({ type: "success", message: "Devolución registrada correctamente." });
@@ -343,7 +362,7 @@ export default function ReturnSalesPage() {
                             </thead>
                             <tbody>
                                 {paginatedProds.map((prod, i) => {
-                                    const devuelto = cantidadDevueltaPor(prod.nombre);
+                                    const devuelto = cantidadDevueltaPorProductoId(prod.productoId);
                                     const restante = prod.cantidad - devuelto;
                                     const totalDevuelto = devuelto >= prod.cantidad;
                                     

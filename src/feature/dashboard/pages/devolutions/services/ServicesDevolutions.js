@@ -79,6 +79,8 @@ function normalizeDevolution(devolution) {
         responsable: product.responsable || devolution.responsable || "",
         garantiaProveedor:
             product.garantiaProveedor ?? devolution.garantiaProveedor ?? null,
+        montoReembolso:
+            product.montoReembolso ?? devolution.montoReembolso ?? null,
         descripcion: product.descripcion || devolution.descripcion || "",
         observaciones: product.observaciones || devolution.observaciones || "",
         fechaDevolucion: toDateOnly(devolution.fechaDevolucion),
@@ -115,6 +117,10 @@ function toApiPayload(data) {
                         : producto.garantiaProveedor,
                 descripcion: producto.descripcion || "",
                 observaciones: producto.observaciones || "",
+                montoReembolso:
+                    producto.montoReembolso === undefined
+                        ? null
+                        : Number(producto.montoReembolso),
             },
         ],
     };
@@ -145,6 +151,14 @@ export const ServicesDevolutions = {
         );
     },
 
+    async createBatch(saleId, devoluciones) {
+        const result = await request("/batch", {
+            method: "POST",
+            body: JSON.stringify({ saleId, devoluciones: devoluciones.map(toApiPayload) }),
+        });
+        return (Array.isArray(result) ? result : []).map(normalizeDevolution);
+    },
+
     async update(id, data) {
         const { idVenta, saleId, productos, productoId, producto, fechaCreacion, creadoEn, ...editable } =
             data;
@@ -164,5 +178,9 @@ export const ServicesDevolutions = {
                 body: JSON.stringify({}),
             }),
         );
+    },
+
+    async delete(id) {
+        return this.anular(id);
     },
 };
