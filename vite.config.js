@@ -15,7 +15,6 @@ export default defineConfig({
         globPatterns: ["**/*.{js,jsx,css,html,png,jpg,svg}"],
         clientsClaim: true,
         skipWaiting: true,
-        navigateFallback: "/index.html",
       },
       manifest: {
         name: 'ElectroSoft',
@@ -24,7 +23,7 @@ export default defineConfig({
         scope: "/",
         start_url: "/",
         display: "standalone",
-        theme_color: '#000000',
+        theme_color: '#FFC107',
         background_color: "#ffffff",
 
         "screenshots": [

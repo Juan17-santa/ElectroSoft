@@ -386,7 +386,7 @@ const paymentsService = {
             });
         });
 
-        return rows;
+        return rows.reverse();
     },
 
     formatCurrency(value) {

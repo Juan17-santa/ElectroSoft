@@ -4,6 +4,18 @@ import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import DevolutionForm from "../components/DevolutionForm";
 import { ArrowLeft } from "lucide-react";
 
+function buscarEnLocalStorage(id) {
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("pendingDevs_")) {
+            const devs = JSON.parse(localStorage.getItem(key) || "[]");
+            const found = devs.find((d) => String(d.id) === String(id));
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
 /**
  * DevolutionProductDetails
  * Formulario de solo lectura para ver el detalle de una devolución de producto.
@@ -22,25 +34,37 @@ export default function DevolutionProductDetails() {
 
     const [form, setForm] = useState(null);
     const [loading, setLoading] = useState(true);
+    const isTemporal = String(id).startsWith("temp-");
 
     useEffect(() => {
         let active = true;
 
-        ServicesDevolutions.getById(id)
-            .then((found) => {
-                if (active && found) setForm(found);
-            })
-            .catch(() => {
+        async function loadData() {
+            try {
+                if (isTemporal) {
+                    const tempDev = buscarEnLocalStorage(id);
+                    if (active) {
+                        setForm(tempDev ?? null);
+                    }
+                } else {
+                    const found = await ServicesDevolutions.getById(id);
+                    if (active) {
+                        setForm(found ?? null);
+                    }
+                }
+            } catch {
                 if (active) setForm(null);
-            })
-            .finally(() => {
+            } finally {
                 if (active) setLoading(false);
-            });
+            }
+        }
+
+        loadData();
 
         return () => {
             active = false;
         };
-    }, [id]);
+    }, [id, isTemporal]);
 
     if (loading) {
         return (
@@ -52,11 +76,20 @@ export default function DevolutionProductDetails() {
     }
 
     if (form === null) {
+        const idVenta = location.state?.idVenta;
         return (
             <div className="bg-gray-50 p-6 rounded-2xl flex flex-col w-full h-full gap-4 items-center justify-center shadow-inner min-h-40">
                 <p className="text-gray-500 text-sm">No se encontró la devolución solicitada.</p>
                 <button
-                    onClick={() => navigate("/dashboard/devolutions")}
+                    onClick={() => {
+                        if (idVenta) {
+                            navigate("/dashboard/sales-management/return", {
+                                state: { idVenta, mode: location.state?.mode ?? "from-sales" },
+                            });
+                        } else {
+                            navigate("/dashboard/devolutions");
+                        }
+                    }}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
                 >
                     <ArrowLeft size={16} />

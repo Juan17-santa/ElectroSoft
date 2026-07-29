@@ -84,24 +84,9 @@ export default function ReturnSalesPage() {
 
     const handleDevolver = (producto) => {
         const devuelto = cantidadDevueltaPorProductoId(producto.productoId);
+        const restante = producto.cantidad - devuelto;
 
-        if (devuelto > 0 || isYaDevuelto || esDevolucionParcial) {
-            const devolucion = devolucionesVenta.find(
-                d => d.productoId === producto.productoId && d.estadoResolucion !== "Anulada"
-            );
-            if (devolucion) {
-                if (ESTADOS_BLOQUEADOS.includes(devolucion.estadoResolucion)) {
-                    navigate(`/dashboard/devolutions/product-details/${devolucion.id}`, {
-                        state: { mode: "view-only", idVenta: sale.id },
-                    });
-                } else {
-                    navigate(`/dashboard/devolutions/edit/${devolucion.id}`, {
-                        state: { idVenta: sale.id, mode: "from-sales" },
-                    });
-                }
-                return;
-            }
-        }
+        if (restante <= 0) return;
 
         const meses = parseInt(producto.garantia) || 0;
         const fechaVenta = new Date(sale.fechaCreacion || sale.fecha);

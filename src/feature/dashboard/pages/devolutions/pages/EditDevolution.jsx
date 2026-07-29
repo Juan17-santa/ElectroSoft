@@ -470,7 +470,7 @@ export default function EditDevolution() {
                 ventasList={ventasList}
                 estadoCampo={estadoCampo}
                 onFieldBlur={tocarCampo}
-                readOnlyFields={["idVenta", "motivo", "submotivo", "producto"]}
+                readOnlyFields={["idVenta", "producto"]}
             />
 
             {confirmData && (

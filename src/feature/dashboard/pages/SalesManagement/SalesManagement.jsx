@@ -34,9 +34,9 @@ function validarAnulacion(sale) {
     if (sale.estado === "Anulado" || esVentaConDevolucion(sale.estado)) {
         return { puedeAnularse: false, razon: "La venta ya no puede ser anulada por su estado." };
     }
-    
+
     const now = new Date();
-    
+
     // Validar fecha de creación (48 horas límite)
     if (sale.fechaCreacion) {
         const createdAt = new Date(sale.fechaCreacion);
@@ -47,7 +47,7 @@ function validarAnulacion(sale) {
             }
         }
     }
-    
+
     // Validar fecha de venta/factura (48 horas límite desde el final del día)
     if (sale.fecha && /^\d{4}-\d{2}-\d{2}$/.test(sale.fecha)) {
         const [year, month, day] = sale.fecha.split("-").map(Number);
@@ -72,7 +72,7 @@ function validarAnulacion(sale) {
             }
         }
     }
-    
+
     return { puedeAnularse: true };
 }
 
@@ -238,7 +238,9 @@ export default function SalesManagement() {
             const activas = devoluciones.filter((dev) => dev.estadoResolucion !== "Anulada");
 
             if (activas.length === 0) {
-                showAlert("error", "La venta figura con devolución, pero no se encontró una devolución activa asociada.");
+                navigate("/dashboard/sales-management/return", {
+                    state: { idVenta: sale.id, mode: "from-sales", origin: "sales" },
+                });
                 return;
             }
 
@@ -356,12 +358,11 @@ export default function SalesManagement() {
                                             <td className="px-3 py-3">{formatCOP(sale.montoPagado)}</td>
                                             <td className="px-3 py-3">{formatCOP(sale.montoPorPagar)}</td>
                                             <td className="px-3 py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                    (sale.estado === "Finalizado" || sale.estado === "Finalizadas") ? "bg-green-100 text-green-700" :
-                                                    sale.estado === "Vigente" ? "bg-yellow-100 text-yellow-600" :
-                                                    (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
-                                                    "bg-red-100 text-red-600"
-                                                }`}>
+                                                <span className={`inline-block px-2 py-1 rounded-lg text-xs font-medium whitespace-normal break-words leading-tight max-w-[110px] ${(sale.estado === "Finalizado" || sale.estado === "Finalizadas") ? "bg-green-100 text-green-700" :
+                                                        sale.estado === "Vigente" ? "bg-yellow-100 text-yellow-600" :
+                                                            (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
+                                                                "bg-red-100 text-red-600"
+                                                    }`}>
                                                     {sale.estado}
                                                 </span>
                                             </td>
@@ -407,7 +408,7 @@ export default function SalesManagement() {
                                                                     motivo: sale.observaciones || "Anulación registrada sin motivo."
                                                                 }} />
                                                             ) : (
-                                                                <BanButton 
+                                                                <BanButton
                                                                     validacion={validarAnulacion(sale)}
                                                                     onClick={() => handleAnull(sale)}
                                                                 />

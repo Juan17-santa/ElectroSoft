@@ -158,15 +158,15 @@ export default function PaymentDetail() {
                             Historial de Abonos
                         </h3>
 
-                        <div className="rounded-xl overflow-x-auto border border-gray-100">
-                            <table className="min-w-xl w-full text-sm">
+                        <div className="border border-gray-200 rounded-sm overflow-x-auto">
+                            <table className="min-w-150 w-full text-sm">
                                 <thead>
-                                    <tr className="bg-gray-50">
-                                        <th className="text-left px-5 py-3 font-semibold text-gray-500">Fecha</th>
-                                        <th className="text-left px-5 py-3 font-semibold text-gray-500">Método</th>
-                                        <th className="text-left px-5 py-3 font-semibold text-gray-500">Abono</th>
-                                        <th className="text-left px-5 py-3 font-semibold text-gray-500">Saldo pendiente</th>
-                                        <th className="text-left px-5 py-3 font-semibold text-gray-500">Acción</th>
+                                    <tr className="border-b border-gray-200">
+                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Fecha</th>
+                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Método</th>
+                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Abono</th>
+                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Saldo pendiente</th>
+                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -186,23 +186,23 @@ export default function PaymentDetail() {
                                             return (
                                                 <tr
                                                     key={i}
-                                                    className={`border-t border-gray-50 ${isAnulado ? "opacity-50 line-through text-gray-400" :
+                                                    className={`border-b border-gray-100 last:border-b-0 ${isAnulado ? "opacity-50 line-through text-gray-400" :
                                                         isRojo ? "text-red-500 font-medium" :
                                                             isAzul ? "text-blue-500 font-medium" :
                                                                 "text-gray-600"
                                                         }`}
                                                 >
-                                                    <td className="px-5 py-2.5">{row.fecha}</td>
-                                                    <td className="px-5 py-2.5 text-gray-400 text-xs">
+                                                    <td className="px-4 py-2.5">{row.fecha}</td>
+                                                    <td className="px-4 py-2.5 text-gray-400 text-xs">
                                                         {row.metodoPago || "—"}
                                                     </td>
-                                                    <td className="px-5 py-2.5">
+                                                    <td className="px-4 py-2.5">
                                                         {row.abono === 0 ? "0"
                                                             : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
                                                                 : `+${fmt(row.abono)}`}
                                                     </td>
-                                                    <td className="px-5 py-2.5">{fmt(row.saldoPendiente)}</td>
-                                                    <td className="px-5 py-2.5">
+                                                    <td className="px-4 py-2.5">{fmt(row.saldoPendiente)}</td>
+                                                    <td className="px-4 py-2.5">
                                                         {/* ✅ Solo en el último abono real y no anulado */}
                                                         {row.esUltimoReal && !isAnulado && !isInicio && (
                                                             <button
