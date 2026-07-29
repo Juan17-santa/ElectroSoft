@@ -43,11 +43,11 @@ export default function ProductsTable({
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
                             <th className="px-4 py-2 w-12">#</th>
-                            <th className="px-4 py-2 w-28">Nombre</th>
+                            <th className="px-4 py-2 w-40">Nombre</th>
                             <th className="px-4 py-2 w-36">Categoría</th>
-                            <th className="px-4 py-2 w-28">Precio</th>
-                            <th className="px-4 py-2 w-24">Stock</th>
-                            <th className="px-4 py-2 w-24 text-center">Estado</th>
+                            <th className="px-4 py-2 w-24">Precio</th>
+                            <th className="px-4 py-2 w-20">Stock</th>
+                            <th className="px-4 py-2 w-16 text-center">Estado</th>
                             <th className="px-4 py-2 text-center w-40">Acciones</th>
                         </tr>
                     </thead>
