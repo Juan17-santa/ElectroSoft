@@ -8,12 +8,12 @@ const mapSaleToFrontend = (sale) => {
         numeroVenta: String(sale.numeroFactura || "").replace(/\D/g, ""),
         numeroDocumento: sale.clienteId?.documentNumber || "N/A",
         cliente: sale.clienteId ? `${sale.clienteId.firstName} ${sale.clienteId.lastName}` : "Cliente Desconocido",
-        // ✅ FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
+        //   FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
         tipoVenta: sale.tipoVenta === "Crédito" ? "Credito" : (sale.tipoVenta || "Contado"),
         diasPlazo: sale.diasPlazo,
         fecha: sale.fechaVenta || new Date(sale.fechaCreacion).toISOString().split('T')[0],
         fechaCreacion: sale.fechaCreacion,
-        // ✅ FIX: estado más preciso (Finalizado se calcula en paymentsService al enriquecer con pagos, pero para Contado es automático)
+        //   FIX: estado más preciso (Finalizado se calcula en paymentsService al enriquecer con pagos, pero para Contado es automático)
         estado: sale.estado === 'ACTIVA' ? (sale.tipoVenta === 'Contado' ? 'Finalizado' : 'Vigente') : (sale.estado === 'ANULADA' ? 'Anulado' : sale.estado),
         productos: (sale.productos || []).map(p => ({
             productoId: p.productoId?._id || p.productoId,
@@ -58,7 +58,7 @@ export const SalesService = {
             const payload = {
                 numeroFactura,
                 clienteId: numeroDocumento, // ObjectId del cliente
-                // ✅ FIX: el backend solo acepta "Crédito" (con tilde) en el enum
+                //   FIX: el backend solo acepta "Crédito" (con tilde) en el enum
                 tipoVenta: tipoVenta === "Credito" ? "Crédito" : (tipoVenta || "Contado"),
                 diasPlazo: diasPlazo != null ? Number(diasPlazo) : null,
                 productos: productos.map(p => ({
@@ -77,7 +77,7 @@ export const SalesService = {
             const newSale = response.data.data || response.data;
             const mappedSale = mapSaleToFrontend(newSale);
 
-            // ✅ FIX: Registrar el pago inicial si la venta es de Contado o Mixta
+            //   FIX: Registrar el pago inicial si la venta es de Contado o Mixta
             const pagoInicial = (tipoVenta === 'Contado' || tipoVenta === "Contado")
                 ? mappedSale.total
                 : (tipoVenta === 'Mixto' || tipoVenta === "Mixto")

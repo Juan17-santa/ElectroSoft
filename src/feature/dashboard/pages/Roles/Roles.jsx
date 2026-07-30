@@ -14,12 +14,13 @@ const ITEMS_PER_PAGE = 6;
 export default function Roles() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
-    const [roles, setRoles]             = useState([]);
-    const [loading, setLoading]         = useState(false); // ← AÑADIDO
-    const [search, setSearch]           = useState("");
+    const [roles, setRoles] = useState([]);
+    const [loading, setLoading] = useState(false); // ← AÑADIDO
+    const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert]             = useState(null);
+    const [alert, setAlert] = useState(null);
+    const PROTECTED_ROLES = ["Administrador", "Empleado", "Super Administrador"];
 
     const showAlert = (type, message) => setAlert({ type, message });
 
@@ -49,8 +50,8 @@ export default function Roles() {
         (role.estado ? "activo" : "inactivo").includes(search.toLowerCase())
     );
 
-    const totalPages     = Math.max(1, Math.ceil(filteredRoles.length / ITEMS_PER_PAGE));
-    const pageActual     = Math.min(currentPage, totalPages);
+    const totalPages = Math.max(1, Math.ceil(filteredRoles.length / ITEMS_PER_PAGE));
+    const pageActual = Math.min(currentPage, totalPages);
     const paginatedRoles = filteredRoles.slice(
         (pageActual - 1) * ITEMS_PER_PAGE,
         pageActual * ITEMS_PER_PAGE
@@ -123,7 +124,7 @@ export default function Roles() {
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
-                                    <th className="px-3 py-3 font-semibold w-16">ID</th>
+                                    <th className="px-3 py-3 font-semibold w-16">#</th>
                                     <th className="px-3 py-3 font-semibold w-1/4">Nombre</th>
                                     <th className="px-3 py-3 font-semibold">Descripción</th>
                                     <th className="px-3 py-3 font-semibold w-32 text-center">Estado</th>
@@ -183,25 +184,25 @@ export default function Roles() {
                                                 )}
                                             </td>
                                             <td className="px-4 py-2">
-                                            <div className="flex flex-col items-center gap-1">
-                                                <div
-                                                    onClick={() => handleToggleEstado(role)}
-                                                    className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
-                                                        ${role.estado ? "bg-green-500" : "bg-red-500"}`}
-                                                >
+                                                <div className="flex flex-col items-center gap-1">
                                                     <div
-                                                        className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
+                                                        onClick={() => handleToggleEstado(role)}
+                                                        className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
+                                                        ${role.estado ? "bg-green-500" : "bg-red-500"}`}
+                                                    >
+                                                        <div
+                                                            className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
                                                         ${role.estado ? "translate-x-5" : "translate-x-0"}`}
-                                                    />
-                                                </div>
-                                                <span
-                                                    className={`text-xs font-semibold
+                                                        />
+                                                    </div>
+                                                    <span
+                                                        className={`text-xs font-semibold
                                                     ${role.estado ? "text-green-600" : "text-red-600"}`}
-                                                >
-                                                    {role.estado ? "Activo" : "Inactivo"}
-                                                </span>
-                                            </div>
-                                        </td>
+                                                    >
+                                                        {role.estado ? "Activo" : "Inactivo"}
+                                                    </span>
+                                                </div>
+                                            </td>
                                             <td className="px-3 py-3">
                                                 <div className="flex justify-center gap-1.5">
                                                     <button
@@ -220,14 +221,18 @@ export default function Roles() {
                                                             <Pencil size={18} className="text-yellow-600" />
                                                         </button>
                                                     </Restricted>
-                                                    
+
                                                     <Restricted scope="Roles" action="Eliminar">
                                                         <button
-                                                            onClick={() => handleDelete(role)}
-                                                            className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
-                                                            title="Eliminar"
+                                                            onClick={() => !PROTECTED_ROLES.includes(role.nombre) && handleDelete(role)}
+                                                            disabled={PROTECTED_ROLES.includes(role.nombre)}
+                                                            className={`p-2 rounded-lg transition
+                                                                ${PROTECTED_ROLES.includes(role.nombre)
+                                                                    ? "bg-gray-100 cursor-not-allowed opacity-40"
+                                                                    : "bg-red-100 hover:bg-red-200 cursor-pointer"}`}
+                                                            title={PROTECTED_ROLES.includes(role.nombre) ? "No se puede eliminar este rol" : "Eliminar"}
                                                         >
-                                                            <Trash size={18} className="text-red-500" />
+                                                            <Trash size={18} className={PROTECTED_ROLES.includes(role.nombre) ? "text-gray-400" : "text-red-500"} />
                                                         </button>
                                                     </Restricted>
                                                 </div>

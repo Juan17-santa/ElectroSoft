@@ -3,7 +3,7 @@ import { ServicesOrders } from "../../../../../feature/dashboard/pages/orders/se
 import { ClientsService } from "../../../../../feature/dashboard/pages/Clients/services/ClientsService";
 import api from "../../../../../utils/api.js";
 
-// ✅ Cache de clientes para evitar N llamadas a GET /clients por cada venta
+//   Cache de clientes para evitar N llamadas a GET /clients por cada venta
 let _clientsCache = null;
 let _clientsCacheTime = 0;
 const CLIENTS_CACHE_TTL = 30_000; // 30 segundos
@@ -15,7 +15,7 @@ const getCachedClients = async () => {
     if (_clientsCache && (now - _clientsCacheTime) < CLIENTS_CACHE_TTL) {
         return _clientsCache;
     }
-    // ✅ FIX: Si ya hay una petición en curso, esperar a que termine
+    //   FIX: Si ya hay una petición en curso, esperar a que termine
     if (_clientsCachePromise) {
         return _clientsCachePromise;
     }
@@ -72,11 +72,11 @@ const esCredito = (tipoVenta) =>
 const esAnulada = (estado) =>
     estado === "Anulada" || estado === "Anulado" || estado === "ANULADA";
 
-// ✅ FIX: Las ventas ANULADAS no deben aparecer en pagos pendientes
+//   FIX: Las ventas ANULADAS no deben aparecer en pagos pendientes
 const esPendiente = (estado) =>
     estado === "Vigente" || estado === "ACTIVA" || estado === "Pendiente";
 
-// ✅ Helper: parsea la respuesta de /payments/venta/:id correctamente.
+//   Helper: parsea la respuesta de /payments/venta/:id correctamente.
 // El backend devuelve { venta, totalPagado, saldoPendiente, estadoPago, pagos: [] }
 // NO devuelve directamente un array.
 const parsePagosResponse = (responseData) => {
@@ -117,7 +117,7 @@ const paymentsService = {
             console.error("Error fetching sales for payments:", error);
         }
 
-        // ✅ FIX: Obtener todos los pagos de una vez para evitar consultas N+1 por cada venta
+        //   FIX: Obtener todos los pagos de una vez para evitar consultas N+1 por cada venta
         let allPayments = [];
         try {
             const payRes = await api.get('/payments');
@@ -134,7 +134,7 @@ const paymentsService = {
             return acc;
         }, {});
 
-        // ✅ FIX: Pre-cargar los clientes una vez ANTES del mapeo concurrente.
+        //   FIX: Pre-cargar los clientes una vez ANTES del mapeo concurrente.
         // Esto evita disparar decenas de llamadas simultáneas a GET /clients.
         await getCachedClients();
 
@@ -156,7 +156,7 @@ const paymentsService = {
                     .filter(a => !a.anulado)
                     .reduce((acc, a) => acc + Number(a.monto), 0);
                 const montoPorPagar = s.total - totalAbonado;
-                // ✅ FIX: calcular estado Finalizado cuando ya está pagado
+                //   FIX: calcular estado Finalizado cuando ya está pagado
                 const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : s.estado;
 
                 return enriquecerVenta({
@@ -223,7 +223,7 @@ const paymentsService = {
             let abonos = [];
             try {
                 const payRes = await api.get(`/payments/venta/${venta.id}`);
-                // ✅ FIX: parsear correctamente la respuesta del backend
+                //   FIX: parsear correctamente la respuesta del backend
                 const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
                 abonos = pagosRaw.map(p => ({
                     id: p._id,
@@ -363,7 +363,7 @@ const paymentsService = {
 
         let saldo = venta.total;
 
-        // ✅ FIX: Ordenar los abonos cronológicamente (más antiguos primero)
+        //   FIX: Ordenar los abonos cronológicamente (más antiguos primero)
         // El backend los envía descendentes, lo que causaba que el saldo se restara "el doble" visualmente
         const abonosCronologicos = [...(venta.abonos || [])].sort((a, b) => {
             const valA = a.timestamp || a.id;
@@ -408,7 +408,7 @@ const paymentsService = {
         const clients = await getCachedClients();
         const filtered = clients.filter(c => c.cupoActivo === true && c.cupoTotal > 0);
 
-        // ✅ FIX: Obtener TODAS las ventas pendientes de una vez para evitar llamadas N+1 a getPending()
+        //   FIX: Obtener TODAS las ventas pendientes de una vez para evitar llamadas N+1 a getPending()
         const allPendingSales = await this.getPending();
 
         const promises = filtered.map(async c => {
@@ -467,7 +467,7 @@ const paymentsService = {
                 cupoTotal: Number(nuevoCupo),
                 cupoActivo: true
             });
-            invalidateClientsCache(); // ✅ Invalidar cache para que la próxima carga sea fresca
+            invalidateClientsCache(); //   Invalidar cache para que la próxima carga sea fresca
             window.dispatchEvent(new Event("payments-updated"));
             return true;
         } catch (e) {
@@ -485,7 +485,7 @@ const paymentsService = {
     async anularUltimoAbono(ventaId) {
         try {
             const payRes = await api.get(`/payments/venta/${ventaId}`);
-            // ✅ FIX: parsear correctamente — el backend devuelve { pagos: [] }
+            //   FIX: parsear correctamente — el backend devuelve { pagos: [] }
             const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
             const pagos = pagosRaw
                 .filter(p => p.estado !== 'ANULADO')

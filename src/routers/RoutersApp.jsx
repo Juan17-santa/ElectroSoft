@@ -88,7 +88,7 @@ export default function RoutersApp() {
 
             {/* DASHBOARD */}
             <Route path="/dashboard" element={<Layout />}>
-                <Route index element={<Dashboard />} />
+                <Route index element={<ProtectedRoute scope="Dashboard" action="acceso" element={<Dashboard />} />} />
 
                 {/* CATEGORIA DE PRODUCTOS */}
                 <Route path="productCategory" element={<ProtectedRoute scope="Categoria de productos" element={<ProductCategory />} />} />

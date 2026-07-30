@@ -36,8 +36,10 @@ export default function CreateProvider() {
         formData,
         errors,
         handleChange,
+        handleBlur,
         handleSubmit,
         setCategoriasAsociadas,
+        loading,
         isNatural,
         isJuridica
     } = useProviderForm({
@@ -89,7 +91,9 @@ export default function CreateProvider() {
                     categorias={categoriasActivas}
                     documentTypes={documentTypes}
                     handleChange={handleChange}
+                    handleBlur={handleBlur}
                     setCategoriasAsociadas={setCategoriasAsociadas}
+                    loading={loading}
                     isNatural={isNatural}
                     isJuridica={isJuridica}
                     handleSubmit={handleSubmit}

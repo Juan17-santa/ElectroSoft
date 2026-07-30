@@ -9,7 +9,7 @@ const NotFound = () => {
     return (
         <div className="flex flex-col items-center justify-center h-full w-full">
             <div className="flex flex-col items-center bg-white border border-gray-100 rounded-2xl shadow-sm px-12 py-14 max-w-md w-full text-center">
-                
+
                 <div className="bg-yellow-50 rounded-full p-5 mb-6">
                     <ShieldOff size={48} className="text-yellow-400" />
                 </div>
@@ -26,10 +26,10 @@ const NotFound = () => {
                 </p>
 
                 <button
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate(-1)}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-8 rounded-lg transition-colors shadow-sm w-full"
                 >
-                    Volver al Dashboard
+                    Volver
                 </button>
             </div>
         </div>

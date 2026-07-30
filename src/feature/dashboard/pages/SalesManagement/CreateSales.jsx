@@ -25,7 +25,7 @@ export default function CreateSales() {
     const navigate = useNavigate();
     const [alert, setAlert] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
     const clientDropdownRef = useRef(null);
 
@@ -206,20 +206,20 @@ export default function CreateSales() {
     const handleQuantityChange = (productId, newQuantity) => {
         const productInfo = availableProducts.find(p => (p.id || p._id) === productId);
         const maxStock = productInfo ? (productInfo.stock || 999999) : 999999;
-        
+
         if (newQuantity === "") {
             setProductos(prev => prev.map(p => p.id === productId ? { ...p, cantidad: "" } : p));
             return;
         }
-        
+
         let validQuantity = parseInt(newQuantity, 10);
         if (isNaN(validQuantity)) return;
-        
+
         if (validQuantity > maxStock) {
             validQuantity = maxStock;
             setAlert({ type: "error", message: `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}` });
         }
-        
+
         setProductos(prev => prev.map(p => p.id === productId ? { ...p, cantidad: validQuantity } : p));
     };
 
@@ -254,7 +254,7 @@ export default function CreateSales() {
                 const cant = parseFloat(item.cantidad) || 0;
                 const precio = parseFloat(item.precio) || 0;
 
-                // ✅ FIX CRÍTICO: preservar el id real del producto (ObjectId de MongoDB)
+                //   FIX CRÍTICO: preservar el id real del producto (ObjectId de MongoDB)
                 // Antes se sobreescribía con Date.now() + Math.random(), causando el error
                 // "Uno o más productoId no son ObjectId válidos" al crear la venta.
                 const productoId = item.id || item.productoId || item.idProducto;
@@ -331,6 +331,8 @@ export default function CreateSales() {
             return;
         }
 
+        setIsSubmitting(true);
+
         try {
             const datosVenta = {
                 numeroDocumento: resultadoDoc.cliente?.id,
@@ -355,7 +357,7 @@ export default function CreateSales() {
             console.error(error);
             const rawError = error?.response?.data?.error || error.message;
             let friendlyError = "Error al registrar la venta: " + rawError;
-            
+
             // Traducir errores técnicos del backend a lenguaje amigable
             if (rawError.includes("ObjectId válidos") || rawError.includes("productoId no son ObjectId")) {
                 friendlyError = "Hay productos en la lista que no son válidos. Por favor, elimínelos y vuelva a agregarlos.";
@@ -364,6 +366,8 @@ export default function CreateSales() {
             }
 
             setAlert({ type: "error", message: friendlyError });
+
+            setIsSubmitting(false);
         }
     };
 
@@ -423,15 +427,15 @@ export default function CreateSales() {
                                     </button>
                                 )}
                             </div>
-                            
+
                             {isClientDropdownOpen && formData.numeroDocumento && (
-                                <div className="absolute top-[75px] w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-60 overflow-y-auto">
-                                    {clients.filter(c => 
-                                        (c.documento?.toLowerCase() || "").includes(formData.numeroDocumento.toLowerCase()) || 
+                                <div className="absolute top-18.75 w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-60 overflow-y-auto">
+                                    {clients.filter(c =>
+                                        (c.documento?.toLowerCase() || "").includes(formData.numeroDocumento.toLowerCase()) ||
                                         (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.numeroDocumento.toLowerCase())
                                     ).map(c => (
-                                        <div 
-                                            key={c.id} 
+                                        <div
+                                            key={c.id}
                                             className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0"
                                             onClick={() => {
                                                 setFormData(prev => ({ ...prev, numeroDocumento: c.documento }));
@@ -443,14 +447,14 @@ export default function CreateSales() {
                                             <p className="text-xs text-gray-500">C.C. {c.documento}</p>
                                         </div>
                                     ))}
-                                    {clients.filter(c => 
-                                        (c.documento?.toLowerCase() || "").includes(formData.numeroDocumento.toLowerCase()) || 
+                                    {clients.filter(c =>
+                                        (c.documento?.toLowerCase() || "").includes(formData.numeroDocumento.toLowerCase()) ||
                                         (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.numeroDocumento.toLowerCase())
                                     ).length === 0 && (
-                                        <div className="px-4 py-3 text-sm text-gray-400 text-center">
-                                            No se encontraron resultados
-                                        </div>
-                                    )}
+                                            <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                                                No se encontraron resultados
+                                            </div>
+                                        )}
                                 </div>
                             )}
                             {tocado.numeroDocumento && (
@@ -747,11 +751,13 @@ export default function CreateSales() {
                             <X size={16} />
                             Cancelar
                         </button>
-                        <button type="submit"
+                        <PrimaryButton
+                            type="submit"
                             disabled={!!errorCredito || !!errorMontoCredito || isSubmitting}
-                            className="px-5 py-2.5 text-sm rounded-lg bg-linear-to-r from-white to-yellow-300 shadow-md hover:shadow-lg transition font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
-                            {isSubmitting ? "Creando..." : "Crear Venta"}
-                        </button>
+                            loading={isSubmitting}
+                        >
+                            Crear venta
+                        </PrimaryButton>
                     </div>
                 </form>
 

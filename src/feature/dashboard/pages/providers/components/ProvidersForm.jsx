@@ -10,9 +10,11 @@ export default function ProviderForm({
     categorias,
     documentTypes = [],
     handleChange,
+    handleBlur,
     handleSubmit,
     buttonText,
     setCategoriasAsociadas,
+    loading,
     isNatural,
     isJuridica
 }) {
@@ -181,6 +183,7 @@ export default function ProviderForm({
                             name="document"
                             value={formData.document}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             placeholder={isNatural ? "Ingrese el documento" : "Ingrese el NIT"}
                             className={getInputClasses("document")}
                         />
@@ -227,6 +230,7 @@ export default function ProviderForm({
                             name="providerEmail"
                             value={formData.providerEmail}
                             onChange={handleChange}
+                            onBlur={handleBlur}
                             placeholder={isNatural ? "Ingrese el correo electrónico" : "Ingrese el correo de la empresa"}
                             className={getInputClasses("providerEmail")}
                         />
@@ -325,6 +329,7 @@ export default function ProviderForm({
                                 name="contactEmail"
                                 value={formData.contactEmail}
                                 onChange={handleChange}
+                                onBlur={handleBlur}
                                 placeholder="Ingrese el correo del contacto"
                                 className={getInputClasses("contactEmail")}
                             />
@@ -395,6 +400,7 @@ export default function ProviderForm({
                     </button>
                     <PrimaryButton
                         type="submit"
+                        loading={loading}
                         disabled={Object.values(errors).some(error => error)}
                     >
                         {buttonText}

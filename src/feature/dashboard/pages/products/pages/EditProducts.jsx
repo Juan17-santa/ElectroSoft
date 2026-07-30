@@ -31,7 +31,8 @@ export default function EditProducts() {
         formData,
         errors,
         handleChange,
-        handleSubmit: submitForm
+        handleSubmit: submitForm,
+        loading
     } = useProductEditForm({
         id,
         initialData: initialProduct || {},
@@ -171,7 +172,7 @@ export default function EditProducts() {
 
                     <div className="flex flex-col gap-3">
                         <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                            <DollarSign size={16} /> Precio *
+                            <DollarSign size={16} /> Precio 
                         </label>
                         <input
                             name="precio"
@@ -180,6 +181,11 @@ export default function EditProducts() {
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9]*"
+                            onKeyDown={(e) => {
+                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            }}
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.precio ? 'border-red-500' : 'border-transparent'
                                 }`}
                         />
@@ -192,7 +198,7 @@ export default function EditProducts() {
 
                     <div className="flex flex-col gap-3">
                         <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                            <Boxes size={16} /> Stock *
+                            <Boxes size={16} /> Stock 
                         </label>
                         <input
                             name="stock"
@@ -201,6 +207,11 @@ export default function EditProducts() {
                             type="text"
                             inputMode="numeric"
                             pattern="[0-9]*"
+                            onKeyDown={(e) => {
+                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            }}
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.stock ? 'border-red-500' : 'border-transparent'
                                 }`}
                         />
@@ -375,6 +386,7 @@ export default function EditProducts() {
                     </button>
                     <PrimaryButton
                         type="submit"
+                        loading={loading}
                         disabled={Object.values(errors).some(error => error)}
                     >
                         Guardar cambios
