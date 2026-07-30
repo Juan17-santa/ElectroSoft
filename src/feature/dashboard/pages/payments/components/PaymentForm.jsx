@@ -265,14 +265,14 @@ export default function PaymentForm({
                         )}
                     </div>
 
-                    <div className="overflow-x-auto rounded-xl border border-gray-200">
-                        <table className="w-full text-sm">
-                            <thead className="bg-gray-100">
+                    <div className="border border-gray-200 rounded-sm overflow-x-auto">
+                        <table className="min-w-150 w-full text-sm">
+                            <thead>
                                 <tr className="text-left border-b border-gray-200">
-                                    <th className="px-4 py-2 font-semibold">Fecha</th>
-                                    <th className="px-4 py-2 font-semibold">Método</th>
-                                    <th className="px-4 py-2 font-semibold text-center">Abono</th>
-                                    <th className="px-4 py-2 font-semibold text-center">Saldo pendiente</th>
+                                    <th className="px-4 py-2.5 font-semibold text-gray-800">Fecha</th>
+                                    <th className="px-4 py-2.5 font-semibold text-gray-800">Método</th>
+                                    <th className="px-4 py-2.5 font-semibold text-gray-800 text-center">Abono</th>
+                                    <th className="px-4 py-2.5 font-semibold text-gray-800 text-center">Saldo pendiente</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -297,14 +297,14 @@ export default function PaymentForm({
                                                     "text-gray-600"
                                                 }`}
                                         >
-                                            <td className="px-4 py-2">{row.fecha}</td>
-                                            <td className="px-4 py-2 text-gray-400 text-xs">{row.metodoPago || "—"}</td>
-                                            <td className="px-4 py-2 text-center">
+                                            <td className="px-4 py-2.5">{row.fecha}</td>
+                                            <td className="px-4 py-2.5 text-gray-400 text-xs">{row.metodoPago || "—"}</td>
+                                            <td className="px-4 py-2.5 text-center">
                                                 {row.abono === 0 ? "0"
                                                     : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
                                                         : `+${fmt(row.abono)}`}
                                             </td>
-                                            <td className="px-4 py-2 text-center">{fmt(row.saldoPendiente)}</td>
+                                            <td className="px-4 py-2.5 text-center">{fmt(row.saldoPendiente)}</td>
                                         </tr>
                                     ))
                                 )}

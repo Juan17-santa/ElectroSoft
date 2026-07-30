@@ -42,11 +42,11 @@ function normalizeSale(sale) {
 }
 
 // ─── Estado de campos "tocados" ───────────────────────────────────────────────
-const EMPTY_TOCADOS = {
+const     EMPTY_TOCADOS = {
     idVenta: false, motivo: false, submotivo: false, producto: false,
     cantidad: false, condicionProducto: false, gestion: false,
     responsable: false, garantiaProveedor: false, descripcion: false,
-    observaciones: false,
+    observaciones: false, montoReembolso: false,
 };
 
 // ─── Funciones de validación (retornan { valido, mensaje } o null) ────────────
@@ -142,6 +142,27 @@ function validarGarantia(val, motivo) {
     if (motivo !== "GARANTIA") return null;
     if (val === null || val === undefined || val === "")
         return { valido: false, mensaje: "Indica si aplica garantía de proveedor." };
+    return { valido: true, mensaje: "" };
+}
+
+function getMontoMaximoReembolso(form, ventasList) {
+    const venta = ventasList.find((v) => String(v.id) === String(form.idVenta));
+    const producto = venta?.productos?.find((p) => p.nombre === form.producto);
+    return Number(form.cantidad || 0) * Number(producto?.precio || 0);
+}
+function validarMontoReembolso(form, ventasList) {
+    if (form.gestion !== "REEMBOLSO_PARCIAL") return null;
+    const monto = Number(form.montoReembolso);
+    const maximo = getMontoMaximoReembolso(form, ventasList);
+    if (!Number.isFinite(monto) || monto <= 0) {
+        return { valido: false, mensaje: "Ingresa el monto parcial a reembolsar." };
+    }
+    if (maximo <= 0) {
+        return { valido: false, mensaje: "Selecciona producto y cantidad para calcular el maximo." };
+    }
+    if (monto > maximo) {
+        return { valido: false, mensaje: `El monto parcial no puede superar $${Number(maximo || 0).toLocaleString("en-US")}.` };
+    }
     return { valido: true, mensaje: "" };
 }
 
@@ -306,6 +327,7 @@ export default function EditDevolution() {
             case "cantidad": return validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id, devolucionesVenta);
             case "condicionProducto": return validarCondicion(form.condicionProducto, form.motivo);
             case "gestion": return validarGestion(form.gestion, form.motivo, form.submotivo);
+            case "montoReembolso": return validarMontoReembolso(form, ventasList);
             case "responsable": return validarResponsable(form.responsable, form.motivo, form.garantiaProveedor);
             case "garantiaProveedor": return validarGarantia(form.garantiaProveedor, form.motivo);
             case "descripcion": return validarDescripcion(form.descripcion);
@@ -319,6 +341,7 @@ export default function EditDevolution() {
             validarCantidad(form.cantidad, form.producto, form.idVenta, ventasList, id, devolucionesVenta),
             validarCondicion(form.condicionProducto, form.motivo),
             validarGestion(form.gestion, form.motivo, form.submotivo),
+            validarMontoReembolso(form, ventasList),
             validarResponsable(form.responsable, form.motivo, form.garantiaProveedor),
             validarGarantia(form.garantiaProveedor, form.motivo),
             validarDescripcion(form.descripcion),
@@ -447,7 +470,7 @@ export default function EditDevolution() {
                 ventasList={ventasList}
                 estadoCampo={estadoCampo}
                 onFieldBlur={tocarCampo}
-                readOnlyFields={["idVenta", "motivo", "submotivo", "producto"]}
+                readOnlyFields={["idVenta", "producto"]}
             />
 
             {confirmData && (

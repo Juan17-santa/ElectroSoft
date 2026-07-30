@@ -2,6 +2,7 @@ import { Eye, Undo2, Ban, Wallet } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
+import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
@@ -22,14 +23,20 @@ const formatCOP = (val) => {
 };
 
 const ITEMS_PER_PAGE = 6;
+const ESTADOS_DEVOLUCION_VENTA = ["Devuelto", "Devolución Parcial", "Devolucion Parcial", "DevoluciÃ³n Parcial"];
+const ESTADOS_DEVOLUCION_FINALES = ["RESUELTO", "RECHAZADA"];
+
+function esVentaConDevolucion(estado) {
+    return ESTADOS_DEVOLUCION_VENTA.includes(estado);
+}
 
 function validarAnulacion(sale) {
-    if (sale.estado === "Anulado" || sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") {
+    if (sale.estado === "Anulado" || esVentaConDevolucion(sale.estado)) {
         return { puedeAnularse: false, razon: "La venta ya no puede ser anulada por su estado." };
     }
-    
+
     const now = new Date();
-    
+
     // Validar fecha de creación (48 horas límite)
     if (sale.fechaCreacion) {
         const createdAt = new Date(sale.fechaCreacion);
@@ -40,7 +47,7 @@ function validarAnulacion(sale) {
             }
         }
     }
-    
+
     // Validar fecha de venta/factura (48 horas límite desde el final del día)
     if (sale.fecha && /^\d{4}-\d{2}-\d{2}$/.test(sale.fecha)) {
         const [year, month, day] = sale.fecha.split("-").map(Number);
@@ -65,7 +72,7 @@ function validarAnulacion(sale) {
             }
         }
     }
-    
+
     return { puedeAnularse: true };
 }
 
@@ -216,9 +223,42 @@ export default function SalesManagement() {
         navigate("/dashboard/sales-management/credit-details");
     };
 
-    const handleReturn = (sale) => {
+    const handleReturn = async (sale) => {
         localStorage.setItem("saleToReturn", JSON.stringify(sale));
-        navigate("/dashboard/sales-management/return");
+
+        if (!esVentaConDevolucion(sale.estado)) {
+            navigate("/dashboard/sales-management/return", {
+                state: { idVenta: sale.id, mode: "from-sales", origin: "sales" },
+            });
+            return;
+        }
+
+        try {
+            const devoluciones = await ServicesDevolutions.getBySaleId(sale.id);
+            const activas = devoluciones.filter((dev) => dev.estadoResolucion !== "Anulada");
+
+            if (activas.length === 0) {
+                navigate("/dashboard/sales-management/return", {
+                    state: { idVenta: sale.id, mode: "from-sales", origin: "sales" },
+                });
+                return;
+            }
+
+            const todasFinalizadas = activas.every((dev) =>
+                ESTADOS_DEVOLUCION_FINALES.includes(dev.estadoResolucion),
+            );
+
+            navigate("/dashboard/sales-management/return", {
+                state: {
+                    idVenta: sale.id,
+                    mode: todasFinalizadas ? "view-only" : "editable",
+                    origin: "sales",
+                },
+            });
+        } catch (error) {
+            const errorMsg = error.response?.data?.error || error.message || "No se pudo abrir la devolución existente.";
+            showAlert("error", errorMsg);
+        }
     };
 
     const handleAnull = (sale) => {
@@ -318,12 +358,11 @@ export default function SalesManagement() {
                                             <td className="px-3 py-3">{formatCOP(sale.montoPagado)}</td>
                                             <td className="px-3 py-3">{formatCOP(sale.montoPorPagar)}</td>
                                             <td className="px-3 py-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                    (sale.estado === "Finalizado" || sale.estado === "Finalizadas") ? "bg-green-100 text-green-700" :
-                                                    sale.estado === "Vigente" ? "bg-yellow-100 text-yellow-600" :
-                                                    (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
-                                                    "bg-red-100 text-red-600"
-                                                }`}>
+                                                <span className={`inline-block px-2 py-1 rounded-lg text-xs font-medium whitespace-normal break-words leading-tight max-w-[110px] ${(sale.estado === "Finalizado" || sale.estado === "Finalizadas") ? "bg-green-100 text-green-700" :
+                                                        sale.estado === "Vigente" ? "bg-yellow-100 text-yellow-600" :
+                                                            (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
+                                                                "bg-red-100 text-red-600"
+                                                    }`}>
                                                     {sale.estado}
                                                 </span>
                                             </td>
@@ -332,19 +371,18 @@ export default function SalesManagement() {
                                                     {/* DEVOLVER */}
                                                     <Restricted scope="Ventas" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            {sale.estado === "Devuelto" ? (
+                                                            {sale.estado === "Anulado" ? (
                                                                 <CancellationInfoTooltip cancelInfo={{
                                                                     fechaAnulacion: sale.anuladaEn || sale.fecha,
-                                                                    motivo: sale.observaciones || "Devolución registrada."
+                                                                    motivo: sale.observaciones || "Anulación registrada sin motivo."
                                                                 }} />
                                                             ) : (
                                                                 <button
-                                                                    className={`p-2 rounded-lg transition duration-300 ${sale.estado === "Anulado" ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
+                                                                    className={`p-2 rounded-lg transition duration-300 cursor-pointer ${sale.estado === "Devuelto" ? "bg-gray-100 hover:bg-gray-200" : "bg-yellow-100 hover:bg-yellow-200"}`}
                                                                     onClick={() => handleReturn(sale)}
-                                                                    title={sale.estado === "Anulado" ? "" : "Devolver venta"}
-                                                                    disabled={sale.estado === "Anulado"}
+                                                                    title={sale.estado === "Devuelto" ? "Ver devolución" : "Devolver venta"}
                                                                 >
-                                                                    <Undo2 size={18} className={sale.estado === "Anulado" ? "text-gray-400" : "text-yellow-600"} />
+                                                                    <Undo2 size={18} className={sale.estado === "Devuelto" ? "text-gray-500" : "text-yellow-600"} />
                                                                 </button>
                                                             )}
                                                         </div>
@@ -370,7 +408,7 @@ export default function SalesManagement() {
                                                                     motivo: sale.observaciones || "Anulación registrada sin motivo."
                                                                 }} />
                                                             ) : (
-                                                                <BanButton 
+                                                                <BanButton
                                                                     validacion={validarAnulacion(sale)}
                                                                     onClick={() => handleAnull(sale)}
                                                                 />
