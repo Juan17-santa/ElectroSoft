@@ -1,5 +1,5 @@
 import { X, CreditCard, Info } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const formatCOP = (val) => {
     return new Intl.NumberFormat('es-CO', {
@@ -12,6 +12,13 @@ const formatCOP = (val) => {
 export default function AssignQuotaModal({ isOpen, onClose, onConfirm, clientName, currentQuota }) {
     const [amount, setAmount] = useState("");
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (isOpen) {
+            setAmount(currentQuota && currentQuota > 0 ? String(currentQuota) : "");
+            setError("");
+        }
+    }, [isOpen, currentQuota]);
 
     if (!isOpen) return null;
 

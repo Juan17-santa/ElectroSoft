@@ -98,9 +98,9 @@ export default function CreateSales() {
     ];
 
     const calcularTotales = () => {
-        const sub = productos.reduce((acc, p) => acc + (p.cantidad * p.precio), 0);
-        const iv = sub * 0.19;
-        const tot = sub + iv;
+        const tot = productos.reduce((acc, p) => acc + (p.cantidad * p.precio), 0);
+        const sub = tot / 1.19;
+        const iv = tot - sub;
         return { subtotal: sub, iva: iv, total: tot };
     };
     const { subtotal, iva, total } = calcularTotales();
@@ -738,6 +738,12 @@ export default function CreateSales() {
                                     <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-3.5 py-1.5 rounded-xl text-xs font-medium shadow-2xs max-w-lg text-right animate-pulse">
                                         <AlertCircle size={15} className="text-red-500 shrink-0" />
                                         <span><strong>Venta no permitida:</strong> {errorCredito}</span>
+                                    </div>
+                                )}
+                                {errorMontoCredito && (
+                                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-3.5 py-1.5 rounded-xl text-xs font-medium shadow-2xs max-w-lg text-right animate-pulse mt-2">
+                                        <AlertCircle size={15} className="text-red-500 shrink-0" />
+                                        <span><strong>Venta no permitida:</strong> {errorMontoCredito}</span>
                                     </div>
                                 )}
                             </div>
