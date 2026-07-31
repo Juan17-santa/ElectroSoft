@@ -146,9 +146,9 @@ export function useSalesForm({ onSubmit }) {
     };
 
     const calcularTotales = () => {
-        const subtotal = productos.reduce((sum, p) => sum + p.cantidad * p.precio, 0);
-        const iva = subtotal * 0.19;
-        const total = subtotal + iva;
+        const total = productos.reduce((sum, p) => sum + p.cantidad * p.precio, 0);
+        const iva = total * 0.19;
+        const subtotal = total - iva;
         return { subtotal, iva, total };
     };
 

@@ -1,17 +1,35 @@
 import api from "../../../../../utils/api.js";
 
+const abbreviateDocType = (type) => {
+    if (!type) return "";
+    const t = type.toLowerCase();
+    if (t.includes("ciudadan")) return "CC";
+    if (t.includes("extranjer")) return "CE";
+    if (t.includes("identidad")) return "TI";
+    if (t.includes("pasaporte")) return "PA";
+    return type;
+};
+
+const localDate = (dateParam) => {
+    const d = dateParam ? new Date(dateParam) : new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
+
 // Mapea el modelo del backend al modelo del frontend
 const mapSaleToFrontend = (sale) => {
     return {
         id: sale._id,
         // Extrae solo los números del numeroFactura, eliminando prefijos como "FAC"
         numeroVenta: String(sale.numeroFactura || "").replace(/\D/g, ""),
-        numeroDocumento: sale.clienteId?.documentNumber || "N/A",
+        numeroDocumento: sale.clienteId?.documentNumber ? `${abbreviateDocType(sale.clienteId.documentType)} ${sale.clienteId.documentNumber}`.trim() : "N/A",
         cliente: sale.clienteId ? `${sale.clienteId.firstName} ${sale.clienteId.lastName}` : "Cliente Desconocido",
         //   FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
         tipoVenta: sale.tipoVenta === "Crédito" ? "Credito" : (sale.tipoVenta || "Contado"),
         diasPlazo: sale.diasPlazo,
-        fecha: sale.fechaVenta || new Date(sale.fechaCreacion).toISOString().split('T')[0],
+        fecha: sale.fechaVenta || localDate(sale.fechaCreacion),
         fechaCreacion: sale.fechaCreacion,
         //   FIX: estado más preciso (Finalizado se calcula en paymentsService al enriquecer con pagos, pero para Contado es automático)
         estado: sale.estado === 'ACTIVA' ? (sale.tipoVenta === 'Contado' ? 'Finalizado' : 'Vigente') : (sale.estado === 'ANULADA' ? 'Anulado' : sale.estado),

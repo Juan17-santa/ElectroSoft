@@ -8,6 +8,16 @@ const fmt = (val) => new Intl.NumberFormat("es-CO", {
 
 const hoy = () => new Date().toISOString().split("T")[0];
 
+const abbreviateDocType = (type) => {
+    if (!type) return "";
+    const t = type.toLowerCase();
+    if (t.includes("ciudadan")) return "CC";
+    if (t.includes("extranjer")) return "CE";
+    if (t.includes("identidad")) return "TI";
+    if (t.includes("pasaporte")) return "PA";
+    return type;
+};
+
 /**
  * Reporte general — todos los clientes con cupo de crédito
  * Una hoja por cliente con sus ventas y abonos detallados
@@ -69,7 +79,7 @@ export const generarReporteGeneral = (clientes, fechaInicio, fechaFin) => {
                 : c.cupoOcupado > 0 ? "Por pagar" : "Al día";
             return [
                 `${c.nombres} ${c.apellidos}`,
-                c.tipoDocumento,
+                abbreviateDocType(c.tipoDocumento),
                 c.documento,
                 c.email    || "—",
                 c.telefono || "—",
@@ -265,7 +275,7 @@ export const generarReporteClientePDF = (resumen, ventas) => {
         extraInfo: [
             `DATOS DEL CLIENTE`,
             `Nombre:      ${resumen.nombres} ${resumen.apellidos}`,
-            `Documento:   ${resumen.tipoDocumento} ${resumen.documento}`,
+            `Documento:   ${abbreviateDocType(resumen.tipoDocumento)} ${resumen.documento}`.trim(),
             `Contacto:    ${resumen.email || "—"}  |  Tel: ${resumen.telefono || "—"}`,
             `Estado:      ${resumen.estado === false ? "Suspendido" : "Activo"}`
         ],
@@ -310,6 +320,8 @@ export const generarReporteVenta = (venta, abonosTable) => {
         extraInfo: [
             `DATOS DEL CRÉDITO`,
             `Cliente:        ${venta.cliente || "—"}`,
+            `Documento:      ${venta.numeroDocumento || "—"}`,
+            `Tipo de Venta:  ${venta.tipoVenta || "Crédito"}`,
             `Fecha de venta: ${venta.fecha || "—"}`,
             `Fecha límite:   ${venta.fechaLimite || "—"}`,
             `Estado:         ${estadoVenta}`

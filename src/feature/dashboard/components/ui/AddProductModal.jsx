@@ -133,10 +133,7 @@ export default function AddProductModal({
             
             if (isCredit) {
                 const totalValue = queue.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
-                const currentQueueIVA = totalValue * 0.19;
-                const addedItemIVA = (num * product.precio) * 0.19;
-                
-                const newTotalSaleValue = currentSaleTotal + totalValue + currentQueueIVA + (num * product.precio) + addedItemIVA;
+                const newTotalSaleValue = currentSaleTotal + totalValue + (num * product.precio);
                 if (newTotalSaleValue > quotaAmount) {
                     return "El monto superaría el cupo";
                 }
@@ -223,8 +220,7 @@ export default function AddProductModal({
     const totalItems = queue.reduce((acc, p) => acc + (Number(p.cantidad) || 0), 0);
     const totalValue = queue.reduce((acc, p) => acc + p.precio * (Number(p.cantidad) || 0), 0);
 
-    const totalQueueWithIva = totalValue * 1.19;
-    const isExceedingQuota = isCredit && (currentSaleTotal + totalQueueWithIva > quotaAmount);
+    const isExceedingQuota = isCredit && (currentSaleTotal + totalValue > quotaAmount);
 
     const fmt = (n) => new Intl.NumberFormat("es-CO", {
         style: "currency", currency: "COP", minimumFractionDigits: 0,
@@ -249,9 +245,9 @@ export default function AddProductModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ backgroundColor: "rgba(0,0,0,0.45)", backdropFilter: "blur(3px)" }}>
 
-            <div className="w-full flex flex-col bg-white"
+            <div className="w-full flex flex-col bg-white overflow-hidden"
                 style={{
-                    maxWidth: "820px", maxHeight: "90vh", borderRadius: "20px",
+                    maxWidth: "1024px", maxHeight: "90vh", borderRadius: "20px",
                     boxShadow: "0 25px 60px rgba(0,0,0,0.18)", border: "1px solid #e5e7eb"
                 }}>
 
@@ -533,7 +529,7 @@ export default function AddProductModal({
                                 ))}
                             </div>
 
-                            <div className="overflow-y-auto" style={{ maxHeight: "240px" }}>
+                            <div className="overflow-y-auto" style={{ maxHeight: "60vh", minHeight: "240px" }}>
                                 {queue.length > 0 ? queue.map((item, index) => (
 
                                     <div

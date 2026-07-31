@@ -88,8 +88,8 @@ export default function CreditDetailsPage() {
             };
         });
         
-        // Revertir al final para mostrar el abono más reciente arriba en la tabla
-        return rows.reverse();
+        // Eliminado el reverse() para mostrar cronológicamente (más antiguo primero) igual que en el módulo de pagos
+        return rows;
     };
 
     const refreshSale = async () => {

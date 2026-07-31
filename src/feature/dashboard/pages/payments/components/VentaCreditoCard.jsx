@@ -51,6 +51,12 @@ export default function VentaCreditoCard({ venta, onDetalle, onAbonar }) {
                     </span>
                 </div>
 
+                {/* Tipo */}
+                <div className="flex flex-col gap-0.5 w-20 shrink-0">
+                    <p className="text-xs text-gray-400">Tipo</p>
+                    <p className="text-sm font-semibold text-gray-800">{venta.tipoVenta || "Crédito"}</p>
+                </div>
+
                 {/* Total */}
                 <div className="flex flex-col gap-0.5 w-28 shrink-0">
                     <p className="text-xs text-gray-400">Total venta</p>
