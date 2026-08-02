@@ -47,6 +47,8 @@ const mapSaleToFrontend = (sale) => {
         // Para Contado, se pagan inmediatamente al crear la venta.
         montoPagado: sale.tipoVenta === 'Contado' ? sale.total : (sale.montoPagado || 0),
         montoPorPagar: sale.tipoVenta === 'Contado' ? 0 : (sale.montoPorPagar ?? sale.total),
+        montoContado: sale.montoContado || 0,
+        montoCredito: sale.montoCredito || 0,
         anuladaEn: sale.anuladaEn || null,
         abonos: sale.abonos || [],
         observaciones: sale.observaciones || "",

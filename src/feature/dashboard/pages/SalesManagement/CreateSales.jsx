@@ -778,6 +778,7 @@ export default function CreateSales() {
                     isCredit={formData.tipoVenta === "Credito"}
                     quotaAmount={resultadoDoc.cliente?.cupoTotal || 0}
                     currentSaleTotal={total}
+                    onSwitchToMixed={() => setFormData(prev => ({ ...prev, tipoVenta: "Mixto" }))}
                 />
             </div>
 

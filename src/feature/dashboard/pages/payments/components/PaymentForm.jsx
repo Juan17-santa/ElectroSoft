@@ -15,8 +15,7 @@ export default function PaymentForm({
     handleSubmit,
     ventasDelDocumento,
     isSubmitting,
-    onCancel,
-    isSubmitting
+    onCancel
 }) {
 
     const [showMetodo, setShowMetodo] = useState(false);
