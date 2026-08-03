@@ -152,7 +152,7 @@ const paymentsService = {
             .map(async s => {
                 const pagosRaw = paymentsByVentaId[String(s.id)] || [];
                 const abonos = pagosRaw.map(p => ({
-                    id: p._id,
+                    id: p._id || p.id,
                     fecha: localDate(p.fechaPago),
                     timestamp: new Date(p.fechaPago).getTime(),
                     monto: p.monto,
@@ -236,7 +236,7 @@ const paymentsService = {
                 //   FIX: parsear correctamente la respuesta del backend
                 const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
                 abonos = pagosRaw.map(p => ({
-                    id: p._id,
+                    id: p._id || p.id,
                     fecha: localDate(p.fechaPago),
                     timestamp: new Date(p.fechaPago).getTime(),
                     monto: p.monto,
@@ -510,6 +510,17 @@ const paymentsService = {
 
             // Recalcular y retornar el estado de la venta con abonos actualizados
             return await this.getById(ventaId);
+        } catch (e) {
+            console.error("Error anulando abono:", e);
+            throw e;
+        }
+    },
+
+    // Anula un abono específico por su ID
+    async anularAbono(pagoId) {
+        try {
+            await api.patch(`/payments/${pagoId}/cancel`);
+            return true;
         } catch (e) {
             console.error("Error anulando abono:", e);
             throw e;

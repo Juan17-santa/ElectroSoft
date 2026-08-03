@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FileText, ArrowLeft, FileDown, Ban, Loader2 } from "lucide-react";
 import paymentsService from "../services/paymentsService";
 import { generarReporteVenta } from "../hooks/reportesPayments";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
 
 const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
@@ -13,6 +14,7 @@ export default function PaymentDetail() {
 
     const [venta, setVenta] = useState(location.state?.payment || null);
     const [isCanceling, setIsCanceling] = useState(false);
+    const [confirmData, setConfirmData] = useState(null);
 
     useEffect(() => {
         const fetchSale = async () => {
@@ -40,14 +42,25 @@ export default function PaymentDetail() {
     const abonosTable = paymentsService.buildAbonosTable(venta);
 
     // Handler anular último abono
-    const handleAnularAbono = async () => {
-        setIsCanceling(true);
-        try {
-            const resultado = await paymentsService.anularUltimoAbono(venta.id);
-            if (resultado) setVenta(resultado);
-        } finally {
-            setIsCanceling(false);
-        }
+    const handleAnularAbono = () => {
+        setConfirmData({
+            type: "delete",
+            title: "Anular abono",
+            message: "¿Estás seguro de anular el último abono? Esta acción no se puede deshacer.",
+            onConfirm: async () => {
+                setConfirmData(null);
+                setIsCanceling(true);
+                try {
+                    const resultado = await paymentsService.anularUltimoAbono(venta.id);
+                    if (resultado) setVenta(resultado);
+                } catch (error) {
+                    console.error("Error al anular abono:", error);
+                } finally {
+                    setIsCanceling(false);
+                }
+            },
+            onCancel: () => setConfirmData(null)
+        });
     };
 
     return (
@@ -242,7 +255,15 @@ export default function PaymentDetail() {
                 </div>
             </div>
 
-
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={confirmData.onCancel}
+                />
+            )}
         </div>
     );
 }
