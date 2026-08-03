@@ -34,7 +34,7 @@ export default function Dashboard() {
             setIsLoading(true);
             try {
                 const [compras, sales, products, clients, devolutions, categories] = await Promise.all([
-                    ServicesShopping.fetchAll().catch(() => []),
+                    ServicesShopping.fetchAll().then((r) => r?.data || []).catch(() => []),
                     SalesService.get().catch(() => []),
                     ServicesProducts.get().catch(() => []),
                     ClientsService.get().catch(() => []),

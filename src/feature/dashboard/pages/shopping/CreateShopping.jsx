@@ -1,5 +1,5 @@
 import { Plus, Trash2, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2, X, Minus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
 import { formatCOP, IVA_RATE } from "../shopping/helpers/shoppingHelpers";
@@ -33,16 +33,6 @@ function validarFecha(fecha) {
     return { valido: true, mensaje: "" };
 }
 
-function validarNumeroFactura(valor, compras = []) {
-    if (!valor || valor === "") return { valido: false, mensaje: "Debes ingresar un número de factura." };
-    if (!/^\d+$/.test(valor)) return { valido: false, mensaje: "Solo se permiten números." };
-    const existe = compras
-        .filter((compra) => compra.estado !== "Anulada")
-        .some((compra) => String(compra.numeroFactura) === String(valor));
-    if (existe) return { valido: false, mensaje: "Este numero de factura ya esta en uso." };
-    return { valido: true, mensaje: "" };
-}
-
 // ─── Mini-componente: Indicador de validación ─────────────────────────────────
 function FieldStatus({ estado }) {
     if (estado === null) return null;
@@ -63,7 +53,7 @@ function FieldStatus({ estado }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CreateShopping() {
     const navigate = useNavigate();
-    const { guardarCompra, compras, saving } = useShopping();
+    const { guardarCompra, saving } = useShopping();
 
     const [showModal, setShowModal] = useState(false);
     const [showCreateProductModal, setShowCreateProductModal] = useState(false);
@@ -86,6 +76,42 @@ export default function CreateShopping() {
 
     // Productos en tabla
     const [productos, setProductos] = useState([]);
+
+    // Estado de validación del número de factura consultado al servidor.
+    const [estadoNumeroFactura, setEstadoNumeroFactura] = useState(null);
+    const facturaTimerRef = useRef(null);
+    const facturaCheckRef = useRef("");
+
+    const validarNumeroFacturaAsync = useCallback(async (valor) => {
+        if (!valor || valor === "") return { valido: false, mensaje: "Debes ingresar un número de factura." };
+        if (!/^\d+$/.test(valor)) return { valido: false, mensaje: "Solo se permiten números." };
+        const existe = await ServicesShopping.checkInvoiceExists(valor);
+        if (existe) return { valido: false, mensaje: "Este numero de factura ya esta en uso." };
+        return { valido: true, mensaje: "" };
+    }, []);
+
+    // Validación en tiempo real con debounce para no saturar el servidor.
+    useEffect(() => {
+        if (!numeroFacturaTocado || !numeroFactura) {
+            setEstadoNumeroFactura(null);
+            return;
+        }
+
+        facturaCheckRef.current = numeroFactura;
+        if (facturaTimerRef.current) clearTimeout(facturaTimerRef.current);
+
+        facturaTimerRef.current = setTimeout(async () => {
+            const valorActual = facturaCheckRef.current;
+            if (valorActual !== numeroFactura) return;
+            const res = await validarNumeroFacturaAsync(numeroFactura);
+            if (facturaCheckRef.current !== numeroFactura) return;
+            setEstadoNumeroFactura(res);
+        }, 300);
+
+        return () => {
+            if (facturaTimerRef.current) clearTimeout(facturaTimerRef.current);
+        };
+    }, [numeroFactura, numeroFacturaTocado, validarNumeroFacturaAsync]);
 
     useEffect(() => {
         let mounted = true;
@@ -140,7 +166,6 @@ export default function CreateShopping() {
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
     const estadoProveedor = proveedorTocado ? validarProveedor(proveedorId) : null;
     const estadoFecha = fechaTocada ? validarFecha(fechaISO) : null;
-    const estadoNumeroFactura = numeroFacturaTocado ? validarNumeroFactura(numeroFactura, compras) : null;
 
     // ─── Cálculos ─────────────────────────────────────────────────────────────
     const productosActivos = productos;
@@ -270,7 +295,7 @@ export default function CreateShopping() {
         }
     };
 
-    const handleCrearCompra = () => {
+    const handleCrearCompra = async () => {
         setProveedorTocado(true);
         setFechaTocada(true);
         setNumeroFacturaTocado(true);
@@ -278,7 +303,8 @@ export default function CreateShopping() {
 
         const vProv = validarProveedor(proveedorId);
         const vFech = validarFecha(fechaISO);
-        const vNumFact = validarNumeroFactura(numeroFactura, compras);
+        const vNumFact = await validarNumeroFacturaAsync(numeroFactura);
+        setEstadoNumeroFactura(vNumFact);
 
         if (!vProv.valido || !vFech.valido || !vNumFact.valido) return;
 

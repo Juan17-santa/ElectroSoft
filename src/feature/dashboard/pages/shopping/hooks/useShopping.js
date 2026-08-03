@@ -1,15 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ServicesShopping } from "../services/ServicesShopping";
 
-function matchesSearch(compra, term) {
-    if (!term) return true;
-    return (
-        String(compra.proveedor || "").toLowerCase().includes(term) ||
-        String(compra.numeroFactura || "").toLowerCase().includes(term) ||
-        String(compra.fechaCompra || "").toLowerCase().includes(term) ||
-        String(compra.estado || "").toLowerCase().includes(term)
-    );
-}
+export const ITEMS_PER_PAGE = 11;
+const SEARCH_DEBOUNCE_MS = 300;
 
 function getRemainingHours(fechaCreacion) {
     const createdAt = new Date(fechaCreacion);
@@ -21,44 +14,74 @@ function getRemainingHours(fechaCreacion) {
 export function useShopping() {
     const [compras, setCompras] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [canceling, setCanceling] = useState(false);
     const [error, setError] = useState("");
     const [cancelStatusById, setCancelStatusById] = useState({});
 
-    const cargarCompras = useCallback(async () => {
+    // Guarda anti-race: ignora respuestas de peticiones obsoletas.
+    const requestIdRef = useRef(0);
+    // Debounce de búsqueda.
+    const searchTimerRef = useRef(null);
+
+    const cargarCompras = useCallback(async ({ page: p = 1, search: s = "" } = {}) => {
+        const requestId = ++requestIdRef.current;
         setLoading(true);
         setError("");
         try {
-            const comprasApi = await ServicesShopping.fetchAll();
-            setCompras(comprasApi);
-            return comprasApi;
+            const result = await ServicesShopping.fetchAll({
+                page: p,
+                limit: ITEMS_PER_PAGE,
+                search: s,
+            });
+            if (requestId !== requestIdRef.current) return [];
+            setCompras(result.data);
+            setTotalPages(result.pagination.totalPages);
+            setTotal(result.pagination.total);
+            return result.data;
         } catch (err) {
-            const message = "No se pudieron cargar las compras." || err.message;
+            if (requestId !== requestIdRef.current) return [];
+            const message = err.message || "No se pudieron cargar las compras.";
             setError(message);
             return [];
         } finally {
-            setLoading(false);
+            if (requestId === requestIdRef.current) setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        cargarCompras();
+        cargarCompras({ page: 1, search: "" });
+        return () => {
+            requestIdRef.current += 1;
+            if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        };
     }, [cargarCompras]);
 
-    const comprasFiltradas = useMemo(() => {
-        const term = searchTerm.toLowerCase().trim();
-        return compras.filter((compra) => matchesSearch(compra, term));
-    }, [compras, searchTerm]);
+    const handleSearchChange = useCallback((term) => {
+        setSearchTerm(term);
+        setPage(1);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(() => {
+            cargarCompras({ page: 1, search: term });
+        }, SEARCH_DEBOUNCE_MS);
+    }, [cargarCompras]);
+
+    const handlePageChange = useCallback((newPage) => {
+        setPage(newPage);
+        cargarCompras({ page: newPage, search: searchTerm });
+    }, [cargarCompras, searchTerm]);
 
     const guardarCompra = useCallback(async (compra) => {
         setSaving(true);
         setError("");
         try {
             const compraCreada = await ServicesShopping.createRemote(compra);
-            const comprasActualizadas = await ServicesShopping.fetchAll();
-            setCompras(comprasActualizadas);
+            setPage(1);
+            await cargarCompras({ page: 1, search: searchTerm });
             return compraCreada;
         } catch (err) {
             const message = err.message || "No se pudo registrar la compra.";
@@ -67,7 +90,7 @@ export function useShopping() {
         } finally {
             setSaving(false);
         }
-    }, []);
+    }, [cargarCompras, searchTerm]);
 
     const validarAnulacion = useCallback((compra) => {
         const cached = cancelStatusById[String(compra.id)];
@@ -95,6 +118,7 @@ export function useShopping() {
 
     const cargarEstadoAnulacion = useCallback(async (compra) => {
         if (!compra?.id || compra.estado !== "Completada") return null;
+        if (cancelStatusById[String(compra.id)]) return cancelStatusById[String(compra.id)];
 
         try {
             const status = await ServicesShopping.getCancellationStatus(compra.id);
@@ -114,8 +138,10 @@ export function useShopping() {
             }));
             return status;
         }
-    }, []);
+    }, [cancelStatusById]);
 
+    // Consulta el estado de anulación solo de las compras de la página visible.
+    // El cache por id evita re-peticiones al volver a una misma página.
     useEffect(() => {
         compras
             .filter((compra) => compra.estado === "Completada" && !cancelStatusById[String(compra.id)])
@@ -129,8 +155,6 @@ export function useShopping() {
         setError("");
         try {
             const compraAnulada = await ServicesShopping.cancelRemote(id, motivo);
-            const comprasActualizadas = await ServicesShopping.fetchAll();
-            setCompras(comprasActualizadas);
             setCancelStatusById((prev) => ({
                 ...prev,
                 [String(id)]: {
@@ -138,6 +162,7 @@ export function useShopping() {
                     razon: "La compra ya fue anulada.",
                 },
             }));
+            await cargarCompras({ page: page, search: searchTerm });
             return { compra: compraAnulada, advertencias: [] };
         } catch (err) {
             const message = err.message || "No se pudo anular la compra.";
@@ -146,17 +171,25 @@ export function useShopping() {
         } finally {
             setCanceling(false);
         }
-    }, []);
+    }, [cargarCompras, page, searchTerm]);
 
     const getCompraById = useCallback((id) =>
         compras.find((compra) => String(compra.id) === String(id)) || null,
     [compras]);
 
+    const pagination = useMemo(
+        () => ({ page, total, totalPages, itemsPerPage: ITEMS_PER_PAGE }),
+        [page, total, totalPages],
+    );
+
     return {
         compras,
-        comprasFiltradas,
         searchTerm,
-        setSearchTerm,
+        setSearchTerm: handleSearchChange,
+        page,
+        total,
+        totalPages,
+        pagination,
         loading,
         saving,
         canceling,
@@ -168,5 +201,6 @@ export function useShopping() {
         getCompraById,
         validarAnulacion,
         cargarEstadoAnulacion,
+        handlePageChange,
     };
 }

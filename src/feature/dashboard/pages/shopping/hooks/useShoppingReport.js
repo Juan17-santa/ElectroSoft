@@ -36,9 +36,23 @@ function parsePurchaseDate(dateStr) {
     return null;
 }
 
-export function useShoppingReport(comprasFiltradas, setAlert) {
+export function useShoppingReport(loadCompras, setAlert) {
 
-    const exportReport = (fechaInicio, fechaFin) => {
+    const exportReport = async (fechaInicio, fechaFin) => {
+        let comprasFiltradas;
+
+        // Carga el dataset completo (con la búsqueda actual) desde el servidor
+        // para que el reporte no quede limitado a la página visible.
+        try {
+            const data = await loadCompras();
+            comprasFiltradas = Array.isArray(data) ? data : [];
+        } catch {
+            setAlert({
+                type: "error",
+                message: "No se pudieron cargar las compras para el reporte.",
+            });
+            return;
+        }
 
         // ─── FILTRO POR FECHA ────────────────────────────────
         const filtradas = comprasFiltradas.filter((compra) => {
