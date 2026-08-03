@@ -109,7 +109,7 @@ export default function ShoppingDetails() {
                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-md">
 
                             {/* ENCABEZADO DE LA COMPRA */}
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 mb-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4 mb-6">
 
                                 <div>
                                     <p className="text-xs sm:text-sm text-yellow-400 mb-1">Fecha Factura</p>
@@ -136,6 +136,11 @@ export default function ShoppingDetails() {
                                 <div>
                                     <p className="text-xs sm:text-sm text-yellow-400 mb-1">IVA (19%)</p>
                                     <p className="text-xs sm:text-sm font-semibold text-gray-800">{compra.iva ?? "—"}</p>
+                                </div>
+
+                                <div>
+                                    <p className="text-xs sm:text-sm text-yellow-400 mb-1">Subtotal</p>
+                                    <p className="text-xs sm:text-sm font-semibold text-gray-800">{compra.subtotal ?? "—"}</p>
                                 </div>
 
                                 <div>

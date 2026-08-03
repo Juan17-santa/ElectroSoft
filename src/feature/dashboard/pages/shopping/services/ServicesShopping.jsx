@@ -184,6 +184,7 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
         proveedorId,
         proveedor: shopping.proveedor ?? provider?.nombreProveedor ?? "Proveedor no encontrado",
         iva: formatCOP(Math.round(totalNumber * 0.19)),
+        subtotal: formatCOP(Math.round(totalNumber) - Math.round(totalNumber * 0.19)),
         total: formatCOP(Math.round(totalNumber)),
         totalNumerico: totalNumber,
         estado: normalizeEstado(shopping.estado),
