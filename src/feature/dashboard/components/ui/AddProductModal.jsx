@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Search, Plus, Trash2, Package, ShoppingCart, ChevronDown, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import { X, Search, Plus, Trash2, Package, ShoppingCart, ChevronDown, ChevronLeft, ChevronRight, CheckCircle, AlertCircle } from "lucide-react";
 import { Validations } from "../../../../utils/validations";
 import ValidationMessage from "./ValidationMessage";
 
@@ -25,13 +25,18 @@ export default function AddProductModal({
     confirmText = "Confirmar selección",
     isCredit = false,
     quotaAmount = 0,
-    currentSaleTotal = 0
+    currentSaleTotal = 0,
+    onSwitchToMixed
 }) {
     // ── BUSCADOR / COMBO ─────────────────────────────────────────────────────
     const [searchTerm, setSearchTerm] = useState("");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [quantity, setQuantity] = useState("");
+
+    // ── ERRORES ADICIONALES ──────────────────────────────────────────────────
+    const [showQuotaWarning, setShowQuotaWarning] = useState(false);
+    const [pendingProductToAdd, setPendingProductToAdd] = useState(null);
 
     // ── PAGINACIÓN DEL DROPDOWN ──────────────────────────────────────────────
     const [currentPage, setCurrentPage] = useState(1);
@@ -133,12 +138,9 @@ export default function AddProductModal({
             
             if (isCredit) {
                 const totalValue = queue.reduce((acc, p) => acc + p.precio * p.cantidad, 0);
-                const currentQueueIVA = totalValue * 0.19;
-                const addedItemIVA = (num * product.precio) * 0.19;
-                
-                const newTotalSaleValue = currentSaleTotal + totalValue + currentQueueIVA + (num * product.precio) + addedItemIVA;
+                const newTotalSaleValue = currentSaleTotal + totalValue + (num * product.precio);
                 if (newTotalSaleValue > quotaAmount) {
-                    return "El monto superaría el cupo";
+                    return "QUOTA_EXCEEDED";
                 }
             }
         }
@@ -149,14 +151,26 @@ export default function AddProductModal({
         let hasError = false;
         if (!selectedProduct) { setProductError("Selecciona un producto válido"); hasError = true; }
         const qError = validateQty(quantity, selectedProduct);
-        if (qError) { setQuantityError(qError); hasError = true; }
+        
+        if (qError === "QUOTA_EXCEEDED") {
+            setShowQuotaWarning(true);
+            setPendingProductToAdd({ selectedProduct, quantity: Number(quantity) });
+            return;
+        } else if (qError) { 
+            setQuantityError(qError); 
+            hasError = true; 
+        }
+        
         if (hasError) return;
 
-        const qty = Number(quantity);
-        const existing = queue.find((q) => String(q.id) === String(selectedProduct.id));
+        performAddToQueue(selectedProduct, Number(quantity));
+    };
+
+    const performAddToQueue = (prod, qty) => {
+        const existing = queue.find((q) => String(q.id) === String(prod.id));
         setQueue(existing
-            ? queue.map((q) => String(q.id) === String(selectedProduct.id) ? { ...q, cantidad: (Number(q.cantidad) || 0) + qty } : q)
-            : [...queue, { ...selectedProduct, cantidad: qty }]
+            ? queue.map((q) => String(q.id) === String(prod.id) ? { ...q, cantidad: (Number(q.cantidad) || 0) + qty } : q)
+            : [...queue, { ...prod, cantidad: qty }]
         );
         setSelectedProduct(null); setSearchTerm(""); setQuantity("");
         setProductError(""); setQuantityError("");
@@ -223,8 +237,7 @@ export default function AddProductModal({
     const totalItems = queue.reduce((acc, p) => acc + (Number(p.cantidad) || 0), 0);
     const totalValue = queue.reduce((acc, p) => acc + p.precio * (Number(p.cantidad) || 0), 0);
 
-    const totalQueueWithIva = totalValue * 1.19;
-    const isExceedingQuota = isCredit && (currentSaleTotal + totalQueueWithIva > quotaAmount);
+    const isExceedingQuota = isCredit && (currentSaleTotal + totalValue > quotaAmount);
 
     const fmt = (n) => new Intl.NumberFormat("es-CO", {
         style: "currency", currency: "COP", minimumFractionDigits: 0,
@@ -249,9 +262,9 @@ export default function AddProductModal({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ backgroundColor: "rgba(0,0,0,0.45)", backdropFilter: "blur(3px)" }}>
 
-            <div className="w-full flex flex-col bg-white"
+            <div className="w-full flex flex-col bg-white overflow-hidden"
                 style={{
-                    maxWidth: "820px", maxHeight: "90vh", borderRadius: "20px",
+                    maxWidth: "1024px", maxHeight: "90vh", borderRadius: "20px",
                     boxShadow: "0 25px 60px rgba(0,0,0,0.18)", border: "1px solid #e5e7eb"
                 }}>
 
@@ -460,6 +473,12 @@ export default function AddProductModal({
                                     if (val === "" || Validations.soloNumeros(val)) {
                                         setQuantity(val);
                                         setQuantityError(validateQty(val, selectedProduct));
+                                        
+                                        // Ocultar alerta de excedente si el usuario decide cambiar la cantidad
+                                        if (showQuotaWarning) {
+                                            setShowQuotaWarning(false);
+                                            setPendingProductToAdd(null);
+                                        }
                                     }
                                 }}
                                 onKeyDown={(e) => {
@@ -481,7 +500,7 @@ export default function AddProductModal({
                                     e.currentTarget.style.boxShadow = quantityError ? "0 0 0 3px rgba(248,113,113,0.12)" : "none";
                                 }}
                             />
-                            <ValidationMessage error={quantityError} />
+                            <ValidationMessage error={quantityError === "QUOTA_EXCEEDED" ? "El monto superaría el cupo (Pulsa Añadir para opciones)" : quantityError} />
                             <ValidationMessage success={quantity !== "" && !quantityError} successMessage="Cantidad válida" />
                         </div>
 
@@ -501,6 +520,41 @@ export default function AddProductModal({
                             </button>
                         </div>
                     </div>
+                    {/* Alerta de cambio de tipo a Mixto */}
+                    {showQuotaWarning && (
+                        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-start sm:items-center gap-2">
+                                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                                <p className="text-sm text-red-700">
+                                    El monto total supera el cupo. ¿Deseas cambiar la venta a Mixto para continuar?
+                                </p>
+                            </div>
+                            <div className="flex justify-end gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowQuotaWarning(false);
+                                        setPendingProductToAdd(null);
+                                    }}
+                                    className="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (onSwitchToMixed) onSwitchToMixed();
+                                        performAddToQueue(pendingProductToAdd.selectedProduct, pendingProductToAdd.quantity);
+                                        setShowQuotaWarning(false);
+                                        setPendingProductToAdd(null);
+                                    }}
+                                    className="px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
+                                >
+                                    Cambiar a Mixto
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* ── TABLA ──────────────────────────────────────────────── */}
@@ -533,7 +587,7 @@ export default function AddProductModal({
                                 ))}
                             </div>
 
-                            <div className="overflow-y-auto" style={{ maxHeight: "240px" }}>
+                            <div className="overflow-y-auto" style={{ maxHeight: "60vh", minHeight: "240px" }}>
                                 {queue.length > 0 ? queue.map((item, index) => (
 
                                     <div

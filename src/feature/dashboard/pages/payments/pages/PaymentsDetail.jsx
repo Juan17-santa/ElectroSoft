@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { FileText, ArrowLeft, FileDown, Trash2 } from "lucide-react";
+import { FileText, ArrowLeft, FileDown, Ban, Loader2 } from "lucide-react";
 import paymentsService from "../services/paymentsService";
 import { generarReporteVenta } from "../hooks/reportesPayments";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
 
 const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
@@ -12,6 +13,8 @@ export default function PaymentDetail() {
     const location = useLocation();
 
     const [venta, setVenta] = useState(location.state?.payment || null);
+    const [isCanceling, setIsCanceling] = useState(false);
+    const [confirmData, setConfirmData] = useState(null);
 
     useEffect(() => {
         const fetchSale = async () => {
@@ -39,9 +42,25 @@ export default function PaymentDetail() {
     const abonosTable = paymentsService.buildAbonosTable(venta);
 
     // Handler anular último abono
-    const handleAnularAbono = async () => {
-        const resultado = await paymentsService.anularUltimoAbono(venta.id);
-        if (resultado) setVenta(resultado);
+    const handleAnularAbono = () => {
+        setConfirmData({
+            type: "delete",
+            title: "Anular abono",
+            message: "¿Estás seguro de anular el último abono? Esta acción no se puede deshacer.",
+            onConfirm: async () => {
+                setConfirmData(null);
+                setIsCanceling(true);
+                try {
+                    const resultado = await paymentsService.anularUltimoAbono(venta.id);
+                    if (resultado) setVenta(resultado);
+                } catch (error) {
+                    console.error("Error al anular abono:", error);
+                } finally {
+                    setIsCanceling(false);
+                }
+            },
+            onCancel: () => setConfirmData(null)
+        });
     };
 
     return (
@@ -139,6 +158,16 @@ export default function PaymentDetail() {
                                 </p>
                             </div>
                             <div>
+                                <p className="text-sm text-yellow-400 mb-1">Tipo de venta</p>
+                                <p className="text-base font-semibold text-gray-800">{venta.tipoVenta || "Crédito"}</p>
+                            </div>
+                            {(venta.tipoVenta === 'Mixto' || venta.formaPago === 'Mixto') && (
+                                <div>
+                                    <p className="text-sm text-yellow-400 mb-1">Pago Inicial (Contado)</p>
+                                    <p className="text-base font-semibold text-gray-800">${fmt(venta.montoContado || 0)}</p>
+                                </div>
+                            )}
+                            <div>
                                 <p className="text-sm text-yellow-400 mb-1">Monto Pagado</p>
                                 <p className="text-base font-semibold text-gray-800">${fmt(montoPagado)}</p>
                             </div>
@@ -186,17 +215,15 @@ export default function PaymentDetail() {
                                             return (
                                                 <tr
                                                     key={i}
-                                                    className={`border-b border-gray-100 last:border-b-0 ${isAnulado ? "opacity-50 line-through text-gray-400" :
-                                                        isRojo ? "text-red-500 font-medium" :
-                                                            isAzul ? "text-blue-500 font-medium" :
-                                                                "text-gray-600"
+                                                    className={`border-t border-gray-50 ${isAnulado ? "opacity-50 line-through text-gray-400" :
+                                                        "text-gray-600"
                                                         }`}
                                                 >
-                                                    <td className="px-4 py-2.5">{row.fecha}</td>
-                                                    <td className="px-4 py-2.5 text-gray-400 text-xs">
+                                                    <td className="px-5 py-2.5">{row.fecha}</td>
+                                                    <td className="px-5 py-2.5 text-gray-400 text-xs">
                                                         {row.metodoPago || "—"}
                                                     </td>
-                                                    <td className="px-4 py-2.5">
+                                                    <td className="px-5 py-2.5">
                                                         {row.abono === 0 ? "0"
                                                             : row.abono < 0 ? `-${fmt(Math.abs(row.abono))}`
                                                                 : `+${fmt(row.abono)}`}
@@ -209,10 +236,11 @@ export default function PaymentDetail() {
                                                         {row.esUltimoReal && !isAnulado && !isInicio && (
                                                             <button
                                                                 onClick={handleAnularAbono}
-                                                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs font-medium transition cursor-pointer"
+                                                                disabled={isCanceling}
+                                                                title="Anular abono"
+                                                                className="flex items-center justify-center p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 text-xs transition cursor-pointer disabled:opacity-50"
                                                             >
-                                                                <Trash2 size={12} />
-                                                                Anular
+                                                                {isCanceling ? <Loader2 size={16} className="animate-spin" /> : <Ban size={16} />}
                                                             </button>
                                                         )}
                                                     </td>
@@ -227,7 +255,15 @@ export default function PaymentDetail() {
                 </div>
             </div>
 
-
+            {confirmData && (
+                <ConfirmModal
+                    type={confirmData.type}
+                    title={confirmData.title}
+                    message={confirmData.message}
+                    onConfirm={confirmData.onConfirm}
+                    onCancel={confirmData.onCancel}
+                />
+            )}
         </div>
     );
 }

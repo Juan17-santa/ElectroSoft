@@ -12,7 +12,7 @@ export const generatePDFReport = ({
     data,
     extraInfo = [],
     totals = [],
-    headColor = [234, 179, 8],
+    headColor = [240, 240, 240],
     emptyMessage = "No hay registros disponibles"
 }) => {
 
@@ -20,8 +20,8 @@ export const generatePDFReport = ({
     const pageWidth = doc.internal.pageSize.width;
 
     // --- BANNER INSTITUCIONAL ---
-    // Fondo oscuro para que el logo amarillo resalte
-    doc.setFillColor(30, 30, 30); 
+    // Fondo claro para ahorrar tinta en impresión
+    doc.setFillColor(245, 245, 245); 
     doc.rect(0, 0, pageWidth, 26, "F");
 
     // Logo (bombillo)
@@ -30,13 +30,13 @@ export const generatePDFReport = ({
     } catch(e) {}
 
     // Nombre de Empresa
-    doc.setTextColor(234, 179, 8); // Amarillo institucional
+    doc.setTextColor(50, 50, 50); // Gris oscuro
     doc.setFontSize(26);
     doc.setFont("helvetica", "bold");
     doc.text("ElectroSoft", 35, 18);
 
     // Título del Reporte (alineado a la derecha)
-    doc.setTextColor(255, 255, 255); // Blanco
+    doc.setTextColor(80, 80, 80); // Gris oscuro
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
     doc.text(title.toUpperCase(), pageWidth - 14, 17, { align: "right" });

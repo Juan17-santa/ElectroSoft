@@ -110,7 +110,7 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
         }
     }, [formData.documento, allSales, initialized]);
 
-    const validateField = (name, value) => {
+    const validateField = (name, value, currentMetodo = formData.metodoPago) => {
         switch (name) {
             case "documento":
                 if (!value) return "El documento es obligatorio";
@@ -125,12 +125,18 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
             case "monto": {
                 const raw = parseFloat(String(value).replace(/\./g, "").replace(",", ".")) || 0;
                 if (!raw || raw <= 0) return "Ingresa un monto válido";
-
-                const minAbono = Math.min(10000, formData.montoPorPagar);
+                const exactTotal = Math.round(formData.montoPorPagar);
+                const maxTotal = currentMetodo?.toUpperCase() === "EFECTIVO" ? Math.ceil(exactTotal / 50) * 50 : exactTotal;
+                
+                const minAbono = Math.min(10000, exactTotal);
                 if (raw < minAbono) return `El abono mínimo es de $${fmt(minAbono)}`;
-                if (raw % 50 !== 0 && raw !== formData.montoPorPagar) return "El abono debe ser múltiplo de 50";
-                if (raw > formData.montoPorPagar) return `El monto no puede superar $${fmt(formData.montoPorPagar)}`;
-
+                
+                if (currentMetodo?.toUpperCase() === "EFECTIVO" && raw % 50 !== 0) {
+                    return "En efectivo, el abono debe ser múltiplo de $50";
+                }
+                
+                if (raw > maxTotal) return `El monto no puede superar $${fmt(maxTotal)}`;
+                
                 return "";
             }
             default:
@@ -140,9 +146,27 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        const error = validateField(name, value);
-        setErrors(prev => ({ ...prev, [name]: error }));
+        
+        if (name === "metodoPago") {
+            const exactTotal = Math.round(formData.montoPorPagar);
+            const newMax = value?.toUpperCase() === "EFECTIVO" ? Math.ceil(exactTotal / 50) * 50 : exactTotal;
+            const rawMonto = parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0;
+            
+            let newMonto = formData.monto;
+            if (rawMonto > newMax) {
+                newMonto = fmt(newMax);
+            }
+            
+            setFormData(prev => ({ ...prev, [name]: value, monto: newMonto }));
+            setErrors(prev => ({ 
+                ...prev, 
+                [name]: validateField(name, value),
+                monto: validateField("monto", newMonto, value) 
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+            setErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+        }
     };
 
     const handleSelectVenta = (id) => {
@@ -189,18 +213,19 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
 
             if (!resultado) {
                 setFormError("No se pudo crear el abono.");
-                setIsSubmitting(false);
                 return;
             }
 
             onSuccess();
         } catch (e) {
+            console.error("Error creating abono:", e);
             const msg =
                 e.response?.data?.error ||
                 e.message ||
                 "Error al procesar el abono en el servidor";
 
             setFormError(msg);
+        } finally {
             setIsSubmitting(false);
         }
     };

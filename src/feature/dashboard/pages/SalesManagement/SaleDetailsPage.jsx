@@ -77,9 +77,9 @@ export default function SaleDetailsPage() {
                     };
                 });
 
-                const newSubtotal = netos.reduce((sum, p) => sum + (p.precio * p.cantNeta), 0);
-                const newIva = newSubtotal * 0.19;
-                const newTotal = newSubtotal + newIva;
+                const newTotal = netos.reduce((sum, p) => sum + (p.precio * p.cantNeta), 0);
+                const newIva = newTotal * 0.19;
+                const newSubtotal = newTotal - newIva;
 
                 setProductosNetos(netos);
                 setTotalesNetos({ subtotal: newSubtotal, iva: newIva, total: newTotal });
@@ -140,6 +140,7 @@ export default function SaleDetailsPage() {
                 
                 const extraInfo = [
                     `Cliente: ${sale.cliente || '-'}`,
+                    `Documento: ${sale.numeroDocumento || '-'}`,
                     `Fecha creación: ${sale.fecha}`,
                     `Estado: ${sale.estado}`,
                     `Tipo de Venta: ${sale.tipoVenta || "Contado"}`
@@ -316,15 +317,15 @@ export default function SaleDetailsPage() {
                         <div className="flex flex-col gap-6 md:gap-3">
                             <div>
                                 <p className="text-xs text-gray-400 leading-none mb-1">Subtotal</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${sale.subtotal?.toLocaleString()}</p>
+                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.subtotal?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-gray-400 leading-none mb-1">IVA</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${(sale.iva || (sale.total * 0.19)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.iva?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-gray-400 leading-none mb-1">Total</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${sale.total?.toLocaleString()}</p>
+                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.total?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                             </div>
                         </div>
                     </div>
@@ -385,15 +386,15 @@ export default function SaleDetailsPage() {
                                 <div className="flex flex-wrap justify-end items-center gap-4 md:gap-10 text-xs md:text-sm">
                                     <div className="flex gap-2">
                                         <span className="text-gray-500 uppercase">Subtotal:</span>
-                                        <span className="text-gray-800 font-semibold">${sale.subtotal?.toLocaleString()}</span>
+                                        <span className="text-gray-800 font-semibold">${totalesNetos.subtotal?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                     </div>
                                     <div className="flex gap-2">
                                         <span className="text-gray-500 uppercase">IVA (19%):</span>
-                                        <span className="text-blue-600 font-semibold">${(sale.iva || (sale.total * 0.19)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                                        <span className="text-blue-600 font-semibold">${totalesNetos.iva?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                     </div>
                                     <div className="flex gap-2">
                                         <span className="text-gray-700 uppercase font-bold">Total:</span>
-                                        <span className="text-green-600 font-bold">${sale.total?.toLocaleString()}</span>
+                                        <span className="text-green-600 font-bold">${totalesNetos.total?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                                     </div>
                                 </div>
                             </div>

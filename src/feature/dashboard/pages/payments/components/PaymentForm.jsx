@@ -14,8 +14,8 @@ export default function PaymentForm({
     handleSelectVenta,
     handleSubmit,
     ventasDelDocumento,
-    onCancel,
-    isSubmitting
+    isSubmitting,
+    onCancel
 }) {
 
     const [showMetodo, setShowMetodo] = useState(false);
@@ -32,13 +32,21 @@ export default function PaymentForm({
     }, []);
 
     const handleMontoChange = (e) => {
-        const raw = e.target.value.replace(/\D/g, "");
-        handleChange({
-            target: {
-                name: "monto",
-                value: raw ? fmt(Number(raw)) : ""
-            }
-        });
+        let rawStr = e.target.value.replace(/\D/g, "");
+        if (!rawStr) {
+            handleChange({ target: { name: "monto", value: "" } });
+            return;
+        }
+
+        let raw = parseFloat(rawStr);
+        const exactTotal = Math.round(formData.montoPorPagar);
+        const maxTotal = formData.metodoPago?.toUpperCase() === "EFECTIVO" ? Math.ceil(exactTotal / 50) * 50 : exactTotal;
+        
+        if (raw > maxTotal) {
+            raw = maxTotal;
+        }
+
+        handleChange({ target: { name: "monto", value: fmt(raw) } });
     };
 
     // corregido: montoPorPagar y a.monto
@@ -47,7 +55,7 @@ export default function PaymentForm({
             ...formData,
             id: formData.ventaId,
             abonos: formData.abonos,
-            total: formData.montoPorPagar + (formData.abonos || []).reduce((acc, a) => acc + Number(a.monto), 0),
+            total: formData.montoPorPagar + (formData.abonos || []).filter(a => !a.anulado).reduce((acc, a) => acc + Number(a.monto), 0),
             fecha: formData.abonos?.[0]?.fecha || "-",
         })
         : [];
@@ -56,7 +64,35 @@ export default function PaymentForm({
 
     return (
         <form onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-8 mt-6 h-full">
+            <div className="flex flex-col gap-6 mt-6 h-full">
+
+                {/* ===== NÚMERO DE VENTA (Encabezado) ===== */}
+                <div className="px-4 md:px-16 flex flex-col gap-2 border-b border-gray-100 pb-4">
+                    <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
+                        <FileText size={18} />
+                        <span>Número de venta seleccionada</span>
+                    </div>
+
+                    {ventasDelDocumento.length > 1 && !formData.ventaId ? (
+                        <select
+                            defaultValue=""
+                            onChange={(e) => handleSelectVenta(e.target.value)}
+                            className="bg-gray-100 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 max-w-sm"
+                        >
+                            <option value="" disabled>Seleccionar venta pendiente</option>
+                            {ventasDelDocumento.map((v) => (
+                                <option key={v.id} value={v.id}>
+                                    {v.numeroVenta || `V-${v.id}`} — ${fmt(v.montoPorPagar)}
+                                    {v.estado === "Anulada" ? " (Vencida)" : ""}
+                                </option>
+                            ))}
+                        </select>
+                    ) : (
+                        <h2 className="text-2xl font-bold text-gray-800">
+                            {formData.numeroVenta ? `#${formData.numeroVenta}` : "—"}
+                        </h2>
+                    )}
+                </div>
 
                 {/* ===== PRIMERA FILA: Documento + Cliente ===== */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 px-4 md:px-16">
@@ -117,51 +153,8 @@ export default function PaymentForm({
                     </div>
                 )}
 
-                {/* ===== SEGUNDA FILA: Venta + Método + Monto ===== */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 px-4 md:px-16">
-
-                    {/* NÚMERO DE VENTA */}
-                    <div className="flex flex-col gap-3 w-full">
-                        <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium">
-                            <FileText size={16} />
-                            <span>Número de venta *</span>
-                        </div>
-
-                        {ventasDelDocumento.length > 1 && !formData.ventaId ? (
-                            <select
-                                defaultValue=""
-                                onChange={(e) => handleSelectVenta(e.target.value)}
-                                className="bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                            >
-                                <option value="" disabled>Seleccionar</option>
-                                {ventasDelDocumento.map((v) => (
-                                    <option key={v.id} value={v.id}>
-                                        {v.numeroVenta || `V-${v.id}`} — ${fmt(v.montoPorPagar)} {/*   */}
-                                        {v.estado === "Anulada" ? " ⚠ Vencida" : ""}
-                                    </option>
-                                ))}
-                            </select>
-                        ) : (
-                            <input
-                                type="text"
-                                value={formData.numeroVenta || ""}
-                                disabled
-                                placeholder="—"
-                                className={`rounded-xl px-4 py-3 text-sm shadow-md text-gray-500
-                                    ${isVencida
-                                        ? "bg-red-50 border border-red-200"  //   rojo si vencida
-                                        : "bg-gray-200"
-                                    }`}
-                            />
-                        )}
-                        <div className="h-4">
-                            <ValidationMessage
-                                error={errors.ventaId}
-                                success={formData.ventaId}
-                                successMessage="Venta seleccionada"
-                            />
-                        </div>
-                    </div>
+                {/* ===== SEGUNDA FILA: Método + Monto ===== */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 px-4 md:px-16">
 
                     {/* MÉTODO DE PAGO */}
                     <div className="flex flex-col gap-2 w-full">
@@ -239,12 +232,25 @@ export default function PaymentForm({
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 disabled:opacity-50
                                 ${errors.monto ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                         />
-                        <div className="h-4">
+                        <div className="min-h-4 flex flex-col items-start gap-1">
                             <ValidationMessage
                                 error={errors.monto}
                                 success={formData.monto && !errors.monto}
                                 successMessage="Monto válido"
                             />
+                            {errors.monto?.includes("múltiplo de $50") && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const raw = parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0;
+                                        const rounded = Math.round(raw / 50) * 50;
+                                        handleChange({ target: { name: "monto", value: fmt(rounded) } });
+                                    }}
+                                    className="mt-0.5 text-[11px] font-semibold text-yellow-700 bg-yellow-100 hover:bg-yellow-200 px-2 py-1 rounded-md transition cursor-pointer flex items-center border border-yellow-200"
+                                >
+                                    Corregir a ${fmt(Math.round((parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0) / 50) * 50)}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -289,12 +295,12 @@ export default function PaymentForm({
                                         </td>
                                     </tr>
                                 ) : (
-                                    abonosTable.map((row, i) => (
+                                    abonosTable.filter(row => !row.anulado).map((row, i) => (
                                         <tr
                                             key={i}
-                                            className={`border-b border-gray-100 ${row.tipo === "inicio" ? "text-red-500 font-medium" :
-                                                row.tipo === "ultimo" ? "text-blue-500 font-medium" :
-                                                    "text-gray-600"
+                                            className={`border-b border-gray-100 ${row.tipo === "inicio" ? "text-gray-600 font-medium" :
+                                                    row.tipo === "ultimo" ? "text-blue-500 font-medium" :
+                                                        "text-gray-600"
                                                 }`}
                                         >
                                             <td className="px-4 py-2.5">{row.fecha}</td>
@@ -326,11 +332,16 @@ export default function PaymentForm({
 
                     <PrimaryButton
                         type="submit"
-                        disabled={
-                            Object.values(errors).some(Boolean) || isSubmitting
-                        }
+                        disabled={Object.values(errors).some(Boolean) || isSubmitting}
                     >
-                        {isSubmitting ? "Guardando..." : "Crear abono"}
+                        {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                Procesando...
+                            </span>
+                        ) : (
+                            "Crear abono"
+                        )}
                     </PrimaryButton>
                 </div>
             </div>

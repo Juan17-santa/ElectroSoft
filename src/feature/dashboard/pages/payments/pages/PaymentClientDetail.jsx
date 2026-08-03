@@ -4,6 +4,7 @@ import { ArrowLeft, AlertCircle, FileDown, Pencil, X, CreditCard } from "lucide-
 import paymentsService from "../services/paymentsService";
 import VentaCreditoCard from "../components/VentaCreditoCard";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
+import Alert from "../../../components/ui/Alert";
 import { generarReporteCliente, generarReporteClientePDF } from "../hooks/reportesPayments";
 
 const fmt = (val) => new Intl.NumberFormat("es-CO", {
@@ -48,7 +49,10 @@ export default function PaymentClientDetail() {
 
     const handleAbrirModal = () => {
         if (resumen?.cupoOcupado > 0) {
-            alert(`No se puede modificar el cupo hasta que el cliente libere su saldo pendiente (Cupo ocupado: ${fmt(resumen.cupoOcupado)}).`);
+            setAlert({
+                type: "error",
+                message: `No se puede modificar el cupo hasta que el cliente libere su saldo pendiente (Cupo ocupado: ${fmt(resumen.cupoOcupado)}).`
+            });
             return;
         }
         // Precarga el cupo actual
@@ -67,7 +71,7 @@ export default function PaymentClientDetail() {
         const monto = Number(nuevoCupo);
         if (resumen?.cupoOcupado > 0) {
             setErrorCupo(`No se puede modificar el cupo hasta liberar el saldo ocupado (${fmt(resumen.cupoOcupado)}).`);
-        } else if (nuevoCupo !== "" && monto < resumen?.cupoOcupado) {
+        } else if (nuevoCupo !== "" && monto < (resumen?.cupoOcupado || 0)) {
             setErrorCupo(`El cupo no puede ser menor al monto ya ocupado (${fmt(resumen.cupoOcupado)}).`);
         } else {
             setErrorCupo("");
@@ -76,7 +80,10 @@ export default function PaymentClientDetail() {
 
     const handleConfirmarCupo = async () => {
         if (resumen?.cupoOcupado > 0) {
-            setErrorCupo(`No se puede modificar el cupo hasta liberar el saldo ocupado (${fmt(resumen.cupoOcupado)}).`);
+            setAlert({
+                type: "error",
+                message: `No se puede modificar el cupo hasta liberar el saldo ocupado (${fmt(resumen.cupoOcupado)}).`
+            });
             return;
         }
         const monto = Number(nuevoCupo);
@@ -84,14 +91,21 @@ export default function PaymentClientDetail() {
             setErrorCupo("Ingresa un monto válido mayor a 0.");
             return;
         }
-        if (monto < resumen.cupoOcupado) {
+        if (monto < (resumen?.cupoOcupado || 0)) {
             setErrorCupo(`El cupo no puede ser menor al monto ya ocupado (${fmt(resumen.cupoOcupado)}).`);
             return;
         }
-        // Usa el id del cliente (ObjectId del backend) en lugar del documento
-        await paymentsService.actualizarCupo(resumen.id, monto);
-        setShowModal(false);
-        await cargarDatos();
+        try {
+            await paymentsService.actualizarCupo(resumen.id, monto);
+            setShowModal(false);
+            setAlert({ type: "success", message: "Cupo de crédito actualizado exitosamente." });
+            await cargarDatos();
+        } catch (error) {
+            console.error("Error actualizando cupo:", error);
+            const msg = error?.response?.data?.error || error?.message || "Error al actualizar el cupo.";
+            setErrorCupo(msg);
+            setAlert({ type: "error", message: msg });
+        }
     };
 
     if (loading) return (
@@ -339,6 +353,14 @@ export default function PaymentClientDetail() {
                         }
                         setShowReportModal(false);
                     }}
+                />
+            )}
+
+            {alert && (
+                <Alert
+                    type={alert.type}
+                    message={alert.message}
+                    onClose={() => setAlert(null)}
                 />
             )}
         </>

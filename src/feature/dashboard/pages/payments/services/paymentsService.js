@@ -5,6 +5,14 @@ import api from "../../../../../utils/api.js";
 
 //   Cache de clientes para evitar N llamadas a GET /clients por cada venta
 let _clientsCache = null;
+
+const localDate = (dateParam) => {
+    const d = dateParam ? new Date(dateParam) : new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
 let _clientsCacheTime = 0;
 const CLIENTS_CACHE_TTL = 30_000; // 30 segundos
 
@@ -55,7 +63,7 @@ const calcularFechaLimite = (fecha) => {
     if (!fecha) return null;
     const d = new Date(fecha);
     d.setDate(d.getDate() + 60);
-    return d.toISOString().split("T")[0];
+    return localDate(d);
 };
 
 const enriquecerVenta = (venta) => {
@@ -144,17 +152,19 @@ const paymentsService = {
             .map(async s => {
                 const pagosRaw = paymentsByVentaId[String(s.id)] || [];
                 const abonos = pagosRaw.map(p => ({
-                    id: p._id,
-                    fecha: new Date(p.fechaPago).toISOString().split('T')[0],
+                    id: p._id || p.id,
+                    fecha: localDate(p.fechaPago),
                     timestamp: new Date(p.fechaPago).getTime(),
                     monto: p.monto,
                     metodoPago: p.metodoPago,
                     anulado: p.estado === 'ANULADO' || false
                 }));
 
-                const totalAbonado = abonos
+                const pagoInicial = (s.tipoVenta === 'Mixto' || s.formaPago === 'Mixto') ? (Number(s.montoContado) || 0) : 0;
+                const sumaAbonos = abonos
                     .filter(a => !a.anulado)
                     .reduce((acc, a) => acc + Number(a.monto), 0);
+                const totalAbonado = pagoInicial + sumaAbonos;
                 const montoPorPagar = s.total - totalAbonado;
                 //   FIX: calcular estado Finalizado cuando ya está pagado
                 const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : s.estado;
@@ -226,8 +236,8 @@ const paymentsService = {
                 //   FIX: parsear correctamente la respuesta del backend
                 const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
                 abonos = pagosRaw.map(p => ({
-                    id: p._id,
-                    fecha: new Date(p.fechaPago).toISOString().split('T')[0],
+                    id: p._id || p.id,
+                    fecha: localDate(p.fechaPago),
                     timestamp: new Date(p.fechaPago).getTime(),
                     monto: p.monto,
                     metodoPago: p.metodoPago,
@@ -238,8 +248,8 @@ const paymentsService = {
             }
 
             const sumaAbonos = abonos.filter(a => !a.anulado).reduce((acc, a) => acc + Number(a.monto), 0);
-            const pagoInicial = (venta.tipoVenta === 'Mixto') ? ((venta.montoContado != null) ? Number(venta.montoContado) : ((venta.montoCredito != null && Number(venta.montoCredito) > 0) ? Math.max(0, Number(venta.total) - Number(venta.montoCredito)) : 0)) : 0;
-            const totalAbonado = sumaAbonos < pagoInicial ? pagoInicial + sumaAbonos : sumaAbonos;
+            const pagoInicial = (venta.tipoVenta === 'Mixto' || venta.formaPago === 'Mixto') ? (Number(venta.montoContado) || 0) : 0;
+            const totalAbonado = pagoInicial + sumaAbonos;
             const montoPorPagar = venta.total - totalAbonado > 0 ? venta.total - totalAbonado : 0;
             const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : venta.estado;
             return enriquecerVenta({
@@ -315,7 +325,7 @@ const paymentsService = {
         if (order) {
             const nuevoAbono = {
                 id: Date.now(),
-                fecha: new Date().toISOString().split("T")[0],
+                fecha: localDate(),
                 timestamp: Date.now(),
                 monto: Number(amount),
                 metodoPago: paymentMethod,
@@ -500,6 +510,17 @@ const paymentsService = {
 
             // Recalcular y retornar el estado de la venta con abonos actualizados
             return await this.getById(ventaId);
+        } catch (e) {
+            console.error("Error anulando abono:", e);
+            throw e;
+        }
+    },
+
+    // Anula un abono específico por su ID
+    async anularAbono(pagoId) {
+        try {
+            await api.patch(`/payments/${pagoId}/cancel`);
+            return true;
         } catch (e) {
             console.error("Error anulando abono:", e);
             throw e;

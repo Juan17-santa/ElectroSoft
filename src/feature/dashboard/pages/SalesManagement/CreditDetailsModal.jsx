@@ -64,7 +64,7 @@ export default function CreditDetailsPage() {
 
     const getPaymentRows = () => {
         if (!sale) return [];
-        let saldoPendiente = sale.total || 0;
+        let saldoPendiente = sale.tipoVenta === 'Mixto' ? (sale.montoCredito || 0) : (sale.total || 0);
         
         //   FIX: Ordenar cronológicamente (más antiguos primero)
         // El backend envía los abonos en orden descendente, lo que causa un cálculo visual inverso
@@ -88,8 +88,18 @@ export default function CreditDetailsPage() {
             };
         });
         
-        // Revertir al final para mostrar el abono más reciente arriba en la tabla
-        return rows.reverse();
+        // Revertir para mostrar el abono más reciente arriba en la UI
+        const reversedRows = rows.reverse();
+        
+        let foundUltimoValido = false;
+        return reversedRows.map(row => {
+            let esUltimoActivo = false;
+            if (!row.anulado && !foundUltimoValido) {
+                esUltimoActivo = true;
+                foundUltimoValido = true;
+            }
+            return { ...row, esUltimoActivo };
+        });
     };
 
     const refreshSale = async () => {
@@ -138,6 +148,26 @@ export default function CreditDetailsPage() {
             `/dashboard/payments/detail/${sale.id}`,
             { state: { payment: sale, documento: sale.numeroDocumento } }
         );
+    };
+
+    const handleRemovePayment = (paymentId) => {
+        setConfirmData({
+            type: "delete",
+            title: "Anular abono",
+            message: "¿Estás seguro de anular este abono? Esta acción no se puede deshacer.",
+            onConfirm: async () => {
+                setConfirmData(null);
+                try {
+                    await paymentsService.anularAbono(paymentId);
+                    setAlert({ type: "success", message: "Abono anulado exitosamente." });
+                    refreshSale();
+                } catch (error) {
+                    console.error("Error al anular abono:", error);
+                    setAlert({ type: "error", message: "Error al anular el abono." });
+                }
+            },
+            onCancel: () => setConfirmData(null)
+        });
     };
 
     const handleBack = (e) => {
@@ -321,7 +351,7 @@ export default function CreditDetailsPage() {
                                                     </td>
                                                     <td className={`px-4 py-3 text-base ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-yellow-600 font-semibold' : 'text-gray-700')}`}>{formatCOP(row.saldoPendiente)}</td>
                                                     <td className="px-4 py-2.5 text-center">
-                                                        {!row.anulado && (
+                                                        {!row.anulado && row.esUltimoActivo && (
                                                             <button
                                                                 type="button"
                                                                 onClick={(e) => { e.preventDefault(); handleRemovePayment(row.id); }}
