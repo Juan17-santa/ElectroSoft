@@ -32,6 +32,12 @@ function formatFechaEstadoDisplay(fechaISO) {
 
 export default function Devolutions() {
     const navigate = useNavigate();
+    const [currentPage, setCurrentPage] = useState(1);
+    const [confirmData, setConfirmData] = useState(null);
+    const [alert, setAlert] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [ventasMap, setVentasMap] = useState(null);
+
     const {
         devolucionesFiltradas,
         searchTerm,
@@ -39,13 +45,7 @@ export default function Devolutions() {
         anularPorVenta,
         loading,
         error,
-    } = useDevolutions();
-
-    const [currentPage, setCurrentPage] = useState(1);
-    const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
-    const [showReportModal, setShowReportModal] = useState(false);
-    const [ventasMap, setVentasMap] = useState(null);
+    } = useDevolutions(ventasMap);
 
     useEffect(() => {
         SalesService.get().then((ventas) => {
@@ -117,10 +117,13 @@ export default function Devolutions() {
 
     const handleAnularGrupo = (grupo) => {
         const idVenta = grupo[0].idVenta;
+        const numeroVenta = ventasMap && ventasMap[idVenta] != null
+            ? String(ventasMap[idVenta]).padStart(2, "0")
+            : idVenta;
         setConfirmData({
             type: "warning",
             title: "Anular devolución",
-            message: `¿Anular la devolución de la venta #${idVenta}? Se anularán todos los productos devueltos.`,
+            message: `¿Anular la devolución de la venta #${numeroVenta}? Se anularán todos los productos devueltos.`,
             onConfirm: async () => {
                 try {
                     await anularPorVenta(idVenta);

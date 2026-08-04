@@ -22,8 +22,17 @@ function normalizeSale(sale) {
         estado: sale.estado === "ANULADA" ? "Anulado" : sale.estado,
         productos: (sale.productos || []).map((producto) => ({
             ...producto,
-            nombre: producto.nombre || producto.producto?.name || producto.name,
-            precio: producto.precio || producto.precioUnitario || producto.producto?.price || 0,
+            nombre:
+                producto.productoId?.name ||
+                producto.nombre ||
+                producto.producto?.name ||
+                producto.name,
+            precio:
+                producto.precioUnitario ??
+                producto.precio ??
+                producto.productoId?.price ??
+                producto.producto?.price ??
+                0,
         })),
     };
 }
@@ -34,7 +43,9 @@ function calcularMonto(devolucion, venta) {
     if (!venta) return 0;
 
     const productoVenta = (venta.productos || []).find(
-        (producto) => producto.nombre === devolucion.producto,
+        (producto) =>
+            (producto.productoId?._id && String(producto.productoId._id) === String(devolucion.productoId)) ||
+            producto.nombre === devolucion.producto,
     );
 
     if (!productoVenta) return 0;
