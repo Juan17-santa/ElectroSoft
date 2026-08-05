@@ -36,7 +36,8 @@ export default function AddProductModal({
 
     // ── ERRORES ADICIONALES ──────────────────────────────────────────────────
     const [showQuotaWarning, setShowQuotaWarning] = useState(false);
-    const [pendingProductToAdd, setPendingProductToAdd] = useState(null);
+    const [pendingProductToAdd, setPendingProductToAdd] = useState(null);   // { selectedProduct, quantity }
+    const [pendingQueueUpdate, setPendingQueueUpdate] = useState(null);      // { id, change }
 
     // ── PAGINACIÓN DEL DROPDOWN ──────────────────────────────────────────────
     const [currentPage, setCurrentPage] = useState(1);
@@ -188,6 +189,22 @@ export default function AddProductModal({
                 if (newQty <= 0) return q;
                 const base = getAvailableStock?.(q) ?? Infinity;
                 if (change > 0 && newQty > base) return q;
+
+                // Verificar cupo si es venta a crédito y se está aumentando cantidad
+                if (change > 0 && isCredit && quotaAmount > 0) {
+                    const otherTotal = prev
+                        .filter(item => item.id !== id)
+                        .reduce((acc, item) => acc + item.precio * (Number(item.cantidad) || 0), 0);
+                    const newTotal = otherTotal + q.precio * newQty + currentSaleTotal;
+                    if (newTotal > quotaAmount) {
+                        // Mostrar alerta de cambio a Mixto sin aplicar el cambio
+                        setPendingQueueUpdate({ id, change });
+                        setPendingProductToAdd(null);
+                        setShowQuotaWarning(true);
+                        return q; // No aplicar el cambio todavía
+                    }
+                }
+
                 return { ...q, cantidad: newQty };
             }
             return q;
@@ -535,6 +552,7 @@ export default function AddProductModal({
                                     onClick={() => {
                                         setShowQuotaWarning(false);
                                         setPendingProductToAdd(null);
+                                        setPendingQueueUpdate(null);
                                     }}
                                     className="px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors"
                                 >
@@ -544,9 +562,20 @@ export default function AddProductModal({
                                     type="button"
                                     onClick={() => {
                                         if (onSwitchToMixed) onSwitchToMixed();
-                                        performAddToQueue(pendingProductToAdd.selectedProduct, pendingProductToAdd.quantity);
+                                        // Aplicar acción pendiente según el flujo que activó la alerta
+                                        if (pendingProductToAdd) {
+                                            performAddToQueue(pendingProductToAdd.selectedProduct, pendingProductToAdd.quantity);
+                                        } else if (pendingQueueUpdate) {
+                                            setQueue((prev) => prev.map((q) => {
+                                                if (q.id === pendingQueueUpdate.id) {
+                                                    return { ...q, cantidad: (Number(q.cantidad) || 0) + pendingQueueUpdate.change };
+                                                }
+                                                return q;
+                                            }));
+                                        }
                                         setShowQuotaWarning(false);
                                         setPendingProductToAdd(null);
+                                        setPendingQueueUpdate(null);
                                     }}
                                     className="px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm"
                                 >

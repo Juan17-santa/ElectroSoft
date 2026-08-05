@@ -13,6 +13,9 @@ const fmt = (val) => new Intl.NumberFormat("es-CO", {
 
 const fmtInput = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
+// Monto mínimo de crédito: igual al mínimo de venta a crédito del sistema
+const MIN_CUPO = 10_000;
+
 export default function PaymentClientDetail() {
     const navigate = useNavigate();
     const { documento } = useParams();
@@ -71,6 +74,8 @@ export default function PaymentClientDetail() {
         const monto = Number(nuevoCupo);
         if (resumen?.cupoOcupado > 0) {
             setErrorCupo(`No se puede modificar el cupo hasta liberar el saldo ocupado (${fmt(resumen.cupoOcupado)}).`);
+        } else if (nuevoCupo !== "" && monto < MIN_CUPO) {
+            setErrorCupo(`El cupo mínimo es ${fmt(MIN_CUPO)}. Un cupo menor no permite realizar ninguna venta a crédito.`);
         } else if (nuevoCupo !== "" && monto < (resumen?.cupoOcupado || 0)) {
             setErrorCupo(`El cupo no puede ser menor al monto ya ocupado (${fmt(resumen.cupoOcupado)}).`);
         } else {
@@ -89,6 +94,10 @@ export default function PaymentClientDetail() {
         const monto = Number(nuevoCupo);
         if (!monto || monto <= 0) {
             setErrorCupo("Ingresa un monto válido mayor a 0.");
+            return;
+        }
+        if (monto < MIN_CUPO) {
+            setErrorCupo(`El cupo mínimo es ${fmt(MIN_CUPO)}. Un cupo de ${fmt(monto)} no permite realizar ninguna venta a crédito.`);
             return;
         }
         if (monto < (resumen?.cupoOcupado || 0)) {
