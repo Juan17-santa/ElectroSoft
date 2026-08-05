@@ -422,7 +422,11 @@ const paymentsService = {
         const allPendingSales = await this.getPending();
 
         const promises = filtered.map(async c => {
-            const ventasCredito = allPendingSales.filter(s => String(s.numeroDocumento) === String(c.documento));
+            const docC = String(c.documento).trim();
+            const ventasCredito = allPendingSales.filter(s => {
+                const docS = String(s.numeroDocumento).split(" ").pop().trim();
+                return docS === docC;
+            });
             const cupoOcupado = ventasCredito.reduce((acc, v) => acc + v.montoPorPagar, 0);
             return {
                 id: c.id,
@@ -482,13 +486,17 @@ const paymentsService = {
             return true;
         } catch (e) {
             console.error("Error actualizando cupo:", e);
-            return false;
+            throw e;
         }
     },
 
     async getVentasCredito(documento) {
         const pendingSales = await this.getPending();
-        return pendingSales.filter(s => String(s.numeroDocumento) === String(documento));
+        const targetDoc = String(documento).trim();
+        return pendingSales.filter(s => {
+            const docS = String(s.numeroDocumento).split(" ").pop().trim();
+            return docS === targetDoc;
+        });
     },
 
     // Anula el último abono activo de una venta usando el backend
