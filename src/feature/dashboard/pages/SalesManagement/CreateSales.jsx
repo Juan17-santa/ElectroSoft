@@ -5,8 +5,10 @@ import CustomSelect from "../../components/ui/CustomSelect";
 import { SalesService } from "./services/SalesService";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { ClientsService } from "../Clients/services/ClientsService";
+import paymentsService from "../payments/services/paymentsService";
 import AddProductModal from "../../components/ui/AddProductModal";
 import Alert from "../../components/ui/Alert";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import ValidationMessage from "../../components/ui/ValidationMessage";
 import Calendar from "../../components/ui/Calendar";
 import Pagination from "../../components/ui/Pagination";
@@ -25,6 +27,7 @@ export default function CreateSales() {
     const navigate = useNavigate();
     const [alert, setAlert] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showNoCupoModal, setShowNoCupoModal] = useState(false);
 
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
     const clientDropdownRef = useRef(null);
@@ -83,13 +86,26 @@ export default function CreateSales() {
     const estadoNumDoc = tocado.numeroDocumento ? resultadoDoc : null;
 
     const [montoCredito, setMontoCredito] = useState("");
+    const [cupoResumen, setCupoResumen] = useState(null);
+
+    // Cuando hay un cliente válido seleccionado, obtener su cupo disponible real
+    useEffect(() => {
+        if (resultadoDoc.cliente && resultadoDoc.valido) {
+            paymentsService.getResumenCliente(resultadoDoc.cliente.documento)
+                .then(resumen => setCupoResumen(resumen))
+                .catch(() => setCupoResumen(null));
+        } else {
+            setCupoResumen(null);
+        }
+    }, [resultadoDoc.cliente?.id]);
 
     // Opciones siempre visibles — el bloqueo se hace con alerta inline
     const clienteTieneCupo = resultadoDoc.cliente?.cupoActivo && (resultadoDoc.cliente?.cupoTotal || 0) > 0;
-    const cupoDisponible = clienteTieneCupo
-        ? Math.max(0, (resultadoDoc.cliente?.cupoTotal || 0) - (resultadoDoc.cliente?.cupoOcupado || 0))
-        : 0;
-    const cupoTotal = resultadoDoc.cliente?.cupoTotal || 0;
+    // Usar el cupoDisponible real del resumen (que descuenta la deuda activa)
+    const cupoDisponible = cupoResumen
+        ? Math.max(0, cupoResumen.cupoDisponible)
+        : (clienteTieneCupo ? (resultadoDoc.cliente?.cupoTotal || 0) : 0);
+    const cupoTotal = cupoResumen?.cupoCredito || resultadoDoc.cliente?.cupoTotal || 0;
 
     const opcionesTipoVenta = [
         { value: "Contado", label: "Contado" },
@@ -106,6 +122,7 @@ export default function CreateSales() {
     const { subtotal, iva, total } = calcularTotales();
 
     const isCreditBlocked = (formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") && resultadoDoc.valido && !clienteTieneCupo;
+    // Verificar que el total no supere el cupo DISPONIBLE (cupoTotal menos deuda activa)
     const isQuotaExceeded = formData.tipoVenta === "Credito" && resultadoDoc.valido && clienteTieneCupo && total > cupoDisponible;
     const isLowCreditAmount = (formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") && total > 0 && total < 10000;
 
@@ -496,6 +513,17 @@ export default function CreateSales() {
                                 options={opcionesTipoVenta}
                                 value={formData.tipoVenta}
                                 onChange={(val) => {
+                                    // Si selecciona crédito o mixto pero no hay cupo disponible, mostrar alerta
+                                    const MIN_VENTA_CREDITO = 10000;
+                                    const sinCupo = resultadoDoc.valido && (
+                                        !clienteTieneCupo ||                                                // sin cupo asignado
+                                        (cupoResumen !== null && cupoDisponible === 0) ||                   // cupo agotado
+                                        (cupoResumen !== null && cupoDisponible < MIN_VENTA_CREDITO)        // cupo demasiado bajo
+                                    );
+                                    if ((val === "Credito" || val === "Mixto") && sinCupo) {
+                                        setShowNoCupoModal(true);
+                                        return; // No cambiar el tipo de venta todavía
+                                    }
                                     setFormData(prev => ({ ...prev, tipoVenta: val }));
                                     tocar("tipoVenta");
                                 }}
@@ -776,13 +804,42 @@ export default function CreateSales() {
                     title="Agregar Productos a la Venta"
                     confirmText="Cargar a la venta"
                     isCredit={formData.tipoVenta === "Credito"}
-                    quotaAmount={resultadoDoc.cliente?.cupoTotal || 0}
+                    quotaAmount={cupoDisponible}
                     currentSaleTotal={total}
                     onSwitchToMixed={() => setFormData(prev => ({ ...prev, tipoVenta: "Mixto" }))}
                 />
             </div>
 
             {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
+
+            {/* Modal: sin cupo disponible al seleccionar Crédito/Mixto */}
+            {showNoCupoModal && (
+                <ConfirmModal
+                    type="warning"
+                    title="Sin cupo disponible"
+                    message={
+                        !clienteTieneCupo
+                            ? `Este cliente no tiene un cupo de crédito asignado. ¿Desea realizar la venta de Contado en su lugar?`
+                            : cupoDisponible === 0
+                                ? `Este cliente no tiene cupo disponible. Cupo total: ${formatCOP(cupoTotal)} — Cupo ocupado: ${formatCOP(cupoResumen?.cupoOcupado || 0)}. ¿Desea realizar la venta de Contado?`
+                                : `El cupo disponible (${formatCOP(cupoDisponible)}) es insuficiente para realizar ventas a crédito (mínimo ${formatCOP(10000)}). ¿Desea realizar la venta de Contado?`
+                    }
+                    labelConfirmar="Sí, realizar de Contado"
+                    labelCancelar="No, cancelar"
+                    onConfirm={() => {
+                        setFormData(prev => ({ ...prev, tipoVenta: "Contado" }));
+                        tocar("tipoVenta");
+                        setShowNoCupoModal(false);
+                    }}
+                    onCancel={() => {
+                        // Limpiar el tipo de venta si fue la primera selección
+                        if (!formData.tipoVenta || formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") {
+                            setFormData(prev => ({ ...prev, tipoVenta: "" }));
+                        }
+                        setShowNoCupoModal(false);
+                    }}
+                />
+            )}
         </>
     );
 }

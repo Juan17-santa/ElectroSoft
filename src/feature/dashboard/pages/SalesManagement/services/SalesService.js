@@ -7,6 +7,7 @@ const abbreviateDocType = (type) => {
     if (t.includes("extranjer")) return "CE";
     if (t.includes("identidad")) return "TI";
     if (t.includes("pasaporte")) return "PA";
+    if (type.length === 24 && /^[a-fA-F0-9]{24}$/.test(type)) return "";
     return type;
 };
 
