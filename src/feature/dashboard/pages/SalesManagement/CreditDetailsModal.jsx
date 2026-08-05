@@ -195,6 +195,7 @@ export default function CreditDetailsPage() {
                     ]),
                     extraInfo: [
                         `Cliente: ${sale.cliente || '-'}`,
+                        `Documento: ${sale.numeroDocumento || 'No registrado'}`,
                         `Estado: ${sale.estado}`
                     ],
                     emptyMessage: "Aún no se han registrado abonos a este crédito.",
