@@ -76,11 +76,19 @@ export default function Orders() {
     };
 
     // FUNCION PARA CONFIRMAR LA VENTA Y REDIRIGIR
-    const handleConfirmSale = async (order) => {
+    const handleConfirmSale = async (order, diasPlazo, requestedCredit) => {
         try {
-            await processOrderToSale(order._id);
+            await processOrderToSale(order._id, {
+                diasPlazo: Number(diasPlazo),
+                montoCredito:
+                    order.paymentMethod === "Mixto"
+                        ? Number(requestedCredit)
+                        : order.paymentMethod === "Credito"
+                            ? Number(order.total)
+                            : 0
+            });
             setIsSaleModalOpen(false);
-            setAlert({ type: "success", message: "Pedido procesado como venta con éxito. Redirigiendo a ventas"});
+            setAlert({ type: "success", message: "Pedido procesado como venta con éxito. Redirigiendo a ventas" });
 
             setTimeout(() => {
                 navigate("/dashboard/sales-management");
@@ -165,6 +173,7 @@ export default function Orders() {
                 onClose={() => setIsSaleModalOpen(false)}
                 order={orderToProcess}
                 onConfirm={handleConfirmSale}
+                loading={loading}
             />
 
             {/* MODAL DE CONFIRMACION PARA CANCELAR UN PEDIDO */}

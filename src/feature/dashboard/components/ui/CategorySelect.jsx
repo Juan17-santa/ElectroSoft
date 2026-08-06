@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown, Search, X, Check } from "lucide-react";
 
 export default function CategorySelect({
     label,
@@ -10,12 +10,14 @@ export default function CategorySelect({
     placeholder = "Seleccionar categoría",
     width = "w-full",
     hasError = false,
-    onlyActive = true // <--- NUEVA PROP: Por defecto solo muestra activas
+    onlyActive = true,
+    multiple = false
 }) {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const dropdownRef = useRef(null);
     const inputRef = useRef(null);
+    const menuRef = useRef(null);
 
     useEffect(() => {
         const handler = (e) => {
@@ -28,30 +30,49 @@ export default function CategorySelect({
         return () => document.removeEventListener("mousedown", handler);
     }, []);
 
-    // Filtrar opciones según el término de búsqueda
+    useEffect(() => {
+        if (open && menuRef.current) {
+            const timer = setTimeout(() => {
+                menuRef.current?.scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest"
+                });
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [open]);
+
+    const selectedIds = multiple
+        ? (Array.isArray(value) ? value : [])
+        : (value ? [value] : []);
+
     const filteredOptions = options.filter(option => {
-        // Coincidencia con búsqueda
         const matchesSearch = option.name &&
             option.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-        // Regla de negocio:
-        // Si onlyActive es true, mostramos solo si está activa O si es la opción seleccionada actualmente
-        // (Esto evita que en edición el campo quede en blanco si la categoría se inactivó)
         if (onlyActive) {
             const isActive = option.status === true;
-            const isSelected = option.id === value;
+            const isSelected = selectedIds.includes(option.id);
             return matchesSearch && (isActive || isSelected);
         }
 
         return matchesSearch;
     });
 
-    const selectedOption = options.find(opt => opt.id === value);
+    const selectedOption = !multiple ? options.find(opt => opt.id === value) : null;
 
     const handleSelect = (option) => {
-        onChange(option.id);
-        setOpen(false);
-        setSearchTerm("");
+        if (multiple) {
+            const isSelected = selectedIds.includes(option.id);
+            const newSelection = isSelected
+                ? selectedIds.filter(id => id !== option.id)
+                : [...selectedIds, option.id];
+            onChange(newSelection);
+        } else {
+            onChange(option.id);
+            setOpen(false);
+            setSearchTerm("");
+        }
     };
 
     const handleInputChange = (e) => {
@@ -62,10 +83,23 @@ export default function CategorySelect({
         setSearchTerm("");
     };
 
+    const getDisplayLabel = () => {
+        if (multiple) {
+            if (selectedIds.length === 0) return placeholder;
+            if (selectedIds.length === 1) {
+                const opt = options.find(o => o.id === selectedIds[0]);
+                return opt ? opt.name : `1 seleccionada`;
+            }
+            return `${selectedIds.length} categorías seleccionadas`;
+        }
+        return selectedOption ? selectedOption.name : placeholder;
+    };
+
+    const hasSelection = multiple ? selectedIds.length > 0 : !!selectedOption;
+
     return (
         <div ref={dropdownRef} className={`relative ${width}`}>
             <div className="flex flex-col gap-3">
-                {/* LABEL */}
                 {label && (
                     <label className="flex items-center gap-2 text-yellow-500 font-medium">
                         {Icon && <Icon size={16} />}
@@ -73,7 +107,6 @@ export default function CategorySelect({
                     </label>
                 )}
 
-                {/* BOTÓN CON BUSCADOR */}
                 <div className="relative">
                     <button
                         type="button"
@@ -84,8 +117,8 @@ export default function CategorySelect({
                         className={`w-full bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 flex justify-between items-center cursor-pointer hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-yellow-400 text-left ${hasError ? 'border-red-500' : 'border-transparent'
                             }`}
                     >
-                        <span className={selectedOption ? "text-gray-800" : "text-gray-500"}>
-                            {selectedOption ? selectedOption.name : placeholder}
+                        <span className={`truncate ${hasSelection ? "text-gray-800" : "text-gray-500"}`}>
+                            {getDisplayLabel()}
                         </span>
                         <ChevronDown
                             size={18}
@@ -93,11 +126,9 @@ export default function CategorySelect({
                         />
                     </button>
 
-                    {/* DROPDOWN CON BÚSQUEDA */}
                     {open && (
-                        <div className="absolute top-full mt-2 w-full bg-white shadow-lg rounded-xl p-3 z-20">
+                        <div ref={menuRef} className="absolute top-full mt-2 w-full bg-white shadow-lg rounded-xl p-3 z-20">
 
-                            {/* INPUT DE BÚSQUEDA */}
                             <div className="flex items-center gap-2 mb-3 bg-gray-100 rounded-lg px-3 py-2">
                                 <Search size={16} className="text-gray-500" />
                                 <input
@@ -119,22 +150,30 @@ export default function CategorySelect({
                                 )}
                             </div>
 
-                            {/* LISTA DE OPCIONES */}
                             <div className="max-h-48 overflow-y-auto">
                                 {filteredOptions.length > 0 ? (
-                                    filteredOptions.map(option => (
-                                        <button
-                                            key={option.id}
-                                            type="button"
-                                            onClick={() => handleSelect(option)}
-                                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${value === option.id
+                                    filteredOptions.map(option => {
+                                        const isSelected = multiple
+                                            ? selectedIds.includes(option.id)
+                                            : value === option.id;
+
+                                        return (
+                                            <button
+                                                key={option.id}
+                                                type="button"
+                                                onClick={() => handleSelect(option)}
+                                                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition flex items-center justify-between ${isSelected
                                                     ? "bg-yellow-400 text-gray-800 font-medium"
                                                     : "hover:bg-yellow-100 text-gray-700"
-                                                }`}
-                                        >
-                                            {option.name}
-                                        </button>
-                                    ))
+                                                    }`}
+                                            >
+                                                <span>{option.name}</span>
+                                                {multiple && isSelected && (
+                                                    <Check size={16} className="shrink-0" />
+                                                )}
+                                            </button>
+                                        );
+                                    })
                                 ) : (
                                     <div className="text-center py-4 text-gray-500 text-sm">
                                         No hay coincidencias

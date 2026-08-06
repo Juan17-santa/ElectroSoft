@@ -40,7 +40,14 @@ export default function CreateOrder() {
         indexOfFirstItem,
         itemsPerPage,
         paymentOptions,
-        loading
+        loading,
+        submitted,
+
+        showSummaryModal,
+        setShowSummaryModal,
+        requestedCredit,
+        setRequestedCredit,
+        handleOpenSummary
     } = useOrdersForm({
         onSuccess: () => {
             setAlert({
@@ -51,7 +58,11 @@ export default function CreateOrder() {
                 navigate("/dashboard/orders");
             }, 2000);
         },
-        onShowAlert: (msg) => setAlert({ type: "error", message: msg })
+        onShowAlert: (msg) =>
+            setAlert({
+                type: "error",
+                message: msg
+            })
     });
 
     // FUNCIÓN PARA GUARDAR UN NUEVO CLIENTE DESDE LA MODAL
@@ -105,7 +116,8 @@ export default function CreateOrder() {
                     formData={formData}
                     errors={errors}
                     handleChange={handleChange}
-                    handleSubmit={handleSubmit}
+                    handleSubmit={handleOpenSummary}
+                    onConfirmOrder={handleSubmit}
                     buttonText="Crear Pedido"
                     onCancel={() => setShowCancelModal(true)}
                     onOpenClientModal={() => setShowClientModal(true)}
@@ -122,6 +134,10 @@ export default function CreateOrder() {
                     itemsPerPage={itemsPerPage}
                     paymentOptions={paymentOptions}
                     loading={loading}
+                    showSummaryModal={showSummaryModal}
+                    setShowSummaryModal={setShowSummaryModal}
+                    requestedCredit={requestedCredit}
+                    setRequestedCredit={setRequestedCredit}
                 />
             </div>
 

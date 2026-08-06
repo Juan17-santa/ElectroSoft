@@ -3,6 +3,7 @@ import { IdCard, FileText, User, Mail, MapPin, Package, Phone, Building2, Info }
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import { useNavigate } from "react-router-dom";
+import CategorySelect from "../../../components/ui/CategorySelect";
 
 export default function ProviderForm({
     formData,
@@ -21,8 +22,9 @@ export default function ProviderForm({
     const navigate = useNavigate();
 
     const categoriasOptions = categorias.map(cat => ({
-        value: cat._id,
-        label: cat.name
+        id: cat._id,
+        name: cat.name,
+        status: cat.status
     }));
 
     const documentTypeOptions = documentTypes.map(doc => ({
@@ -375,7 +377,7 @@ export default function ProviderForm({
 
                     {/* CATEGORÍAS */}
                     <div className="flex flex-col gap-1 w-full">
-                        <CustomSelect
+                        <CategorySelect
                             label="Categorías Asociadas"
                             icon={Package}
                             options={categoriasOptions}

@@ -8,7 +8,6 @@ export const ServicesOrders = {
             const response = await fetch(API_URL);
             const resJson = await response.json();
 
-            // 🛡️ Tu controlador devuelve { data: [...] } o { error: ... } si falla
             if (!response.ok) throw new Error(resJson.error || "Error al obtener los pedidos");
 
             return resJson.data || resJson;
@@ -52,20 +51,17 @@ export const ServicesOrders = {
         }
     },
 
-    // 🎯 CANCELAR PEDIDO MANUALLY (¡El que faltaba!)
     async cancelOrder(id, cancelReason) {
         try {
             const response = await fetch(`${API_URL}/${id}/cancel`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ cancelReason }) // Enviamos el motivo en el body
+                body: JSON.stringify({ cancelReason })
             });
             const resJson = await response.json();
 
-            // 🛡️ Si tiene menos de 20 caracteres o no está pendiente, el backend responde con resJson.error
             if (!response.ok) throw new Error(resJson.error || "Error al cancelar el pedido");
 
-            // Tu backend devuelve: { message: "...", data: result }
             return resJson.data;
         } catch (error) {
             console.error(`Error en el servicio cancelOrder (ID: ${id}):`, error);
@@ -74,13 +70,14 @@ export const ServicesOrders = {
     },
 
     // CONFIRMAR PEDIDO Y CONVERTIRLO EN VENTA
-    async confirmOrder(id) {
+    async confirmOrder(id, confirmationData = {}) {
         try {
             const response = await fetch(`${API_URL}/${id}/confirm`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json"
-                }
+                },
+                body: JSON.stringify(confirmationData)
             });
             const resJson = await response.json();
 

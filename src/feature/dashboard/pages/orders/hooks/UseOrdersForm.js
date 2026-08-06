@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Validations } from "../../../../../utils/validations";
 import { ServicesOrders } from "../services/ServicesOrders";
 import { ClientsService } from "../../Clients/services/ClientsService";
+import paymentsService from "../../payments/services/paymentsService";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
 
 // HOOK PERSONALIZADO PARA GESTIONAR LA LÓGICA DEL FORMULARIO DE PEDIDOS
@@ -11,10 +11,10 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
     const today = new Date();
     const todayFormatted = today.toISOString().split("T")[0];
 
-    // FUNCION PARA CALCULAR EL VENCIMIENTO DE LA FECHA (15 DESPUES)
+    // FUNCION PARA CALCULAR EL VENCIMIENTO DE LA FECHA (2 DIAS DESPUES)
     const calculateVencimiento = (fecha) => {
         const date = new Date(fecha);
-        date.setDate(date.getDate() + 15);
+        date.setDate(date.getDate() + 2);
         return date.toISOString().split("T")[0];
     };
 
@@ -27,6 +27,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
         clienteCupoActivo: false,
         clienteCupoTotal: 0,
+        clienteCupoDisponible: 0,
 
         fechaPedido: todayFormatted,
         formaPago: "",
@@ -45,14 +46,17 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
     const [errors, setErrors] = useState({});
 
     const [loading, setLoading] = useState(false);
+    const [submitted, setSubmitted] = useState(false);
 
-    // DOCUMENTO CON RETARDO PARA EVITAR PETICIONES EN CADA TECLA
-    const [documentoBusqueda, setDocumentoBusqueda] = useState("");
+    // ESTADOS PARA EL MODAL DE RESUMEN Y EL CRÉDITO SOLICITADO
+    const [showSummaryModal, setShowSummaryModal] = useState(false);
+    const [requestedCredit, setRequestedCredit] = useState(0);
 
     // OPCIONES DE PAGO DISPONIBLES
     const paymentOptions = [
         { value: "Contado", label: "Contado" },
-        { value: "Credito", label: "Credito" }
+        { value: "Credito", label: "Credito" },
+        { value: "Mixto", label: "Mixto" }
     ];
 
     // PAGINADOR PARA LA LISTA DE PRODUCTOS AGREGADOS
@@ -85,6 +89,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                 formaPago: "",
                 clienteCupoActivo: false,
                 clienteCupoTotal: 0,
+                clienteCupoDisponible: 0,
             }));
             return;
         }
@@ -94,20 +99,39 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             `${c.nombres} ${c.apellidos}`.toLowerCase() === formData.documento.toLowerCase()
         );
         if (found && found.estado) {
-            setFormData(prev => ({
-                ...prev,
-                clienteId: found.id,
-                clienteNombre: `${found.nombres} ${found.apellidos}`,
-                clienteTipoDocumento: found.tipoDocumento,
-                clienteCupoActivo: found.cupoActivo,
-                clienteCupoTotal: found.cupoTotal || 0,
-            }));
-            setErrors(prev => ({ ...prev, documento: "" }));
+            // When selecting from cached clients, attempt to fetch cupoDisponible
+            (async () => {
+                let resumen = null;
+                try {
+                    resumen = await paymentsService.getResumenCliente(found.documento);
+                } catch (e) {
+                    // ignore and fallback
+                }
+
+                setFormData(prev => ({
+                    ...prev,
+                    clienteId: found.id,
+                    clienteNombre: `${found.nombres} ${found.apellidos}`,
+                    clienteTipoDocumento: found.tipoDocumento,
+                    clienteCupoActivo: found.cupoActivo,
+                    clienteCupoTotal: found.cupoTotal || 0,
+                    clienteCupoDisponible: resumen?.cupoDisponible ?? (found.cupoTotal || 0),
+                }));
+                setErrors(prev => ({ ...prev, documento: "" }));
+            })();
         } else if (formData.documento.length >= 8) {
             const timer = setTimeout(async () => {
                 try {
                     const clienteEncontrado = await ClientsService.getByDocument(formData.documento);
                     if (clienteEncontrado?.estado) {
+                        // Also fetch latest cupo disponible from payments service (considers abonos/pagos)
+                        let resumen = null;
+                        try {
+                            resumen = await paymentsService.getResumenCliente(clienteEncontrado.documento);
+                        } catch (e) {
+                            // fallback to assigned cupo if resumen fails
+                        }
+
                         setFormData(prev => ({
                             ...prev,
                             clienteId: clienteEncontrado.id,
@@ -115,6 +139,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                             clienteTipoDocumento: clienteEncontrado.tipoDocumento,
                             clienteCupoActivo: clienteEncontrado.cupoActivo,
                             clienteCupoTotal: clienteEncontrado.cupoTotal || 0,
+                            clienteCupoDisponible: resumen?.cupoDisponible ?? (clienteEncontrado.cupoTotal || 0),
                         }));
                         setErrors(prev => ({ ...prev, documento: "" }));
                     } else {
@@ -126,6 +151,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                             formaPago: "",
                             clienteCupoActivo: false,
                             clienteCupoTotal: 0,
+                            clienteCupoDisponible: 0,
                         }));
                     }
                 } catch (error) {
@@ -137,6 +163,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                         formaPago: "",
                         clienteCupoActivo: false,
                         clienteCupoTotal: 0,
+                        clienteCupoDisponible: 0,
                     }));
                 }
             }, 500);
@@ -150,6 +177,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                 formaPago: "",
                 clienteCupoActivo: false,
                 clienteCupoTotal: 0,
+                clienteCupoDisponible: 0,
             }));
         }
     }, [formData.documento, clients]);
@@ -190,18 +218,21 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                 break;
 
             case "formaPago":
-                if (!value) {
+                    if (!value) {
                     error = "La forma de pago es obligatoria";
-                } else if (value === "Credito") {
+                } else if (value === "Credito" || value === "Mixto") {
                     if (!formData.clienteCupoActivo) {
                         error = "Este cliente no tiene cupo de crédito asignado. Asígnale uno desde el módulo de Clientes para poder fiarle.";
-                    } else if (formData.clienteCupoTotal <= 0) {
+                        } else if (formData.clienteCupoDisponible <= 0) {
                         error = "El cliente no tiene cupo disponible.";
                     } else if (formData.total > 0 && formData.total < 10000) {
                         error = "El total es inferior a $10.000. No se permiten pedidos a crédito por montos tan bajos; cóbralo de Contado.";
-                    } else if (formData.total > formData.clienteCupoTotal) {
+                    }
+
+                    if (value === "Credito" && formData.total > formData.clienteCupoDisponible) {
                         const formatCOP = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(val || 0);
-                        error = `El total del pedido (${formatCOP(formData.total)}) supera el cupo de crédito del cliente (${formatCOP(formData.clienteCupoTotal)}).`;
+                        error = `El total del pedido (${formatCOP(formData.total)}) supera el cupo de crédito disponible del cliente (${formatCOP(formData.clienteCupoDisponible)}).
+                        Si desea fiarle, reduzca la cantidad de productos o elija otra forma de pago.`;
                     }
                 }
                 break;
@@ -215,8 +246,11 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     // VALIDACIÓN ESPECIAL PARA CREDITO CUANDO CAMBIAN LOS CAMPOS RELACIONADOS
     useEffect(() => {
-        if (formData.formaPago === "Credito") {
-            const error = validateField("formaPago", "Credito");
+        if (
+            formData.formaPago === "Credito" ||
+            formData.formaPago === "Mixto"
+        ) {
+            const error = validateField("formaPago", formData.formaPago);
 
             setErrors(prev => ({
                 ...prev,
@@ -226,8 +260,9 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
     }, [
         formData.formaPago,
         formData.total,
-        formData.clienteCupoActivo,
-        formData.clienteCupoTotal
+        formData.clienteCupoActive,
+        formData.clienteCupoTotal,
+        formData.clienteCupoDisponible
     ]);
 
     // MANEJADOR DE CAMBIOS CON ACTUALIZACIÓN DE FECHAS Y VALIDACIÓN
@@ -263,7 +298,6 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     // FUNCION PARA AÑADIR PRODUCTOS
     const addProduct = (productosNuevos) => {
-        // Normalizar: si llega un objeto solo, convertir a array
         const lista = Array.isArray(productosNuevos)
             ? productosNuevos
             : [productosNuevos];
@@ -392,17 +426,54 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
         return Object.keys(newErrors).length === 0;
     };
 
-    // PROCESAMIENTO DEL ENVÍO DEL FORMULARIO
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleOpenSummary = (e) => {
+        if (e && typeof e.preventDefault === "function") {
+            e.preventDefault();
+        }
 
         if (loading) return;
 
-        // DETENER LA EJECUCIÓN SI EL FORMULARIO NO ES VÁLIDO
         if (!validateForm()) return;
+
+        if (formData.formaPago === "Credito") {
+            setRequestedCredit(formData.total);
+        } else if (formData.formaPago === "Mixto") {
+            setRequestedCredit(0);
+        }
+
+        setErrors(prev => ({ ...prev, requestedCredit: "" }));
+        setShowSummaryModal(true);
+    };
+
+    // PROCESAMIENTO DEL ENVÍO DEL FORMULARIO
+    const handleSubmit = async (e) => {
+
+        if (e && typeof e.preventDefault === "function") {
+            e.preventDefault();
+        }
+
+        if (loading) return;
+
+        if (!validateForm()) return;
+
+        if (formData.formaPago === "Mixto") {
+            if (requestedCredit <= 0) {
+                setErrors(prev => ({ ...prev, requestedCredit: "Debe indicar cuánto crédito utilizará." }));
+                return;
+            }
+            if (requestedCredit > formData.clienteCupoDisponible) {
+                setErrors(prev => ({ ...prev, requestedCredit: "El crédito solicitado supera el cupo disponible." }));
+                return;
+            }
+            if (requestedCredit > formData.total) {
+                setErrors(prev => ({ ...prev, requestedCredit: "El crédito solicitado no puede ser mayor al total del pedido." }));
+                return;
+            }
+        }
 
         try {
             setLoading(true);
+            setErrors(prev => ({ ...prev, submit: "", requestedCredit: "" }));
 
             // PREPARAR LOS DATOS EN EL FORMATO QUE ESPERA EL BACKEND
             const orderData = {
@@ -410,7 +481,10 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                 client: formData.clienteId,
                 orderDate: formData.fechaPedido,
                 paymentMethod: formData.formaPago,
-
+                requestedCredit:
+                    formData.formaPago === "Mixto"
+                        ? Number(requestedCredit)
+                        : 0,
                 products: formData.productos.map(product => ({
                     product: product.id,
                     quantity: product.cantidad
@@ -420,11 +494,23 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             // ENVIAR LOS DATOS AL SERVICIO PARA CREAR EL PEDIDO
             const nuevoPedido = await ServicesOrders.createOrder(orderData);
 
+            setSubmitted(true);
+            setShowSummaryModal(false);
             onSuccess(nuevoPedido);
-
         } catch (error) {
             console.error(error);
-            setErrors(prev => ({ ...prev, submit: error.message || "Error al crear el pedido" }));
+            // Close the summary modal and show the backend error in the page-level Alert
+            try {
+                setShowSummaryModal(false);
+            } catch (e) { }
+
+            if (onShowAlert) {
+                onShowAlert(error.message || "Error al crear el pedido");
+            } else {
+                setErrors(prev => ({ ...prev, submit: error.message || "Error al crear el pedido" }));
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -447,6 +533,13 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
         indexOfFirstItem,
         itemsPerPage,
         paymentOptions,
-        loading
+        loading,
+        submitted,
+
+        showSummaryModal,
+        setShowSummaryModal,
+        requestedCredit,
+        setRequestedCredit,
+        handleOpenSummary,
     };
 }
