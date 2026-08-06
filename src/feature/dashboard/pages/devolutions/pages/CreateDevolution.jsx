@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
+import { ServicesProducts } from "../../products/services/ServicesProducts";
 import DevolutionForm from "../components/DevolutionForm";
 import ConfirmModal   from "../../../components/ui/ConfirmModal";
 import Alert          from "../../../components/ui/Alert";
@@ -9,6 +10,7 @@ import {
     SUBMOTIVOS,
     getGestionesPermitidas,
     getResponsableAuto,
+    calcularReembolsoTotal,
 } from "../helpers/devolutionsHelpers";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
@@ -131,6 +133,12 @@ function validarMontoReembolso(form, ventasList) {
     if (!Number.isFinite(monto) || monto <= 0) {
         return { valido: false, mensaje: "Ingresa el monto parcial a reembolsar." };
     }
+    if (monto < 100) {
+        return { valido: false, mensaje: "El monto mínimo a reembolsar es $100." };
+    }
+    if (monto > 999999999) {
+        return { valido: false, mensaje: "El monto no puede superar los 9 dígitos." };
+    }
     if (maximo <= 0) {
         return { valido: false, mensaje: "Selecciona producto y cantidad para calcular el maximo." };
     }
@@ -198,6 +206,7 @@ export default function CreateDevolution() {
     const [confirmData, setConfirmData]     = useState(null);
     const [alert, setAlert]                 = useState(null);
     const [garantiaVencidaMap, setGarantiaVencidaMap] = useState({});
+    const [stockDisponible, setStockDisponible] = useState(null);
 
     useEffect(() => {
         let active = true;
@@ -256,6 +265,30 @@ export default function CreateDevolution() {
             })
             .catch((err) => setAlert({ type: "error", message: err.message }));
     }, [form.idVenta, ventasList, form.producto]);
+
+    const { idVenta: idVentaForm, producto: productoForm, gestion: gestionForm } = form;
+
+    useEffect(() => {
+        let active = true;
+        const consultarStock = async () => {
+            if (gestionForm !== "MISMO_PRODUCTO" || !productoForm || !idVentaForm) {
+                setStockDisponible(null);
+                return;
+            }
+            const venta = ventasList.find((v) => String(v.id) === String(idVentaForm));
+            const producto = venta?.productos?.find((p) => p.nombre === productoForm);
+            const productoId = producto?.productoId || producto?.id;
+            if (!productoId) { setStockDisponible(null); return; }
+            try {
+                const prod = await ServicesProducts.getById(productoId);
+                if (active) setStockDisponible(Number(prod?.stock) || 0);
+            } catch {
+                if (active) setStockDisponible(null);
+            }
+        };
+        consultarStock();
+        return () => { active = false; };
+    }, [idVentaForm, productoForm, gestionForm, ventasList]);
 
     const handleChange = (field, value) => {
         let autoTouched = {};
@@ -332,6 +365,10 @@ export default function CreateDevolution() {
                     const devolucionData = {
                         ...form,
                         productoId: producto?.productoId || producto?.id,
+                        montoReembolso:
+                            form.gestion === "REEMBOLSO_TOTAL"
+                                ? calcularReembolsoTotal(form.cantidad, producto?.precio)
+                                : form.montoReembolso,
                     };
 
                     if (fromReturn) {
@@ -406,6 +443,9 @@ export default function CreateDevolution() {
         ...(productoPreCargado ? ["producto"] : []),
     ];
 
+    const ventaSeleccionada = ventasList.find((v) => String(v.id) === String(form.idVenta));
+    const saldoPendiente = Number(ventaSeleccionada?.montoPorPagar ?? 0) > 0;
+
     return (
         <>
             <DevolutionForm
@@ -422,6 +462,8 @@ export default function CreateDevolution() {
                 sinProductos={sinProductos}
                 readOnlyFields={readOnlyFields}
                 garantiaVencidaMap={garantiaVencidaMap}
+                stockDisponible={stockDisponible}
+                saldoPendiente={saldoPendiente}
             />
 
             {confirmData && (

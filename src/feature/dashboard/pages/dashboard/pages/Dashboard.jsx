@@ -89,8 +89,20 @@ export default function Dashboard() {
     const sum = (arr, fn) => arr.reduce((a, x) => a + fn(x), 0);
     const delta = (cur, prev) => prev ? ((cur - prev) / Math.abs(prev)) * 100 : 0;
 
-    const totalVentas = sum(salesNow, s => parseMoney(s.total));
-    const prevVentas = sum(salesPrev, s => parseMoney(s.total));
+    // Reembolsos que descuentan del monto de ventas: solo gestiones de reembolso,
+    // no anuladas ni rechazadas, con monto mayor a 0 (el monto incluye IVA).
+    const esReembolsoValido = (d) =>
+        d.estadoResolucion !== "Anulada" &&
+        d.estadoResolucion !== "RECHAZADA" &&
+        (d.gestion === "REEMBOLSO_TOTAL" || d.gestion === "REEMBOLSO_PARCIAL") &&
+        Number(d.montoReembolso) > 0;
+    const sumReembolso = (arr) => sum(arr, d => Number(d.montoReembolso || 0));
+
+    const reembolsosNow = raw.devolutions.filter(d => esReembolsoValido(d) && inM(d.creadoEn || d.fecha, year, month));
+    const reembolsosPrev = raw.devolutions.filter(d => esReembolsoValido(d) && inM(d.creadoEn || d.fecha, prevYM.y, prevYM.m));
+
+    const totalVentas = sum(salesNow, s => parseMoney(s.total)) - sumReembolso(reembolsosNow);
+    const prevVentas = sum(salesPrev, s => parseMoney(s.total)) - sumReembolso(reembolsosPrev);
     const prodVend = sum(salesNow, s => sum(s.productos || [], p => Number(p.cantidad || 0)));
     const prevProdVend = sum(salesPrev, s => sum(s.productos || [], p => Number(p.cantidad || 0)));
 
@@ -105,7 +117,9 @@ export default function Dashboard() {
         mes, total: sum(raw.compras.filter(c => inM(c.fechaCompra, year, i) && c.estado !== "Anulada"), c => parseMoney(c.total)),
     }));
     const serieVentas = MESES.map((mes, i) => ({
-        mes, total: sum(raw.sales.filter(s => inM(s.fecha, year, i) && s.estado !== "Anulado"), s => parseMoney(s.total)),
+        mes,
+        total: sum(raw.sales.filter(s => inM(s.fecha, year, i) && s.estado !== "Anulado"), s => parseMoney(s.total))
+            - sumReembolso(raw.devolutions.filter(d => esReembolsoValido(d) && inM(d.creadoEn || d.fecha, year, i))),
     }));
 
     const prodMap = {};

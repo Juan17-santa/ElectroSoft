@@ -73,6 +73,14 @@ export default function ReturnSalesPage() {
     const isYaDevuelto = sale.estado === "Devuelto";
     const esDevolucionParcial = sale.estado === "Devolución Parcial";
 
+    const totalMontoReembolsado = devolucionesVenta
+        .filter((d) =>
+            d.estadoResolucion !== "Anulada" &&
+            d.estadoResolucion !== "RECHAZADA" &&
+            (d.gestion === "REEMBOLSO_TOTAL" || d.gestion === "REEMBOLSO_PARCIAL"),
+        )
+        .reduce((s, d) => s + Number(d.montoReembolso || 0), 0);
+
     // ─── Paginación ───────────────────────────────────────────────────────────
     const totalProdPages = Math.max(1, Math.ceil(productos.length / PROD_PER_PAGE));
     const prodActual = Math.min(prodPage, totalProdPages);
@@ -117,20 +125,27 @@ export default function ReturnSalesPage() {
             type: "delete",
             title: "Eliminar devolución",
             message: `¿Eliminar la devolución del producto "${devolucion.producto}"? Esta acción no se puede deshacer.`,
-            onConfirm: () => {
-                if (String(devolucion.id).startsWith("temp-")) {
-                    const key = `pendingDevs_${sale.id}`;
-                    const localDevsStr = localStorage.getItem(key);
-                    if (localDevsStr) {
-                        const localDevs = JSON.parse(localDevsStr).filter(d => String(d.id) !== String(devolucion.id));
-                        localStorage.setItem(key, JSON.stringify(localDevs));
+            onConfirm: async () => {
+                try {
+                    if (String(devolucion.id).startsWith("temp-")) {
+                        const key = `pendingDevs_${sale.id}`;
+                        const localDevsStr = localStorage.getItem(key);
+                        if (localDevsStr) {
+                            const localDevs = JSON.parse(localDevsStr).filter(d => String(d.id) !== String(devolucion.id));
+                            localStorage.setItem(key, JSON.stringify(localDevs));
+                        }
+                    } else {
+                        await ServicesDevolutions.delete(devolucion.id);
+                        const saleActualizada = await SalesService.getById(sale.id);
+                        setSale(saleActualizada);
                     }
-                } else {
-                    ServicesDevolutions.delete(devolucion.id);
+                    setDevolucionesVenta((prev) => prev.filter((d) => String(d.id) !== String(devolucion.id)));
+                    setAlertMsg({ type: "success", message: "Devolución eliminada." });
+                } catch (error) {
+                    setAlertMsg({ type: "error", message: "Error eliminando devolución: " + error.message });
+                } finally {
+                    setConfirmData(null);
                 }
-                setDevolucionesVenta((prev) => prev.filter((d) => String(d.id) !== String(devolucion.id)));
-                setAlertMsg({ type: "success", message: "Devolución eliminada." });
-                setConfirmData(null);
             },
         });
     };
@@ -419,6 +434,7 @@ export default function ReturnSalesPage() {
                                     <th className="px-3 py-2.5 font-semibold">Motivo</th>
                                     <th className="px-3 py-2.5 font-semibold">Condición</th>
                                     <th className="px-3 py-2.5 font-semibold">Gestión</th>
+                                    <th className="px-3 py-2.5 font-semibold text-right">Subtotal</th>
                                     <th className="px-3 py-2.5 font-semibold">Estado resolución</th>
                                     <th className="px-3 py-2.5 font-semibold text-center w-32">Acciones</th>
                                 </tr>
@@ -426,7 +442,7 @@ export default function ReturnSalesPage() {
                             <tbody>
                                 {paginatedDevs.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="py-6 text-center text-gray-400 text-sm">
+                                        <td colSpan={8} className="py-6 text-center text-gray-400 text-sm">
                                             {isFromSales
                                                 ? "Usa el botón ↩ para agregar productos a devolver."
                                                 : "No hay productos devueltos para esta venta."}
@@ -442,6 +458,11 @@ export default function ReturnSalesPage() {
                                                 <td className="px-3 py-2.5 text-xs">{dev.motivo?.replace(/_/g, " ") || "—"}</td>
                                                 <td className="px-3 py-2.5 text-xs">{dev.condicionProducto?.replace(/_/g, " ") || "—"}</td>
                                                 <td className="px-3 py-2.5 text-xs">{dev.gestion?.replace(/_/g, " ") || "—"}</td>
+                                                <td className="px-3 py-2.5 text-xs text-right">
+                                                    {dev.gestion === "REEMBOLSO_TOTAL" || dev.gestion === "REEMBOLSO_PARCIAL"
+                                                        ? (Number(dev.montoReembolso) > 0 ? formatCOP(dev.montoReembolso) : "N/A")
+                                                        : "N/A"}
+                                                </td>
                                                 <td className="px-3 py-2.5 text-xs">
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getEstadoColor(dev.estadoResolucion)}`}>
                                                         {dev.estadoResolucion || "—"}
@@ -486,6 +507,14 @@ export default function ReturnSalesPage() {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+                    <div className="flex justify-end pt-3">
+                        <div className="flex items-center gap-2 text-sm">
+                            <span className="font-semibold text-gray-700">Total monto reembolsado:</span>
+                            <span className="font-bold text-green-700 text-base">
+                                {formatCOP(totalMontoReembolsado)}
+                            </span>
+                        </div>
                     </div>
                     <Paginator currentPage={devActual} totalPages={totalDevPages} onPageChange={setDevPage} />
                 </div>
