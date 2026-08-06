@@ -85,7 +85,7 @@ export default function useProvidersTable({
         });
     };
 
-    // FILTRADO DEL BUSCADOR (INCLUYE CATEGORÍAS ASOCIADAS)
+    // FILTRADO DEL BUSCADOR
     const filteredProviders = providers.filter(pro => {
         const query = searchTerm.trim().toLowerCase();
         if (!query) return true;
@@ -94,19 +94,13 @@ export default function useProvidersTable({
         const phone = pro.contactPhone ? String(pro.contactPhone) : "";
         const documentStr = pro.document ? String(pro.document).toLowerCase() : "";
 
-        // EXTRAER ABREVIATURA Y NOMBRE DEL TIPO DE DOCUMENTO PARA BUSQUEDA
+        // EXTRAER ABREVIATURA DEL TIPO DE DOCUMENTO 
         const docTypeAbbreviation = pro.documentType?.abbreviation ? String(pro.documentType.abbreviation).toLowerCase() : "";
-        const docTypeName = pro.documentType?.name ? String(pro.documentType.name).toLowerCase() : "";
-
-        // BUSQUEDA EN CATEGORÍAS ASOCIADAS
-        const matchesCategory = pro.categoriesAssociated?.some(cat => {
-            const catName = cat.name || cat.nombre || "";
-            return String(catName).toLowerCase().includes(query);
-        }) || false;
 
         const providerType = pro.providerType?.toLowerCase() || "";
-        const email = pro.email?.toLowerCase() || "";
-        const address = pro.address?.toLowerCase() || "";
+        const providerEmail = pro.providerEmail?.toLowerCase() || "";
+
+        const matchesDocTypeAbbreviation = docTypeAbbreviation === query;
 
         let matchesStatus = false;
         if (query === "activo") {
@@ -120,14 +114,10 @@ export default function useProvidersTable({
         return (
             pro.providerName?.toLowerCase().includes(query) ||
             documentStr.includes(query) ||
-            docTypeAbbreviation.includes(query) ||
-            docTypeName.includes(query) ||
-            pro.contactName?.toLowerCase().includes(query) ||
+            matchesDocTypeAbbreviation ||
             providerType.includes(query) ||
-            email.includes(query) ||
-            address.includes(query) ||
+            providerEmail.includes(query) ||
             phone.includes(query) ||
-            matchesCategory ||
             matchesStatus
         );
     });
