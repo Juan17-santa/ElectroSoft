@@ -191,13 +191,6 @@ export default function CreateSales() {
 
     // Ya no forzamos resetear a Contado — el usuario ve el error inline y decide
 
-    useEffect(() => {
-        setFormData(prev => ({
-            ...prev,
-            estado: formData.tipoVenta === "Contado" ? "Finalizado" : "Vigente"
-        }));
-    }, [formData.tipoVenta]);
-
     // Auto-llenar nombre del cliente cuando cambia el número de documento
     useEffect(() => {
         if (!formData.numeroDocumento) {
@@ -357,7 +350,6 @@ export default function CreateSales() {
                 diasPlazo: (formData.tipoVenta === "Credito" || formData.tipoVenta === "Mixto") ? Number(formData.diasPlazo) : null,
                 cliente: clienteNombre,
                 fecha: formData.fecha,
-                estado: formData.estado,
                 productos,
                 subtotal,
                 iva,

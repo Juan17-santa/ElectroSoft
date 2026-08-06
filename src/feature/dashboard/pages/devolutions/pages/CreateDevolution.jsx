@@ -53,6 +53,7 @@ const EMPTY_FORM = (() => {
         producto:           "",
         cantidad:           "",
         condicionProducto:  "",
+        regresarAlInventario: true,
         gestion:            "",
         responsable:        "",
         garantiaProveedor:  null,

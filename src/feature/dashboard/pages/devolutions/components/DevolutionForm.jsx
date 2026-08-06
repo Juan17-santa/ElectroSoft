@@ -215,6 +215,27 @@ export default function DevolutionForm({
                         width="w-full"
                         disabled={esReadOnly("condicionProducto")}
                     />
+                    {form.submotivo === "PRODUCTO_INCOMPLETO" &&
+                        form.condicionProducto === "BUEN_ESTADO" && (
+                        <label
+                            className={`flex items-center gap-2 mt-2 text-xs text-gray-500 cursor-pointer select-none ${
+                                esReadOnly("regresarAlInventario") ? "opacity-60 cursor-not-allowed" : ""
+                            }`}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={form.regresarAlInventario !== false}
+                                onChange={(e) => {
+                                    onChange("regresarAlInventario", e.target.checked);
+                                    onFieldBlur("condicionProducto");
+                                }}
+                                readOnly={esReadOnly("regresarAlInventario")}
+                                disabled={esReadOnly("regresarAlInventario")}
+                                className="h-4 w-4 accent-yellow-500"
+                            />
+                            <span >¿Regresar estos productos al inventario/stock?</span>
+                        </label>
+                    )}
                     <FieldStatus estado={estadoCampo("condicionProducto")} />
                 </Field>
 
@@ -257,7 +278,7 @@ export default function DevolutionForm({
                                     options={gestionesDisponibles.map((g) => ({
                                         value: g,
                                         label: g.replace(/_/g, " "),
-                                        disabled: saldoPendiente && (g === "REEMBOLSO_TOTAL" || g === "REEMBOLSO_PARCIAL"),
+                                        disabled: false,
                                     }))}
                                     placeholder={!form.motivo ? "Primero elige motivo" : (form.motivo === "CLIENTE" && !form.submotivo ? "Primero elige submotivo" : "Seleccionar...")}
                                     width="w-full"
@@ -274,10 +295,12 @@ export default function DevolutionForm({
                                     )}
                                 </div>
                             )}
-                            {saldoPendiente && (
-                                <div className="flex items-center gap-1 text-xs mt-1 text-amber-600">
+                            {(form.gestion === "REEMBOLSO_TOTAL" ||
+                                form.gestion === "REEMBOLSO_PARCIAL") &&
+                                saldoPendiente && (
+                                <div className="flex items-center gap-1 text-xs mt-1 text-sky-600">
                                     <span>
-                                        Esta venta tiene saldo pendiente. No se puede reembolsar en efectivo.
+                                        El reembolso se descontará del saldo pendiente de la venta.
                                     </span>
                                 </div>
                             )}

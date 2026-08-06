@@ -88,10 +88,20 @@ export function useDevolutions(ventasMap = null) {
     const anularPorVenta = async (idVenta) => {
         setError(null);
         const devolucionesVenta = await ServicesDevolutions.getBySaleId(idVenta);
+        const anulables = devolucionesVenta.filter((d) => d.estadoResolucion !== "Anulada");
+
+        // Si alguna devolución quedó en estado final, la tanda completa no se puede anular (R2)
+        const conEstadoFinal = anulables.some((d) =>
+            ["RESUELTO", "RECHAZADA"].includes(d.estadoResolucion),
+        );
+        if (conEstadoFinal) {
+            throw new Error(
+                "No se puede anular la tanda: hay devoluciones en estado final (RESUELTO o RECHAZADA).",
+            );
+        }
+
         const anuladas = await Promise.all(
-            devolucionesVenta
-                .filter((d) => d.estadoResolucion !== "Anulada")
-                .map((d) => ServicesDevolutions.anular(d.id)),
+            anulables.map((d) => ServicesDevolutions.anular(d.id)),
         );
 
         setDevolutions((prev) =>

@@ -75,6 +75,8 @@ function normalizeDevolution(devolution) {
         motivo: product.motivo || devolution.motivo || "",
         submotivo: product.submotivo || devolution.submotivo || "",
         condicionProducto: product.condicionProducto || devolution.condicionProducto || "",
+        regresarAlInventario:
+            product.regresarAlInventario ?? devolution.regresarAlInventario ?? true,
         gestion: product.gestion || devolution.gestion || "",
         responsable: product.responsable || devolution.responsable || "",
         garantiaProveedor:
@@ -109,6 +111,10 @@ function toApiPayload(data) {
                 motivo: producto.motivo,
                 submotivo: producto.submotivo || "",
                 condicionProducto: producto.condicionProducto || "",
+                regresarAlInventario:
+                    producto.regresarAlInventario === undefined
+                        ? true
+                        : producto.regresarAlInventario,
                 gestion: producto.gestion || "",
                 responsable: producto.responsable || "",
                 garantiaProveedor:

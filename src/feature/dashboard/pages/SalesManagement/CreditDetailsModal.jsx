@@ -32,12 +32,17 @@ export default function CreditDetailsPage() {
                 setSale(parsed);
 
                 ServicesDevolutions.getBySaleId(parsed.id).then(devoluciones => {
-                    const totalRetornado = devoluciones.reduce((sum, d) => {
-                        const prodPrice = parsed.productos?.find(p => p.nombre === d.producto)?.precio || 0;
-                        return sum + (Number(d.cantidad || 0) * prodPrice);
-                    }, 0);
-                    const totalRetornadoConIVA = totalRetornado * 1.19;
-                    setNetTotal(parsed.total - totalRetornadoConIVA);
+                    // RECHAZADA y anuladas no cuentan: se comportan como si nunca hubieran existido
+                    const devolucionesValidas = devoluciones.filter(
+                        (d) => d.estadoResolucion !== "Anulada" && d.estadoResolucion !== "RECHAZADA",
+                    );
+                    //   FIX: usar el reembolso real persistido por el backend (regla R6)
+                    // en vez de recalcular cantidad × precio × IVA adivinando el precio
+                    // por nombre de producto (causaba el descuadre de 278.334 vs 279.000).
+                    const reembolsos = devolucionesValidas
+                        .filter((d) => d.estadoResolucion === "RESUELTO")
+                        .reduce((sum, d) => sum + (Number(d.montoReembolso) || 0), 0);
+                    setNetTotal(parsed.total - reembolsos);
                 }).catch(e => console.error("Error al cargar devoluciones:", e));
 
 
@@ -47,7 +52,8 @@ export default function CreditDetailsPage() {
                         setSale(prev => ({
                             ...prev,
                             abonos: ventaEnriquecida.abonos || [],
-                            montoPagado: ventaEnriquecida.montoPagado || 0
+                            montoPagado: ventaEnriquecida.montoPagado || 0,
+                            montoPorPagar: ventaEnriquecida.montoPorPagar ?? prev.montoPorPagar
                         }));
                     }
                 }).catch(e => console.error("Error cargando abonos:", e));
@@ -110,12 +116,13 @@ export default function CreditDetailsPage() {
                 localStorage.setItem("saleToView", JSON.stringify(updatedSale));
 
                 ServicesDevolutions.getBySaleId(updatedSale.id).then(devoluciones => {
-                    const totalRetornado = devoluciones.reduce((sum, d) => {
-                        const prodPrice = updatedSale.productos?.find(p => p.nombre === d.producto)?.precio || 0;
-                        return sum + (Number(d.cantidad || 0) * prodPrice);
-                    }, 0);
-                    const totalRetornadoConIVA = totalRetornado * 1.19;
-                    setNetTotal(updatedSale.total - totalRetornadoConIVA);
+                    const devolucionesValidas = devoluciones.filter(
+                        (d) => d.estadoResolucion !== "Anulada" && d.estadoResolucion !== "RECHAZADA",
+                    );
+                    const reembolsos = devolucionesValidas
+                        .filter((d) => d.estadoResolucion === "RESUELTO")
+                        .reduce((sum, d) => sum + (Number(d.montoReembolso) || 0), 0);
+                    setNetTotal(updatedSale.total - reembolsos);
                 }).catch(e => console.error("Error al refrescar devoluciones:", e));
             }
         } catch (error) {
@@ -202,7 +209,7 @@ export default function CreditDetailsPage() {
                     totals: [
                         `Monto Total: ${formatCOP(sale.total)}`,
                         `Monto Neto: ${formatCOP(netTotal)}`,
-                        `Saldo Real Pendiente: ${formatCOP(Math.max(0, netTotal - sale.montoPagado))}`
+                        `Saldo Real Pendiente: ${formatCOP(sale.montoPorPagar ?? Math.max(0, netTotal - sale.montoPagado))}`
                     ]
                 });
 
@@ -291,7 +298,7 @@ export default function CreditDetailsPage() {
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-400 leading-none mb-1">Saldo Real Pendiente</p>
-                                    <p className="font-bold text-yellow-600 text-[17px]">{formatCOP(Math.max(0, netTotal - sale.montoPagado))}</p>
+                                    <p className="font-bold text-yellow-600 text-[17px]">{formatCOP(sale.montoPorPagar ?? Math.max(0, netTotal - sale.montoPagado))}</p>
                                 </div>
                             </div>
                         </div>
@@ -301,7 +308,7 @@ export default function CreditDetailsPage() {
                             <button
                                 type="button"
                                 onClick={handleIrAPagos}
-                                disabled={sale.estado === "Finalizado" || sale.estado === "Anulado" || sale.estado === "Devuelto"}
+                                disabled={sale.estado === "Finalizado" || sale.estado === "Anulado" || sale.estado === "ANULADA"}
                                 className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-yellow-600 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             >
                                 <Plus size={18} className="text-gray-600 bg-gray-100 rounded-full p-0.5" />

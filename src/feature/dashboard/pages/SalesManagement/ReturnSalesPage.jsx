@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Eye, Pencil, Trash2, Undo2, X, FileText, History, ArrowLeft } from "lucide-react";
+import { Eye, Pencil, Trash2, Undo2, FileText, History, ArrowLeft } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
@@ -33,6 +33,10 @@ export default function ReturnSalesPage() {
     const isFromSales = mode === "from-sales";
     const isViewOnly = mode === "view-only";
     const isEditable = mode === "editable";
+    // Cuando se abre desde Ventas se ocultan anuladas/RECHAZADAS; cuando se abre
+    // desde Control de Devoluciones (sin origin "sales") se muestran todas como
+    // registro de auditoría.
+    const desdeVentas = isFromSales || location.state?.origin === "sales";
 
     // ─── Cargar venta ─────────────────────────────────────────────────────────
     useEffect(() => {
@@ -50,14 +54,21 @@ export default function ReturnSalesPage() {
         if (sale?.id) {
             ServicesDevolutions.getBySaleId(sale.id)
                 .then((devs) => {
-                    const devsActivas = devs.filter(d => d.estadoResolucion !== "Anulada");
+                    // En Ventas solo se muestran devoluciones contables activas: anuladas y
+                    // RECHAZADAS quedan ocultas (R1: RECHAZADA se comporta como si nunca
+                    // hubiera existido). Desde Control de Devoluciones sí se muestran todas.
+                    const devsActivas = desdeVentas
+                        ? devs.filter(
+                            (d) => !d.anulada && d.estadoResolucion !== "Anulada" && d.estadoResolucion !== "RECHAZADA",
+                        )
+                        : devs;
                     const localDevsStr = localStorage.getItem(`pendingDevs_${sale.id}`);
                     const localDevs = localDevsStr ? JSON.parse(localDevsStr) : [];
                     setDevolucionesVenta([...devsActivas, ...localDevs]);
                 })
                 .catch(e => console.error("Error cargando devoluciones:", e));
         }
-    }, [sale?.id]);
+    }, [sale?.id, desdeVentas]);
 
     useEffect(() => { recargarDevoluciones(); }, [recargarDevoluciones]);
 
@@ -67,11 +78,15 @@ export default function ReturnSalesPage() {
 
     const cantidadDevueltaPorProductoId = (productoId) =>
         devolucionesVenta
-            .filter((d) => d.estadoResolucion !== "Anulada" && d.productoId === productoId)
+            .filter(
+                (d) =>
+                    d.estadoResolucion !== "Anulada" &&
+                    d.estadoResolucion !== "RECHAZADA" &&
+                    d.productoId === productoId,
+            )
             .reduce((s, d) => s + Number(d.cantidad || 0), 0);
 
     const isYaDevuelto = sale.estado === "Devuelto";
-    const esDevolucionParcial = sale.estado === "Devolución Parcial";
 
     const totalMontoReembolsado = devolucionesVenta
         .filter((d) =>
@@ -121,13 +136,23 @@ export default function ReturnSalesPage() {
     };
 
     const handleEliminar = (devolucion) => {
+        const esTemporal = String(devolucion.id).startsWith("temp-");
+
+        if (!esTemporal && ESTADOS_BLOQUEADOS.includes(devolucion.estadoResolucion)) {
+            setAlertMsg({
+                type: "error",
+                message: `No se puede anular una devolución en estado ${devolucion.estadoResolucion}.`,
+            });
+            return;
+        }
+
         setConfirmData({
             type: "delete",
             title: "Eliminar devolución",
             message: `¿Eliminar la devolución del producto "${devolucion.producto}"? Esta acción no se puede deshacer.`,
             onConfirm: async () => {
                 try {
-                    if (String(devolucion.id).startsWith("temp-")) {
+                    if (esTemporal) {
                         const key = `pendingDevs_${sale.id}`;
                         const localDevsStr = localStorage.getItem(key);
                         if (localDevsStr) {
@@ -182,6 +207,46 @@ export default function ReturnSalesPage() {
                     setTimeout(() => navigate("/dashboard/sales-management"), 1500);
                 } catch (error) {
                     setAlertMsg({ type: "error", message: "Error registrando devolución: " + error.message });
+                    setConfirmData(null);
+                }
+            },
+        });
+    };
+
+    // Anula todas las devoluciones registradas (no temporales) de la venta.
+    // La venta queda limpia (Vigente/Finalizado) y el stock se revierte (R8).
+    const handleCancelarTanda = () => {
+        const registradas = devolucionesVenta.filter((d) => !String(d.id).startsWith("temp-"));
+        if (registradas.length === 0) return;
+
+        const tandaConFinal = registradas.some((d) => ESTADOS_BLOQUEADOS.includes(d.estadoResolucion));
+        if (tandaConFinal) {
+            setAlertMsg({
+                type: "error",
+                message: "No se puede anular la tanda: hay devoluciones en estado final (RESUELTO o RECHAZADA).",
+            });
+            return;
+        }
+
+        setConfirmData({
+            type: "warning",
+            title: "Cancelar tanda de devolución",
+            message: `Se anularán las ${registradas.length} devolución(es) registrada(s) de esta venta. La venta volverá a su estado normal (Vigente o Finalizado según el saldo) y el stock se revertirá. ¿Continuar?`,
+            onConfirm: async () => {
+                try {
+                    for (const dev of registradas) {
+                        await ServicesDevolutions.anular(dev.id);
+                    }
+                    const saleActualizada = await SalesService.getById(sale.id);
+                    setSale(saleActualizada);
+                    recargarDevoluciones();
+                    setAlertMsg({
+                        type: "success",
+                        message: "Tanda de devolución anulada. La venta quedó en estado normal.",
+                    });
+                } catch (error) {
+                    setAlertMsg({ type: "error", message: "Error anulando la tanda: " + error.message });
+                } finally {
                     setConfirmData(null);
                 }
             },
@@ -450,7 +515,9 @@ export default function ReturnSalesPage() {
                                     </tr>
                                 ) : (
                                     paginatedDevs.map((dev) => {
-                                        const bloqueado = ESTADOS_BLOQUEADOS.includes(dev.estadoResolucion);
+                                        const esTemporal = String(dev.id).startsWith("temp-");
+                                        // Las temporales (borradores locales) siempre son editables (R5)
+                                        const bloqueado = !esTemporal && ESTADOS_BLOQUEADOS.includes(dev.estadoResolucion);
                                         return (
                                             <tr key={dev.id} className="border-b border-gray-100 hover:bg-gray-50">
                                                 <td className="px-3 py-2.5 text-xs font-medium">{dev.producto}</td>
@@ -495,7 +562,12 @@ export default function ReturnSalesPage() {
                                                         )}
                                                         {/* Eliminar — solo from-sales */}
                                                         {isFromSales && (
-                                                            <button title="Eliminar devolución" onClick={() => handleEliminar(dev)} className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer">
+                                                            <button
+                                                                title={bloqueado ? "No se puede anular una devolución en estado final" : "Eliminar devolución"}
+                                                                onClick={() => handleEliminar(dev)}
+                                                                disabled={bloqueado}
+                                                                className={`p-1.5 rounded-lg transition ${bloqueado ? "bg-gray-100 opacity-40 cursor-not-allowed" : "bg-red-100 hover:bg-red-200 cursor-pointer"}`}
+                                                            >
                                                                 <Trash2 size={14} className="text-red-600" />
                                                             </button>
                                                         )}
@@ -527,6 +599,14 @@ export default function ReturnSalesPage() {
                             className="px-6 py-2.5 bg-linear-to-r from-white to-yellow-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
                         >
                             Registrar devolución
+                        </button>
+                    )}
+                    {isFromSales && devolucionesVenta.some((d) => !String(d.id).startsWith("temp-")) && (
+                        <button
+                            onClick={handleCancelarTanda}
+                            className="px-6 py-2.5 bg-linear-to-r from-white to-red-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
+                        >
+                            Cancelar tanda de devolución
                         </button>
                     )}
                 </div>

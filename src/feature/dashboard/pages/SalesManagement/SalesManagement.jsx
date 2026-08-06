@@ -31,7 +31,7 @@ function esVentaConDevolucion(estado) {
 }
 
 function validarAnulacion(sale) {
-    if (sale.estado === "Anulado" || esVentaConDevolucion(sale.estado)) {
+    if (["ANULADA", "Anulado"].includes(sale.estado) || esVentaConDevolucion(sale.estado)) {
         return { puedeAnularse: false, razon: "La venta ya no puede ser anulada por su estado." };
     }
 
@@ -287,7 +287,7 @@ export default function SalesManagement() {
         switch (estado) {
             case "Finalizado": case "Finalizadas": return "bg-green-100 text-green-700";
             case "Vigente": return "bg-yellow-100 text-yellow-700";
-            case "Anulado": return "bg-red-100 text-red-700";
+            case "Anulado": case "ANULADA": return "bg-red-100 text-red-700";
             case "Devuelto": return "bg-gray-100 text-gray-700";
             case "Devolución Parcial": return "bg-amber-100 text-amber-700";
             default: return "bg-gray-100 text-gray-700";
@@ -371,11 +371,14 @@ export default function SalesManagement() {
                                                     {/* DEVOLVER */}
                                                     <Restricted scope="Ventas" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            {sale.estado === "Anulado" ? (
-                                                                <CancellationInfoTooltip cancelInfo={{
-                                                                    fechaAnulacion: sale.anuladaEn || sale.fecha,
-                                                                    motivo: sale.observaciones || "Anulación registrada sin motivo."
-                                                                }} />
+                                                            {sale.estado === "Anulado" || sale.estado === "ANULADA" ? (
+                                                                <button
+                                                                    disabled
+                                                                    title="Venta anulada"
+                                                                    className="p-2 rounded-lg bg-gray-100 opacity-50 cursor-not-allowed"
+                                                                >
+                                                                    <Undo2 size={18} className="text-gray-400" />
+                                                                </button>
                                                             ) : (
                                                                 <button
                                                                     className={`p-2 rounded-lg transition duration-300 cursor-pointer ${sale.estado === "Devuelto" ? "bg-gray-100 hover:bg-gray-200" : "bg-yellow-100 hover:bg-yellow-200"}`}
@@ -402,7 +405,7 @@ export default function SalesManagement() {
                                                     {/* ANULAR */}
                                                     <Restricted scope="Ventas" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            {sale.estado === "Anulado" ? (
+                                                            {sale.estado === "Anulado" || sale.estado === "ANULADA" ? (
                                                                 <CancellationInfoTooltip cancelInfo={{
                                                                     fechaAnulacion: sale.anuladaEn || sale.fecha,
                                                                     motivo: sale.observaciones || "Anulación registrada sin motivo."

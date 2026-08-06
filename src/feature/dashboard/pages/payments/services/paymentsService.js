@@ -80,9 +80,12 @@ const esCredito = (tipoVenta) =>
 const esAnulada = (estado) =>
     estado === "Anulada" || estado === "Anulado" || estado === "ANULADA";
 
-//   FIX: Las ventas ANULADAS no deben aparecer en pagos pendientes
+//   FIX: Las ventas ANULADAS no deben aparecer en pagos pendientes.
+// Incluye ventas con devoluciones activas (Devuelto / Devolución Parcial):
+// la regla R3 permite registrar abonos en esas ventas.
 const esPendiente = (estado) =>
-    estado === "Vigente" || estado === "ACTIVA" || estado === "Pendiente";
+    estado === "Vigente" || estado === "ACTIVA" || estado === "Pendiente" ||
+    estado === "Devuelto" || estado === "Devolución Parcial";
 
 //   Helper: parsea la respuesta de /payments/venta/:id correctamente.
 // El backend devuelve { venta, totalPagado, saldoPendiente, estadoPago, pagos: [] }
@@ -160,12 +163,9 @@ const paymentsService = {
                     anulado: p.estado === 'ANULADO' || false
                 }));
 
-                const pagoInicial = (s.tipoVenta === 'Mixto' || s.formaPago === 'Mixto') ? (Number(s.montoContado) || 0) : 0;
-                const sumaAbonos = abonos
-                    .filter(a => !a.anulado)
-                    .reduce((acc, a) => acc + Number(a.monto), 0);
-                const totalAbonado = pagoInicial + sumaAbonos;
-                const montoPorPagar = s.total - totalAbonado;
+                //   FIX: usar el saldo canónico que envía GET /sales (descuenta pagos
+                //   Y reembolsos de devoluciones RESUELTAS, regla R6). No recalcular a mano.
+                const montoPorPagar = Number(s.montoPorPagar) > 0 ? Number(s.montoPorPagar) : 0;
                 //   FIX: calcular estado Finalizado cuando ya está pagado
                 const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : s.estado;
 
@@ -173,8 +173,8 @@ const paymentsService = {
                     ...s,
                     fuente: "venta",
                     cliente: s.cliente || await getClientName(s.numeroDocumento, null),
-                    montoPagado: totalAbonado,
-                    montoPorPagar: montoPorPagar > 0 ? montoPorPagar : 0,
+                    montoPagado: Number(s.montoPagado) > 0 ? Number(s.montoPagado) : 0,
+                    montoPorPagar,
                     estado: estadoFinal,
                     abonos
                 });
@@ -231,10 +231,13 @@ const paymentsService = {
 
         if (venta) {
             let abonos = [];
+            let saldoPendiente = null;
+            let totalPagado = null;
             try {
                 const payRes = await api.get(`/payments/venta/${venta.id}`);
                 //   FIX: parsear correctamente la respuesta del backend
-                const pagosRaw = parsePagosResponse(payRes.data.data || payRes.data);
+                const responseData = payRes.data.data || payRes.data;
+                const pagosRaw = parsePagosResponse(responseData);
                 abonos = pagosRaw.map(p => ({
                     id: p._id || p.id,
                     fecha: localDate(p.fechaPago),
@@ -243,18 +246,26 @@ const paymentsService = {
                     metodoPago: p.metodoPago,
                     anulado: p.estado === 'ANULADO' || false
                 }));
+                //   FIX: usar el saldo canónico que calcula el backend (descuenta pagos
+                //   y reembolsos de devoluciones RESUELTAS, regla R6). No recalcular a mano.
+                if (responseData && !Array.isArray(responseData)) {
+                    saldoPendiente = responseData.saldoPendiente;
+                    totalPagado = responseData.totalPagado;
+                }
             } catch (e) {
                 console.error(`Error fetching abonos for sale ${venta.id}:`, e);
             }
 
             const sumaAbonos = abonos.filter(a => !a.anulado).reduce((acc, a) => acc + Number(a.monto), 0);
             const pagoInicial = (venta.tipoVenta === 'Mixto' || venta.formaPago === 'Mixto') ? (Number(venta.montoContado) || 0) : 0;
-            const totalAbonado = pagoInicial + sumaAbonos;
-            const montoPorPagar = venta.total - totalAbonado > 0 ? venta.total - totalAbonado : 0;
+            const montoPorPagar = saldoPendiente != null
+                ? (Number(saldoPendiente) > 0 ? Number(saldoPendiente) : 0)
+                : (venta.total - pagoInicial - sumaAbonos > 0 ? venta.total - pagoInicial - sumaAbonos : 0);
+            const montoPagado = totalPagado != null ? (Number(totalPagado) || 0) : (pagoInicial + sumaAbonos);
             const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : venta.estado;
             return enriquecerVenta({
                 ...venta,
-                montoPagado: totalAbonado,
+                montoPagado,
                 montoPorPagar,
                 estado: estadoFinal,
                 abonos
