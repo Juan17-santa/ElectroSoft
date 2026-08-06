@@ -213,46 +213,6 @@ export default function ReturnSalesPage() {
         });
     };
 
-    // Anula todas las devoluciones registradas (no temporales) de la venta.
-    // La venta queda limpia (Vigente/Finalizado) y el stock se revierte (R8).
-    const handleCancelarTanda = () => {
-        const registradas = devolucionesVenta.filter((d) => !String(d.id).startsWith("temp-"));
-        if (registradas.length === 0) return;
-
-        const tandaConFinal = registradas.some((d) => ESTADOS_BLOQUEADOS.includes(d.estadoResolucion));
-        if (tandaConFinal) {
-            setAlertMsg({
-                type: "error",
-                message: "No se puede anular la tanda: hay devoluciones en estado final (RESUELTO o RECHAZADA).",
-            });
-            return;
-        }
-
-        setConfirmData({
-            type: "warning",
-            title: "Cancelar tanda de devolución",
-            message: `Se anularán las ${registradas.length} devolución(es) registrada(s) de esta venta. La venta volverá a su estado normal (Vigente o Finalizado según el saldo) y el stock se revertirá. ¿Continuar?`,
-            onConfirm: async () => {
-                try {
-                    for (const dev of registradas) {
-                        await ServicesDevolutions.anular(dev.id);
-                    }
-                    const saleActualizada = await SalesService.getById(sale.id);
-                    setSale(saleActualizada);
-                    recargarDevoluciones();
-                    setAlertMsg({
-                        type: "success",
-                        message: "Tanda de devolución anulada. La venta quedó en estado normal.",
-                    });
-                } catch (error) {
-                    setAlertMsg({ type: "error", message: "Error anulando la tanda: " + error.message });
-                } finally {
-                    setConfirmData(null);
-                }
-            },
-        });
-    };
-
     const handleGenerarPDF = () => {
         const doc = new jsPDF();
         const numeroVenta = String(sale.numeroVenta || "").padStart(2, "0");
@@ -599,14 +559,6 @@ export default function ReturnSalesPage() {
                             className="px-6 py-2.5 bg-linear-to-r from-white to-yellow-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
                         >
                             Registrar devolución
-                        </button>
-                    )}
-                    {isFromSales && devolucionesVenta.some((d) => !String(d.id).startsWith("temp-")) && (
-                        <button
-                            onClick={handleCancelarTanda}
-                            className="px-6 py-2.5 bg-linear-to-r from-white to-red-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
-                        >
-                            Cancelar tanda de devolución
                         </button>
                     )}
                 </div>
