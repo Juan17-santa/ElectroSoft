@@ -34,9 +34,9 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage, showAler
         }
     };
 
-    const processOrderToSale = async (id) => {
+    const processOrderToSale = async (id, confirmationData) => {
         try {
-            await ServicesOrders.confirmOrder(id);
+            await ServicesOrders.confirmOrder(id, confirmationData);
             await loadOrders();
         } catch (error) {
             console.error(error);

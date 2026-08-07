@@ -1,4 +1,4 @@
-import { Boxes, CircleUser, FileText, Plus, Minus, X, Trash, CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Boxes, CircleUser, FileText, Plus, Minus, X, Trash, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Calendar from "../../../components/ui/Calendar";
@@ -6,6 +6,7 @@ import AddProductModal from "../../../components/ui/AddProductModal";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import Pagination from "../../../components/ui/Pagination";
 import CustomSelect from "../../../components/ui/CustomSelect";
+import OrderSummaryModal from "./OrderSummaryModal";
 
 // COMPONENTE PRINCIPAL DEL FORMULARIO DE PEDIDOS
 export default function OrdersForm({
@@ -13,6 +14,7 @@ export default function OrdersForm({
     errors,
     handleChange,
     handleSubmit,
+    onConfirmOrder,
     buttonText,
     onCancel,
     onOpenClientModal,
@@ -28,7 +30,12 @@ export default function OrdersForm({
     indexOfFirstItem,
     itemsPerPage,
     paymentOptions,
-    loading
+    loading,
+    submitted,
+    showSummaryModal,
+    setShowSummaryModal,
+    requestedCredit,
+    setRequestedCredit
 }) {
 
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
@@ -254,10 +261,9 @@ export default function OrdersForm({
 
                         {/* TIPO DE PAGO */}
                         <div className="flex flex-col gap-2 w-full">
-
                             <CustomSelect
-                                label="Forma de pago *"
-                                icon={CreditCard}
+                                label="Tipo de pedido *"
+                                icon={FileText}
                                 value={formData.formaPago}
                                 onChange={(value) =>
                                     handleChange({
@@ -265,26 +271,35 @@ export default function OrdersForm({
                                     })
                                 }
                                 options={paymentOptions}
-                                placeholder="Seleccionar tipo"
+                                placeholder="Seleccione el tipo de pedido"
                             />
 
-                            {/* Error inline de crédito — siempre visible si hay problema */}
-                            {formData.formaPago === "Credito" && errors.formaPago ? (
+                            {(
+                                (formData.formaPago === "Credito" ||
+                                    formData.formaPago === "Mixto") &&
+                                errors.formaPago
+                            ) ? (
                                 <div className="flex items-start gap-1.5 mt-1.5 px-3 py-2 bg-red-50 border border-red-200 rounded-xl">
                                     <AlertCircle size={13} className="text-red-500 mt-0.5 shrink-0" />
                                     <span className="text-xs text-red-600 leading-snug">{errors.formaPago}</span>
                                 </div>
                             ) : (
                                 <ValidationMessage
-                                    error={errors.formaPago && formData.formaPago !== "Credito" ? errors.formaPago : ""}
+                                    error={
+                                        errors.formaPago &&
+                                            formData.formaPago !== "Credito" &&
+                                            formData.formaPago !== "Mixto"
+                                            ? errors.formaPago
+                                            : ""
+                                    }
                                     success={
                                         formData.formaPago &&
                                         !errors.formaPago
                                     }
                                     successMessage={
-                                        formData.formaPago === "Credito"
-                                            ? `Crédito aprobado - Cupo disponible: ${formatCurrency(formData.clienteCupoTotal)}`
-                                            : "Forma de pago válida"
+                                        formData.formaPago === "Credito" || formData.formaPago === "Mixto"
+                                            ? `Crédito aprobado - Cupo disponible: ${formatCurrency(formData.clienteCupoDisponible)}`
+                                            : "Tipo de pedido válido"
                                     }
                                 />
                             )}
@@ -427,13 +442,27 @@ export default function OrdersForm({
                         <PrimaryButton
                             type="submit"
                             loading={loading}
-                            disabled={loading || Object.values(errors).some(error => error)}
+                            disabled={submitted || loading || Object.values(errors).some(error => error)}
                         >
                             {buttonText}
                         </PrimaryButton>
                     </div>
                 </div>
             </form>
+
+            {/* MODAL DE RESUMEN DEL PEDIDO */}
+            <OrderSummaryModal
+                isOpen={showSummaryModal}
+                onClose={() => setShowSummaryModal(false)}
+                onConfirm={onConfirmOrder}
+                total={formData.total}
+                paymentMethod={formData.formaPago}
+                availableCredit={formData.clienteCupoDisponible}
+                requestedCredit={requestedCredit}
+                setRequestedCredit={setRequestedCredit}
+                loading={loading}
+                errorRequestedCredit={errors.requestedCredit}
+            />
 
             {/* MODAL PARA AÑADIR PRODUCTOS */}
             <AddProductModal

@@ -38,7 +38,14 @@ export default function CreateOrder() {
         indexOfFirstItem,
         itemsPerPage,
         paymentOptions,
-        loading
+        loading,
+        submitted,
+
+        showSummaryModal,
+        setShowSummaryModal,
+        requestedCredit,
+        setRequestedCredit,
+        handleOpenSummary
     } = useOrdersForm({
         onSuccess: () => {
             showToast("success", "Pedido registrado con éxito.");
@@ -97,7 +104,8 @@ export default function CreateOrder() {
                     formData={formData}
                     errors={errors}
                     handleChange={handleChange}
-                    handleSubmit={handleSubmit}
+                    handleSubmit={handleOpenSummary}
+                    onConfirmOrder={handleSubmit}
                     buttonText="Crear Pedido"
                     onCancel={() => setShowCancelModal(true)}
                     onOpenClientModal={() => setShowClientModal(true)}
@@ -114,6 +122,10 @@ export default function CreateOrder() {
                     itemsPerPage={itemsPerPage}
                     paymentOptions={paymentOptions}
                     loading={loading}
+                    showSummaryModal={showSummaryModal}
+                    setShowSummaryModal={setShowSummaryModal}
+                    requestedCredit={requestedCredit}
+                    setRequestedCredit={setRequestedCredit}
                 />
             </div>
 

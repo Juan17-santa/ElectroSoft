@@ -75,7 +75,7 @@ export default function CustomSelect({
                     <span className="truncate min-w-0 flex-1 text-left">{getLabel()}</span>
                     <ChevronDown
                         size={18}
-                        className={`transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`}
+                        className={`transition-transform shrink-0 ${open ? "rotate-180" : ""}`}
                     />
                 </button>
 
