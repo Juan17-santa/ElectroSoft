@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { RolesService } from "../Roles/services/RolesService.js";
 import { useRoleForm } from "../Roles/hooks/useRoleForm.jsx";
 import RoleForm from "../Roles/components/RoleForm";
-import Alert from "../../components/ui/Alert";
 import { X } from "lucide-react";
+import { useToast } from "../../../../context/ToastContext";
 
 export default function CreateRoles() {
     const navigate = useNavigate();
-    const [alert, setAlert] = useState(null);
+    const { showToast } = useToast();
 
     const formHook = useRoleForm({
         onSubmit: async (formData) => {
@@ -18,7 +18,7 @@ export default function CreateRoles() {
                     descripcion: formData.descripcion,
                     permisos:    formData.permisos,
                 });
-                setAlert({ type: "success", message: "Rol creado correctamente." });
+                showToast("success", "Rol creado correctamente.");
                 setTimeout(() => navigate("/dashboard/roles"), 1500);
             } catch (error) {
                 const message = error.response?.data?.message || "Error al crear el rol";
@@ -48,10 +48,6 @@ export default function CreateRoles() {
                     />
                 </div>
             </div>
-
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
-            )}
         </>
     );
 }

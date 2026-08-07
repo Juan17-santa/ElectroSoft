@@ -7,17 +7,17 @@ import Pagination from "../../../components/ui/Pagination";
 import { CreditCard } from "lucide-react";
 import { generarReporteGeneral, generarReporteGeneralPDF } from "../hooks/reportesPayments";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function Payments() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { showToast } = useToast();
 
     const [clientes, setClientes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [showReportModal, setShowReportModal] = useState(false);
-    const [alert, setAlert] = useState()
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
@@ -29,11 +29,11 @@ export default function Payments() {
             setClientes(data);
         } catch (err) {
             const message = "No se pudieron cargar los créditos." || err.message;
-            setAlert({ type: "error", message });
+            showToast("error", message);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [showToast]);
 
     // Recarga al navegar a esta ruta
     useEffect(() => {
@@ -134,27 +134,14 @@ export default function Payments() {
                                 generarReporteGeneral(clientes, fechaInicio, fechaFin);
                             }
 
-                            setAlert({
-                                type: "success",
-                                message: "El reporte se generó correctamente"
-                            });
+                            showToast("success", "El reporte se generó correctamente");
 
                         } catch (error) {
-                            setAlert({
-                                type: "error",
-                                message: "Hubo un error al generar el reporte"
-                            });
+                            showToast("error", "Hubo un error al generar el reporte");
                         }
 
                         setShowReportModal(false);
                     }}
-                />
-            )}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </div>

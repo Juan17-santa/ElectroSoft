@@ -4,11 +4,11 @@ import { Eye, Pencil, Trash2, Undo2, FileText, History, ArrowLeft } from "lucide
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
-import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import StatusHistoryModal from "../devolutions/components/StatusHistoryModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { useToast } from "../../../../context/ToastContext";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
@@ -19,10 +19,10 @@ const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 export default function ReturnSalesPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { showToast } = useToast();
 
     const [sale, setSale] = useState(null);
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
-    const [alertMsg, setAlertMsg] = useState(null);
     const [confirmData, setConfirmData] = useState(null);
     const [prodPage, setProdPage] = useState(1);
     const [devPage, setDevPage] = useState(1);
@@ -139,10 +139,7 @@ export default function ReturnSalesPage() {
         const esTemporal = String(devolucion.id).startsWith("temp-");
 
         if (!esTemporal && ESTADOS_BLOQUEADOS.includes(devolucion.estadoResolucion)) {
-            setAlertMsg({
-                type: "error",
-                message: `No se puede anular una devolución en estado ${devolucion.estadoResolucion}.`,
-            });
+            showToast("error", `No se puede anular una devolución en estado ${devolucion.estadoResolucion}.`);
             return;
         }
 
@@ -165,9 +162,9 @@ export default function ReturnSalesPage() {
                         setSale(saleActualizada);
                     }
                     setDevolucionesVenta((prev) => prev.filter((d) => String(d.id) !== String(devolucion.id)));
-                    setAlertMsg({ type: "success", message: "Devolución eliminada." });
+                    showToast("success", "Devolución eliminada.");
                 } catch (error) {
-                    setAlertMsg({ type: "error", message: "Error eliminando devolución: " + error.message });
+                    showToast("error", "Error eliminando devolución: " + error.message);
                 } finally {
                     setConfirmData(null);
                 }
@@ -177,7 +174,7 @@ export default function ReturnSalesPage() {
 
     const handleRegistrar = () => {
         if (devolucionesVenta.length === 0) {
-            setAlertMsg({ type: "error", message: "Debes devolver al menos un producto antes de registrar." });
+            showToast("error", "Debes devolver al menos un producto antes de registrar.");
             return;
         }
         setConfirmData({
@@ -202,11 +199,11 @@ export default function ReturnSalesPage() {
 
                     localStorage.removeItem(key);
                     localStorage.removeItem("saleToReturn");
-                    setAlertMsg({ type: "success", message: "Devolución registrada correctamente." });
+                    showToast("success", "Devolución registrada correctamente.");
                     setConfirmData(null);
                     setTimeout(() => navigate("/dashboard/sales-management"), 1500);
                 } catch (error) {
-                    setAlertMsg({ type: "error", message: "Error registrando devolución: " + error.message });
+                    showToast("error", "Error registrando devolución: " + error.message);
                     setConfirmData(null);
                 }
             },
@@ -566,7 +563,6 @@ export default function ReturnSalesPage() {
 
             </div>
 
-            {alertMsg && <Alert type={alertMsg.type} message={alertMsg.message} onClose={() => setAlertMsg(null)} />}
             {confirmData && (
                 <ConfirmModal
                     type={confirmData.type}

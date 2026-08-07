@@ -1,16 +1,16 @@
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { useState } from "react";
-import Alert from "../../../components/ui/Alert";
+import { useEffect } from "react";
 import PaymentForm from "../components/PaymentForm";
 import { usePaymentForm } from "../hooks/usePaymentForm";
 import { ArrowLeft, X } from "lucide-react";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function CreatePayment() {
     const navigate = useNavigate();
     const { ventaId } = useParams();
     const location = useLocation();
     const documento = location.state?.documento || null;
-    const [alert, setAlert] = useState(null);
+    const { showToast } = useToast();
 
     const {
         formData,
@@ -26,7 +26,7 @@ export default function CreatePayment() {
         ventaIdPreseleccionada: ventaId,
         documentoPreseleccionado: documento,
         onSuccess: () => {
-            setAlert({ type: "success", message: "Abono creado correctamente" });
+            showToast("success", "Abono creado correctamente");
             setTimeout(() => navigate(
                 documento
                     ? `/dashboard/payments/client/${documento}`
@@ -34,6 +34,13 @@ export default function CreatePayment() {
             ), 2000);
         }
     });
+
+    useEffect(() => {
+        if (formError) {
+            showToast("error", formError);
+            setFormError("");
+        }
+    }, [formError, showToast, setFormError]);
 
     return (
         <>
@@ -70,22 +77,6 @@ export default function CreatePayment() {
                     onCancel={() => navigate(-1)}
                 />
             </div>
-
-            {formError && (
-                <Alert
-                    type="error"
-                    message={formError}
-                    onClose={() => setFormError("")}
-                />
-            )}
-
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
         </>
     );
 }

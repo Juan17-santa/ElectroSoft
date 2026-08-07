@@ -36,7 +36,7 @@ function parsePurchaseDate(dateStr) {
     return null;
 }
 
-export function useShoppingReport(loadCompras, setAlert) {
+export function useShoppingReport(loadCompras, notify) {
 
     const exportReport = async (fechaInicio, fechaFin) => {
         let comprasFiltradas;
@@ -47,10 +47,7 @@ export function useShoppingReport(loadCompras, setAlert) {
             const data = await loadCompras();
             comprasFiltradas = Array.isArray(data) ? data : [];
         } catch {
-            setAlert({
-                type: "error",
-                message: "No se pudieron cargar las compras para el reporte.",
-            });
+            notify("error", "No se pudieron cargar las compras para el reporte.");
             return;
         }
 
@@ -66,10 +63,7 @@ export function useShoppingReport(loadCompras, setAlert) {
         });
 
         if (filtradas.length === 0) {
-            setAlert({
-                type: "error",
-                message: "No hay compras en el rango de fechas seleccionado.",
-            });
+            notify("error", "No hay compras en el rango de fechas seleccionado.");
             return;
         }
 
@@ -209,10 +203,7 @@ export function useShoppingReport(loadCompras, setAlert) {
             data: excelData,
         });
 
-        setAlert({
-            type: "success",
-            message: "Reporte generado correctamente.",
-        });
+        notify("success", "Reporte generado correctamente.");
     };
 
     return { exportReport };

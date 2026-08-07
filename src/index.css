@@ -18,3 +18,19 @@ body {
 .animate-slide-in {
   animation: slide-in 0.4s ease-out;
 }
+
+/* SALIDA SUAVE HACIA LA DERECHA */
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(120%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 0.35s ease-in forwards;
+}

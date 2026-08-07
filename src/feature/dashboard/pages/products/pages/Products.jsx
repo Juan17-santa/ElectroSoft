@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Alert from "../../../components/ui/Alert";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 import Searchbar from "../../../components/ui/Searchbar";
@@ -8,20 +7,17 @@ import ProductsTable from "../components/ProductsTable";
 import useProductTable from "../hooks/useProductTable";
 import { usePermissions } from "../../../../../hooks/usePermissions";
 import Pagination from "../../../components/ui/Pagination";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function Products() {
     const { hasPermission } = usePermissions();
+    const { showToast } = useToast();
     const navigate = useNavigate();
 
     const [search, setSearch] = useState("");
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
-
-    const showAlert = (type, message) => {
-        setAlert({ type, message });
-    };
 
     const {
         data,
@@ -32,7 +28,7 @@ export default function Products() {
         toggleEstado
     } = useProductTable({
         setConfirmData,
-        showAlert,
+        showAlert: showToast,
         searchTerm: search,
         currentPage: presentPage,
         recordsPerPage
@@ -79,7 +75,7 @@ export default function Products() {
                     ])
                 });
 
-                showAlert("success", "Reporte generado correctamente.");
+                showToast("success", "Reporte generado correctamente.");
                 setConfirmData(null);
             }
         });
@@ -134,14 +130,6 @@ export default function Products() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
-                />
-            )}
-
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

@@ -8,11 +8,11 @@ import CreateProductModal from "../shopping/components/CreateProductModal";
 import CreateProviderModal from "../shopping/components/CreateProviderModal";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { ServicesShopping } from "../shopping/services/ServicesShopping";
+import { useToast } from "../../../../context/ToastContext";
 
 const ITEMS_PER_PAGE = 4;
 
@@ -54,6 +54,7 @@ function FieldStatus({ estado }) {
 export default function CreateShopping() {
     const navigate = useNavigate();
     const { guardarCompra, saving } = useShopping();
+    const { showToast } = useToast();
 
     const [showModal, setShowModal] = useState(false);
     const [showCreateProductModal, setShowCreateProductModal] = useState(false);
@@ -61,7 +62,6 @@ export default function CreateShopping() {
     const [currentPage, setCurrentPage] = useState(1);
     const [proveedoresList, setProveedoresList] = useState([]);
     const [confirmData, setConfirmData] = useState(null);
-    const [alertData, setAlertData] = useState(null);
     const [navegarACompras, setNavegarACompras] = useState(false);
     const [catalogLoading, setCatalogLoading] = useState(false);
 
@@ -123,10 +123,7 @@ export default function CreateShopping() {
             .catch((err) => {
                 if (mounted) {
                     setProveedoresList([]);
-                    setAlertData({
-                        type: "error",
-                        message: err.message || "No se pudieron cargar los proveedores.",
-                    });
+                    showToast("error", err.message || "No se pudieron cargar los proveedores.");
                 }
             })
             .finally(() => {
@@ -135,7 +132,7 @@ export default function CreateShopping() {
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [showToast]);
 
     // Navegación reactiva: se dispara cuando finalizarCompra marca navegarACompras=true.
     // Usar useEffect en lugar de setTimeout dentro de un closure evita problemas
@@ -250,7 +247,7 @@ export default function CreateShopping() {
 
         if (validQuantity > maxStock) {
             validQuantity = maxStock;
-            setAlertData({ type: "error", message: `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}` });
+            showToast("error", `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}`);
         }
 
         setProductos(prev => prev.map(p =>
@@ -281,17 +278,11 @@ export default function CreateShopping() {
                 productos: productosParaGuardar,
             });
 
-            setAlertData({
-                type: "success",
-                message: `Compra registrada exitosamente. Numero de factura: ${numeroFactura}`,
-            });
+            showToast("success", `Compra registrada exitosamente. Numero de factura: ${numeroFactura}`);
             setNumeroFacturaTocado(false);
             setNavegarACompras(true);
         } catch (err) {
-            setAlertData({
-                type: "error",
-                message: err.message || "No se pudo registrar la compra.",
-            });
+            showToast("error", err.message || "No se pudo registrar la compra.");
         }
     };
 
@@ -595,7 +586,7 @@ export default function CreateShopping() {
                                                         onConfirm: () => {
                                                             handleEliminarProducto(producto.id);
                                                             setConfirmData(null);
-                                                            setAlertData({ type: "success", message: "El producto fue eliminado de la compra." });
+                                                            showToast("success", "El producto fue eliminado de la compra.");
                                                         }
                                                     })}
                                                     className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition duration-300 cursor-pointer"
@@ -702,15 +693,6 @@ export default function CreateShopping() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
-                />
-            )}
-
-            {/* ALERTA DE ÉXITO */}
-            {alertData && (
-                <Alert
-                    type={alertData.type}
-                    message={alertData.message}
-                    onClose={() => setAlertData(null)}
                 />
             )}
         </>

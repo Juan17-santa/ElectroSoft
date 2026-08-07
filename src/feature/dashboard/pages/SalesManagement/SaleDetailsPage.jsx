@@ -17,14 +17,14 @@ import { X, FileText, ArrowLeft, RefreshCw } from "lucide-react";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { SalesService } from "./services/SalesService";
-import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import { useToast } from "../../../../context/ToastContext";
 
 export default function SaleDetailsPage() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [sale, setSale] = useState(null);
     const [loadingRefresh, setLoadingRefresh] = useState(false);
-    const [alert, setAlert] = useState(null);
     const [confirmData, setConfirmData] = useState(null);
 
     /**
@@ -178,7 +178,7 @@ export default function SaleDetailsPage() {
                     ]
                 });
 
-                setAlert({ type: "success", message: "Reporte generado correctamente." });
+                showToast("success", "Reporte generado correctamente.");
                 setConfirmData(null);
             },
             onCancel: () => setConfirmData(null)
@@ -210,9 +210,6 @@ export default function SaleDetailsPage() {
                 backgroundRepeat: 'no-repeat'
             }}
         >
-            {/* ALERTA FLOTANTE EN PARTE SUPERIOR */}
-            {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
-
             {/* ═══ CONTENIDO ═══ */}
             <div className="px-10 py-8 relative z-10 flex flex-col h-full overflow-y-auto bg-gray-100 md:bg-transparent">
 

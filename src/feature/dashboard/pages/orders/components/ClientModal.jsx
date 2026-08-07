@@ -1,12 +1,15 @@
 import { X, User, Mail, Phone, FileText, IdCard } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { useClientModal } from "../hooks/UseClientModal";
-import Alert from "../../../components/ui/Alert";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
+import { useEffect } from "react";
+import { useToast } from "../../../../../context/ToastContext";
 
 // COMPONENTE PRINCIPAL DE LA MODAL DE CREAR CLIENTE
 export default function ClientModal({ onClose, onSave }) {
+
+    const { showToast } = useToast();
 
     // CONFIGURACIÓN DEL HOOK PERSONALIZADO PARA EL FORMULARIO
     const {
@@ -26,6 +29,13 @@ export default function ClientModal({ onClose, onSave }) {
             onClose();
         }, 4000);
     }, onClose);
+
+    useEffect(() => {
+        if (formError) {
+            showToast("error", formError);
+            setFormError("");
+        }
+    }, [formError, showToast, setFormError]);
 
     return (
         <>
@@ -58,12 +68,6 @@ export default function ClientModal({ onClose, onSave }) {
                             <X size={18} />
                         </button>
                     </div>
-
-                    {formError && (
-                        <div className="mb-4">
-                            <Alert type="error" message={formError} onClose={() => setFormError("")} />
-                        </div>
-                    )}
 
                     {/* FORMULARIO */}
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4 md:gap-6">

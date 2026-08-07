@@ -3,13 +3,12 @@ import { Mail, Lock, Eye, EyeOff, Lightbulb, CheckCircle, AlertCircle, Shield } 
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/authService";
 import { Validations } from "../../../utils/validations";
-import Alert from "../../dashboard/components/ui/Alert";
+import { useToast } from "../../../context/ToastContext";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -17,6 +16,7 @@ export default function Login() {
   const [passwordTouched, setPasswordTouched] = useState(false);
 
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // ─── Lógica original intacta ───────────────────────────────────────────────
 
@@ -76,16 +76,12 @@ export default function Login() {
     // ← Actualizar loading y alert en el mismo ciclo (lógica original)
     if (!result.ok) {
       setLoading(false);
-      setAlert({ type: "error", message: result.message, id: Date.now() });
+      showToast("error", result.message);
       return;
     }
 
     setLoading(false);
-    setAlert({
-      type: "success",
-      message: `Bienvenid@, ${result.user?.fullName}.`,
-      id: Date.now(),
-    });
+    showToast("success", `Bienvenid@, ${result.user?.fullName}.`);
     const firstRoute = getFirstAllowedRoute(result.user?.permissions || []);
     setTimeout(() => navigate(firstRoute), 2000);
   };
@@ -127,16 +123,6 @@ export default function Login() {
 
   return (
     <>
-      {/* Alert FUERA del grid (lógica original) */}
-      {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-          key={alert.id}
-        />
-      )}
-
       <div className="min-h-screen flex bg-slate-50">
 
         {/* ── Panel Izquierdo – Imagen ── */}

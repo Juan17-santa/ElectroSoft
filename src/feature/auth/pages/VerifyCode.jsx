@@ -2,12 +2,12 @@ import { useState, useRef } from "react";
 import { Lightbulb, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { verifyCode } from "../services/authService";
-import Alert from "../../dashboard/components/ui/Alert";
+import { useToast } from "../../../context/ToastContext";
 
 export default function VerifyCode() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
-  const [alert, setAlert] = useState(null);
   const inputRefs = useRef([]);
 
   // ─── Lógica original intacta ───────────────────────────────────────────────
@@ -46,7 +46,7 @@ export default function VerifyCode() {
   const handleVerify = async () => {
     const code = digits.join("");
     if (code.length !== 6) {
-      setAlert({ type: "error", message: "Ingresa los 6 dígitos." });
+      showToast("error", "Ingresa los 6 dígitos.");
       return;
     }
 
@@ -54,10 +54,10 @@ export default function VerifyCode() {
     const ok = await verifyCode(email, code);
 
     if (ok) {
-      setAlert({ type: "success", message: "Código verificado. Redirigiendo..." });
+      showToast("success", "Código verificado. Redirigiendo...");
       setTimeout(() => navigate("/reset-password"), 2000);
     } else {
-      setAlert({ type: "error", message: "Código incorrecto. Intenta de nuevo." });
+      showToast("error", "Código incorrecto. Intenta de nuevo.");
       setDigits(["", "", "", "", "", ""]);
       inputRefs.current[0].focus();
     }
@@ -67,14 +67,6 @@ export default function VerifyCode() {
 
   return (
     <>
-      {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
-      )}
-
       <div className="min-h-screen flex bg-slate-50">
 
         {/* ── Panel Izquierdo – Imagen ── */}

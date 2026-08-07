@@ -4,17 +4,18 @@ import { ClientsService } from "./services/ClientsService";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 import AssignQuotaModal from "./components/AssignQuotaModal";
 import { Eye, Pencil, Trash, CreditCard } from "lucide-react";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
+import { useToast } from "../../../../context/ToastContext";
 
 const ITEMS_PER_PAGE = 6;
 
 export default function Clients() {
     const { hasPermission } = usePermissions();
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -22,9 +23,6 @@ export default function Clients() {
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
     const [assignQuotaClient, setAssignQuotaClient] = useState(null);
-    const [alert, setAlert] = useState(null);
-
-    const showAlert = (type, message) => setAlert({ type, message });
 
     const filteredClients = clients.filter(client =>
         `${client.nombres} ${client.apellidos}`.toLowerCase().includes(search.toLowerCase()) ||
@@ -51,7 +49,7 @@ export default function Clients() {
             setClients(data);
         } catch (err) {
             const message = "No se pudieron cargar los clientes." || err.message;
-            showAlert("error", message);
+            showToast("error", message);
         } finally {
             setLoading(false);
         }
@@ -71,10 +69,10 @@ export default function Clients() {
                 try {
                     await ClientsService.delete(client.id);
                     await getClients(); // Refresh list
-                    showAlert("success", "Cliente eliminado correctamente.");
+                    showToast("success", "Cliente eliminado correctamente.");
                 } catch (error) {
                     console.error("Error eliminando cliente:", error);
-                    showAlert("error", "Error al eliminar el cliente.");
+                    showToast("error", "Error al eliminar el cliente.");
                 }
                 setConfirmData(null);
             }
@@ -90,11 +88,11 @@ export default function Clients() {
         try {
             await ClientsService.updateCupo(assignQuotaClient.id, { cupoTotal: amount, cupoActivo: true });
             await getClients();
-            showAlert("success", `Cupo de $${amount.toLocaleString("es-CO")} asignado exitosamente.`);
+            showToast("success", `Cupo de $${amount.toLocaleString("es-CO")} asignado exitosamente.`);
         } catch (error) {
             console.error("Error asignando cupo:", error);
             const msg = error?.response?.data?.error || error?.message || "Error al asignar cupo.";
-            showAlert("error", msg);
+            showToast("error", msg);
         }
         setAssignQuotaClient(null);
     };
@@ -134,7 +132,7 @@ export default function Clients() {
                     data: data
                 });
 
-                showAlert("success", "Reporte Excel generado correctamente.");
+                showToast("success", "Reporte Excel generado correctamente.");
                 setConfirmData(null);
             }
         });
@@ -308,15 +306,6 @@ export default function Clients() {
                 clientName={assignQuotaClient ? `${assignQuotaClient.nombres} ${assignQuotaClient.apellidos}` : ''}
                 currentQuota={assignQuotaClient?.cupoTotal || 0}
             />
-
-            {/* ALERTA */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
         </>
     );
 }

@@ -1,6 +1,6 @@
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 
-export function useSalesReport(data, setAlert) {
+export function useSalesReport(data, notify) {
 
     const exportReport = (fechaInicio, fechaFin) => {
 
@@ -14,10 +14,7 @@ export function useSalesReport(data, setAlert) {
         });
 
         if (filtrados.length === 0) {
-            setAlert({
-                type: "error",
-                message: "No hay ventas en el rango de fechas seleccionado."
-            });
+            notify("error", "No hay ventas en el rango de fechas seleccionado.");
             return;
         }
 
@@ -76,10 +73,7 @@ export function useSalesReport(data, setAlert) {
             data: excelData
         });
 
-        setAlert({
-            type: "success",
-            message: "Reporte de ventas generado correctamente"
-        });
+        notify("success", "Reporte de ventas generado correctamente");
     };
 
     return { exportReport };

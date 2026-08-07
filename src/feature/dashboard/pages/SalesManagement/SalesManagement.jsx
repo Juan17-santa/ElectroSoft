@@ -6,13 +6,13 @@ import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 import CancellationModal from "./components/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { useSalesReport } from "./hooks/useSalesReport";
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
+import { useToast } from "../../../../context/ToastContext";
 
 const formatCOP = (val) => {
     return new Intl.NumberFormat('es-CO', {
@@ -152,18 +152,18 @@ const formatFechaConSlash = (fechaStr) => {
 export default function SalesManagement() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [cancelModalSale, setCancelModalSale] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
 
-    const { exportReport } = useSalesReport(sales, setAlert);
+    const { exportReport } = useSalesReport(sales, showToast);
 
-    const showAlert = (type, message) => setAlert({ type, message });
+    const showAlert = (type, message) => showToast(type, message);
 
     const filteredSales = sales.filter(sale => {
         const fechaSlash = formatFechaConSlash(sale.fecha);
@@ -194,11 +194,11 @@ export default function SalesManagement() {
             setSales(sortedSales);
         } catch (err) {
             const message = "No se pudieron cargar las ventas." || err.message;
-            showAlert("error", message);
+            showToast("error", message);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [showToast]);
 
     useEffect(() => { getSales(); }, [getSales]);
 
@@ -489,15 +489,6 @@ export default function SalesManagement() {
                     saleId={cancelModalSale.numeroVenta || cancelModalSale.id}
                     onConfirm={confirmAnull}
                     onCancel={() => setCancelModalSale(null)}
-                />
-            )}
-
-            {/* ALERTA */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

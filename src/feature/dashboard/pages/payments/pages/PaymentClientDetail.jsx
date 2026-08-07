@@ -4,8 +4,8 @@ import { ArrowLeft, AlertCircle, FileDown, Pencil, X, CreditCard } from "lucide-
 import paymentsService from "../services/paymentsService";
 import VentaCreditoCard from "../components/VentaCreditoCard";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
 import { generarReporteCliente, generarReporteClientePDF } from "../hooks/reportesPayments";
+import { useToast } from "../../../../../context/ToastContext";
 
 const fmt = (val) => new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0
@@ -19,13 +19,13 @@ const MIN_CUPO = 10_000;
 export default function PaymentClientDetail() {
     const navigate = useNavigate();
     const { documento } = useParams();
+    const { showToast } = useToast();
     const [resumen, setResumen] = useState(null);
     const [ventas, setVentas] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [nuevoCupo, setNuevoCupo] = useState("");
     const [errorCupo, setErrorCupo] = useState("");
     const [loading, setLoading] = useState(true);
-    const [alert, setAlert] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
 
     const cargarDatos = async () => {
@@ -52,10 +52,7 @@ export default function PaymentClientDetail() {
 
     const handleAbrirModal = () => {
         if (resumen?.cupoOcupado > 0) {
-            setAlert({
-                type: "error",
-                message: `No se puede modificar el cupo hasta que el cliente libere su saldo pendiente (Cupo ocupado: ${fmt(resumen.cupoOcupado)}).`
-            });
+            showToast("error", `No se puede modificar el cupo hasta que el cliente libere su saldo pendiente (Cupo ocupado: ${fmt(resumen.cupoOcupado)}).`);
             return;
         }
         // Precarga el cupo actual
@@ -85,10 +82,7 @@ export default function PaymentClientDetail() {
 
     const handleConfirmarCupo = async () => {
         if (resumen?.cupoOcupado > 0) {
-            setAlert({
-                type: "error",
-                message: `No se puede modificar el cupo hasta liberar el saldo ocupado (${fmt(resumen.cupoOcupado)}).`
-            });
+            showToast("error", `No se puede modificar el cupo hasta liberar el saldo ocupado (${fmt(resumen.cupoOcupado)}).`);
             return;
         }
         const monto = Number(nuevoCupo);
@@ -107,13 +101,13 @@ export default function PaymentClientDetail() {
         try {
             await paymentsService.actualizarCupo(resumen.id, monto);
             setShowModal(false);
-            setAlert({ type: "success", message: "Cupo de crédito actualizado exitosamente." });
+            showToast("success", "Cupo de crédito actualizado exitosamente.");
             await cargarDatos();
         } catch (error) {
             console.error("Error actualizando cupo:", error);
             const msg = error?.response?.data?.error || error?.message || "Error al actualizar el cupo.";
             setErrorCupo(msg);
-            setAlert({ type: "error", message: msg });
+            showToast("error", msg);
         }
     };
 
@@ -356,20 +350,12 @@ export default function PaymentClientDetail() {
                             } else {
                                 generarReporteCliente(resumen, ventas);
                             }
-                            setAlert({ type: "success", message: "Reporte generado correctamente" });
+                            showToast("success", "Reporte generado correctamente");
                         } catch (error) {
-                            setAlert({ type: "error", message: "Error al generar el reporte" });
+                            showToast("error", "Error al generar el reporte");
                         }
                         setShowReportModal(false);
                     }}
-                />
-            )}
-
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

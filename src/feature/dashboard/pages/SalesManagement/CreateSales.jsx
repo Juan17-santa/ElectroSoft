@@ -7,13 +7,13 @@ import { ServicesProducts } from "../products/services/ServicesProducts";
 import { ClientsService } from "../Clients/services/ClientsService";
 import paymentsService from "../payments/services/paymentsService";
 import AddProductModal from "../../components/ui/AddProductModal";
-import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import ValidationMessage from "../../components/ui/ValidationMessage";
 import Calendar from "../../components/ui/Calendar";
 import Pagination from "../../components/ui/Pagination";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 import { Validations } from "../../../../utils/validations";
+import { useToast } from "../../../../context/ToastContext";
 
 const formatCOP = (val) => {
     return new Intl.NumberFormat('es-CO', {
@@ -25,7 +25,7 @@ const formatCOP = (val) => {
 
 export default function CreateSales() {
     const navigate = useNavigate();
-    const [alert, setAlert] = useState(null);
+    const { showToast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showNoCupoModal, setShowNoCupoModal] = useState(false);
 
@@ -227,7 +227,7 @@ export default function CreateSales() {
 
         if (validQuantity > maxStock) {
             validQuantity = maxStock;
-            setAlert({ type: "error", message: `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}` });
+            showToast("error", `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}`);
         }
 
         setProductos(prev => prev.map(p => p.id === productId ? { ...p, cantidad: validQuantity } : p));
@@ -331,13 +331,13 @@ export default function CreateSales() {
 
         // Bloquear si hay error de crédito (sin cupo)
         if (errorCredito) {
-            setAlert({ type: "error", message: errorCredito });
+            showToast("error", errorCredito);
             return;
         }
 
         // Bloquear si tipo Mixto con montoCredito inválido
         if (formData.tipoVenta === "Mixto" && errorMontoCredito) {
-            setAlert({ type: "error", message: errorMontoCredito });
+            showToast("error", errorMontoCredito);
             return;
         }
 
@@ -360,7 +360,7 @@ export default function CreateSales() {
                 montoContado: formData.tipoVenta === "Mixto" ? montoContado : (formData.tipoVenta === "Contado" ? total : 0)
             };
             await SalesService.create(datosVenta);
-            setAlert({ type: "success", message: "Venta registrada correctamente." });
+            showToast("success", "Venta registrada correctamente.");
             setTimeout(() => navigate("/dashboard/sales-management"), 1500);
         } catch (error) {
             console.error(error);
@@ -374,7 +374,7 @@ export default function CreateSales() {
                 friendlyError = "El cliente seleccionado no es válido.";
             }
 
-            setAlert({ type: "error", message: friendlyError });
+            showToast("error", friendlyError);
 
             setIsSubmitting(false);
         }
@@ -801,8 +801,6 @@ export default function CreateSales() {
                     onSwitchToMixed={() => setFormData(prev => ({ ...prev, tipoVenta: "Mixto" }))}
                 />
             </div>
-
-            {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
 
             {/* Modal: sin cupo disponible al seleccionar Crédito/Mixto */}
             {showNoCupoModal && (

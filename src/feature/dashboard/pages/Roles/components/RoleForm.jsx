@@ -2,7 +2,8 @@ import { Tag, FileText, Check, AlertCircle, CheckCircle2, Activity, Calendar } f
 import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { PERMISSION_SCOPES } from "../services/RolesService";
-import Alert from "../../../components/ui/Alert";
+import { useEffect } from "react";
+import { useToast } from "../../../../../context/ToastContext";
 
 function FieldStatus({ estado }) {
     if (estado === null || estado === undefined) return null;
@@ -29,6 +30,15 @@ export default function RoleForm({
     buttonText,
     isUpdate = false
 }) {
+    const { showToast } = useToast();
+
+    useEffect(() => {
+        if (formError) {
+            showToast("error", formError);
+            setFormError(null);
+        }
+    }, [formError, showToast, setFormError]);
+
     const ringClass = (estado) => {
         if (!estado) return "border border-gray-200 focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-transparent";
         return estado.valido
@@ -43,10 +53,6 @@ export default function RoleForm({
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 h-full">
-
-            {formError && (
-                <Alert type="error" message={formError} onClose={() => setFormError(null)} />
-            )}
 
             <div className={`grid grid-cols-1 md:grid-cols-2 ${isUpdate ? "gap-x-12 gap-y-6" : "gap-6"}`}>
 

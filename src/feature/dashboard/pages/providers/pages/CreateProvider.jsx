@@ -2,14 +2,13 @@ import { useState, useEffect } from "react";
 import { useProviderForm } from "../hooks/useProviderForm";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
-import Alert from "../../../components/ui/Alert";
 import ProviderForm from "../components/ProvidersForm";
 import { ServicesProviders } from "../services/ServicesProviders";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function CreateProvider() {
     const navigate = useNavigate();
-
-    const [alert, setAlert] = useState(null);
+    const { showToast } = useToast();
 
     const [documentTypes, setDocumentTypes] = useState([]);
     const [categoriasActivas, setCategoriasActivas] = useState([]);
@@ -46,20 +45,14 @@ export default function CreateProvider() {
         mode: "create",
         documentTypes,
         onSuccess: () => {
-            setAlert({
-                type: "success",
-                message: "Proveedor registrado con éxito."
-            });
+            showToast("success", "Proveedor registrado con éxito.");
 
             setTimeout(() => {
                 navigate("/dashboard/providers");
             }, 2000);
         },
         onError: (message) => {
-            setAlert({
-                type: "error",
-                message
-            });
+            showToast("error", message);
         },
     });
 
@@ -101,15 +94,6 @@ export default function CreateProvider() {
                     buttonText="Crear proveedor"
                 />
             </div>
-
-            {/* ALERTA */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
         </>
     );
 }

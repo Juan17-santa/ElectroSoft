@@ -2,16 +2,16 @@ import { ChevronDown, Lightbulb, Pencil, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAuthUser, logout } from "../../auth/services/authService";
-import Alert from "./ui/alert";
+import { useToast } from "../../../context/ToastContext";
 import ConfirmModal from "./ui/ConfirmModal";
 import { Menu } from "lucide-react";
 
 export const Navbar = ({ setIsOpen }) => {
     const [open, setOpen] = useState(false);
     const [user, setUser] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     // Carga inicial
     useEffect(() => {
@@ -45,10 +45,7 @@ export const Navbar = ({ setIsOpen }) => {
         setShowLogoutModal(false);
         setOpen(false);
 
-        setAlert({
-            type: "success",
-            message: "Has cerrado sesión correctamente."
-        });
+        showToast("success", "Has cerrado sesión correctamente.");
 
         setTimeout(() => {
             logout();
@@ -59,14 +56,6 @@ export const Navbar = ({ setIsOpen }) => {
 
     return (
         <>
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
-
             {showLogoutModal && (
                 <ConfirmModal
                     type="warning"

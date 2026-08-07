@@ -3,7 +3,7 @@ import { Mail, Lightbulb, CheckCircle, AlertCircle, KeyRound } from "lucide-reac
 import { useNavigate } from "react-router-dom";
 import { requestPasswordReset } from "../services/authService";
 import { Validations } from "../../../utils/validations";
-import Alert from "../../dashboard/components/ui/alert";
+import { useToast } from "../../../context/ToastContext";
 import emailjs from "@emailjs/browser";
 
 const EMAILJS_SERVICE_ID = "service_ysdyl1c";
@@ -12,8 +12,8 @@ const EMAILJS_PUBLIC_KEY = "WXWGLAjiTmbUXWdlK";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [email, setEmail] = useState("");
-  const [alert, setAlert] = useState(null);
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
@@ -56,13 +56,10 @@ export default function ForgotPassword() {
         { to_email: email, code: result.code },
         EMAILJS_PUBLIC_KEY
       );
-      setAlert({
-        type: "success",
-        message: `Código enviado a ${email}. Revisa tu bandeja de entrada.`,
-      });
+      showToast("success", `Código enviado a ${email}. Revisa tu bandeja de entrada.`);
       setTimeout(() => navigate("/verify-code"), 2500);
     } else {
-      setAlert({ type: "error", message: result.message });
+      showToast("error", result.message);
     }
   };
 
@@ -82,14 +79,6 @@ export default function ForgotPassword() {
 
   return (
     <>
-      {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
-      )}
-
       <div className="min-h-screen flex bg-slate-50">
 
         {/* ── Panel Izquierdo – Imagen ── */}

@@ -5,7 +5,7 @@ import { ServicesDevolutions } from "../services/ServicesDevolutions";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
 import DevolutionForm from "../components/DevolutionForm";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
+import { useToast } from "../../../../../context/ToastContext";
 import {
     SUBMOTIVOS,
     getGestionesPermitidas,
@@ -216,6 +216,7 @@ export default function EditDevolution() {
     const location = useLocation();
     const { id } = useParams();
     const { editarDevolucion } = useDevolutions();
+    const { showToast } = useToast();
 
     const [form, setForm] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -224,7 +225,6 @@ export default function EditDevolution() {
     const [ventasList, setVentasList] = useState([]);
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [stockDisponible, setStockDisponible] = useState(null);
     const initialFormRef = useRef(null);
     const isTemporal = String(id).startsWith("temp-");
@@ -272,7 +272,7 @@ export default function EditDevolution() {
                     }
                 }
             } catch (err) {
-                if (active) setAlert({ type: "error", message: err.message });
+                if (active) showToast("error", err.message);
             } finally {
                 if (active) setLoading(false);
             }
@@ -283,7 +283,7 @@ export default function EditDevolution() {
         return () => {
             active = false;
         };
-    }, [id, isTemporal]);
+    }, [id, isTemporal, showToast]);
 
     const { idVenta: idVentaForm, producto: productoForm, gestion: gestionForm } = form ?? {};
 
@@ -389,7 +389,7 @@ export default function EditDevolution() {
         tocarTodo();
 
         if (!formularioEsValido()) {
-            setAlert({ type: "error", message: "Revisa los campos marcados en rojo antes de continuar." });
+            showToast("error", "Revisa los campos marcados en rojo antes de continuar.");
             return;
         }
 
@@ -425,7 +425,7 @@ export default function EditDevolution() {
                         await editarDevolucion(formConMonto);
                     }
                     setConfirmData(null);
-                    setAlert({ type: "success", message: "Devolución actualizada correctamente." });
+                    showToast("success", "Devolución actualizada correctamente.");
                     const idVenta = location.state?.idVenta ?? form.idVenta;
                     const mode = location.state?.mode ?? "from-sales";
                     setTimeout(() => {
@@ -437,7 +437,7 @@ export default function EditDevolution() {
                     }, 1500);
                 } catch (err) {
                     setConfirmData(null);
-                    setAlert({ type: "error", message: err.message });
+                    showToast("error", err.message);
                 }
             },
         });
@@ -528,13 +528,6 @@ export default function EditDevolution() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
-                />
-            )}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

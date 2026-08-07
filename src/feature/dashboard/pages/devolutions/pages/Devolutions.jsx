@@ -8,8 +8,8 @@ import { getEstadoColor } from "../helpers/devolutionsHelpers";
 import SearchBar from "../../../components/ui/Searchbar";
 import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
 import { Restricted } from "../../../components/ui/Restricted";
+import { useToast } from "../../../../../context/ToastContext";
 
 const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
@@ -32,9 +32,9 @@ function formatFechaEstadoDisplay(fechaISO) {
 
 export default function Devolutions() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [ventasMap, setVentasMap] = useState(null);
 
@@ -55,11 +55,11 @@ export default function Devolutions() {
         }).catch(() => {});
     }, []);
 
-    const { exportReport } = useDevolutionsReport(devolucionesFiltradas, setAlert);
+    const { exportReport } = useDevolutionsReport(devolucionesFiltradas, showToast);
 
     useEffect(() => {
-        if (error) setAlert({ type: "error", message: error });
-    }, [error]);
+        if (error) showToast("error", error);
+    }, [error, showToast]);
 
     // Agrupar por idVenta — una fila por venta
     const gruposPorVenta = useMemo(() => {
@@ -127,10 +127,10 @@ export default function Devolutions() {
             onConfirm: async () => {
                 try {
                     await anularPorVenta(idVenta);
-                setAlert({ type: "success", message: "Devolución anulada correctamente." });
+                showToast("success", "Devolución anulada correctamente.");
                 setConfirmData(null);
                 } catch (err) {
-                    setAlert({ type: "error", message: err.message });
+                    showToast("error", err.message);
                     setConfirmData(null);
                 }
             },
@@ -361,9 +361,6 @@ export default function Devolutions() {
                         setShowReportModal(false);
                     }}
                 />
-            )}
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );

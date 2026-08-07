@@ -2,17 +2,17 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProviderForm } from "../hooks/useProviderForm";
 import { X } from "lucide-react";
-import Alert from "../../../components/ui/Alert";
 import ProviderForm from "../components/ProvidersForm";
 import { ServicesProviders } from "../services/ServicesProviders";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function UpdateProvider() {
     // CAPTURA DE PARÁMETROS Y NAVEGACIÓN
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     // ESTADOS LOCALES PARA LA DATA DE LOS SELECTS Y CONTROL
-    const [alert, setAlert] = useState(null);
     const [documentTypes, setDocumentTypes] = useState([]);
     const [categoriasActivas, setCategoriasActivas] = useState([]);
 
@@ -33,14 +33,11 @@ export default function UpdateProvider() {
         initialData: {},
         documentTypes,
         onSuccess: () => {
-            setAlert({ type: "success", message: "Proveedor actualizado con éxito." });
+            showToast("success", "Proveedor actualizado con éxito.");
             setTimeout(() => navigate("/dashboard/providers"), 2000);
         },
         onError: (message) => {
-            setAlert({
-                type: "error",
-                message
-            });
+            showToast("error", message);
         }
     });
 
@@ -73,16 +70,16 @@ export default function UpdateProvider() {
                         status: provider.status
                     });
                 } else if (!provider) {
-                    setAlert({ type: "error", message: "No se encontró el proveedor." });
+                    showToast("error", "No se encontró el proveedor.");
                 }
             } catch (error) {
                 console.error("Error al cargar los datos de edición:", error);
-                setAlert({ type: "error", message: "Error al conectar con el servidor." });
+                showToast("error", "Error al conectar con el servidor.");
             }
         };
 
         if (id) loadUpdateData();
-    }, [id, setFormData]);
+    }, [id, setFormData, showToast]);
 
     return (
         <>
@@ -119,15 +116,6 @@ export default function UpdateProvider() {
                     loading={loading}
                 />
             </div>
-
-            {/* ALERTAS */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
         </>
     );
 }

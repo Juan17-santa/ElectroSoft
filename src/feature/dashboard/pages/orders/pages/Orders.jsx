@@ -4,15 +4,16 @@ import { useOrdersTable } from "../hooks/UseOrdersTable";
 import SearchBar from "../../../components/ui/Searchbar";
 import OrdersTable from "../components/OrdersTable";
 import Pagination from "../../../components/ui/Pagination"
-import Alert from "../../../components/ui/Alert";
 import CancellationModal from "../../../components/ui/CancellationModal";
 import ConfirmSaleModal from "../components/ConfirmSaleModal";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { useOrdersReport } from "../hooks/useOrdersReport";
 import { usePermissions } from "../../../../../hooks/usePermissions";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function Orders() {
     const { hasPermission } = usePermissions();
+    const { showToast } = useToast();
 
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
@@ -28,15 +29,12 @@ export default function Orders() {
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
-    // ESTADO ALERTA
-    const [alert, setAlert] = useState(null);
-
     // MODAL DEL GENERAR REPORTE
     const [showReportModal, setShowReportModal] = useState(false);
 
     // FUNCIÓN AUXILIAR PARA COMPATIBILIZAR EL COUPLING CON EL HOOK
     const showAlert = (type, message) => {
-        setAlert({ type, message });
+        showToast(type, message);
     };
 
     const {
@@ -80,7 +78,7 @@ export default function Orders() {
         try {
             await processOrderToSale(order._id);
             setIsSaleModalOpen(false);
-            setAlert({ type: "success", message: "Pedido procesado como venta con éxito. Redirigiendo a ventas"});
+            showToast("success", "Pedido procesado como venta con éxito. Redirigiendo a ventas");
 
             setTimeout(() => {
                 navigate("/dashboard/sales-management");
@@ -88,10 +86,7 @@ export default function Orders() {
 
         } catch (error) {
 
-            setAlert({
-                type: "error",
-                message: error.message
-            });
+            showToast("error", error.message);
 
         }
     };
@@ -105,20 +100,13 @@ export default function Orders() {
 
             setOrderToCancel(null);
 
-            setAlert({
-                type: "success",
-                message: "Pedido anulado con éxito."
-            });
-
-            setTimeout(() => {
-                setAlert(null);
-            }, 3000);
+            showToast("success", "Pedido anulado con éxito.");
         } catch (error) {
             setOrderToCancel(null);
         }
     };
 
-    const { exportReport } = useOrdersReport(data, setAlert);
+    const { exportReport } = useOrdersReport(data, showToast);
 
     return (
         <>
@@ -198,15 +186,6 @@ export default function Orders() {
                         exportReport(fechaInicio, fechaFin);
                         setShowReportModal(false);
                     }}
-                />
-            )}
-
-            {/* ALERTA */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

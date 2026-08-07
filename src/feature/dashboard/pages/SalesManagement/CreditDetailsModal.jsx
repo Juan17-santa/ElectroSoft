@@ -4,9 +4,9 @@ import { Plus, Ban, FileText, ArrowLeft, ExternalLink } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
-import Alert from "../../components/ui/Alert";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import paymentsService from "../payments/services/paymentsService";
+import { useToast } from "../../../../context/ToastContext";
 
 const formatCOP = (val) => {
     return new Intl.NumberFormat('es-CO', {
@@ -18,8 +18,8 @@ const formatCOP = (val) => {
 
 export default function CreditDetailsPage() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [sale, setSale] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [confirmData, setConfirmData] = useState(null);
     const [netTotal, setNetTotal] = useState(0);
 
@@ -60,9 +60,9 @@ export default function CreditDetailsPage() {
             }
         } catch (error) {
             console.error("Error al cargar detalles del crédito:", error);
-            setAlert({ type: "error", message: "Error al cargar los datos del crédito." });
+            showToast("error", "Error al cargar los datos del crédito.");
         }
-    }, []);
+    }, [showToast]);
 
     if (!sale) return null;
 
@@ -127,7 +127,7 @@ export default function CreditDetailsPage() {
             }
         } catch (error) {
             console.error("Error al refrescar venta:", error);
-            setAlert({ type: "error", message: "Error al actualizar los datos en tiempo real." });
+            showToast("error", "Error al actualizar los datos en tiempo real.");
         }
     };
 
@@ -166,11 +166,11 @@ export default function CreditDetailsPage() {
                 setConfirmData(null);
                 try {
                     await paymentsService.anularAbono(paymentId);
-                    setAlert({ type: "success", message: "Abono anulado exitosamente." });
+                    showToast("success", "Abono anulado exitosamente.");
                     refreshSale();
                 } catch (error) {
                     console.error("Error al anular abono:", error);
-                    setAlert({ type: "error", message: "Error al anular el abono." });
+                    showToast("error", "Error al anular el abono.");
                 }
             },
             onCancel: () => setConfirmData(null)
@@ -213,7 +213,7 @@ export default function CreditDetailsPage() {
                     ]
                 });
 
-                setAlert({ type: "success", message: "Reporte generado correctamente." });
+                showToast("success", "Reporte generado correctamente.");
                 setConfirmData(null);
             },
             onCancel: () => setConfirmData(null)
@@ -233,9 +233,6 @@ export default function CreditDetailsPage() {
                     backgroundRepeat: 'no-repeat'
                 }}
             >
-                {/* ALERTA FLOTANTE EN PARTE SUPERIOR */}
-                {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
-
                 {/* ═══ CONTENIDO ═══ */}
                 <div className="px-4 md:px-10 py-6 md:py-8 relative z-10 flex flex-col h-full overflow-y-auto bg-gray-100 md:bg-transparent">
 

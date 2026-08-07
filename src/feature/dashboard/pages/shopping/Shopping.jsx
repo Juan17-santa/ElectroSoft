@@ -1,17 +1,17 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Eye, Ban, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useShopping, ITEMS_PER_PAGE } from "../shopping/hooks/useShopping";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 import CancellationModal from "../../components/ui/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
 import { useShoppingReport } from "../shopping/hooks/useShoppingReport";
 import { ServicesShopping } from "../shopping/services/ServicesShopping";
+import { useToast } from "../../../../context/ToastContext";
 
 // ─── Botón anular con tooltip informativo cuando no se puede anular ───────────
 function BanButton({ puedeAnularse, onClick }) {
@@ -93,14 +93,22 @@ export default function Shopping() {
         clearError,
     } = useShopping();
     const [cancelModalData, setCancelModalData] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
 
-    const showAlert = (type, message) => setAlert({ type, message });
+    const { showToast } = useToast();
+
+    const showAlert = (type, message) => showToast(type, message);
+
+    useEffect(() => {
+        if (error) {
+            showToast("error", error);
+            clearError();
+        }
+    }, [error, showToast, clearError]);
 
     const { exportReport } = useShoppingReport(
         () => ServicesShopping.fetchAll({ page: 1, limit: 100000, search: searchTerm }).then((r) => r.data),
-        setAlert,
+        showToast,
     );
 
     const handleSearch = (e) => {
@@ -260,18 +268,6 @@ export default function Shopping() {
                         }
                     }}
                     onCancel={() => setCancelModalData(null)}
-                />
-            )}
-
-            {/* ALERTA */}
-            {(alert || error) && (
-                <Alert
-                    type={alert?.type || "error"}
-                    message={alert?.message || error}
-                    onClose={() => {
-                        setAlert(null);
-                        clearError();
-                    }}
                 />
             )}
         </>

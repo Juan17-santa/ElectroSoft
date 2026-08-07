@@ -3,19 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { ClientsService } from "./services/ClientsService";
 import { useClientForm } from "./hooks/useClientForm";
 import ClientForm from "./components/ClientForm";
-import Alert from "../../components/ui/Alert";
 import { X } from "lucide-react";
+import { useToast } from "../../../../context/ToastContext";
 
 export default function CreateClients() {
     const navigate = useNavigate();
-    const [alert, setAlert] = useState(null);
+    const { showToast } = useToast();
     const [formError, setFormError] = useState(null);
 
     const formHook = useClientForm({
         onSubmit: async (formData) => {
             try {
                 await ClientsService.create(formData);
-                setAlert({ type: "success", message: "Cliente creado correctamente." });
+                showToast("success", "Cliente creado correctamente.");
                 setTimeout(() => navigate("/dashboard/clients"), 1500);
             } catch (error) {
                 setFormError(
@@ -52,8 +52,6 @@ export default function CreateClients() {
                     buttonText="Crear cliente"
                 />
             </div>
-
-            {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
         </>
     );
 }

@@ -4,26 +4,24 @@ import { usersService } from "../services/usersService";
 
 import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
 import UsersTable from "../components/UsersTable";
 import { useUsersTable } from "../hooks/useUsersTable";
 import SearchBar from "../../../components/ui/Searchbar";
 import { usePermissions } from "../../../../../hooks/usePermissions";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function Users() {
     const { hasPermission } = usePermissions();
+    const { showToast } = useToast();
     const navigate = useNavigate();
 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
 
     const [currentPage, setCurrentPage] = useState(1);
     const recordsPerPage = 6;
-
-    const showAlert = (type, message) => setAlert({ type, message });
 
     useEffect(() => { getUsers(); }, []);
 
@@ -89,7 +87,7 @@ export default function Users() {
     const { deleteUser, toggleEstado } = useUsersTable({
         setUsers,
         setConfirmData,
-        showAlert,
+        showAlert: showToast,
     });
 
     return (
@@ -133,10 +131,6 @@ export default function Users() {
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
                 />
-            )}
-
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );

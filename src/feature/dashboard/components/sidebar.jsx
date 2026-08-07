@@ -3,14 +3,14 @@ import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import { ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck, LogOut, ChevronDown, X, Lightbulb } from 'lucide-react';
 import { getAuthUser, logout } from "../../auth/services/authService";
 import { usePermissions } from "../../../hooks/usePermissions";
-import Alert from "./ui/alert";
+import { useToast } from "../../../context/ToastContext";
 import ConfirmModal from "./ui/ConfirmModal";
 
 export const Sidebar = ({ isOpen, setIsOpen }) => {
     const { hasAccessToScope } = usePermissions();
     const location = useLocation();
     const navigate = useNavigate();
-    const [alert, setAlert] = useState(null);
+    const { showToast } = useToast();
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const handleLogout = () => {
@@ -23,11 +23,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
         setShowLogoutModal(false);
         setIsOpen(false);
 
-        setAlert({
-            type: "success",
-            message: "Has cerrado sesión correctamente."
-        });
-
+        showToast("success", "Has cerrado sesión correctamente.");
 
         setTimeout(() => {
 
@@ -112,14 +108,6 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
 
     return (
         <>
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
-                />
-            )}
-
             {showLogoutModal && (
 
                 <ConfirmModal

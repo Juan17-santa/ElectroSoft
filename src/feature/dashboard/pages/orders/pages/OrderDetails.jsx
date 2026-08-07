@@ -4,17 +4,17 @@ import { Info, X, Package, Calendar as CalendarIcon, User, FileText, ArrowLeft }
 import { generatePDFReport } from "../../../../../utils/PDFReportGenerator";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Pagination from "../../../components/ui/Pagination";
-import Alert from "../../../components/ui/Alert";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { ServicesOrders } from "../services/ServicesOrders";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function OrderDetails() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [alert, setAlert] = useState(null);
     const [showPrintModal, setShowPrintModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 4;
@@ -27,13 +27,13 @@ export default function OrderDetails() {
                 if (res) setOrder(res.data || res);
             } catch (error) {
                 console.error("Error al cargar los detalles:", error);
-                setAlert({ type: "error", message: "No se pudieron cargar los detalles del pedido." });
+                showToast("error", "No se pudieron cargar los detalles del pedido.");
             } finally {
                 setLoading(false);
             }
         };
         if (id) loadOrderDetails();
-    }, [id]);
+    }, [id, showToast]);
 
     const formatDate = (date) => date ? new Date(date).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-";
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value || 0);
@@ -92,7 +92,7 @@ export default function OrderDetails() {
         });
 
         setShowPrintModal(false);
-        setAlert({ type: "success", message: "El reporte del pedido se generó correctamente." });
+        showToast("success", "El reporte del pedido se generó correctamente.");
     };
 
     return (
@@ -241,8 +241,6 @@ export default function OrderDetails() {
             {showPrintModal && (
                 <ConfirmModal type="info" title="Imprimir pedido" message={`¿Seguro que deseas imprimir el reporte en PDF del pedido #${visualId}?`} onConfirm={handleReport} onCancel={() => setShowPrintModal(false)} />
             )}
-
-            {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
         </>
     );
 }

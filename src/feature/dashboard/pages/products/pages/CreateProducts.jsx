@@ -2,7 +2,6 @@ import { Package, Tag, DollarSign, Boxes, Hash, ShieldCheck, X, Plus, Trash, Che
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
-import Alert from "../../../components/ui/Alert";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import CategorySelect from "../../../components/ui/CategorySelect";
 import useProductForm from "../hooks/useProductForm";
@@ -10,9 +9,11 @@ import { ServicesCharacteristics } from "../services/ServicesCharacteristics";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function CreateProducts() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [categorias, setCategorias] = useState([]);
     const [caracteristicas, setCaracteristicas] = useState([]);
@@ -30,8 +31,6 @@ export default function CreateProducts() {
     const itemsPerPage = 3;
     const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-    const [alert, setAlert] = useState(null);
-
     const {
         formData,
         errors,
@@ -40,20 +39,14 @@ export default function CreateProducts() {
         loading
     } = useProductForm({
         onSuccess: () => {
-            setAlert({
-                type: "success",
-                message: "Producto creado correctamente"
-            });
+            showToast("success", "Producto creado correctamente");
 
             setTimeout(() => {
                 navigate("/dashboard/products");
             }, 2000);
         },
         onError: (message) => {
-            setAlert({
-                type: "error",
-                message
-            });
+            showToast("error", message);
         },
         caracteristicas
     });
@@ -70,16 +63,13 @@ export default function CreateProducts() {
                 const medidasData = await ServicesCharacteristics.getMeasures();
                 setMeasureOptions(medidasData);
             } catch (error) {
-                setAlert({
-                    type: "error",
-                    message: "Error al cargar los datos"
-                });
+                showToast("error", "Error al cargar los datos");
                 console.error(error);
             }
         };
         
         cargarDatos();
-    }, []);
+    }, [showToast]);
 
     const handleModalChange = (e) => {
         const { name, value } = e.target;
@@ -146,10 +136,7 @@ export default function CreateProducts() {
             setCharacteristicOptions(Array.isArray(chars) ? chars : []);
             setMeasureOptions(Array.isArray(measures) ? measures : []);
         } catch (error) {
-            setAlert({
-                type: "error",
-                message: error.message || "Error al recargar las opciones"
-            });
+            showToast("error", error.message || "Error al recargar las opciones");
         }
     };
 
@@ -161,10 +148,7 @@ export default function CreateProducts() {
             setCharDropdownOpen(false);
             await refreshCharacteristicLists();
         } catch (error) {
-            setAlert({
-                type: "error",
-                message: error.message || "Error al agregar la característica"
-            });
+            showToast("error", error.message || "Error al agregar la característica");
         }
     };
 
@@ -173,10 +157,7 @@ export default function CreateProducts() {
             const updated = await ServicesCharacteristics.removeCharacteristic(id);
             setCharacteristicOptions(Array.isArray(updated) ? updated : []);
         } catch (error) {
-            setAlert({
-                type: "error",
-                message: error.message || "Error al eliminar la característica"
-            });
+            showToast("error", error.message || "Error al eliminar la característica");
         }
     };
 
@@ -188,10 +169,7 @@ export default function CreateProducts() {
             setMeasDropdownOpen(false);
             await refreshCharacteristicLists();
         } catch (error) {
-            setAlert({
-                type: "error",
-                message: error.message || "Error al agregar la medida"
-            });
+            showToast("error", error.message || "Error al agregar la medida");
         }
     };
 
@@ -200,10 +178,7 @@ export default function CreateProducts() {
             const updated = await ServicesCharacteristics.removeMeasure(id);
             setMeasureOptions(Array.isArray(updated) ? updated : []);
         } catch (error) {
-            setAlert({
-                type: "error",
-                message: error.message || "Error al eliminar la medida"
-            });
+            showToast("error", error.message || "Error al eliminar la medida");
         }
     };
 
@@ -239,7 +214,7 @@ export default function CreateProducts() {
         }
         if (hasErrors) {
             setCharacteristicErrors(newErrors);
-            setAlert({ type: "error", message: "Corrija los errores antes de continuar" });
+            showToast("error", "Corrija los errores antes de continuar");
             return;
         }
         const nuevo = {
@@ -253,10 +228,7 @@ export default function CreateProducts() {
         setModalForm({ nombre: "", medida: "", valor: "" });
         setCharacteristicErrors({});
         setTimeout(() => {
-            setAlert({
-                type: "success",
-                message: "Característica agregada correctamente"
-            });
+            showToast("success", "Característica agregada correctamente");
         }, 100);
     };
 
@@ -267,10 +239,7 @@ export default function CreateProducts() {
     const confirmarEliminar = () => {
         if (!deleteConfirm) return;
         setCaracteristicas(caracteristicas.filter(c => c.id !== deleteConfirm));
-        setAlert({
-            type: "success",
-            message: "Característica eliminada correctamente"
-        });
+        showToast("success", "Característica eliminada correctamente");
         setDeleteConfirm(null);
     };
 
@@ -704,15 +673,6 @@ export default function CreateProducts() {
                     message="¿Estás seguro de eliminar esta característica?"
                     onConfirm={confirmarEliminar}
                     onCancel={() => setDeleteConfirm(null)}
-                />
-            )}
-
-            {/* ALERTA DE EXITO O ERROR */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </div>

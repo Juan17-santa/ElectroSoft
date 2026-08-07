@@ -63,13 +63,13 @@ function formatFechaDisplay(fechaISO) {
     return `${d}/${m}/${y}`;
 }
 
-export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
+export function useDevolutionsReport(devolucionesFiltradas, notify) {
     const exportReport = async (fechaInicio, fechaFin) => {
         let ventas = [];
         try {
             ventas = await fetchSales();
         } catch (err) {
-            setAlert({ type: "error", message: err.message });
+            notify("error", err.message);
             return;
         }
 
@@ -79,7 +79,7 @@ export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
         });
 
         if (filtradas.length === 0) {
-            setAlert({ type: "error", message: "No hay devoluciones en el rango de fechas seleccionado." });
+            notify("error", "No hay devoluciones en el rango de fechas seleccionado.");
             return;
         }
 
@@ -182,7 +182,7 @@ export function useDevolutionsReport(devolucionesFiltradas, setAlert) {
             data: excelData,
         });
 
-        setAlert({ type: "success", message: "Reporte de devoluciones generado correctamente." });
+        notify("success", "Reporte de devoluciones generado correctamente.");
     };
 
     return { exportReport };
