@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
-import { DollarSign, Package, ShoppingBag, TrendingUp, Calendar, RotateCcw, Users, Loader2 } from "lucide-react";
+import { DollarSign, Package, ShoppingBag, TrendingUp, Calendar, RotateCcw, Loader2 } from "lucide-react";
 import { getAuthUser } from "../../../../auth/services/authService";
 import { StatCard } from "../components/StatCard";
-import { currentMonth, toDate, formatCOP, currentYear, MESES, MESES_FULL, parseMoney, DONUT_COLORS } from "../utils/constants";
+import { currentMonth, toDate, currentYear, MESES, MESES_FULL, parseMoney, DONUT_COLORS } from "../utils/constants";
 import { Empty, Tip } from "../components/Ui";
 import { PurchasesChart } from "../components/PurchasesChart";
 import { TopProductsChart } from "../components/TopProductsChart";
 import { Card } from "../components/Card";
 import { CategorySalesChart } from "../components/CategorySalesChart";
 import { TotalSalesChart } from "../components/TotalSalesChart";
+import { SalesTypeChart } from "../components/SalesTypeChart";
 import { Dropdown } from "../components/Dropdown";
 
 // Servicios importados
@@ -87,7 +88,11 @@ export default function Dashboard() {
     const salesPrev = raw.sales.filter(s => inM(s.fecha, prevYM.y, prevYM.m) && s.estado !== "Anulado");
 
     const sum = (arr, fn) => arr.reduce((a, x) => a + fn(x), 0);
-    const delta = (cur, prev) => prev ? ((cur - prev) / Math.abs(prev)) * 100 : 0;
+    const delta = (cur, prev) => {
+        if (!prev) return null;
+        const d = ((cur - prev) / Math.abs(prev)) * 100;
+        return Number.isFinite(d) ? d : null;
+    };
 
     // Reembolsos que descuentan del monto de ventas: solo gestiones de reembolso,
     // no anuladas ni rechazadas, con monto mayor a 0 (el monto incluye IVA).
@@ -140,8 +145,15 @@ export default function Dashboard() {
     const donut = Object.entries(catMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
     const donutTotal = donut.reduce((a, d) => a + d.value, 0);
 
-    const clientesActivos = raw.clients.filter(c => c.estado !== false && c.estado !== "Inactivo").length;
+    const tipoMap = {};
+    salesNow.forEach(s => {
+        const t = s.tipoVenta === "Credito" ? "Crédito" : (s.tipoVenta || "Otro");
+        tipoMap[t] = (tipoMap[t] || 0) + parseMoney(s.total);
+    });
+    const tipoDonut = Object.entries(tipoMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+
     const devMes = raw.devolutions.filter(d => inM(d.creadoEn || d.fecha, year, month)).length;
+    const devMesPrev = raw.devolutions.filter(d => inM(d.creadoEn || d.fecha, prevYM.y, prevYM.m)).length;
     const stockBajo = raw.products.filter(p => Number(p.stock) <= 5 && p.stock > 0 && p.estado !== false).length;
 
     const yearItems = [currentYear, currentYear - 1, currentYear - 2].map(y => ({ label: `Año ${y}`, value: y }));
@@ -227,11 +239,11 @@ export default function Dashboard() {
                         <TotalSalesChart data={serieVentas} year={year} />
                     </div>
 
-                    {/* Columna de StatCards */}
-                    <div className="col-span-1 grid grid-cols-1 gap-4" style={{ animation: "kpiFadeUp .6s ease both", animationDelay: "540ms" }}>
-                        <StatCard icon={Users} label="Clientes activos" value={clientesActivos} color="#3b82f6" isMoney={false} />
-                        <StatCard icon={RotateCcw} label="Devoluciones este mes" value={devMes} color="#f59e0b" isMoney={false} />
-                        <StatCard icon={Package} label="Stock bajo (≤5 uds)" value={stockBajo} color={stockBajo > 0 ? "#ef4444" : "#9ca3af"} isMoney={false} />
+                    {/* Columna de gráfica y StatCards */}
+                    <div className="col-span-1 flex flex-col gap-4" style={{ animation: "kpiFadeUp .6s ease both", animationDelay: "540ms" }}>
+                        <SalesTypeChart data={tipoDonut} monthName={MESES_FULL[month]} year={year} />
+                        <StatCard icon={RotateCcw} label="Devoluciones este mes" value={devMes} delta={delta(devMes, devMesPrev)} color="#f59e0b" isMoney={false} />
+                        <StatCard icon={Package} label="Stock bajo (≤5 uds)" value={stockBajo} color={stockBajo > 0 ? "#ef4444" : "#9ca3af"} isMoney={false} showDelta={false} />
                     </div>
                 </div>
             </div>

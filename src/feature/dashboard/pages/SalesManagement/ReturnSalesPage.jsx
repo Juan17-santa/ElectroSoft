@@ -237,6 +237,7 @@ export default function ReturnSalesPage() {
             `Total venta: ${formatCOP(sale.total)}`,
             `Estado: ${sale.estado ?? "—"}`,
             `Productos devueltos: ${devolucionesVenta.length}`,
+            `Total monto reembolso: ${totalMontoReembolsado > 0 ? formatCOP(totalMontoReembolsado) : "No aplica."}`,
         ];
         infoLines.forEach((line) => {
             doc.text(line, 14, currentY);
