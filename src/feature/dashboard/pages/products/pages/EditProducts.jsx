@@ -3,27 +3,26 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ServicesProducts } from "../services/ServicesProducts";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
-import Alert from "../../../components/ui/Alert";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import CategorySelect from "../../../components/ui/CategorySelect";
 import useProductEditForm from "../hooks/useProductEditForm";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function EditProducts() {
 
     const location = useLocation();
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [categorias, setCategorias] = useState([]);
     const [caracteristicas, setCaracteristicas] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
     const itemsPerPage = 3;
-
-    const [alert, setAlert] = useState(null);
 
     const initialProduct = location.state?.productToEdit || null;
 
@@ -37,10 +36,7 @@ export default function EditProducts() {
         id,
         initialData: initialProduct || {},
         onSuccess: () => {
-            setAlert({
-                type: "success",
-                message: "Producto actualizado correctamente"
-            });
+            showToast("success", "Producto actualizado correctamente");
 
             setTimeout(() => {
                 navigate("/dashboard/products");
@@ -70,16 +66,13 @@ export default function EditProducts() {
                     setCategorias(catsFiltradas);
                 }
             } catch (error) {
-                setAlert({
-                    type: "error",
-                    message: "Error al cargar los datos del producto"
-                });
+                showToast("error", "Error al cargar los datos del producto");
                 console.error(error);
             }
         };
         
         cargarDatos();
-    }, [id, initialProduct]);
+    }, [id, initialProduct, showToast]);
 
     const eliminarCaracteristica = (id) => {
         setDeleteConfirm(id);
@@ -88,10 +81,7 @@ export default function EditProducts() {
     const confirmarEliminar = () => {
         if (!deleteConfirm) return;
         setCaracteristicas(caracteristicas.filter(c => c.id !== deleteConfirm));
-        setAlert({
-            type: "success",
-            message: "Característica eliminada correctamente"
-        });
+        showToast("success", "Característica eliminada correctamente");
         setDeleteConfirm(null);
     };
 
@@ -401,15 +391,6 @@ export default function EditProducts() {
                     message="¿Estás seguro de eliminar esta característica?"
                     onConfirm={confirmarEliminar}
                     onCancel={() => setDeleteConfirm(null)}
-                />
-            )}
-
-            {/* ALERTA DE EXITO O ERROR */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </div>

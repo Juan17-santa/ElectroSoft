@@ -1,19 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { useOrdersForm } from "../hooks/UseOrdersForm";
 import { useState } from "react";
-import Alert from "../../../components/ui/Alert";
 import OrdersForm from "../components/OrdersForm";
 import ClientModal from "../components/ClientModal";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { X } from "lucide-react";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function CreateOrder() {
 
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
-
-    // ESTADO PARA MOSTRAR LAS ALERTAS DE ÉXITO O ERROR
-    const [alert, setAlert] = useState(null);
+    const { showToast } = useToast();
 
     // ESTADO PARA CONTROLAR LA VISIBILIDAD DE LA MODAL DE NUEVO CLIENTE
     const [showClientModal, setShowClientModal] = useState(false);
@@ -50,19 +48,12 @@ export default function CreateOrder() {
         handleOpenSummary
     } = useOrdersForm({
         onSuccess: () => {
-            setAlert({
-                type: "success",
-                message: "Pedido registrado con éxito."
-            });
+            showToast("success", "Pedido registrado con éxito.");
             setTimeout(() => {
                 navigate("/dashboard/orders");
             }, 2000);
         },
-        onShowAlert: (msg) =>
-            setAlert({
-                type: "error",
-                message: msg
-            })
+        onShowAlert: (msg) => showToast("error", msg)
     });
 
     // FUNCIÓN PARA GUARDAR UN NUEVO CLIENTE DESDE LA MODAL
@@ -78,10 +69,7 @@ export default function CreateOrder() {
             clienteTotalCompras: 0
         }));
 
-        setAlert({
-            type: "success",
-            message: "Cliente creado exitosamente"
-        });
+        showToast("success", "Cliente creado exitosamente");
 
         // CERRAR LA MODAL DE NUEVO CLIENTE
         setShowClientModal(false);
@@ -146,15 +134,6 @@ export default function CreateOrder() {
                 <ClientModal
                     onClose={() => setShowClientModal(false)}
                     onSave={handleSaveClient}
-                />
-            )}
-
-            {/* ALERTA EXITO O ERROR*/}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
 

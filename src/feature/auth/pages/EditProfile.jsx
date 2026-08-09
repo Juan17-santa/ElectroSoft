@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { X, User, Mail, Phone, Shield, Lock, Image, FileText, Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
-import Alert from "../../dashboard/components/ui/alert";
 import Modal from "../components/Modal";
 import PrimaryButton from "../../dashboard/components/ui/PrimaryButton";
 import CustomSelect from "../../dashboard/components/ui/CustomSelect";
@@ -167,8 +166,6 @@ export default function EditProfile() {
         touched,
         passwordTouched,
         loading,
-        alert,
-        setAlert,
         fileRef,
         success,
         handleChange,
@@ -184,11 +181,6 @@ export default function EditProfile() {
 
     return (
         <div className="bg-gray-100 p-3 sm:p-6 rounded-2xl flex flex-col gap-4 sm:gap-6 w-full h-full shadow-inner overflow-y-auto">
-
-            {/* ALERTA */}
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
-            )}
 
             {/* MODAL CAMBIAR CONTRASEÑA */}
             {showPasswordSection && (

@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
+import { ServicesProducts } from "../../products/services/ServicesProducts";
 import DevolutionForm from "../components/DevolutionForm";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
+import { useToast } from "../../../../../context/ToastContext";
 import {
     SUBMOTIVOS,
     getGestionesPermitidas,
     getResponsableAuto,
+    calcularReembolsoTotal,
 } from "../helpers/devolutionsHelpers";
 import { ArrowLeft } from "lucide-react";
 
@@ -157,6 +159,12 @@ function validarMontoReembolso(form, ventasList) {
     if (!Number.isFinite(monto) || monto <= 0) {
         return { valido: false, mensaje: "Ingresa el monto parcial a reembolsar." };
     }
+    if (monto < 100) {
+        return { valido: false, mensaje: "El monto mínimo a reembolsar es $100." };
+    }
+    if (monto > 999999999) {
+        return { valido: false, mensaje: "El monto no puede superar los 9 dígitos." };
+    }
     if (maximo <= 0) {
         return { valido: false, mensaje: "Selecciona producto y cantidad para calcular el maximo." };
     }
@@ -208,6 +216,7 @@ export default function EditDevolution() {
     const location = useLocation();
     const { id } = useParams();
     const { editarDevolucion } = useDevolutions();
+    const { showToast } = useToast();
 
     const [form, setForm] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -216,7 +225,7 @@ export default function EditDevolution() {
     const [ventasList, setVentasList] = useState([]);
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
+    const [stockDisponible, setStockDisponible] = useState(null);
     const initialFormRef = useRef(null);
     const isTemporal = String(id).startsWith("temp-");
 
@@ -263,7 +272,7 @@ export default function EditDevolution() {
                     }
                 }
             } catch (err) {
-                if (active) setAlert({ type: "error", message: err.message });
+                if (active) showToast("error", err.message);
             } finally {
                 if (active) setLoading(false);
             }
@@ -274,7 +283,31 @@ export default function EditDevolution() {
         return () => {
             active = false;
         };
-    }, [id, isTemporal]);
+    }, [id, isTemporal, showToast]);
+
+    const { idVenta: idVentaForm, producto: productoForm, gestion: gestionForm } = form ?? {};
+
+    useEffect(() => {
+        let active = true;
+        const consultarStock = async () => {
+            if (gestionForm !== "MISMO_PRODUCTO" || !productoForm || !idVentaForm) {
+                setStockDisponible(null);
+                return;
+            }
+            const venta = ventasList.find((v) => String(v.id) === String(idVentaForm));
+            const producto = venta?.productos?.find((p) => p.nombre === productoForm);
+            const productoId = producto?.productoId || producto?.id;
+            if (!productoId) { setStockDisponible(null); return; }
+            try {
+                const prod = await ServicesProducts.getById(productoId);
+                if (active) setStockDisponible(Number(prod?.stock) || 0);
+            } catch {
+                if (active) setStockDisponible(null);
+            }
+        };
+        consultarStock();
+        return () => { active = false; };
+    }, [idVentaForm, productoForm, gestionForm, ventasList]);
 
     const handleChange = (field, value) => {
         let autoTouched = {};
@@ -356,7 +389,7 @@ export default function EditDevolution() {
         tocarTodo();
 
         if (!formularioEsValido()) {
-            setAlert({ type: "error", message: "Revisa los campos marcados en rojo antes de continuar." });
+            showToast("error", "Revisa los campos marcados en rojo antes de continuar.");
             return;
         }
 
@@ -366,6 +399,16 @@ export default function EditDevolution() {
             message: "¿Deseas guardar los cambios realizados en esta devolución?",
             onConfirm: async () => {
                 try {
+                    const venta = ventasList.find((v) => String(v.id) === String(form.idVenta));
+                    const producto = venta?.productos?.find((p) => p.nombre === form.producto);
+                    const formConMonto = {
+                        ...form,
+                        montoReembolso:
+                            form.gestion === "REEMBOLSO_TOTAL"
+                                ? calcularReembolsoTotal(form.cantidad, producto?.precio)
+                                : form.montoReembolso,
+                    };
+
                     if (isTemporal) {
                         // Guardar en localStorage
                         const key = `pendingDevs_${form.idVenta}`;
@@ -374,15 +417,15 @@ export default function EditDevolution() {
                             const devs = JSON.parse(devsStr);
                             const idx = devs.findIndex((d) => String(d.id) === String(id));
                             if (idx !== -1) {
-                                devs[idx] = form;
+                                devs[idx] = formConMonto;
                                 localStorage.setItem(key, JSON.stringify(devs));
                             }
                         }
                     } else {
-                        await editarDevolucion(form);
+                        await editarDevolucion(formConMonto);
                     }
                     setConfirmData(null);
-                    setAlert({ type: "success", message: "Devolución actualizada correctamente." });
+                    showToast("success", "Devolución actualizada correctamente.");
                     const idVenta = location.state?.idVenta ?? form.idVenta;
                     const mode = location.state?.mode ?? "from-sales";
                     setTimeout(() => {
@@ -394,7 +437,7 @@ export default function EditDevolution() {
                     }, 1500);
                 } catch (err) {
                     setConfirmData(null);
-                    setAlert({ type: "error", message: err.message });
+                    showToast("error", err.message);
                 }
             },
         });
@@ -457,6 +500,9 @@ export default function EditDevolution() {
         );
     }
 
+    const ventaSeleccionada = ventasList.find((v) => String(v.id) === String(form.idVenta));
+    const saldoPendiente = Number(ventaSeleccionada?.montoPorPagar ?? 0) > 0;
+
     return (
         <>
             <DevolutionForm
@@ -471,6 +517,8 @@ export default function EditDevolution() {
                 estadoCampo={estadoCampo}
                 onFieldBlur={tocarCampo}
                 readOnlyFields={["idVenta", "producto"]}
+                stockDisponible={stockDisponible}
+                saldoPendiente={saldoPendiente}
             />
 
             {confirmData && (
@@ -480,13 +528,6 @@ export default function EditDevolution() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
-                />
-            )}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

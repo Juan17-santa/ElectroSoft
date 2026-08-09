@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
 
-export function useDevolutions() {
+export function useDevolutions(ventasMap = null) {
     const [devolutions, setDevolutions] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(false);
@@ -44,9 +44,12 @@ export function useDevolutions() {
             formattedEstadoDate = `${day}-${m}-${y}`;
         }
 
+        const numeroVenta = d.idVenta && ventasMap ? String(ventasMap[d.idVenta] ?? "") : "";
+
         return (
             String(d.id ?? "").toLowerCase().includes(term) ||
             String(d.idVenta ?? "").toLowerCase().includes(term) ||
+            numeroVenta.toLowerCase().includes(term) ||
             String(d.motivo ?? "").toLowerCase().includes(term) ||
             String(d.producto ?? "").toLowerCase().includes(term) ||
             String(d.responsable ?? "").toLowerCase().includes(term) ||
@@ -85,10 +88,20 @@ export function useDevolutions() {
     const anularPorVenta = async (idVenta) => {
         setError(null);
         const devolucionesVenta = await ServicesDevolutions.getBySaleId(idVenta);
+        const anulables = devolucionesVenta.filter((d) => d.estadoResolucion !== "Anulada");
+
+        // Si alguna devolución quedó en estado final, la tanda completa no se puede anular (R2)
+        const conEstadoFinal = anulables.some((d) =>
+            ["RESUELTO", "RECHAZADA"].includes(d.estadoResolucion),
+        );
+        if (conEstadoFinal) {
+            throw new Error(
+                "No se puede anular la tanda: hay devoluciones en estado final (RESUELTO o RECHAZADA).",
+            );
+        }
+
         const anuladas = await Promise.all(
-            devolucionesVenta
-                .filter((d) => d.estadoResolucion !== "Anulada")
-                .map((d) => ServicesDevolutions.anular(d.id)),
+            anulables.map((d) => ServicesDevolutions.anular(d.id)),
         );
 
         setDevolutions((prev) =>

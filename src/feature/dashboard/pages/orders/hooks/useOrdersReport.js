@@ -1,7 +1,7 @@
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
 import { ServicesOrders } from "../services/ServicesOrders";
 
-export function useOrdersReport(data, setAlert) {
+export function useOrdersReport(data, notify) {
     const fmt = (val) => new Intl.NumberFormat("es-CO", {
         style: "currency", currency: "COP", minimumFractionDigits: 0
     }).format(val ?? 0);
@@ -20,10 +20,7 @@ export function useOrdersReport(data, setAlert) {
         });
 
         if (filtrados.length === 0) {
-            setAlert({
-                type: "error",
-                message: "No hay pedidos en el rango de fechas seleccionado."
-            });
+            notify("error", "No hay pedidos en el rango de fechas seleccionado.");
             return;
         }
 
@@ -74,10 +71,7 @@ export function useOrdersReport(data, setAlert) {
             data: excelData
         });
 
-        setAlert({
-            type: "success",
-            message: "Reporte de pedidos descargado con éxito."
-        });
+        notify("success", "Reporte de pedidos descargado con éxito.");
     };
 
     return { exportReport };

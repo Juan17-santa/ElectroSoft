@@ -2,6 +2,7 @@ import api from "../../../utils/api.js";
 import { useState, useEffect, useRef } from "react";
 import { getAuthUser, updateProfile, changePassword } from "../services/authService";
 import { Validations } from "../../../utils/validations";
+import { useToast } from "../../../context/ToastContext";
 
 export const getPasswordStrength = (value) => {
     if (!value) return null;
@@ -19,6 +20,8 @@ export const getPasswordStrength = (value) => {
 
 export default function useEditProfile() {
 
+    const { showToast } = useToast();
+
     const [formData, setFormData] = useState({
         tipoDoc: "",
         documento: "",
@@ -35,7 +38,6 @@ export default function useEditProfile() {
     const [showPasswordSection, setShowPasswordSection] = useState(false);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
-    const [alert, setAlert] = useState(null);
     const [success, setSuccess] = useState(false);
     const fileRef = useRef();
     const debounceRef = useRef(null);
@@ -287,17 +289,11 @@ export default function useEditProfile() {
         setLoading(false);
 
         if (result.ok) {
-            setAlert({
-                type: "success",
-                message: "Tu perfil fue actualizado correctamente."
-            });
+            showToast("success", "Tu perfil fue actualizado correctamente.");
 
             setTimeout(() => setSuccess(true), 2500);
         } else {
-            setAlert({
-                type: "error",
-                message: result.message || "No se pudo actualizar el perfil."
-            });
+            showToast("error", result.message || "No se pudo actualizar el perfil.");
         }
     };
 
@@ -310,18 +306,18 @@ export default function useEditProfile() {
         );
 
         if (result.ok) {
-            setAlert({ type: "success", message: "Tu contraseña fue cambiada correctamente." });
+            showToast("success", "Tu contraseña fue cambiada correctamente.");
             setShowPasswordSection(false);
             setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
             setPasswordTouched({});
         } else {
-            setAlert({ type: "error", message: result.message || "No se pudo cambiar la contraseña." });
+            showToast("error", result.message || "No se pudo cambiar la contraseña.");
         }
     };
 
     return {
         formData, passwordData, showPasswordSection, setShowPasswordSection,
-        errors, touched, passwordTouched, loading, alert, setAlert, fileRef,
+        errors, touched, passwordTouched, loading, fileRef,
         success, // 🔥 NUEVO
         handleChange, handlePasswordChange, handleAvatarChange,
         handleSubmit, handleChangePassword,

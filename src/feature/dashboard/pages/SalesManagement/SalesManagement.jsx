@@ -6,13 +6,13 @@ import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 import CancellationModal from "./components/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
 import { ServicesProducts } from "../products/services/ServicesProducts";
 import { useSalesReport } from "./hooks/useSalesReport";
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
+import { useToast } from "../../../../context/ToastContext";
 
 const formatCOP = (val) => {
     return new Intl.NumberFormat('es-CO', {
@@ -31,7 +31,7 @@ function esVentaConDevolucion(estado) {
 }
 
 function validarAnulacion(sale) {
-    if (sale.estado === "Anulado" || esVentaConDevolucion(sale.estado)) {
+    if (["ANULADA", "Anulado"].includes(sale.estado) || esVentaConDevolucion(sale.estado)) {
         return { puedeAnularse: false, razon: "La venta ya no puede ser anulada por su estado." };
     }
 
@@ -152,18 +152,18 @@ const formatFechaConSlash = (fechaStr) => {
 export default function SalesManagement() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [sales, setSales] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [cancelModalSale, setCancelModalSale] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
 
-    const { exportReport } = useSalesReport(sales, setAlert);
+    const { exportReport } = useSalesReport(sales, showToast);
 
-    const showAlert = (type, message) => setAlert({ type, message });
+    const showAlert = (type, message) => showToast(type, message);
 
     const filteredSales = sales.filter(sale => {
         const fechaSlash = formatFechaConSlash(sale.fecha);
@@ -194,11 +194,11 @@ export default function SalesManagement() {
             setSales(sortedSales);
         } catch (err) {
             const message = "No se pudieron cargar las ventas." || err.message;
-            showAlert("error", message);
+            showToast("error", message);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [showToast]);
 
     useEffect(() => { getSales(); }, [getSales]);
 
@@ -287,7 +287,7 @@ export default function SalesManagement() {
         switch (estado) {
             case "Finalizado": case "Finalizadas": return "bg-green-100 text-green-700";
             case "Vigente": return "bg-yellow-100 text-yellow-700";
-            case "Anulado": return "bg-red-100 text-red-700";
+            case "Anulado": case "ANULADA": return "bg-red-100 text-red-700";
             case "Devuelto": return "bg-gray-100 text-gray-700";
             case "Devolución Parcial": return "bg-amber-100 text-amber-700";
             default: return "bg-gray-100 text-gray-700";
@@ -371,11 +371,14 @@ export default function SalesManagement() {
                                                     {/* DEVOLVER */}
                                                     <Restricted scope="Ventas" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            {sale.estado === "Anulado" ? (
-                                                                <CancellationInfoTooltip cancelInfo={{
-                                                                    fechaAnulacion: sale.anuladaEn || sale.fecha,
-                                                                    motivo: sale.observaciones || "Anulación registrada sin motivo."
-                                                                }} />
+                                                            {sale.estado === "Anulado" || sale.estado === "ANULADA" ? (
+                                                                <button
+                                                                    disabled
+                                                                    title="Venta anulada"
+                                                                    className="p-2 rounded-lg bg-gray-100 opacity-50 cursor-not-allowed"
+                                                                >
+                                                                    <Undo2 size={18} className="text-gray-400" />
+                                                                </button>
                                                             ) : (
                                                                 <button
                                                                     className={`p-2 rounded-lg transition duration-300 cursor-pointer ${sale.estado === "Devuelto" ? "bg-gray-100 hover:bg-gray-200" : "bg-yellow-100 hover:bg-yellow-200"}`}
@@ -402,7 +405,7 @@ export default function SalesManagement() {
                                                     {/* ANULAR */}
                                                     <Restricted scope="Ventas" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            {sale.estado === "Anulado" ? (
+                                                            {sale.estado === "Anulado" || sale.estado === "ANULADA" ? (
                                                                 <CancellationInfoTooltip cancelInfo={{
                                                                     fechaAnulacion: sale.anuladaEn || sale.fecha,
                                                                     motivo: sale.observaciones || "Anulación registrada sin motivo."
@@ -486,15 +489,6 @@ export default function SalesManagement() {
                     saleId={cancelModalSale.numeroVenta || cancelModalSale.id}
                     onConfirm={confirmAnull}
                     onCancel={() => setCancelModalSale(null)}
-                />
-            )}
-
-            {/* ALERTA */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

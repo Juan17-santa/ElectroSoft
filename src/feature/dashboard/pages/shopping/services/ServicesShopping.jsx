@@ -131,12 +131,17 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
     const products = catalogs.products || [];
     const providers = catalogs.providers || [];
 
-    // El backend devuelve providerId (inglés), pero el frontend trabaja con proveedorId (español)
+    // El backend devuelve providerId (inglés) poblado con { _id, providerName }.
+    // El frontend trabaja con proveedorId (español).
     const proveedorId = String(
         shopping.providerId?._id ?? shopping.providerId
         ?? shopping.proveedorId?._id ?? shopping.proveedorId ?? ""
     );
     const provider = providers.find((item) => String(item.id) === proveedorId);
+    const providerNombre = shopping.providerId?.providerName
+        ?? shopping.proveedor
+        ?? provider?.nombreProveedor
+        ?? "Proveedor no encontrado";
     const totalNumber = Number(shopping.total ?? 0);
 
     // El backend devuelve products[] (inglés), pero el frontend trabaja con productos[] (español)
@@ -148,17 +153,22 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
             ?? item.productoId?._id ?? item.productoId ?? item.id ?? ""
         );
         const product = products.find((stored) => String(stored.id) === productId);
+        const nombreProducto = item.nombre
+            ?? item.productId?.name
+            ?? product?.nombre
+            ?? "Producto no encontrado";
+        const precioInventario = product?.precio ?? item.productId?.price;
         const precioCompra = Number(item.purchasePrice ?? item.precioCompra ?? item.costeProducto ?? 0);
-        const precioVenta = Number(item.salePrice ?? item.precioVenta ?? product?.precio ?? 0);
+        const precioVenta = Number(item.appliedPrice ?? item.salePrice ?? item.precioVenta ?? precioInventario ?? 0);
         const cantidad = Number(item.quantity ?? item.cantidad ?? 0);
 
         return {
             ...item,
             id: productId,
             productoId: productId,
-            nombre: item.nombre ?? product?.nombre ?? "Producto no encontrado",
+            nombre: nombreProducto,
             cantidad,
-            precio: Number(product?.precio ?? precioVenta),
+            precio: Number(precioInventario ?? precioVenta),
             costeProducto: precioCompra,
             precioCompra,
             precioVenta,
@@ -182,8 +192,9 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
         numeroFactura: String(invoiceNumber),
         fechaCompra: purchaseDate,
         proveedorId,
-        proveedor: shopping.proveedor ?? provider?.nombreProveedor ?? "Proveedor no encontrado",
+        proveedor: providerNombre,
         iva: formatCOP(Math.round(totalNumber * 0.19)),
+        subtotal: formatCOP(Math.round(totalNumber) - Math.round(totalNumber * 0.19)),
         total: formatCOP(Math.round(totalNumber)),
         totalNumerico: totalNumber,
         estado: normalizeEstado(shopping.estado),
@@ -213,6 +224,11 @@ function toShoppingPayload({ numeroFactura, fechaFactura, proveedorId, productos
                 // salePrice siempre debe ser el precio original ingresado por el usuario,
                 // ya que el Backend lo usa en la fórmula de costo promedio ponderado (WAC).
                 salePrice: Number(product.precioVentaOriginal ?? product.precioVenta),
+                // appliedPrice es el precio que efectivamente se aplica al inventario
+                // (WAC si se eligió promedio, o el ingresado si se eligió sugerido).
+                appliedPrice: product.appliedPrice != null
+                    ? Number(product.appliedPrice)
+                    : (product.precioVenta != null ? Number(product.precioVenta) : null),
                 useSuggestedPrice: product.usarPrecioSugerido === true || product.sobreescribirConSugerido === true,
             };
             if (product.isNew && product.newProduct) {
@@ -256,16 +272,23 @@ export const ServicesShopping = {
         return { products, providers };
     },
 
-    async fetchAll() {
-        const catalogs = await this.fetchCatalogs();
-        const payload = await request("/shopping");
-        return (payload?.data || []).map((shopping) => normalizeShopping(shopping, catalogs));
+    async fetchAll({ page = 1, limit = 15, search = "" } = {}) {
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("limit", String(limit));
+        if (search) params.set("search", String(search).trim());
+
+        const payload = await request(`/shopping?${params.toString()}`);
+        const data = (payload?.data || []).map((shopping) => normalizeShopping(shopping));
+        return {
+            data,
+            pagination: payload?.pagination || { page, limit, total: data.length, totalPages: 1 },
+        };
     },
 
     async fetchById(id) {
-        const catalogs = await this.fetchCatalogs();
         const payload = await request(`/shopping/${id}`);
-        return normalizeShopping(payload?.data, catalogs);
+        return normalizeShopping(payload?.data);
     },
 
     async createRemote(compra) {
@@ -273,8 +296,7 @@ export const ServicesShopping = {
             method: "POST",
             body: JSON.stringify(toShoppingPayload(compra)),
         });
-        const catalogs = await this.fetchCatalogs();
-        return normalizeShopping(payload?.data, catalogs);
+        return normalizeShopping(payload?.data);
     },
 
     async createProduct(producto) {
@@ -325,8 +347,7 @@ export const ServicesShopping = {
             method: "PATCH",
             body: JSON.stringify(body),
         });
-        const catalogs = await this.fetchCatalogs();
-        return normalizeShopping(payload?.data, catalogs);
+        return normalizeShopping(payload?.data);
     },
 
     async getCancellationStatus(id) {
@@ -338,17 +359,33 @@ export const ServicesShopping = {
     },
 
     /**
-     * Verifica si un número de factura ya existe consultando la API.
-     * Retorna true si ya existe en una compra activa, false si está libre.
+     * Verifica si un número de factura ya existe en una compra activa.
+     * Retorna true si ya existe, false si está libre.
      */
-    async invoiceNumberExists(numeroFactura) {
+    async checkInvoiceExists(numeroFactura) {
         try {
-            const compras = await this.fetchAll();
-            return compras
-                .filter((c) => c.estado !== "Anulada")
-                .some((c) => String(c.numeroFactura) === String(numeroFactura));
+            const number = String(numeroFactura || "").trim();
+            if (!number) return false;
+            const payload = await request(`/shopping/invoice-exists/${encodeURIComponent(number)}`);
+            return payload?.exists === true;
         } catch {
             return false;
+        }
+    },
+
+    /**
+     * Verifica si un campo único de proveedor (documento/email) ya está registrado.
+     * Retorna { exists, field, message } o null si hubo error.
+     */
+    async checkProviderUnique(data) {
+        try {
+            const payload = await request("/providers/check-unique", {
+                method: "POST",
+                body: JSON.stringify(data),
+            });
+            return payload || { exists: false };
+        } catch {
+            return null;
         }
     },
 

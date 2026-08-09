@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { usersService } from "../services/usersService";
 import { Validations } from "../../../../../utils/validations";
 import api from "../../../../../utils/api.js";
+import { useToast } from "../../../../../context/ToastContext";
 
 export function useUserForm({ userToEdit, navigate }) {
+
+    const { showToast } = useToast();
 
     const [formData, setFormData] = useState({
         tipoDoc: "",
@@ -16,7 +19,6 @@ export function useUserForm({ userToEdit, navigate }) {
     });
 
     const [errors, setErrors] = useState({});
-    const [alert, setAlert] = useState(null);
     const [loading, setLoading] = useState(false);
     const debounceRef = useRef(null);
 
@@ -153,11 +155,11 @@ export function useUserForm({ userToEdit, navigate }) {
         try {
             setLoading(true);
             await usersService.create(formData);
-            setAlert({ type: "success", message: "Usuario creado correctamente" });
+            showToast("success", "Usuario creado correctamente");
             return true;
         } catch (error) {
             const message = error.response?.data?.message || "Error al crear usuario";
-            setAlert({ type: "error", message });
+            showToast("error", message);
             return false;
         } finally {
             setLoading(false);
@@ -169,11 +171,11 @@ export function useUserForm({ userToEdit, navigate }) {
         try {
             setLoading(true);
             await usersService.update(formData);
-            setAlert({ type: "success", message: "Usuario actualizado correctamente" });
+            showToast("success", "Usuario actualizado correctamente");
             return true;
         } catch (error) {
             const message = error.response?.data?.message || "Error al actualizar usuario";
-            setAlert({ type: "error", message });
+            showToast("error", message);
             return false;
         } finally {
             setLoading(false);
@@ -183,8 +185,6 @@ export function useUserForm({ userToEdit, navigate }) {
     return {
         formData,
         errors,
-        alert,
-        setAlert,
         loading,
         handleChange,
         validateForm,

@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
 import Pagination from "../../../components/ui/Pagination";
 import SearchBar from "../../../components/ui/Searchbar";
 import ProductCategoryTable from "../components/ProductCategoryTable";
 import useProductCategoryTable from "../hooks/UseProductCategoryTable";
 import ProductCategoryModal from "../components/ProductCategoryModal";
 import { usePermissions } from "../../../../../hooks/usePermissions";
+import { useToast } from "../../../../../context/ToastContext";
 
 // COMPONENTE PRINCIPAL PARA LA GESTION DE CATEGORIAS DE PRODUCTOS
 export default function ProductCategory() {
     const { hasPermission } = usePermissions();
+    const { showToast } = useToast();
 
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
@@ -21,14 +22,6 @@ export default function ProductCategory() {
 
     // ESTADO PARA EL MODAL DE CONFIRMACION
     const [confirmData, setConfirmData] = useState(null);
-
-    // ESTADO PARA LA ALERTA DE EXITO O ERROR
-    const [alert, setAlert] = useState(null);
-
-    // FUNCION PARA MOSTRAR ALERTA
-    const showAlert = (type, message) => {
-        setAlert({ type, message });
-    };
 
     // ESTADOS PARA CONTROLAR LA MODAL DE CREAR / EDITAR
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,7 +53,7 @@ export default function ProductCategory() {
         loading
     } = useProductCategoryTable({
         setConfirmData,
-        showAlert,
+        showAlert: showToast,
         searchTerm,
         currentPage: presentPage,
         recordsPerPage
@@ -110,7 +103,7 @@ export default function ProductCategory() {
                     onClose={() => setIsModalOpen(false)}
                     onSave={() => {
                         loadCategories();
-                        showAlert(
+                        showToast(
                             "success",
                             `Categoría ${selectedCategory ? "actualizada" : "registrada"} con éxito`
                         );
@@ -126,14 +119,6 @@ export default function ProductCategory() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
-                />
-            )}
-            {/* ALERTA DE EXITO O ERROR */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

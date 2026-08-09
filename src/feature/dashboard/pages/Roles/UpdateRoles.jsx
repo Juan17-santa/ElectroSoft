@@ -3,13 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { RolesService } from "../Roles/services/RolesService";
 import { useRoleForm } from "../Roles/hooks/useRoleForm";
 import RoleForm from "../Roles/components/RoleForm";
-import Alert from "../../components/ui/Alert";
 import { X } from "lucide-react";
+import { useToast } from "../../../../context/ToastContext";
 
 export default function UpdateRoles() {
     const navigate  = useNavigate();
     const location  = useLocation();
-    const [alert, setAlert]         = useState(null);
+    const { showToast } = useToast();
     const [initialData, setInitialData] = useState(null);
     const [dataLoaded, setDataLoaded]   = useState(false); // ← controla el skeleton
 
@@ -32,7 +32,7 @@ export default function UpdateRoles() {
                     descripcion: formData.descripcion,
                     permisos:    formData.permisos,
                 });
-                setAlert({ type: "success", message: "Rol actualizado correctamente." });
+                showToast("success", "Rol actualizado correctamente.");
                 setTimeout(() => navigate("/dashboard/roles"), 1500);
             } catch (error) {
                 const message = error.response?.data?.message || "Error al actualizar el rol";
@@ -110,10 +110,6 @@ export default function UpdateRoles() {
                     )}
                 </div>
             </div>
-
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
-            )}
         </>
     );
 }

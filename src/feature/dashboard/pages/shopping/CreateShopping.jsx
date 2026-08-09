@@ -1,5 +1,5 @@
 import { Plus, Trash2, Truck, ScanBarcode, Boxes, AlertCircle, CheckCircle2, X, Minus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useShopping } from "../shopping/hooks/useShopping";
 import { formatCOP, IVA_RATE } from "../shopping/helpers/shoppingHelpers";
@@ -8,11 +8,11 @@ import CreateProductModal from "../shopping/components/CreateProductModal";
 import CreateProviderModal from "../shopping/components/CreateProviderModal";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 import Calendar, { formatearFecha } from "../../components/ui/Calendar";
 import PrimaryButton from "../../components/ui/PrimaryButton";
 import CustomSelect from "../../components/ui/CustomSelect";
 import { ServicesShopping } from "../shopping/services/ServicesShopping";
+import { useToast } from "../../../../context/ToastContext";
 
 const ITEMS_PER_PAGE = 4;
 
@@ -30,16 +30,6 @@ function validarFecha(fecha) {
     const sel = new Date(fecha);
     sel.setHours(0, 0, 0, 0);
     if (sel > hoy) return { valido: false, mensaje: "La fecha no puede ser futura." };
-    return { valido: true, mensaje: "" };
-}
-
-function validarNumeroFactura(valor, compras = []) {
-    if (!valor || valor === "") return { valido: false, mensaje: "Debes ingresar un número de factura." };
-    if (!/^\d+$/.test(valor)) return { valido: false, mensaje: "Solo se permiten números." };
-    const existe = compras
-        .filter((compra) => compra.estado !== "Anulada")
-        .some((compra) => String(compra.numeroFactura) === String(valor));
-    if (existe) return { valido: false, mensaje: "Este numero de factura ya esta en uso." };
     return { valido: true, mensaje: "" };
 }
 
@@ -63,7 +53,8 @@ function FieldStatus({ estado }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function CreateShopping() {
     const navigate = useNavigate();
-    const { guardarCompra, compras, saving } = useShopping();
+    const { guardarCompra, saving } = useShopping();
+    const { showToast } = useToast();
 
     const [showModal, setShowModal] = useState(false);
     const [showCreateProductModal, setShowCreateProductModal] = useState(false);
@@ -71,7 +62,6 @@ export default function CreateShopping() {
     const [currentPage, setCurrentPage] = useState(1);
     const [proveedoresList, setProveedoresList] = useState([]);
     const [confirmData, setConfirmData] = useState(null);
-    const [alertData, setAlertData] = useState(null);
     const [navegarACompras, setNavegarACompras] = useState(false);
     const [catalogLoading, setCatalogLoading] = useState(false);
 
@@ -87,6 +77,42 @@ export default function CreateShopping() {
     // Productos en tabla
     const [productos, setProductos] = useState([]);
 
+    // Estado de validación del número de factura consultado al servidor.
+    const [estadoNumeroFactura, setEstadoNumeroFactura] = useState(null);
+    const facturaTimerRef = useRef(null);
+    const facturaCheckRef = useRef("");
+
+    const validarNumeroFacturaAsync = useCallback(async (valor) => {
+        if (!valor || valor === "") return { valido: false, mensaje: "Debes ingresar un número de factura." };
+        if (!/^\d+$/.test(valor)) return { valido: false, mensaje: "Solo se permiten números." };
+        const existe = await ServicesShopping.checkInvoiceExists(valor);
+        if (existe) return { valido: false, mensaje: "Este numero de factura ya esta en uso." };
+        return { valido: true, mensaje: "" };
+    }, []);
+
+    // Validación en tiempo real con debounce para no saturar el servidor.
+    useEffect(() => {
+        if (!numeroFacturaTocado || !numeroFactura) {
+            setEstadoNumeroFactura(null);
+            return;
+        }
+
+        facturaCheckRef.current = numeroFactura;
+        if (facturaTimerRef.current) clearTimeout(facturaTimerRef.current);
+
+        facturaTimerRef.current = setTimeout(async () => {
+            const valorActual = facturaCheckRef.current;
+            if (valorActual !== numeroFactura) return;
+            const res = await validarNumeroFacturaAsync(numeroFactura);
+            if (facturaCheckRef.current !== numeroFactura) return;
+            setEstadoNumeroFactura(res);
+        }, 300);
+
+        return () => {
+            if (facturaTimerRef.current) clearTimeout(facturaTimerRef.current);
+        };
+    }, [numeroFactura, numeroFacturaTocado, validarNumeroFacturaAsync]);
+
     useEffect(() => {
         let mounted = true;
         setCatalogLoading(true);
@@ -97,10 +123,7 @@ export default function CreateShopping() {
             .catch((err) => {
                 if (mounted) {
                     setProveedoresList([]);
-                    setAlertData({
-                        type: "error",
-                        message: err.message || "No se pudieron cargar los proveedores.",
-                    });
+                    showToast("error", err.message || "No se pudieron cargar los proveedores.");
                 }
             })
             .finally(() => {
@@ -109,7 +132,7 @@ export default function CreateShopping() {
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [showToast]);
 
     // Navegación reactiva: se dispara cuando finalizarCompra marca navegarACompras=true.
     // Usar useEffect en lugar de setTimeout dentro de un closure evita problemas
@@ -140,7 +163,6 @@ export default function CreateShopping() {
     // ─── Validaciones en tiempo real ──────────────────────────────────────────
     const estadoProveedor = proveedorTocado ? validarProveedor(proveedorId) : null;
     const estadoFecha = fechaTocada ? validarFecha(fechaISO) : null;
-    const estadoNumeroFactura = numeroFacturaTocado ? validarNumeroFactura(numeroFactura, compras) : null;
 
     // ─── Cálculos ─────────────────────────────────────────────────────────────
     const productosActivos = productos;
@@ -225,7 +247,7 @@ export default function CreateShopping() {
 
         if (validQuantity > maxStock) {
             validQuantity = maxStock;
-            setAlertData({ type: "error", message: `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}` });
+            showToast("error", `La cantidad máxima disponible para ${productInfo?.nombre || 'este producto'} es ${maxStock}`);
         }
 
         setProductos(prev => prev.map(p =>
@@ -256,21 +278,15 @@ export default function CreateShopping() {
                 productos: productosParaGuardar,
             });
 
-            setAlertData({
-                type: "success",
-                message: `Compra registrada exitosamente. Numero de factura: ${numeroFactura}`,
-            });
+            showToast("success", `Compra registrada exitosamente. Numero de factura: ${numeroFactura}`);
             setNumeroFacturaTocado(false);
             setNavegarACompras(true);
         } catch (err) {
-            setAlertData({
-                type: "error",
-                message: err.message || "No se pudo registrar la compra.",
-            });
+            showToast("error", err.message || "No se pudo registrar la compra.");
         }
     };
 
-    const handleCrearCompra = () => {
+    const handleCrearCompra = async () => {
         setProveedorTocado(true);
         setFechaTocada(true);
         setNumeroFacturaTocado(true);
@@ -278,7 +294,8 @@ export default function CreateShopping() {
 
         const vProv = validarProveedor(proveedorId);
         const vFech = validarFecha(fechaISO);
-        const vNumFact = validarNumeroFactura(numeroFactura, compras);
+        const vNumFact = await validarNumeroFacturaAsync(numeroFactura);
+        setEstadoNumeroFactura(vNumFact);
 
         if (!vProv.valido || !vFech.valido || !vNumFact.valido) return;
 
@@ -569,7 +586,7 @@ export default function CreateShopping() {
                                                         onConfirm: () => {
                                                             handleEliminarProducto(producto.id);
                                                             setConfirmData(null);
-                                                            setAlertData({ type: "success", message: "El producto fue eliminado de la compra." });
+                                                            showToast("success", "El producto fue eliminado de la compra.");
                                                         }
                                                     })}
                                                     className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 transition duration-300 cursor-pointer"
@@ -676,15 +693,6 @@ export default function CreateShopping() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
-                />
-            )}
-
-            {/* ALERTA DE ÉXITO */}
-            {alertData && (
-                <Alert
-                    type={alertData.type}
-                    message={alertData.message}
-                    onClose={() => setAlertData(null)}
                 />
             )}
         </>

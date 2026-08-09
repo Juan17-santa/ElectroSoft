@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import Alert from "../../../components/ui/Alert";
 import UserForm from "../components/UserForm";
 import { useUserForm } from "../hooks/useUserForm";
 import api from "../../../../../utils/api.js";
@@ -40,8 +39,6 @@ export default function CreateUser() {
     const {
         formData,
         errors,
-        alert,
-        setAlert,
         loading,
         handleChange,
         validateForm,
@@ -83,10 +80,6 @@ export default function CreateUser() {
                     documentTypes={documentTypes}
                 />
             </div>
-
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
-            )}
         </>
     );
 }

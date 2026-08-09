@@ -2,13 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Info, ArrowLeft } from "lucide-react";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 
 export default function ClientDetailsPage() {
     const navigate = useNavigate();
     const [client, setClient] = useState(null);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
 
     useEffect(() => {
         const data = localStorage.getItem("clientToView");
@@ -33,17 +31,6 @@ export default function ClientDetailsPage() {
                     backgroundRepeat: 'no-repeat'
                 }}
             >
-                {/* ALERTA (Flotante) */}
-                {alert && (
-                    <div className="absolute top-4 right-4 z-50">
-                        <Alert
-                            type={alert.type}
-                            message={alert.message}
-                            onClose={() => setAlert(null)}
-                        />
-                    </div>
-                )}
-
                 {/* Capa de transparencia */}
                 <div className="absolute inset-0 bg-white/20 pointer-events-none"></div>
 

@@ -72,6 +72,8 @@ export default function DevolutionForm({
     sinProductos     = false,
     readOnlyFields   = [],
     garantiaVencidaMap = {},
+    stockDisponible  = null,
+    saldoPendiente   = false,
 }) {
     const esReadOnly = (campo) => readOnly || readOnlyFields.includes(campo);
 
@@ -83,11 +85,23 @@ export default function DevolutionForm({
     const garantiaNoAplica = !readOnly && form.motivo && !garantiaAplica;
 
     const mostrarMontoParcial = form.gestion === "REEMBOLSO_PARCIAL";
+    const mostrarReembolsoTotal = form.gestion === "REEMBOLSO_TOTAL";
 
     const productoSeleccionado = productosList.find(p => p.nombre === form.producto);
     const valorTotalReferencia = productoSeleccionado?.precio
         ? (parseFloat(productoSeleccionado.precio) * (parseInt(form.cantidad) || 0))
         : 0;
+
+    const valorReembolsoMostrado =
+        Number(form.montoReembolso) > 0
+            ? Number(form.montoReembolso)
+            : valorTotalReferencia;
+
+    const stockSinExistencias =
+        form.gestion === "MISMO_PRODUCTO" &&
+        stockDisponible !== null &&
+        Number(form.cantidad || 0) > 0 &&
+        Number(stockDisponible) < Number(form.cantidad || 0);
 
     const fieldBase = (campo) => `
         bg-gray-200 text-gray-500 rounded-xl px-4 py-3 text-sm w-full shadow-sm
@@ -201,6 +215,27 @@ export default function DevolutionForm({
                         width="w-full"
                         disabled={esReadOnly("condicionProducto")}
                     />
+                    {form.submotivo === "PRODUCTO_INCOMPLETO" &&
+                        form.condicionProducto === "BUEN_ESTADO" && (
+                        <label
+                            className={`flex items-center gap-2 mt-2 text-xs text-gray-500 cursor-pointer select-none ${
+                                esReadOnly("regresarAlInventario") ? "opacity-60 cursor-not-allowed" : ""
+                            }`}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={form.regresarAlInventario !== false}
+                                onChange={(e) => {
+                                    onChange("regresarAlInventario", e.target.checked);
+                                    onFieldBlur("condicionProducto");
+                                }}
+                                readOnly={esReadOnly("regresarAlInventario")}
+                                disabled={esReadOnly("regresarAlInventario")}
+                                className="h-4 w-4 accent-yellow-500"
+                            />
+                            <span >¿Regresar estos productos al inventario/stock?</span>
+                        </label>
+                    )}
                     <FieldStatus estado={estadoCampo("condicionProducto")} />
                 </Field>
 
@@ -240,13 +275,44 @@ export default function DevolutionForm({
                                 <CustomSelect
                                     value={form.gestion}
                                     onChange={(val) => { onChange("gestion", val); onFieldBlur("gestion"); }}
-                                    options={gestionesDisponibles.map((g) => ({ value: g, label: g.replace(/_/g, " ") }))}
+                                    options={gestionesDisponibles.map((g) => ({
+                                        value: g,
+                                        label: g.replace(/_/g, " "),
+                                        disabled: false,
+                                    }))}
                                     placeholder={!form.motivo ? "Primero elige motivo" : (form.motivo === "CLIENTE" && !form.submotivo ? "Primero elige submotivo" : "Seleccionar...")}
                                     width="w-full"
                                     disabled={esReadOnly("gestion") || gestionesDisponibles.length === 0}
                                 />
                             )}
-                            <FieldStatus estado={estadoCampo("gestion")} />
+                            {(estadoCampo("gestion") !== null || (mostrarReembolsoTotal && valorReembolsoMostrado > 0)) && (
+                                <div className="flex items-end gap-2 mt-1">
+                                    <FieldStatus estado={estadoCampo("gestion")} />
+                                    {mostrarReembolsoTotal && valorReembolsoMostrado > 0 && (
+                                        <span className="text-xs  text-green-500 whitespace-nowrap">
+                                            Total a reembolsar: ${Number(valorReembolsoMostrado).toLocaleString("es-CO")}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            {(form.gestion === "REEMBOLSO_TOTAL" ||
+                                form.gestion === "REEMBOLSO_PARCIAL") &&
+                                saldoPendiente && (
+                                <div className="flex items-center gap-1 text-xs mt-1 text-sky-600">
+                                    <span>
+                                        El reembolso se descontará del saldo pendiente de la venta.
+                                    </span>
+                                </div>
+                            )}
+                            {stockSinExistencias && (
+                                <div className="flex items-center gap-1 text-xs mt-1 text-amber-600">
+                                    <AlertCircle size={18} />
+                                    <span>
+                                        No hay existencias suficientes para el cambio por el mismo producto
+                                        {stockDisponible !== null ? ` (stock actual: ${stockDisponible})` : ""}.
+                                    </span>
+                                </div>
+                            )}
                         </Field>
                     </div>
 
@@ -256,10 +322,14 @@ export default function DevolutionForm({
                                 <div className="relative">
                                     <input
                                         type="number"
-                                        min="0"
+                                        min="100"
                                         step="100"
+                                        max="999999999"
                                         value={form.montoReembolso || ""}
-                                        onChange={(e) => onChange("montoReembolso", e.target.value)}
+                                        onChange={(e) => {
+                                            if (String(e.target.value).replace(/\D/g, "").length > 9) return;
+                                            onChange("montoReembolso", e.target.value);
+                                        }}
                                         onKeyDown={blockInvalidKeys}
                                         onBlur={() => onFieldBlur("montoReembolso")}
                                         readOnly={esReadOnly("montoReembolso")}

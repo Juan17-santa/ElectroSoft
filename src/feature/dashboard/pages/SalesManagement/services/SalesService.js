@@ -98,12 +98,12 @@ export const SalesService = {
             const newSale = response.data.data || response.data;
             const mappedSale = mapSaleToFrontend(newSale);
 
-            //   FIX: Registrar el pago inicial si la venta es de Contado o Mixta
-            const pagoInicial = (tipoVenta === 'Contado' || tipoVenta === "Contado")
-                ? mappedSale.total
-                : (tipoVenta === 'Mixto' || tipoVenta === "Mixto")
-                    ? Number(montoPagado || mappedSale.montoContado || 0)
-                    : 0;
+            //   FIX: Registrar el pago inicial SOLO para ventas Mixtas.
+            //   El Contado se considera pagado por el backend (pago base), por lo que
+            //   registrar un pago por el total daría error de "venta ya pagada".
+            const pagoInicial = (tipoVenta === 'Mixto' || tipoVenta === "Mixto")
+                ? Number(montoPagado || mappedSale.montoContado || 0)
+                : 0;
 
             if (pagoInicial > 0) {
                 try {
@@ -111,9 +111,7 @@ export const SalesService = {
                         ventaId: mappedSale.id,
                         monto: pagoInicial,
                         metodoPago: "EFECTIVO",
-                        notas: (tipoVenta === 'Contado' || tipoVenta === "Contado")
-                            ? "Pago automático de contado"
-                            : "Pago inicial en efectivo (Venta Mixta)"
+                        notas: "Pago inicial en efectivo (Venta Mixta)"
                     });
                 } catch (paymentErr) {
                     console.warn("[SalesService] Venta creada pero el pago inicial falló:", paymentErr?.response?.data || paymentErr.message);

@@ -24,6 +24,12 @@ export const StatCard = ({ icon: Icon, label, value, delta = 0, color, isMoney =
                 </div>
             </div>
             {showDelta && (
+                delta === null ? (
+                    <div className="flex items-center gap-2 pl-2">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">—</span>
+                        <span className="text-[11px] text-gray-400">vs mes anterior</span>
+                    </div>
+                ) : (
                 <div className="flex items-center gap-2 pl-2">
                     <span className={`flex items-center gap-0.5 text-[11px] font-semibold px-2 py-0.5 rounded-full
             ${positive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
@@ -32,6 +38,7 @@ export const StatCard = ({ icon: Icon, label, value, delta = 0, color, isMoney =
                     </span>
                     <span className="text-[11px] text-gray-400">vs mes anterior</span>
                 </div>
+                )
             )}
         </div>
     );

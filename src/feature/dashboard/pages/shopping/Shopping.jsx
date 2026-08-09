@@ -1,18 +1,17 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Eye, Ban, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useShopping } from "../shopping/hooks/useShopping";
+import { useShopping, ITEMS_PER_PAGE } from "../shopping/hooks/useShopping";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 import CancellationModal from "../../components/ui/CancellationModal";
 import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip";
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
 import { useShoppingReport } from "../shopping/hooks/useShoppingReport";
-
-const ITEMS_PER_PAGE = 11;
+import { ServicesShopping } from "../shopping/services/ServicesShopping";
+import { useToast } from "../../../../context/ToastContext";
 
 // ─── Botón anular con tooltip informativo cuando no se puede anular ───────────
 function BanButton({ puedeAnularse, onClick }) {
@@ -80,28 +79,40 @@ function BanButton({ puedeAnularse, onClick }) {
 export default function Shopping() {
     const { hasPermission } = usePermissions();
     const navigate = useNavigate();
-    const { comprasFiltradas, searchTerm, setSearchTerm, handleAnular, validarAnulacion, loading, error, clearError } = useShopping();
-    const [currentPage, setCurrentPage] = useState(1);
+    const {
+        compras,
+        searchTerm,
+        setSearchTerm,
+        page,
+        totalPages,
+        handlePageChange,
+        handleAnular,
+        validarAnulacion,
+        loading,
+        error,
+        clearError,
+    } = useShopping();
     const [cancelModalData, setCancelModalData] = useState(null);
-    const [alert, setAlert] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
 
-    const showAlert = (type, message) => setAlert({ type, message });
+    const { showToast } = useToast();
 
-    const { exportReport } = useShoppingReport(comprasFiltradas, setAlert);
+    const showAlert = (type, message) => showToast(type, message);
 
-    // Paginación
-    const comprasOrdenadas = [...comprasFiltradas];
-    const totalPages = Math.max(1, Math.ceil(comprasOrdenadas.length / ITEMS_PER_PAGE));
-    const paginaActual = Math.min(currentPage, totalPages);
-    const comprasPagina = comprasOrdenadas.slice(
-        (paginaActual - 1) * ITEMS_PER_PAGE,
-        paginaActual * ITEMS_PER_PAGE
+    useEffect(() => {
+        if (error) {
+            showToast("error", error);
+            clearError();
+        }
+    }, [error, showToast, clearError]);
+
+    const { exportReport } = useShoppingReport(
+        () => ServicesShopping.fetchAll({ page: 1, limit: 100000, search: searchTerm }).then((r) => r.data),
+        showToast,
     );
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
-        setCurrentPage(1);
     };
 
     const handleGenerarReporte = () => setShowReportModal(true);
@@ -153,19 +164,19 @@ export default function Shopping() {
                                             </div>
                                         </td>
                                     </tr>
-                                ) : comprasPagina.length === 0 ? (
+                                ) : compras.length === 0 ? (
                                     <tr>
                                         <td colSpan={7} className="px-4 py-4 text-center text-gray-400">
                                             No hay compras registradas.
                                         </td>
                                     </tr>
                                 ) : (
-                                    comprasPagina.map((compra, index) => {
+                                    compras.map((compra, index) => {
                                         const validacion = validarAnulacion(compra);
                                         return (
                                             <tr key={compra.id}>
                                                 <td className="px-4 py-1 border-b border-gray-300">
-                                                    {String((paginaActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
+                                                    {String((page - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                                 </td>
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.numeroFactura}</td>
                                                 <td className="px-4 py-1 border-b border-gray-300">{compra.fechaCompra}</td>
@@ -210,13 +221,12 @@ export default function Shopping() {
                 </div>
 
                 {/* PAGINADOR */}
-                {/* PAGINADOR */}
-                {comprasFiltradas.length > 0 && (
+                {totalPages > 1 && (
                     <div className="flex justify-end mt-auto">
                         <Pagination
-                            currentPage={paginaActual}
+                            currentPage={page}
                             totalPages={totalPages}
-                            onPageChange={setCurrentPage}
+                            onPageChange={handlePageChange}
                         />
                     </div>
                 )}
@@ -258,18 +268,6 @@ export default function Shopping() {
                         }
                     }}
                     onCancel={() => setCancelModalData(null)}
-                />
-            )}
-
-            {/* ALERTA */}
-            {(alert || error) && (
-                <Alert
-                    type={alert?.type || "error"}
-                    message={alert?.message || error}
-                    onClose={() => {
-                        setAlert(null);
-                        clearError();
-                    }}
                 />
             )}
         </>

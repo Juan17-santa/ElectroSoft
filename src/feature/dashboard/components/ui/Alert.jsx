@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, XCircle, Zap } from "lucide-react";
 
-export default function Alert({ type = "success", message, onClose }) {
+export default function Alert({ type = "success", message, onClose, isLeaving = false }) {
     const [time, setTime] = useState("");
 
     useEffect(() => {
@@ -12,18 +12,13 @@ export default function Alert({ type = "success", message, onClose }) {
             hour12: true,
         });
         setTime(formattedTime);
-
-        const timer = setTimeout(() => {
-            onClose();
-        }, 4000);
-
-        return () => clearTimeout(timer);
-    }, [onClose]);
+    }, []);
 
     const isSuccess = type === "success";
+    const animation = isLeaving ? "animate-slide-out-right" : "animate-slide-in";
 
     return (
-        <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 animate-slide-in">
+        <div className={`w-[90vw] sm:w-auto sm:max-w-sm ${animation}`}>
             <div
                 className={`flex items-start gap-3 sm:gap-4 px-4 py-4 sm:px-6 sm:py-5 rounded-2xl shadow-2xl 
                 w-[90vw] sm:w-112.5 max-w-sm backdrop-blur-md border transition-all duration-300

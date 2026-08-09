@@ -5,7 +5,7 @@ export const MOTIVOS = ["GARANTIA", "LOGISTICA", "CLIENTE"];
 /** Submotivos agrupados por motivo principal */
 export const SUBMOTIVOS = {
     GARANTIA:  ["FALLA_FABRICA", "DEFECTO_PREMATURO"],
-    LOGISTICA: ["DESPACHO_ERRADO", "PRODUCTO_INCOMPLETO", "PRODUCTO_DIFERENTE"],
+    LOGISTICA: ["DESPACHO_ERRADO", "PRODUCTO_INCOMPLETO"],
     CLIENTE:   ["NO_SATISFECHO", "COMPRA_EQUIVOCADA"],
 };
 
@@ -21,10 +21,10 @@ export const GESTIONES = [
 /** Gestiones permitidas según motivo. Para CLIENTE depende del submotivo. */
 const GESTIONES_MAPA = {
     GARANTIA:  ["MISMO_PRODUCTO", "OTRO_PRODUCTO", "REEMBOLSO_TOTAL", "REEMBOLSO_PARCIAL"],
-    LOGISTICA: ["MISMO_PRODUCTO", "OTRO_PRODUCTO"],
+    LOGISTICA: ["MISMO_PRODUCTO", "OTRO_PRODUCTO", "REEMBOLSO_TOTAL", "REEMBOLSO_PARCIAL"],
     CLIENTE: {
         NO_SATISFECHO:     ["REEMBOLSO_TOTAL", "REEMBOLSO_PARCIAL"],
-        COMPRA_EQUIVOCADA: ["OTRO_PRODUCTO", "REEMBOLSO_PARCIAL"],
+        COMPRA_EQUIVOCADA: ["OTRO_PRODUCTO", "REEMBOLSO_TOTAL", "REEMBOLSO_PARCIAL"],
     },
 };
 
@@ -43,6 +43,14 @@ export const ESTADOS_RESOLUCION = [
 ];
 
 // ─── Helpers de negocio ───────────────────────────────────────────────────────
+
+/**
+ * Reembolso total de una linea: cantidad x precio unitario.
+ * El precio unitario de la venta ya incluye IVA.
+ */
+export function calcularReembolsoTotal(cantidad, precio) {
+    return Math.round((Number(cantidad || 0) * Number(precio || 0)) * 100) / 100;
+}
 
 /**
  * Gestiones permitidas según motivo (y submotivo para CLIENTE).

@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDevolutions } from "../hooks/useDevolutions";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
+import { ServicesProducts } from "../../products/services/ServicesProducts";
 import DevolutionForm from "../components/DevolutionForm";
-import ConfirmModal   from "../../../components/ui/ConfirmModal";
-import Alert          from "../../../components/ui/Alert";
+import ConfirmModal          from "../../../components/ui/ConfirmModal";
+import { useToast }          from "../../../../../context/ToastContext";
 import {
     SUBMOTIVOS,
     getGestionesPermitidas,
     getResponsableAuto,
+    calcularReembolsoTotal,
 } from "../helpers/devolutionsHelpers";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
@@ -51,6 +53,7 @@ const EMPTY_FORM = (() => {
         producto:           "",
         cantidad:           "",
         condicionProducto:  "",
+        regresarAlInventario: true,
         gestion:            "",
         responsable:        "",
         garantiaProveedor:  null,
@@ -131,6 +134,12 @@ function validarMontoReembolso(form, ventasList) {
     if (!Number.isFinite(monto) || monto <= 0) {
         return { valido: false, mensaje: "Ingresa el monto parcial a reembolsar." };
     }
+    if (monto < 100) {
+        return { valido: false, mensaje: "El monto mínimo a reembolsar es $100." };
+    }
+    if (monto > 999999999) {
+        return { valido: false, mensaje: "El monto no puede superar los 9 dígitos." };
+    }
     if (maximo <= 0) {
         return { valido: false, mensaje: "Selecciona producto y cantidad para calcular el maximo." };
     }
@@ -177,6 +186,7 @@ export default function CreateDevolution() {
     const navigate    = useNavigate();
     const location    = useLocation();
     const { guardarDevolucion } = useDevolutions();
+    const { showToast } = useToast();
 
     // Si venimos desde ReturnSalesPage, tenemos idVenta y producto pre-cargados
     const idVentaPreCargado  = location.state?.idVenta        ?? null;
@@ -196,8 +206,8 @@ export default function CreateDevolution() {
     const [devolucionesVenta, setDevolucionesVenta] = useState([]);
     const [sinProductos, setSinProductos]   = useState(false);
     const [confirmData, setConfirmData]     = useState(null);
-    const [alert, setAlert]                 = useState(null);
     const [garantiaVencidaMap, setGarantiaVencidaMap] = useState({});
+    const [stockDisponible, setStockDisponible] = useState(null);
 
     useEffect(() => {
         let active = true;
@@ -207,13 +217,13 @@ export default function CreateDevolution() {
                 if (active) setVentasList(ventas.filter((v) => v.estado !== "Anulado"));
             })
             .catch((err) => {
-                if (active) setAlert({ type: "error", message: err.message });
+                if (active) showToast("error", err.message);
             });
 
         return () => {
             active = false;
         };
-    }, []);
+    }, [showToast]);
 
     useEffect(() => {
         if (!form.idVenta) { setProductosList([]); setSinProductos(false); return; }
@@ -254,8 +264,32 @@ export default function CreateDevolution() {
         if (form.producto && !conDisponible.find((p) => p.nombre === form.producto))
             setForm((prev) => ({ ...prev, producto: "" }));
             })
-            .catch((err) => setAlert({ type: "error", message: err.message }));
-    }, [form.idVenta, ventasList, form.producto]);
+            .catch((err) => showToast("error", err.message));
+    }, [form.idVenta, ventasList, form.producto, showToast]);
+
+    const { idVenta: idVentaForm, producto: productoForm, gestion: gestionForm } = form;
+
+    useEffect(() => {
+        let active = true;
+        const consultarStock = async () => {
+            if (gestionForm !== "MISMO_PRODUCTO" || !productoForm || !idVentaForm) {
+                setStockDisponible(null);
+                return;
+            }
+            const venta = ventasList.find((v) => String(v.id) === String(idVentaForm));
+            const producto = venta?.productos?.find((p) => p.nombre === productoForm);
+            const productoId = producto?.productoId || producto?.id;
+            if (!productoId) { setStockDisponible(null); return; }
+            try {
+                const prod = await ServicesProducts.getById(productoId);
+                if (active) setStockDisponible(Number(prod?.stock) || 0);
+            } catch {
+                if (active) setStockDisponible(null);
+            }
+        };
+        consultarStock();
+        return () => { active = false; };
+    }, [idVentaForm, productoForm, gestionForm, ventasList]);
 
     const handleChange = (field, value) => {
         let autoTouched = {};
@@ -318,7 +352,7 @@ export default function CreateDevolution() {
     const handleSubmit = () => {
         tocarTodo();
         if (!formularioEsValido()) {
-            setAlert({ type: "error", message: "Revisa los campos marcados en rojo antes de continuar." });
+            showToast("error", "Revisa los campos marcados en rojo antes de continuar.");
             return;
         }
         setConfirmData({
@@ -332,6 +366,10 @@ export default function CreateDevolution() {
                     const devolucionData = {
                         ...form,
                         productoId: producto?.productoId || producto?.id,
+                        montoReembolso:
+                            form.gestion === "REEMBOLSO_TOTAL"
+                                ? calcularReembolsoTotal(form.cantidad, producto?.precio)
+                                : form.montoReembolso,
                     };
 
                     if (fromReturn) {
@@ -349,7 +387,7 @@ export default function CreateDevolution() {
                         await guardarDevolucion(devolucionData);
                     }
                 setConfirmData(null);
-                setAlert({ type: "success", message: fromReturn ? "Devolución agregada a la lista." : "Devolución creada correctamente." });
+                showToast("success", fromReturn ? "Devolución agregada a la lista." : "Devolución creada correctamente.");
                     setTimeout(() => {
                     if (fromReturn) {
                         navigate("/dashboard/sales-management/return", {
@@ -361,7 +399,7 @@ export default function CreateDevolution() {
                 }, 1200);
                 } catch (err) {
                     setConfirmData(null);
-                    setAlert({ type: "error", message: err.message });
+                    showToast("error", err.message);
                 }
             },
         });
@@ -406,6 +444,9 @@ export default function CreateDevolution() {
         ...(productoPreCargado ? ["producto"] : []),
     ];
 
+    const ventaSeleccionada = ventasList.find((v) => String(v.id) === String(form.idVenta));
+    const saldoPendiente = Number(ventaSeleccionada?.montoPorPagar ?? 0) > 0;
+
     return (
         <>
             <DevolutionForm
@@ -422,6 +463,8 @@ export default function CreateDevolution() {
                 sinProductos={sinProductos}
                 readOnlyFields={readOnlyFields}
                 garantiaVencidaMap={garantiaVencidaMap}
+                stockDisponible={stockDisponible}
+                saldoPendiente={saldoPendiente}
             />
 
             {confirmData && (
@@ -432,9 +475,6 @@ export default function CreateDevolution() {
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
                 />
-            )}
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );

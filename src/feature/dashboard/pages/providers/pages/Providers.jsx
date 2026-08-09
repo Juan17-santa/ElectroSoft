@@ -2,26 +2,22 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
 import ProvidersTable from "../components/ProvidersTable";
 import useProvidersTable from "../hooks/useProvidersTable";
 import SearchBar from "../../../components/ui/Searchbar";
 import { usePermissions } from "../../../../../hooks/usePermissions";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function Providers() {
     const { hasPermission } = usePermissions();
+    const { showToast } = useToast();
     const navigate = useNavigate();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
 
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
-
-    const showAlert = (type, message) => {
-        setAlert({ type, message });
-    };
 
     const handleDetailsNavigation = (provider) => {
         navigate(`/dashboard/providers/detail/${provider._id}`);
@@ -39,7 +35,7 @@ export default function Providers() {
         loading
     } = useProvidersTable({
         setConfirmData,
-        showAlert,
+        showAlert: showToast,
         searchTerm,
         currentPage: presentPage,
         recordsPerPage
@@ -97,15 +93,6 @@ export default function Providers() {
                     message={confirmData.message}
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
-                />
-            )}
-
-            {/* ALERTA */}
-            {alert && (
-                <Alert
-                    type={alert.type}
-                    message={alert.message}
-                    onClose={() => setAlert(null)}
                 />
             )}
         </>

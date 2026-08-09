@@ -8,8 +8,8 @@ import { getEstadoColor } from "../helpers/devolutionsHelpers";
 import SearchBar from "../../../components/ui/Searchbar";
 import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
-import Alert from "../../../components/ui/Alert";
 import { Restricted } from "../../../components/ui/Restricted";
+import { useToast } from "../../../../../context/ToastContext";
 
 const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
@@ -32,6 +32,12 @@ function formatFechaEstadoDisplay(fechaISO) {
 
 export default function Devolutions() {
     const navigate = useNavigate();
+    const { showToast } = useToast();
+    const [currentPage, setCurrentPage] = useState(1);
+    const [confirmData, setConfirmData] = useState(null);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [ventasMap, setVentasMap] = useState(null);
+
     const {
         devolucionesFiltradas,
         searchTerm,
@@ -39,13 +45,7 @@ export default function Devolutions() {
         anularPorVenta,
         loading,
         error,
-    } = useDevolutions();
-
-    const [currentPage, setCurrentPage] = useState(1);
-    const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
-    const [showReportModal, setShowReportModal] = useState(false);
-    const [ventasMap, setVentasMap] = useState(null);
+    } = useDevolutions(ventasMap);
 
     useEffect(() => {
         SalesService.get().then((ventas) => {
@@ -55,11 +55,11 @@ export default function Devolutions() {
         }).catch(() => {});
     }, []);
 
-    const { exportReport } = useDevolutionsReport(devolucionesFiltradas, setAlert);
+    const { exportReport } = useDevolutionsReport(devolucionesFiltradas, showToast);
 
     useEffect(() => {
-        if (error) setAlert({ type: "error", message: error });
-    }, [error]);
+        if (error) showToast("error", error);
+    }, [error, showToast]);
 
     // Agrupar por idVenta — una fila por venta
     const gruposPorVenta = useMemo(() => {
@@ -117,17 +117,20 @@ export default function Devolutions() {
 
     const handleAnularGrupo = (grupo) => {
         const idVenta = grupo[0].idVenta;
+        const numeroVenta = ventasMap && ventasMap[idVenta] != null
+            ? String(ventasMap[idVenta]).padStart(2, "0")
+            : idVenta;
         setConfirmData({
             type: "warning",
             title: "Anular devolución",
-            message: `¿Anular la devolución de la venta #${idVenta}? Se anularán todos los productos devueltos.`,
+            message: `¿Anular la devolución de la venta #${numeroVenta}? Se anularán todos los productos devueltos.`,
             onConfirm: async () => {
                 try {
                     await anularPorVenta(idVenta);
-                setAlert({ type: "success", message: "Devolución anulada correctamente." });
+                showToast("success", "Devolución anulada correctamente.");
                 setConfirmData(null);
                 } catch (err) {
-                    setAlert({ type: "error", message: err.message });
+                    showToast("error", err.message);
                     setConfirmData(null);
                 }
             },
@@ -192,9 +195,21 @@ export default function Devolutions() {
                                         const bloqueado = editBloqueado(grupo);
                                         const anulado = grupo.every((d) => d.estadoResolucion === "Anulada");
 
-                                        const cantidadDevuelta = grupo
-                                            .filter((d) => d.estadoResolucion !== "Anulada")
+                                        const cantidadContable = grupo
+                                            .filter((d) => d.estadoResolucion !== "Anulada" && d.estadoResolucion !== "RECHAZADA")
                                             .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
+                                        const cantidadRechazada = grupo
+                                            .filter((d) => d.estadoResolucion === "RECHAZADA")
+                                            .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
+                                        const cantidadAnulada = grupo
+                                            .filter((d) => d.estadoResolucion === "Anulada")
+                                            .reduce((sum, d) => sum + Number(d.cantidad || 0), 0);
+                                        const cantidadDevuelta = cantidadContable + cantidadRechazada;
+
+                                        // Si alguna devolución quedó en estado final, la tanda no se puede anular (R2)
+                                        const tandaConFinal = grupo.some((d) =>
+                                            ["RESUELTO", "RECHAZADA"].includes(d.estadoResolucion),
+                                        );
 
                                         return (
                                             <tr key={idVenta} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
@@ -203,15 +218,21 @@ export default function Devolutions() {
                                                 </td>
                                                 <td className="px-4 py-2 font-medium">{ventasMap ? (ventasMap[idVenta] ? String(ventasMap[idVenta]).padStart(2, "0") : "—") : "—"}</td>
                                                 <td className="px-4 py-2">
-                                                    <span className="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full">
                                                         {cantidadDevuelta} producto{cantidadDevuelta !== 1 ? "s" : ""}
+                                                        {cantidadRechazada > 0 && (
+                                                            <span className="ml-1 text-red-500">({cantidadRechazada} rechazado{cantidadRechazada !== 1 ? "s" : ""})</span>
+                                                        )}
+                                                        {cantidadAnulada > 0 && cantidadContable === 0 && cantidadRechazada === 0 && (
+                                                            <span className="ml-1 text-gray-500">({cantidadAnulada} anulado{cantidadAnulada !== 1 ? "s" : ""})</span>
+                                                        )}
                                                     </span>
                                                 </td>
 
                                                 {/* Fecha inicio / última actualización en la misma línea */}
                                                 <td className="px-4 py-2">
                                                     <div className="flex items-center gap-1.5 text-xs">
-                                                        <span className="text-gray-500">{fechaInicio}</span>
+                                                        <span className="text-gray-500 font-semibold">{fechaInicio}</span>
                                                         <span className="text-gray-300">/</span>
                                                         <span className={`font-semibold ${textColor}`}>{fechaEstado}</span>
                                                     </div>
@@ -284,10 +305,10 @@ export default function Devolutions() {
                                                         {/* ANULAR */}
                                                         <Restricted scope="Devoluciones" action="Eliminar">
                                                             <button
-                                                                title="Anular"
+                                                                title={tandaConFinal ? "No se puede anular: hay devoluciones en estado final" : "Anular"}
                                                                 onClick={() => handleAnularGrupo(grupo)}
-                                                                disabled={anulado}
-                                                                className={`p-2 rounded-lg transition duration-300 ${anulado
+                                                                disabled={anulado || tandaConFinal}
+                                                                className={`p-2 rounded-lg transition duration-300 ${(anulado || tandaConFinal)
                                                                         ? "bg-gray-100 opacity-40 cursor-not-allowed"
                                                                         : "bg-red-100 hover:bg-red-200 cursor-pointer"
                                                                     }`}
@@ -340,9 +361,6 @@ export default function Devolutions() {
                         setShowReportModal(false);
                     }}
                 />
-            )}
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );

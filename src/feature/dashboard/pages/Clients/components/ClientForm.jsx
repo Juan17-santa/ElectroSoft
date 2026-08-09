@@ -2,9 +2,9 @@ import { User, FileText, X, Mail, Phone } from "lucide-react";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
-import Alert from "../../../components/ui/Alert";
 import { useEffect, useState } from "react";
 import { ClientsService } from "../services/ClientsService";
+import { useToast } from "../../../../../context/ToastContext";
 
 export default function ClientForm({
     formData,
@@ -19,6 +19,15 @@ export default function ClientForm({
     buttonText,
     loading
 }) {
+    const { showToast } = useToast();
+
+    useEffect(() => {
+        if (formError) {
+            showToast("error", formError);
+            setFormError(null);
+        }
+    }, [formError, showToast, setFormError]);
+
     const ringClass = (campo) => {
         return errors[campo], "focus:ring-yellow-400 bg-gray-200";
     };
@@ -42,8 +51,6 @@ export default function ClientForm({
 
     return (
         <form onSubmit={handleForm} className="flex flex-col flex-1">
-            {formError && <Alert type="error" message={formError} onClose={() => setFormError(null)} />}
-
             {/* GRID RESPONSIVE */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 mt-6 px-4 md:px-16 flex-1">
 

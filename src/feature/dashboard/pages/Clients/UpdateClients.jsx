@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { ClientsService } from "./services/ClientsService";
 import { useClientForm } from "./hooks/useClientForm";
 import ClientForm from "./components/ClientForm";
-import Alert from "../../components/ui/Alert";
 import { X } from "lucide-react";
+import { useToast } from "../../../../context/ToastContext";
 
 export default function UpdateClients() {
     const navigate = useNavigate();
-    const [alert, setAlert] = useState(null);
+    const { showToast } = useToast();
     const [formError, setFormError] = useState(null);
     const [initialData, setInitialData] = useState(null);
 
@@ -23,7 +23,7 @@ export default function UpdateClients() {
             try {
                 await ClientsService.update(formData);
                 localStorage.removeItem("clientToEdit");
-                setAlert({ type: "success", message: "Cliente actualizado correctamente." });
+                showToast("success", "Cliente actualizado correctamente.");
                 setTimeout(() => navigate("/dashboard/clients"), 1500);
             } catch (error) {
                 console.error(error);
@@ -64,8 +64,6 @@ export default function UpdateClients() {
                     <div className="text-gray-500">Cargando datos del cliente...</div>
                 )}
             </div>
-
-            {alert && <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />}
         </>
     );
 }

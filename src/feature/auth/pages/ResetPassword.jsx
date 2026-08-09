@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { resetPassword } from "../services/authService";
 import { Validations } from "../../../utils/validations";
-import Alert from "../../dashboard/components/ui/alert";
+import { useToast } from "../../../context/ToastContext";
 
 // ─── Fortaleza de contraseña (lógica original intacta) ────────────────────────
 const getPasswordStrength = (value) => {
@@ -26,13 +26,13 @@ export default function ResetPassword() {
   const [showPass2, setShowPass2] = useState(false);
   const [pass1, setPass1] = useState("");
   const [pass2, setPass2] = useState("");
-  const [alert, setAlert] = useState(null);
   const [pass1Touched, setPass1Touched] = useState(false);
   const [pass2Touched, setPass2Touched] = useState(false);
   const [pass1Error, setPass1Error] = useState("");
   const [pass2Error, setPass2Error] = useState("");
 
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const strength = getPasswordStrength(pass1);
 
   // ─── Lógica original intacta ───────────────────────────────────────────────
@@ -100,10 +100,10 @@ export default function ResetPassword() {
     const result = await resetPassword(pass1);
 
     if (result.ok) {
-      setAlert({ type: "success", message: "Contraseña cambiada con éxito." });
+      showToast("success", "Contraseña cambiada con éxito.");
       setTimeout(() => navigate("/"), 2000);
     } else {
-      setAlert({ type: "error", message: result.message });
+      showToast("error", result.message);
     }
   };
 
@@ -123,14 +123,6 @@ export default function ResetPassword() {
 
   return (
     <>
-      {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
-      )}
-
       <div className="min-h-screen flex bg-slate-50">
 
         {/* ── Panel Izquierdo – Imagen ── */}

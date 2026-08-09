@@ -5,24 +5,22 @@ import { RolesService } from "../Roles/services/RolesService.js";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
-import Alert from "../../components/ui/Alert";
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
+import { useToast } from "../../../../context/ToastContext";
 
 const ITEMS_PER_PAGE = 6;
 
 export default function Roles() {
     const { hasPermission } = usePermissions();
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(false); // ← AÑADIDO
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
-    const [alert, setAlert] = useState(null);
     const PROTECTED_ROLES = ["Administrador", "Empleado", "Super Administrador"];
-
-    const showAlert = (type, message) => setAlert({ type, message });
 
     useEffect(() => { getRoles(); }, []);
 
@@ -33,7 +31,7 @@ export default function Roles() {
             setRoles(data);
         } catch (error) {
             console.error(error);
-            showAlert("error", "Error al cargar los roles");
+            showToast("error", "Error al cargar los roles");
         } finally {
             setLoading(false); // ← AÑADIDO
         }
@@ -66,11 +64,11 @@ export default function Roles() {
                 try {
                     await RolesService.delete(role.id);
                     await getRoles();
-                    showAlert("success", "Rol eliminado correctamente.");
+                    showToast("success", "Rol eliminado correctamente.");
                     setConfirmData(null);
                 } catch (error) {
                     const message = error.response?.data?.message || "Error al eliminar el rol";
-                    showAlert("error", message);
+                    showToast("error", message);
                     setConfirmData(null);
                 }
             }
@@ -86,11 +84,11 @@ export default function Roles() {
                 try {
                     await RolesService.toggleEstado(role.id);
                     await getRoles();
-                    showAlert("success", "Estado actualizado correctamente.");
+                    showToast("success", "Estado actualizado correctamente.");
                     setConfirmData(null);
                 } catch (error) {
                     const message = error.response?.data?.message || "Error al cambiar el estado";
-                    showAlert("error", message);
+                    showToast("error", message);
                     setConfirmData(null);
                 }
             }
@@ -264,10 +262,6 @@ export default function Roles() {
                     onConfirm={confirmData.onConfirm}
                     onCancel={() => setConfirmData(null)}
                 />
-            )}
-
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
             )}
         </>
     );

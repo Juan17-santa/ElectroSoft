@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
     X, IdCard, FileText, User, Phone, Mail, MapPin, Building2,
     AlertCircle, CheckCircle2, Truck, Tag, ChevronDown,
@@ -70,6 +70,57 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
         address: false, contactName: false, contactEmail: false,
         contactPhone: false,
     });
+
+    // ─── Validación de emails únicos (existencias) con debounce ───────────────
+    const [emailEstados, setEmailEstados] = useState({
+        providerEmail: null, contactEmail: null,
+    });
+    const emailCheckRef = useRef({ providerEmail: "", contactEmail: "" });
+
+    const validarFormatoEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(val || "").trim());
+
+    const checkEmailUnico = useCallback(async (field, value) => {
+        const correo = String(value || "").trim().toLowerCase();
+        if (!correo || !validarFormatoEmail(correo)) return null;
+        const result = await ServicesShopping.checkProviderUnique({ [field]: correo });
+        if (result && result.exists) {
+            return {
+                valido: false,
+                mensaje: result.message || "Este correo ya se encuentra registrado.",
+            };
+        }
+        return null;
+    }, []);
+
+    // Consulta la existencia de los correos en tiempo real (debounce).
+    useEffect(() => {
+        const timers = {};
+        const campos = [
+            { field: "providerEmail", value: providerEmail, tocado: tocados.providerEmail },
+            { field: "contactEmail", value: contactEmail, tocado: tocados.contactEmail },
+        ];
+
+        campos.forEach(({ field, value, tocado }) => {
+            emailCheckRef.current[field] = value;
+            if (timers[field]) clearTimeout(timers[field]);
+
+            if (!tocado || !value || !validarFormatoEmail(value)) {
+                setEmailEstados((prev) => ({ ...prev, [field]: null }));
+                return;
+            }
+
+            timers[field] = setTimeout(async () => {
+                if (emailCheckRef.current[field] !== value) return;
+                const res = await checkEmailUnico(field, value);
+                if (emailCheckRef.current[field] !== value) return;
+                setEmailEstados((prev) => ({ ...prev, [field]: res }));
+            }, 300);
+        });
+
+        return () => {
+            Object.values(timers).forEach((t) => clearTimeout(t));
+        };
+    }, [providerEmail, contactEmail, tocados, checkEmailUnico]);
 
     // ─── Tipo de documento NIT ─────────────────────────────────────────────────
     const nitDocumentType = documentTypes.find(
@@ -199,11 +250,11 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
     const estadoDocumentType = tocados.documentType   ? validarDocumentType(documentType)       : null;
     const estadoDocument      = tocados.docNumber  ? validarDocument(docNumber)                : null;
     const estadoProviderName  = tocados.providerName   ? validarProviderName(providerName)        : null;
-    const estadoProviderEmail = tocados.providerEmail  ? validarProviderEmail(providerEmail)      : null;
+    const estadoProviderEmail = tocados.providerEmail  ? (emailEstados.providerEmail ?? validarProviderEmail(providerEmail)) : null;
     const estadoProviderPhone = tocados.providerPhone  ? validarProviderPhone(providerPhone)      : null;
     const estadoAddress       = tocados.address        ? validarAddress(address)                  : null;
     const estadoContactName   = tocados.contactName    ? validarContactName(contactName)          : null;
-    const estadoContactEmail  = tocados.contactEmail   ? validarContactEmail(contactEmail)        : null;
+    const estadoContactEmail  = tocados.contactEmail   ? (emailEstados.contactEmail ?? validarContactEmail(contactEmail)) : null;
     const estadoContactPhone  = tocados.contactPhone   ? validarContactPhone(contactPhone)        : null;
 
     // ─── Submit ───────────────────────────────────────────────────────────────
@@ -214,11 +265,21 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
             contactName: true, contactEmail: true, contactPhone: true,
         });
 
+        // Verificación de unicidad de correos en el momento de enviar.
+        const emailRes = await checkEmailUnico("providerEmail", providerEmail);
+        setEmailEstados((prev) => ({ ...prev, providerEmail: emailRes }));
+
+        let contactRes = null;
+        if (isJuridica) {
+            contactRes = await checkEmailUnico("contactEmail", contactEmail);
+            setEmailEstados((prev) => ({ ...prev, contactEmail: contactRes }));
+        }
+
         const validations = [
             validarDocumentType(isJuridica ? nitDocumentType?._id : documentType).valido,
             validarDocument(docNumber).valido,
             validarProviderName(providerName).valido,
-            validarProviderEmail(providerEmail).valido,
+            (emailRes ? emailRes.valido : validarProviderEmail(providerEmail).valido),
             validarProviderPhone(providerPhone).valido,
             validarAddress(address).valido,
         ];
@@ -226,7 +287,7 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
         if (isJuridica) {
             validations.push(
                 validarContactName(contactName).valido,
-                validarContactEmail(contactEmail).valido,
+                (contactRes ? contactRes.valido : validarContactEmail(contactEmail).valido),
                 validarContactPhone(contactPhone).valido
             );
         }

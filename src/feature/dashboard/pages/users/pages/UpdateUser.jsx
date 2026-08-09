@@ -1,7 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import Alert from "../../../components/ui/Alert";
 import UserForm from "../components/UserForm";
 import { useUserForm } from "../hooks/useUserForm";
 import api from "../../../../../utils/api.js";
@@ -42,8 +41,6 @@ export default function UpdateUser() {
     const {
         formData,
         errors,
-        alert,
-        setAlert,
         loading,
         handleChange,
         validateForm,
@@ -113,10 +110,6 @@ export default function UpdateUser() {
                     />
                 )}
             </div>
-
-            {alert && (
-                <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
-            )}
         </>
     );
 }
