@@ -11,6 +11,26 @@ import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { useToast } from "../../../../../context/ToastContext";
 
+const formatNumericInputValue = (value, isDecimal = false) => {
+    if (value === "" || value === null || value === undefined) return "";
+
+    const raw = String(value).trim().replace(/\s+/g, "");
+    if (!raw) return "";
+
+    if (isDecimal) {
+        const normalized = raw.replace(/\./g, "").replace(/,/g, ".");
+        const [wholePart = "", decimalPart = ""] = normalized.split(".");
+        const wholeDigits = String(wholePart).replace(/[^\d]/g, "");
+        const decimalDigits = String(decimalPart).replace(/[^\d]/g, "").slice(0, 2);
+        const formattedWhole = wholeDigits ? Number(wholeDigits).toLocaleString("es-CO") : "0";
+        return decimalDigits ? `${formattedWhole},${decimalDigits}` : formattedWhole;
+    }
+
+    const digits = String(raw).replace(/[^\d]/g, "");
+    if (!digits) return "";
+    return Number(digits).toLocaleString("es-CO");
+};
+
 export default function EditProducts() {
 
     const location = useLocation();
@@ -166,13 +186,12 @@ export default function EditProducts() {
                         </label>
                         <input
                             name="precio"
-                            value={formData.precio}
+                            value={formatNumericInputValue(formData.precio, true)}
                             onChange={handleChange}
                             type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
+                            inputMode="decimal"
                             onKeyDown={(e) => {
-                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                if (["e", "E", "+", "-"].includes(e.key)) {
                                     e.preventDefault();
                                 }
                             }}
@@ -192,11 +211,10 @@ export default function EditProducts() {
                         </label>
                         <input
                             name="stock"
-                            value={formData.stock}
+                            value={formatNumericInputValue(formData.stock, false)}
                             onChange={handleChange}
                             type="text"
                             inputMode="numeric"
-                            pattern="[0-9]*"
                             onKeyDown={(e) => {
                                 if (["e", "E", "+", "-", "."].includes(e.key)) {
                                     e.preventDefault();

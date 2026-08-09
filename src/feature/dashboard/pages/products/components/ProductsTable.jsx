@@ -23,6 +23,7 @@ No maneja estado global.
 */
 
 import { Trash, Pencil, Eye } from "lucide-react";
+import { Restricted } from "../../../components/ui/Restricted";
 
 export default function ProductsTable({
     data,
@@ -66,9 +67,10 @@ export default function ProductsTable({
                             data.map((product, index) => {
                                 const consecutivo = (currentPage - 1) * recordsPerPage + index + 1;
                                 const idFormateado = String(consecutivo).padStart(2, '0');
+                                const stockCritico = Number(product.stock) <= 5;
 
                                 return (
-                                    <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                                    <tr key={product.id} className={`border-b border-gray-200 transition ${stockCritico ? "bg-yellow-200/40 hover:bg-yellow-100" : "hover:bg-gray-0"}`}>
 
                                         <td className="px-4 py-2">{idFormateado}</td>
 
@@ -76,63 +78,68 @@ export default function ProductsTable({
 
                                         <td className="px-4 py-2">{product.categoriaName || "Sin categoría"}</td>
 
-                                        <td className="px-4 py-2">${product.precio?.toLocaleString()}</td>
+                                        <td className="px-4 py-2">${Number(product.precio || 0).toLocaleString("es-CO")}</td>
 
                                         <td className="px-4 py-2">
                                             <div className="flex flex-col">
-                                                <span>{product.stock}</span>
+                                                <span className={`${stockCritico ? "text-yellow-600 font-semibold" : ""}`}>{Number(product.stock || 0).toLocaleString("es-CO")}</span>
                                                 <span className="text-xs text-gray-400">
                                                     {product.tipoStock === "metros" ? "MTRS" : "UND"}
                                                 </span>
                                             </div>
                                         </td>
-
                                         <td className="px-4 py-2">
                                             <div className="flex flex-col items-center gap-1">
-                                                <div
-                                                    onClick={() => onToggleEstado(product.id)}
-                                                    className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
-                                                        ${product.estado ? "bg-green-500" : "bg-red-500"}`}
-                                                >
+                                                <Restricted scope="Productos" action="Estado">
                                                     <div
-                                                        className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
+                                                        onClick={() => onToggleEstado(product.id)}
+                                                        className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
+                                                        ${product.estado ? "bg-green-500" : "bg-red-500"}`}
+                                                    >
+                                                        <div
+                                                            className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
                                                         ${product.estado ? "translate-x-5" : "translate-x-0"}`}
-                                                    />
-                                                </div>
-                                                <span
-                                                    className={`text-xs font-semibold
+                                                        />
+                                                    </div>
+                                                    <span
+                                                        className={`text-xs font-semibold
                                                     ${product.estado ? "text-green-600" : "text-red-600"}`}
-                                                >
-                                                    {product.estado ? "Activo" : "Inactivo"}
-                                                </span>
+                                                    >
+                                                        {product.estado ? "Activo" : "Inactivo"}
+                                                    </span>
+                                                </Restricted>
                                             </div>
                                         </td>
 
                                         <td className="px-4 py-2">
                                             <div className="flex justify-center gap-3 items-center">
+                                                <Restricted scope="Productos" action="Ver">
+                                                    <button
+                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition"
+                                                        onClick={() => onDetails(product)}
+                                                    >
+                                                        <Eye size={18} className="text-blue-600" />
+                                                    </button>
+                                                </Restricted>
+                                                <Restricted scope="Productos" action="Editar">
+                                                    <button
+                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
+                                                        onClick={() => onEdit(product)}
+                                                    >
+                                                        <Pencil size={18} className="text-yellow-600" />
+                                                    </button>
+                                                </Restricted>
 
-                                                <button
-                                                    className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition"
-                                                    onClick={() => onDetails(product)}
-                                                >
-                                                    <Eye size={18} className="text-blue-600" />
-                                                </button>
-
-                                                <button
-                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition"
-                                                    onClick={() => onEdit(product)}
-                                                >
-                                                    <Pencil size={18} className="text-yellow-600" />
-                                                </button>
-
-                                                <button
-                                                    className={`p-2 rounded-lg transition ${product.canDelete ? "bg-red-100 hover:bg-red-200" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
-                                                    onClick={() => onDelete(product.id)}
-                                                    disabled={!product.canDelete}
-                                                    title={product.canDelete ? "Eliminar producto" : "No se puede eliminar un producto con ventas o pedidos asociados"}
-                                                >
-                                                    <Trash size={18} className={`${product.canDelete ? "text-red-600" : "text-gray-400"}`} />
-                                                </button>
+                                                <Restricted scope="Productos" action="Eliminar">
+                                                    <button
+                                                        className={`p-2 rounded-lg transition ${product.canDelete ? "bg-red-100 hover:bg-red-200" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
+                                                        onClick={() => onDelete(product.id)}
+                                                        disabled={!product.canDelete}
+                                                        title={product.canDelete ? "Eliminar producto" : "No se puede eliminar un producto con ventas o pedidos asociados"}
+                                                    >
+                                                        <Trash size={18} className={`${product.canDelete ? "text-red-600" : "text-gray-400"}`} />
+                                                    </button>
+                                                </Restricted>
 
                                             </div>
                                         </td>

@@ -11,6 +11,26 @@ import ValidationMessage from "../../../components/ui/ValidationMessage";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { useToast } from "../../../../../context/ToastContext";
 
+const formatNumericInputValue = (value, isDecimal = false) => {
+    if (value === "" || value === null || value === undefined) return "";
+
+    const raw = String(value).trim().replace(/\s+/g, "");
+    if (!raw) return "";
+
+    if (isDecimal) {
+        const normalized = raw.replace(/\./g, "").replace(/,/g, ".");
+        const [wholePart = "", decimalPart = ""] = normalized.split(".");
+        const wholeDigits = String(wholePart).replace(/[^\d]/g, "");
+        const decimalDigits = String(decimalPart).replace(/[^\d]/g, "").slice(0, 2);
+        const formattedWhole = wholeDigits ? Number(wholeDigits).toLocaleString("es-CO") : "0";
+        return decimalDigits ? `${formattedWhole},${decimalDigits}` : formattedWhole;
+    }
+
+    const digits = String(raw).replace(/[^\d]/g, "");
+    if (!digits) return "";
+    return Number(digits).toLocaleString("es-CO");
+};
+
 export default function CreateProducts() {
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -291,6 +311,7 @@ export default function CreateProducts() {
                             value={formData.nombre}
                             onChange={handleChange}
                             type="text"
+                            maxLength={25}
                             placeholder="Ingresar nombre del producto"
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.nombre ? 'border-red-500' : 'border-transparent'
                                 }`}
@@ -326,14 +347,13 @@ export default function CreateProducts() {
                         </label>
                         <input
                             name="precio"
-                            value={formData.precio}
+                            value={formatNumericInputValue(formData.precio, true)}
                             onChange={handleChange}
                             type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
+                            inputMode="decimal"
                             placeholder="Digite el precio"
                             onKeyDown={(e) => {
-                                if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                if (["e", "E", "+", "-"].includes(e.key)) {
                                     e.preventDefault();
                                 }
                             }}
@@ -353,11 +373,10 @@ export default function CreateProducts() {
                         </label>
                         <input
                             name="stock"
-                            value={formData.stock}
+                            value={formatNumericInputValue(formData.stock, false)}
                             onChange={handleChange}
                             type="text"
                             inputMode="numeric"
-                            pattern="[0-9]*"
                             placeholder="Digite el stock"
                             onKeyDown={(e) => {
                                 if (["e", "E", "+", "-", "."].includes(e.key)) {
@@ -407,6 +426,7 @@ export default function CreateProducts() {
                             value={formData.serial}
                             onChange={handleChange}
                             type="text"
+                            maxLength={15}
                             placeholder="Digite el serial"
                             className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.serial ? 'border-red-500' : 'border-transparent'
                                 }`}

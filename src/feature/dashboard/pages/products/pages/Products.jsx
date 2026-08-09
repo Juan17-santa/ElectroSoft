@@ -97,7 +97,7 @@ export default function Products() {
                     onCreateClick={() => navigate("/dashboard/products/create")}
                     createButtonText="Nuevo producto"
                     showCreateButton={hasPermission("Productos", "Crear")}
-                    showReportButton={true}
+                    showReportButton={hasPermission("Productos", "Reporte")}
                     onReportClick={handleGenerateReport}
                 />
 
