@@ -59,22 +59,24 @@ export default function ProductCategoryTable({
                                         </td>
                                         <td className="px-4 py-2">
                                             <div className="flex flex-col items-center gap-1">
-                                                <div
-                                                    onClick={() => onToggleEstado(category.id)}
-                                                    className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
-                                                        ${category.status ? "bg-green-500" : "bg-red-500"}`}
-                                                >
+                                                <Restricted scope="Categoria de productos" action="Estado">
                                                     <div
-                                                        className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
+                                                        onClick={() => onToggleEstado(category.id)}
+                                                        className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
+                                                        ${category.status ? "bg-green-500" : "bg-red-500"}`}
+                                                    >
+                                                        <div
+                                                            className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
                                                         ${category.status ? "translate-x-5" : "translate-x-0"}`}
-                                                    />
-                                                </div>
-                                                <span
-                                                    className={`text-xs font-semibold
+                                                        />
+                                                    </div>
+                                                    <span
+                                                        className={`text-xs font-semibold
                                                     ${category.status ? "text-green-600" : "text-red-600"}`}
-                                                >
-                                                    {category.status ? "Activo" : "Inactivo"}
-                                                </span>
+                                                    >
+                                                        {category.status ? "Activo" : "Inactivo"}
+                                                    </span>
+                                                </Restricted>
                                             </div>
                                         </td>
 
