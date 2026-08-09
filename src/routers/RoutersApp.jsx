@@ -133,7 +133,7 @@ export default function RoutersApp() {
                 <Route path="payments/client/:documento" element={<ProtectedRoute scope="Pagos y abonos" element={<PaymentClientDetail />} />} />
                 <Route path="payments/detail/:id" element={<ProtectedRoute scope="Pagos y abonos" element={<PaymentDetail />} />} />
                 <Route path="payments/create" element={<ProtectedRoute scope="Pagos y abonos" action="Crear" element={<CreatePayment />} />} />
-                <Route path="payments/create/:ventaId" element={<ProtectedRoute scope="Pagos y abonos" action="Crear" element={<CreatePayment />} />} />
+                <Route path="payments/create/:id" element={<ProtectedRoute scope="Pagos y abonos" action="Abonar" element={<CreatePayment />} />} />
 
                 {/* DEVOLUCIONES */}
                 <Route path="devolutions" element={<ProtectedRoute scope="Devoluciones" element={<Devolutions />} />} />
