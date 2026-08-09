@@ -117,7 +117,7 @@ export default function OrdersTable({
                                             <div className="flex justify-center gap-2">
 
                                                 {/* PROCESAR VENTA (DESHABILITADO SI EL PEDIDO ESTÁ ANULADO) */}
-                                                <Restricted scope="Pedidos" action="Editar">
+                                                <Restricted scope="Pedidos" action="procesar">
                                                     <button
                                                         onClick={() => onProcess(order)}
                                                         disabled={order.status === "Anulado"}
@@ -142,17 +142,19 @@ export default function OrdersTable({
                                                 </Restricted>
 
                                                 {/* VER DETALLE */}
-                                                <button
-                                                    onClick={() => onDetails(order)}
-                                                    className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                    title="Ver detalle"
-                                                >
-                                                    <Eye size={18} className="text-blue-600" />
-                                                </button>
+                                                <Restricted scope="Pedidos" action="Ver">
+                                                    <button
+                                                        onClick={() => onDetails(order)}
+                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                        title="Ver detalle"
+                                                    >
+                                                        <Eye size={18} className="text-blue-600" />
+                                                    </button>
+                                                </Restricted>
 
                                                 {/* BOTÓN DE ANULAR O TOOLTIP DE INFO SI YA ESTÁ ANULADO */}
                                                 {order.status !== "Anulado" ? (
-                                                    <Restricted scope="Pedidos" action="Eliminar">
+                                                    <Restricted scope="Pedidos" action="anular">
                                                         <button
                                                             onClick={() => onCancel(order, idFormateado)}
                                                             className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
