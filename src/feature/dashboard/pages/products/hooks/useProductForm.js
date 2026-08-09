@@ -36,8 +36,8 @@ export default function useProductForm({
     const [formData, setFormData] = useState({
         nombre: "",
         categoriaId: "",
-        precio: "",
-        stock: "",
+        precio: "0",
+        stock: "0",
         tipoStock: "",
         serial: "",
         garantia: ""
@@ -72,6 +72,49 @@ export default function useProductForm({
         loadProducts();
     }, []);
 
+    const normalizeNumericString = (name, value) => {
+        const raw = String(value ?? "").trim().replace(/\s+/g, "");
+
+        if (!raw) return "";
+
+        if (name === "precio") {
+            const normalized = raw
+                .replace(/\./g, "")
+                .replace(/,/g, ".")
+                .replace(/[^\d.]/g, "");
+
+            if (!normalized) return "";
+
+            const [wholeRaw = "", fractionRaw = ""] = normalized.split(".");
+            const wholeDigits = String(wholeRaw || "").replace(/[^\d]/g, "");
+            const fractionDigits = String(fractionRaw || "").replace(/[^\d]/g, "").slice(0, 2);
+
+            if (!wholeDigits && !fractionDigits) return "";
+            const safeWholeDigits = wholeDigits || "0";
+
+            return fractionDigits ? `${safeWholeDigits}.${fractionDigits}` : safeWholeDigits;
+        }
+
+        if (name === "stock") {
+            const rawDigits = raw.replace(/[^\d]/g, "");
+            if (!rawDigits) return "";
+            const parsed = Number(rawDigits);
+            return Number.isFinite(parsed) ? String(parsed) : "";
+        }
+
+        return raw;
+    };
+
+    const normalizeTextLimit = (name, value) => {
+        if (name === "nombre") {
+            return String(value ?? "").slice(0, 25);
+        }
+        if (name === "serial") {
+            return String(value ?? "").slice(0, 15);
+        }
+        return value;
+    };
+
     // VALIDACIÓN INDIVIDUAL POR CAMPO
     const validateField = (name, value) => {
 
@@ -89,8 +132,8 @@ export default function useProductForm({
                     error = "El nombre debe contener letras (puede incluir números)";
                 } else if (strValue.length < 3) {
                     error = "El nombre debe tener mínimo 3 caracteres";
-                } else if (strValue.length > 100) {
-                    error = "El nombre no puede exceder 100 caracteres";
+                } else if (strValue.length > 25) {
+                    error = "El nombre no puede exceder 25 caracteres";
                 }
                 break;
 
@@ -103,12 +146,10 @@ export default function useProductForm({
             case "precio":
                 if (!strValue) {
                     error = "";
-                } else if (!/^[0-9]+$/.test(strValue)) {
-                    error = "El precio solo debe contener números";
+                } else if (!/^\d+(\.\d{1,2})?$/.test(strValue)) {
+                    error = "El precio debe usar un formato numérico válido";
                 } else if (Number(strValue) < 0) {
                     error = "El precio no puede ser negativo";
-                } else if (!Number.isInteger(Number(strValue))) {
-                    error = "El precio debe ser un número entero";
                 }
                 break;
 
@@ -131,8 +172,8 @@ export default function useProductForm({
                     error = "El serial solo puede contener letras, números, guiones y guiones bajos";
                 } else if (strValue.length < 2) {
                     error = "El serial debe tener mínimo 2 caracteres";
-                } else if (strValue.length > 50) {
-                    error = "El serial no puede exceder 50 caracteres";
+                } else if (strValue.length > 15) {
+                    error = "El serial no puede exceder 15 caracteres";
                 }
                 break;
 
@@ -163,9 +204,10 @@ export default function useProductForm({
     const handleChange = (e) => {
 
         const { name, value } = e.target;
+        const limitedTextValue = normalizeTextLimit(name, value);
         const normalizedValue = (name === "precio" || name === "stock")
-            ? String(value).replace(/\D/g, "").slice(0, 15)
-            : value;
+            ? normalizeNumericString(name, value).slice(0, 15)
+            : limitedTextValue;
 
         setFormData(prev => ({
             ...prev,

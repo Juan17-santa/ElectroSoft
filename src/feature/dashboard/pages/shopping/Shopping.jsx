@@ -134,7 +134,7 @@ export default function Shopping() {
                     onCreateClick={() => navigate("/dashboard/shopping/create")}
                     createButtonText="Nueva Compra"
                     showCreateButton={hasPermission("Compras", "Crear")}
-                    showReportButton={true}
+                    showReportButton={hasPermission("Compras", "Reporte")}
                     onReportClick={handleGenerarReporte}
                 />
 
@@ -192,17 +192,19 @@ export default function Shopping() {
                                                 </td>
                                                 <td className="px-4 py-1 border-b border-gray-300">
                                                     <div className="flex justify-center gap-4">
-                                                        <button
-                                                            onClick={() => navigate(`/dashboard/shopping/details/${compra.id}`)}
-                                                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
-                                                        >
-                                                            <Eye size={18} className="text-blue-600" />
-                                                        </button>
+                                                        <Restricted scope="Compras" action="Ver">
+                                                            <button
+                                                                onClick={() => navigate(`/dashboard/shopping/details/${compra.id}`)}
+                                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
+                                                            >
+                                                                <Eye size={18} className="text-blue-600" />
+                                                            </button>
+                                                        </Restricted>
 
                                                         {compra.estado === "Anulada" ? (
                                                             <CancellationInfoTooltip cancelInfo={compra.infoAnulacion} />
                                                         ) : (
-                                                            <Restricted scope="Compras" action="Eliminar">
+                                                            <Restricted scope="Compras" action="Anular">
                                                                 <BanButton
                                                                     puedeAnularse={validacion.puedeAnularse}
                                                                     onClick={() => setCancelModalData(compra)}

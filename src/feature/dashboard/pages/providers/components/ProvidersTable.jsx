@@ -64,22 +64,24 @@ export default function ProvidersTable({
                                         <td className="px-3 py-2">{provider.providerType === "NATURAL" ? provider.providerPhone : provider.contactPhone}</td>
                                         <td className="px-4 py-2">
                                             <div className="flex flex-col items-center gap-1">
-                                                <div
-                                                    onClick={() => onToggleEstado(provider._id)}
-                                                    className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
-                                                        ${provider.status ? "bg-green-500" : "bg-red-500"}`}
-                                                >
+                                                <Restricted scope="Proveedores" action="Estado">
                                                     <div
-                                                        className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
+                                                        onClick={() => onToggleEstado(provider._id)}
+                                                        className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
+                                                        ${provider.status ? "bg-green-500" : "bg-red-500"}`}
+                                                    >
+                                                        <div
+                                                            className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
                                                         ${provider.status ? "translate-x-5" : "translate-x-0"}`}
-                                                    />
-                                                </div>
-                                                <span
-                                                    className={`text-xs font-semibold
+                                                        />
+                                                    </div>
+                                                    <span
+                                                        className={`text-xs font-semibold
                                                     ${provider.status ? "text-green-600" : "text-red-600"}`}
-                                                >
-                                                    {provider.status ? "Activo" : "Inactivo"}
-                                                </span>
+                                                    >
+                                                        {provider.status ? "Activo" : "Inactivo"}
+                                                    </span>
+                                                </Restricted>
                                             </div>
                                         </td>
 
@@ -88,12 +90,14 @@ export default function ProvidersTable({
                                             <div className="flex justify-center gap-2">
 
                                                 {/* BOTON DE VER DETALLE */}
-                                                <button
-                                                    className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                    onClick={() => onDetails(provider)}
-                                                >
-                                                    <Eye size={18} className="text-blue-600" />
-                                                </button>
+                                                <Restricted scope="Proveedores" action="Ver">
+                                                    <button
+                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                        onClick={() => onDetails(provider)}
+                                                    >
+                                                        <Eye size={18} className="text-blue-600" />
+                                                    </button>
+                                                </Restricted>
 
                                                 {/* BOTON EDITAR */}
                                                 <Restricted scope="Proveedores" action="Editar">

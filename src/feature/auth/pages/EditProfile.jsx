@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { X, User, Mail, Phone, Shield, Lock, Image, FileText, Eye, EyeOff } from "lucide-react";
+import { X, User, Mail, Phone, Shield, Lock, Image, FileText, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import Modal from "../components/Modal";
 import PrimaryButton from "../../dashboard/components/ui/PrimaryButton";
@@ -39,8 +39,16 @@ function InputField({ icon: Icon, label, name, value, onChange, placeholder, err
                     </button>
                 )}
             </div>
-            {touched && error && <p className="text-red-500 text-xs flex items-center gap-1"><span>⚠</span>{error}</p>}
-            {hasSuccess && <p className="text-green-600 text-xs flex items-center gap-1"><span>✓</span>Correcto</p>}
+            {touched && error && (
+                <p className="text-red-500 text-xs flex items-center gap-1">
+                    <AlertCircle size={14} />{error}
+                </p>
+            )}
+            {hasSuccess && (
+                <p className="text-green-600 text-xs flex items-center gap-1">
+                    <CheckCircle size={14} />Correcto
+                </p>
+            )}
         </div>
     );
 }
@@ -294,12 +302,12 @@ export default function EditProfile() {
                             />
                             {touched.tipoDoc && errors.tipoDoc && (
                                 <p className="text-red-500 text-xs flex items-center gap-1">
-                                    <span>⚠</span>{errors.tipoDoc}
+                                    <AlertCircle size={14} />{errors.tipoDoc}
                                 </p>
                             )}
                             {touched.tipoDoc && !errors.tipoDoc && formData.tipoDoc && (
                                 <p className="text-green-600 text-xs flex items-center gap-1">
-                                    <span>✓</span>Correcto
+                                    <CheckCircle size={14} />Correcto
                                 </p>
                             )}
                         </div>

@@ -127,11 +127,11 @@ export default function Orders() {
                     searchTerm={search}
                     onSearchChange={(e) => setSearch(e.target.value)}
                     placeholder="Buscar pedidos..."
-                    showReportButton={true}
-                    onReportClick={() => setShowReportModal(true)}
                     onCreateClick={() => navigate("/dashboard/orders/create")}
                     createButtonText="Nuevo pedido"
                     showCreateButton={hasPermission("Pedidos", "Crear")}
+                    showReportButton={hasPermission("Pedidos", "Reporte")}
+                    onReportClick={() => setShowReportModal(true)}
                 />
 
                 {/* TABLA */}

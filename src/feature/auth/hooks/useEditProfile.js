@@ -147,64 +147,23 @@ export default function useEditProfile() {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-
         let sanitized = value;
 
         if (name === "documento") {
             sanitized = value.replace(/\D/g, "").slice(0, 12);
         }
-
         if (name === "telefono") {
             sanitized = value.replace(/\D/g, "").slice(0, 14);
         }
-
         if (name === "nombre") {
-            sanitized = value.replace(/[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]/g, "");
+            sanitized = value
+                .replace(/[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]/g, "")
+                .replace(/\b\w/g, l => l.toUpperCase());
         }
 
-        setFormData(prev => ({
-            ...prev,
-            [name]: sanitized,
-        }));
-
-        setTouched(prev => ({
-            ...prev,
-            [name]: true,
-        }));
-
-        const syncError = validateField(name, sanitized);
-
-        setErrors(prev => ({
-            ...prev,
-            [name]: syncError,
-        }));
-
-        if ((name === "email" || name === "documento") && !syncError) {
-
-            clearTimeout(debounceRef.current);
-
-            debounceRef.current = setTimeout(async () => {
-
-                if (name === "email") {
-                    const exists = await checkEmailExists(sanitized);
-
-                    setErrors(prev => ({
-                        ...prev,
-                        email: exists ? "Este correo ya está registrado." : "",
-                    }));
-                }
-
-                if (name === "documento") {
-                    const exists = await checkDocumentExists(sanitized);
-
-                    setErrors(prev => ({
-                        ...prev,
-                        documento: exists ? "Este documento ya está registrado." : "",
-                    }));
-                }
-
-            }, 600);
-        }
+        setFormData((prev) => ({ ...prev, [name]: sanitized }));
+        setTouched((prev) => ({ ...prev, [name]: true }));
+        setErrors((prev) => ({ ...prev, [name]: validateField(name, sanitized) }));
     };
 
     const handlePasswordChange = (e) => {

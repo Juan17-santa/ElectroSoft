@@ -102,16 +102,16 @@ export default function Login() {
   const getFirstAllowedRoute = (permissions) => {
     const routeMap = [
       { permission: "dashboard:acceso", path: "/dashboard" },
-      { permission: "categorias:ver", path: "/dashboard/productCategory" },
-      { permission: "productos:ver", path: "/dashboard/products" },
-      { permission: "proveedores:ver", path: "/dashboard/providers" },
-      { permission: "compras:ver", path: "/dashboard/shopping" },
-      { permission: "clientes:ver", path: "/dashboard/clients" },
-      { permission: "pedidos:ver", path: "/dashboard/orders" },
-      { permission: "ventas:ver", path: "/dashboard/salesManagement" },
-      { permission: "pagos:ver", path: "/dashboard/payments" },
-      { permission: "devoluciones:ver", path: "/dashboard/devolutions" },
-      { permission: "usuarios:ver", path: "/dashboard/users" },
+      { permission: "categorias:acceso", path: "/dashboard/productCategory" },
+      { permission: "productos:acceso", path: "/dashboard/products" },
+      { permission: "proveedores:acceso", path: "/dashboard/providers" },
+      { permission: "compras:acceso", path: "/dashboard/shopping" },
+      { permission: "clientes:acceso", path: "/dashboard/clients" },
+      { permission: "pedidos:acceso", path: "/dashboard/orders" },
+      { permission: "ventas:acceso", path: "/dashboard/salesManagement" },
+      { permission: "pagos:acceso", path: "/dashboard/payments" },
+      { permission: "devoluciones:acceso", path: "/dashboard/devolutions" },
+      { permission: "usuarios:acceso", path: "/dashboard/users" },
       { permission: "roles:acceso", path: "/dashboard/roles" },
     ];
 

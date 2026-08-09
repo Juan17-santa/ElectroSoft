@@ -152,7 +152,7 @@ export default function Clients() {
                     onCreateClick={() => navigate("/dashboard/clients/create")}
                     createButtonText="Nuevo cliente"
                     showCreateButton={hasPermission("Clientes", "Crear")}
-                    showReportButton={true}
+                    showReportButton={hasPermission("Clientes", "Reporte")}
                     onReportClick={handleGenerarReporte}
                 />
 
@@ -217,6 +217,7 @@ export default function Clients() {
                                                 <div className="flex justify-center flex-nowrap gap-1.5 h-9">
                                                     {hasPermission("Clientes", "Editar") && (
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
+                                                            <Restricted scope="Clientes" action="Cupo">
                                                             <button
                                                                 onClick={() => handleAsignarCupo(client)}
                                                                 disabled={client.totalCompras < 1000000}
@@ -232,16 +233,19 @@ export default function Clients() {
                                                             >
                                                                 <CreditCard size={18} />
                                                             </button>
+                                                            </Restricted>
                                                         </div>
                                                     )}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                        <button
-                                                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
-                                                            onClick={() => handleViewDetails(client)}
-                                                            title="Ver detalles"
-                                                        >
-                                                            <Eye size={18} className="text-blue-600" />
-                                                        </button>
+                                                        <Restricted scope="Clientes" action="Ver">
+                                                            <button
+                                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition duration-300 cursor-pointer"
+                                                                onClick={() => handleViewDetails(client)}
+                                                                title="Ver detalles"
+                                                            >
+                                                                <Eye size={18} className="text-blue-600" />
+                                                            </button>
+                                                        </Restricted>
                                                     </div>
                                                     <Restricted scope="Clientes" action="Editar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">

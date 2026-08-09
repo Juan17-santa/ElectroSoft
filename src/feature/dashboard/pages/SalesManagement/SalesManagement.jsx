@@ -308,7 +308,7 @@ export default function SalesManagement() {
                     onCreateClick={() => navigate("/dashboard/sales-management/create")}
                     createButtonText="Nueva Venta"
                     showCreateButton={hasPermission("Ventas", "Crear")}
-                    showReportButton={true}
+                    showReportButton={hasPermission("Ventas", "Reporte")}
                     onReportClick={handleGenerarReporte}
                 />
 
@@ -358,10 +358,10 @@ export default function SalesManagement() {
                                             <td className="px-3 py-3">{formatCOP(sale.montoPagado)}</td>
                                             <td className="px-3 py-3">{formatCOP(sale.montoPorPagar)}</td>
                                             <td className="px-3 py-3 text-center">
-                                                <span className={`inline-block px-2 py-1 rounded-lg text-xs font-medium whitespace-normal break-words leading-tight max-w-[110px] ${(sale.estado === "Finalizado" || sale.estado === "Finalizadas") ? "bg-green-100 text-green-700" :
-                                                        sale.estado === "Vigente" ? "bg-yellow-100 text-yellow-600" :
-                                                            (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
-                                                                "bg-red-100 text-red-600"
+                                                <span className={`inline-block px-2 py-1 rounded-lg text-xs font-medium whitespace-normal wrap-break-words leading-tight max-w-27.5 ${(sale.estado === "Finalizado" || sale.estado === "Finalizadas") ? "bg-green-100 text-green-700" :
+                                                    sale.estado === "Vigente" ? "bg-yellow-100 text-yellow-600" :
+                                                        (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
+                                                            "bg-red-100 text-red-600"
                                                     }`}>
                                                     {sale.estado}
                                                 </span>
@@ -369,7 +369,7 @@ export default function SalesManagement() {
                                             <td className="px-3 py-3">
                                                 <div className="flex justify-center flex-nowrap gap-1.5 h-9">
                                                     {/* DEVOLVER */}
-                                                    <Restricted scope="Ventas" action="Eliminar">
+                                                    <Restricted scope="Ventas" action="Devolver">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             {sale.estado === "Anulado" || sale.estado === "ANULADA" ? (
                                                                 <button
@@ -393,17 +393,19 @@ export default function SalesManagement() {
 
                                                     {/* VER DETALLES */}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                        <button
-                                                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                            onClick={() => handleViewDetails(sale)}
-                                                            title="Ver detalles"
-                                                        >
-                                                            <Eye size={18} className="text-blue-600" />
-                                                        </button>
+                                                        <Restricted scope="Ventas" action="Ver">
+                                                            <button
+                                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                                onClick={() => handleViewDetails(sale)}
+                                                                title="Ver detalles"
+                                                            >
+                                                                <Eye size={18} className="text-blue-600" />
+                                                            </button>
+                                                        </Restricted>
                                                     </div>
 
                                                     {/* ANULAR */}
-                                                    <Restricted scope="Ventas" action="Eliminar">
+                                                    <Restricted scope="Ventas" action="anular">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             {sale.estado === "Anulado" || sale.estado === "ANULADA" ? (
                                                                 <CancellationInfoTooltip cancelInfo={{
@@ -424,14 +426,16 @@ export default function SalesManagement() {
                                                         {(() => {
                                                             const isCreditDisabled = !(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto") || sale.estado === "Anulado" || sale.estado === "Devuelto";
                                                             return (
-                                                                <button
-                                                                    className={`p-2 rounded-lg transition duration-300 ${isCreditDisabled ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
-                                                                    onClick={() => handleViewCredit(sale)}
-                                                                    title={isCreditDisabled ? "Crédito no disponible" : "Detalles del crédito"}
-                                                                    disabled={isCreditDisabled}
-                                                                >
-                                                                    <Wallet size={18} className={isCreditDisabled ? "text-gray-400" : "text-yellow-600"} />
-                                                                </button>
+                                                                <Restricted scope="Ventas" action="Abonar">
+                                                                    <button
+                                                                        className={`p-2 rounded-lg transition duration-300 ${isCreditDisabled ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
+                                                                        onClick={() => handleViewCredit(sale)}
+                                                                        title={isCreditDisabled ? "Crédito no disponible" : "Detalles del crédito"}
+                                                                        disabled={isCreditDisabled}
+                                                                    >
+                                                                        <Wallet size={18} className={isCreditDisabled ? "text-gray-400" : "text-yellow-600"} />
+                                                                    </button>
+                                                                </Restricted>
                                                             );
                                                         })()}
                                                     </div>

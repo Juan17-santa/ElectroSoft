@@ -12,7 +12,7 @@ export default function UsersTable({
 }) {
     const GLOBAL_USER_EMAIL = "administrador@gmail.com";
 
-    
+
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
             <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
@@ -98,37 +98,41 @@ export default function UsersTable({
 
                                     <td className="px-3 py-2">
                                         <div className="flex flex-col items-center gap-1">
-                                            <div
-                                                onClick={() => user.email !== GLOBAL_USER_EMAIL && onToggleEstado(user.id)}
-                                                className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-all duration-300
-                                                    ${user.email === GLOBAL_USER_EMAIL
-                                                        ? "cursor-not-allowed opacity-50 bg-green-500"
-                                                        : `cursor-pointer ${user.estado ? "bg-green-500" : "bg-red-500"}`
-                                                    }`}
-                                            >
+                                            <Restricted scope="Usuarios" action="Estado">
                                                 <div
-                                                    className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
+                                                    onClick={() => user.email !== GLOBAL_USER_EMAIL && onToggleEstado(user.id)}
+                                                    className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-all duration-300
+                                                    ${user.email === GLOBAL_USER_EMAIL
+                                                            ? "cursor-not-allowed opacity-50 bg-green-500"
+                                                            : `cursor-pointer ${user.estado ? "bg-green-500" : "bg-red-500"}`
+                                                        }`}
+                                                >
+                                                    <div
+                                                        className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
                                                         ${user.estado ? "translate-x-5" : "translate-x-0"}`}
-                                                />
-                                            </div>
-                                            <span
-                                                className={`text-xs font-semibold
+                                                    />
+                                                </div>
+                                                <span
+                                                    className={`text-xs font-semibold
                                                     ${user.estado ? "text-green-600" : "text-red-600"}`}
-                                            >
-                                                {user.estado ? "Activo" : "Inactivo"}
-                                            </span>
+                                                >
+                                                    {user.estado ? "Activo" : "Inactivo"}
+                                                </span>
+                                            </Restricted>
                                         </div>
                                     </td>
 
                                     <td className="px-1 py-1">
                                         <div className="flex justify-center gap-2">
 
-                                            <button
-                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                onClick={() => onDetails(user)}
-                                            >
-                                                <Eye size={18} className="text-blue-600" />
-                                            </button>
+                                            <Restricted scope="Usuarios" action="Ver">
+                                                <button
+                                                    className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                    onClick={() => onDetails(user)}
+                                                >
+                                                    <Eye size={18} className="text-blue-600" />
+                                                </button>
+                                            </Restricted>
 
                                             <Restricted scope="Usuarios" action="Editar">
                                                 <button

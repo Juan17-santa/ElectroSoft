@@ -8,12 +8,15 @@ import { CreditCard } from "lucide-react";
 import { generarReporteGeneral, generarReporteGeneralPDF } from "../hooks/reportesPayments";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { useToast } from "../../../../../context/ToastContext";
+import { usePermissions } from "../../../../../hooks/usePermissions";
 
 export default function Payments() {
     const navigate = useNavigate();
     const location = useLocation();
     const { showToast } = useToast();
 
+    
+    const { hasPermission } = usePermissions();
     const [clientes, setClientes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -72,7 +75,7 @@ export default function Payments() {
                 searchTerm={search}
                 onSearchChange={(e) => { setSearch(e.target.value); setPresentPage(1); }}
                 placeholder="Buscar cliente..."
-                showReportButton={true}
+                showReportButton={hasPermission("pagos", "Reporte")}
                 onReportClick={() => setShowReportModal(true)}
                 showCreateButton={false} // ESTA LÍNEA ES LA CLAVE
             />

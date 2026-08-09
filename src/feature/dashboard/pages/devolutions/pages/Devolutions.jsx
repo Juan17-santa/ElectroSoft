@@ -10,6 +10,7 @@ import Pagination from "../../../components/ui/Pagination";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { Restricted } from "../../../components/ui/Restricted";
 import { useToast } from "../../../../../context/ToastContext";
+import { usePermissions } from "../../../../../hooks/usePermissions";
 
 const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
@@ -37,7 +38,8 @@ export default function Devolutions() {
     const [confirmData, setConfirmData] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [ventasMap, setVentasMap] = useState(null);
-
+    const { hasPermission } = usePermissions();
+    
     const {
         devolucionesFiltradas,
         searchTerm,
@@ -52,7 +54,7 @@ export default function Devolutions() {
             const map = {};
             ventas.forEach((v) => { map[v.id] = v.numeroVenta; });
             setVentasMap(map);
-        }).catch(() => {});
+        }).catch(() => { });
     }, []);
 
     const { exportReport } = useDevolutionsReport(devolucionesFiltradas, showToast);
@@ -152,7 +154,7 @@ export default function Devolutions() {
                     onSearchChange={handleSearch}
                     placeholder="Buscar devoluciones..."
                     showCreateButton={false}
-                    showReportButton={true}
+                    showReportButton={hasPermission("Devoluciones", "Reporte")}
                     onReportClick={handleGenerarReporte}
                 />
 
@@ -252,15 +254,17 @@ export default function Devolutions() {
                                                     <div className="flex justify-center gap-2">
 
                                                         {/* VER */}
-                                                        <button
-                                                            title="Ver detalle"
-                                                            onClick={() => navigate("/dashboard/sales-management/return", {
-                                                                state: { idVenta, mode: "view-only" },
-                                                            })}
-                                                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                        >
-                                                            <Eye size={18} className="text-blue-600" />
-                                                        </button>
+                                                        <Restricted scope="Devoluciones" action="Ver">
+                                                            <button
+                                                                title="Ver detalle"
+                                                                onClick={() => navigate("/dashboard/sales-management/return", {
+                                                                    state: { idVenta, mode: "view-only" },
+                                                                })}
+                                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                            >
+                                                                <Eye size={18} className="text-blue-600" />
+                                                            </button>
+                                                        </Restricted>
 
                                                         {/* EDITAR / COMPLETADO / ANULADO */}
                                                         <div className="relative group flex items-center">
@@ -275,10 +279,10 @@ export default function Devolutions() {
                                                                     }
                                                                     disabled={bloqueado}
                                                                     className={`p-2 rounded-lg transition ${anulado
-                                                                            ? "bg-red-100 cursor-default"
-                                                                            : bloqueado
-                                                                                ? "bg-green-100 cursor-default"
-                                                                                : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
+                                                                        ? "bg-red-100 cursor-default"
+                                                                        : bloqueado
+                                                                            ? "bg-green-100 cursor-default"
+                                                                            : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
                                                                         }`}
                                                                 >
                                                                     {anulado ? (
@@ -303,7 +307,7 @@ export default function Devolutions() {
                                                         </div>
 
                                                         {/* ANULAR */}
-                                                        <Restricted scope="Devoluciones" action="Eliminar">
+                                                        <Restricted scope="Devoluciones" action="anular">
                                                             <button
                                                                 title={tandaConFinal ? "No se puede anular: hay devoluciones en estado final" : "Anular"}
                                                                 onClick={() => handleAnularGrupo(grupo)}

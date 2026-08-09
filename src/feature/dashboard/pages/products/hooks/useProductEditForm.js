@@ -38,8 +38,8 @@ export default function useProductEditForm({
         id: id || "",
         nombre: "",
         categoriaId: "",
-        precio: "",
-        stock: "",
+        precio: initialData.precio ?? "0",
+        stock: initialData.stock ?? "0",
         tipoStock: "",
         serial: "",
         garantia: "",
@@ -67,8 +67,8 @@ export default function useProductEditForm({
             id: initialData.id || "",
             nombre: initialData.nombre || "",
             categoriaId: initialData.categoriaId || "",
-            precio: initialData.precio || "",
-            stock: initialData.stock || "",
+            precio: initialData.precio ?? "0",
+            stock: initialData.stock ?? "0",
             tipoStock: initialData.tipoStock || "",
             serial: initialData.serial || "",
             garantia: initialData.garantia || "",
@@ -89,6 +89,39 @@ export default function useProductEditForm({
         
         loadProducts();
     }, []);
+
+    const normalizeNumericString = (name, value) => {
+        const raw = String(value ?? "").trim().replace(/\s+/g, "");
+
+        if (!raw) return "";
+
+        if (name === "precio") {
+            const normalized = raw
+                .replace(/\./g, "")
+                .replace(/,/g, ".")
+                .replace(/[^\d.]/g, "");
+
+            if (!normalized) return "";
+
+            const [wholeRaw = "", fractionRaw = ""] = normalized.split(".");
+            const wholeDigits = String(wholeRaw || "").replace(/[^\d]/g, "");
+            const fractionDigits = String(fractionRaw || "").replace(/[^\d]/g, "").slice(0, 2);
+
+            if (!wholeDigits && !fractionDigits) return "";
+            const safeWholeDigits = wholeDigits || "0";
+
+            return fractionDigits ? `${safeWholeDigits}.${fractionDigits}` : safeWholeDigits;
+        }
+
+        if (name === "stock") {
+            const rawDigits = raw.replace(/[^\d]/g, "");
+            if (!rawDigits) return "";
+            const parsed = Number(rawDigits);
+            return Number.isFinite(parsed) ? String(parsed) : "";
+        }
+
+        return raw;
+    };
 
     // VALIDACIÓN INDIVIDUAL POR CAMPO
     const validateField = (name, value) => {
@@ -121,12 +154,10 @@ export default function useProductEditForm({
             case "precio":
                 if (!strValue) {
                     error = "";
-                } else if (!/^[0-9]+$/.test(strValue)) {
-                    error = "El precio solo debe contener números";
+                } else if (!/^\d+(\.\d{1,2})?$/.test(strValue)) {
+                    error = "El precio debe usar un formato numérico válido";
                 } else if (Number(strValue) < 0) {
                     error = "El precio no puede ser negativo";
-                } else if (!Number.isInteger(Number(strValue))) {
-                    error = "El precio debe ser un número entero";
                 }
                 break;
 
@@ -182,7 +213,7 @@ export default function useProductEditForm({
 
         const { name, value } = e.target;
         const normalizedValue = (name === "precio" || name === "stock")
-            ? String(value).replace(/\D/g, "").slice(0, 15)
+            ? normalizeNumericString(name, value).slice(0, 15)
             : value;
 
         setFormData(prev => ({

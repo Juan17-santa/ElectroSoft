@@ -42,9 +42,9 @@ export default function Dashboard() {
                     ServicesDevolutions.getAll().catch(() => []),
                     ServiceProductCategory.get().catch(() => []),
                 ]);
-                
+
                 if (!mounted) return;
-                
+
                 setRaw({
                     compras,
                     sales,
@@ -144,24 +144,33 @@ export default function Dashboard() {
     }));
     const donut = Object.entries(catMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
     const donutTotal = donut.reduce((a, d) => a + d.value, 0);
-
     const tipoMap = {};
     salesNow.forEach(s => {
         const t = s.tipoVenta === "Credito" ? "Crédito" : (s.tipoVenta || "Otro");
         tipoMap[t] = (tipoMap[t] || 0) + parseMoney(s.total);
     });
-    const tipoDonut = Object.entries(tipoMap).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 
-    const devMes = raw.devolutions.filter(d => inM(d.creadoEn || d.fecha, year, month)).length;
-    const devMesPrev = raw.devolutions.filter(d => inM(d.creadoEn || d.fecha, prevYM.y, prevYM.m)).length;
-    const stockBajo = raw.products.filter(p => Number(p.stock) <= 5 && p.stock > 0 && p.estado !== false).length;
+    const tipoDonut = Object.entries(tipoMap)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value);
 
+    const devMes = raw.devolutions.filter(
+        d => inM(d.creadoEn || d.fecha, year, month)
+    ).length;
+
+    const devMesPrev = raw.devolutions.filter(
+        d => inM(d.creadoEn || d.fecha, prevYM.y, prevYM.m)
+    ).length;
+
+    const stockBajo = raw.products.filter(
+        p => Number(p.stock) <= 5 && Number(p.stock) >= 0 && p.estado !== false
+    ).length;
     const yearItems = [currentYear, currentYear - 1, currentYear - 2].map(y => ({ label: `Año ${y}`, value: y }));
     const monthItems = MESES_FULL.map((m, i) => ({ label: m, value: i }));
 
     if (isLoading) {
         return (
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col items-center justify-center h-full shadow-inner min-h-[500px]">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col items-center justify-center h-full shadow-inner min-h-125">
                 <Loader2 className="w-10 h-10 text-yellow-500 animate-spin mb-4" />
                 <p className="text-gray-500 font-medium">Cargando datos del dashboard...</p>
             </div>
@@ -239,14 +248,14 @@ export default function Dashboard() {
                         <TotalSalesChart data={serieVentas} year={year} />
                     </div>
 
-                    {/* Columna de gráfica y StatCards */}
-                    <div className="col-span-1 flex flex-col gap-4" style={{ animation: "kpiFadeUp .6s ease both", animationDelay: "540ms" }}>
-                        <SalesTypeChart data={tipoDonut} monthName={MESES_FULL[month]} year={year} />
-                        <StatCard icon={RotateCcw} label="Devoluciones este mes" value={devMes} delta={delta(devMes, devMesPrev)} color="#f59e0b" isMoney={false} />
-                        <StatCard icon={Package} label="Stock bajo (≤5 uds)" value={stockBajo} color={stockBajo > 0 ? "#ef4444" : "#9ca3af"} isMoney={false} showDelta={false} />
-                    </div>
-                </div>
-            </div>
+    {/* Columna de gráfica y StatCards */ }
+    <div className="col-span-1 flex flex-col gap-4" style={{ animation: "kpiFadeUp .6s ease both", animationDelay: "540ms" }}>
+        <SalesTypeChart data={tipoDonut} monthName={MESES_FULL[month]} year={year} />
+        <StatCard icon={RotateCcw} label="Devoluciones este mes" value={devMes} delta={delta(devMes, devMesPrev)} color="#f59e0b" isMoney={false} />
+        <StatCard icon={Package} label="Stock bajo (≤5 uds)" value={stockBajo} color={stockBajo > 0 ? "#ef4444" : "#9ca3af"} isMoney={false} showDelta={false} />
+        </div>
+    </div>
+            </div >
 
         </>
     );
