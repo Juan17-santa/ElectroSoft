@@ -4,29 +4,29 @@ import { Validations } from "../../../../../utils/validations";
 export function useRoleForm({ initialData = null, onSubmit }) {
 
     const [formData, setFormData] = useState({
-        id:            "",
-        nombre:        "",
-        descripcion:   "",
-        estado:        true,
+        id: "",
+        nombre: "",
+        descripcion: "",
+        estado: true,
         fechaCreacion: new Date().toLocaleDateString("es-CO"),
-        permisos:      [], // array plano: ["ventas:ver", "ventas:crear"]
+        permisos: [], // array plano: ["ventas:ver", "ventas:crear"]
     });
 
-    const [tocado,    setTocado]    = useState({ nombre: false });
+    const [tocado, setTocado] = useState({ nombre: false });
     const [formError, setFormError] = useState(null);
 
-    const tocar       = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
+    const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
     const estadoNombre = tocado.nombre ? Validations.validarNombreRol(formData.nombre) : null;
 
     useEffect(() => {
         if (initialData) {
             setFormData({
-                id:            initialData.id            || "",
-                nombre:        initialData.nombre        || "",
-                descripcion:   initialData.descripcion   || "",
-                estado:        initialData.estado        ?? true,
+                id: initialData.id || "",
+                nombre: initialData.nombre || "",
+                descripcion: initialData.descripcion || "",
+                estado: initialData.estado ?? true,
                 fechaCreacion: initialData.fechaCreacion || new Date().toLocaleDateString("es-CO"),
-                permisos:      initialData.permisos      || [],
+                permisos: initialData.permisos || [],
             });
         }
     }, [initialData]);
@@ -45,10 +45,33 @@ export function useRoleForm({ initialData = null, onSubmit }) {
     // Agrega o quita un permiso individual: "ventas:crear"
     const handlePermissionChange = (scopeName, action) => {
         const permission = `${scopeName}:${action}`;
+        const accessPermission = `${scopeName}:acceso`;
+
         setFormData(prev => {
-            const permisos = prev.permisos.includes(permission)
+            let permisos = prev.permisos.includes(permission)
                 ? prev.permisos.filter(p => p !== permission)
                 : [...prev.permisos, permission];
+
+            // Si es acceso, no hacer nada especial
+            if (action === "acceso") {
+                return { ...prev, permisos };
+            }
+
+            // Verificar si quedan otras acciones además de acceso
+            const otherActions = permisos.filter(
+                p => p.startsWith(`${scopeName}:`) && p !== accessPermission
+            );
+
+            if (otherActions.length > 0) {
+                // Agregar acceso automáticamente
+                if (!permisos.includes(accessPermission)) {
+                    permisos = [...permisos, accessPermission];
+                }
+            } else {
+                // Quitar acceso si no hay otras acciones
+                permisos = permisos.filter(p => p !== accessPermission);
+            }
+
             return { ...prev, permisos };
         });
         setFormError(null);

@@ -1,7 +1,7 @@
 import { Trash, Pencil, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RolesService } from "../Roles/services/RolesService.js";
+import { RolesService } from "./services/RolesService";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
@@ -10,30 +10,29 @@ import { Restricted } from "../../components/ui/Restricted";
 import { useToast } from "../../../../context/ToastContext";
 
 const ITEMS_PER_PAGE = 6;
+const PROTECTED_ROLES = ["Administrador", "Empleado", "Super Administrador"];
 
 export default function Roles() {
     const { hasPermission } = usePermissions();
     const { showToast } = useToast();
     const navigate = useNavigate();
+
     const [roles, setRoles] = useState([]);
-    const [loading, setLoading] = useState(false); // ← AÑADIDO
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
-    const PROTECTED_ROLES = ["Administrador", "Empleado", "Super Administrador"];
 
-    useEffect(() => { getRoles(); }, []);
+    useEffect(() => {
+        getRoles();
+    }, []);
 
     const getRoles = async () => {
         try {
-            setLoading(true); // ← AÑADIDO
             const data = await RolesService.get();
             setRoles(data);
         } catch (error) {
             console.error(error);
             showToast("error", "Error al cargar los roles");
-        } finally {
-            setLoading(false); // ← AÑADIDO
         }
     };
 
@@ -71,7 +70,8 @@ export default function Roles() {
                     showToast("error", message);
                     setConfirmData(null);
                 }
-            }
+            },
+            onCancel: () => setConfirmData(null),
         });
     };
 
@@ -91,7 +91,8 @@ export default function Roles() {
                     showToast("error", message);
                     setConfirmData(null);
                 }
-            }
+            },
+            onCancel: () => setConfirmData(null),
         });
     };
 
@@ -114,7 +115,7 @@ export default function Roles() {
                     placeholder="Buscar roles..."
                     onCreateClick={() => navigate("/dashboard/roles/create")}
                     createButtonText="Nuevo Rol"
-                    showCreateButton={hasPermission("roles:acceso")}
+                    showCreateButton={hasPermission("Roles", "Crear")}
                 />
 
                 <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
@@ -130,41 +131,12 @@ export default function Roles() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white text-gray-700">
-
-                                {/* ── Loading (igual que UsersTable) ── */}
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={5} className="text-center py-4 text-gray-500">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <svg
-                                                    className="animate-spin h-4 w-4 text-yellow-500"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <circle
-                                                        className="opacity-25"
-                                                        cx="12" cy="12" r="10"
-                                                        stroke="currentColor" strokeWidth="4"
-                                                    />
-                                                    <path
-                                                        className="opacity-75"
-                                                        fill="currentColor"
-                                                        d="M4 12a8 8 0 018-8v8z"
-                                                    />
-                                                </svg>
-                                                Cargando roles...
-                                            </div>
-                                        </td>
-                                    </tr>
-
-                                ) : paginatedRoles.length === 0 ? (
+                                {paginatedRoles.length === 0 ? (
                                     <tr>
                                         <td colSpan={5} className="px-4 py-4 text-center text-gray-400">
                                             No hay roles registrados.
                                         </td>
                                     </tr>
-
                                 ) : (
                                     paginatedRoles.map((role, index) => (
                                         <tr key={role.id} className="border-b border-gray-200 hover:bg-gray-50">
@@ -183,33 +155,39 @@ export default function Roles() {
                                             </td>
                                             <td className="px-4 py-2">
                                                 <div className="flex flex-col items-center gap-1">
-                                                    <div
-                                                        onClick={() => handleToggleEstado(role)}
-                                                        className={`w-10 h-5 flex items-center rounded-full p-0.5 cursor-pointer transition-all duration-300
-                                                        ${role.estado ? "bg-green-500" : "bg-red-500"}`}
-                                                    >
+                                                    <Restricted scope="Roles" action="Estado">
                                                         <div
-                                                            className={`w-4 h-4 bg-white rounded-full shadow transform transition-all duration-300
-                                                        ${role.estado ? "translate-x-5" : "translate-x-0"}`}
-                                                        />
-                                                    </div>
-                                                    <span
-                                                        className={`text-xs font-semibold
-                                                    ${role.estado ? "text-green-600" : "text-red-600"}`}
-                                                    >
-                                                        {role.estado ? "Activo" : "Inactivo"}
-                                                    </span>
+                                                            onClick={() => !PROTECTED_ROLES.includes(role.nombre) && handleToggleEstado(role)}
+                                                            title={PROTECTED_ROLES.includes(role.nombre) ? "No se puede cambiar el estado de este rol" : "Cambiar estado"}
+                                                            className={`w-10 h-6 flex items-center rounded-full p-1 transition
+                                                                ${PROTECTED_ROLES.includes(role.nombre)
+                                                                    ? "opacity-40 cursor-not-allowed"
+                                                                    : "cursor-pointer"
+                                                                }
+                                                                ${role.estado ? "bg-green-500" : "bg-red-500"}`}
+                                                        >
+                                                            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition
+                                                                ${role.estado ? "translate-x-4" : "translate-x-0"}`}
+                                                            />
+                                                        </div>
+                                                    </Restricted>
                                                 </div>
                                             </td>
                                             <td className="px-3 py-3">
                                                 <div className="flex justify-center gap-1.5">
-                                                    <button
-                                                        onClick={() => handleViewDetails(role)}
-                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                        title="Ver detalles"
-                                                    >
-                                                        <Eye size={18} className="text-blue-600" />
-                                                    </button>
+
+                                                    {/* VER DETALLE — visible para quien tenga roles:ver */}
+                                                    <Restricted scope="Roles" action="Ver">
+                                                        <button
+                                                            onClick={() => handleViewDetails(role)}
+                                                            className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                            title="Ver detalles"
+                                                        >
+                                                            <Eye size={18} className="text-blue-600" />
+                                                        </button>
+                                                    </Restricted>
+
+                                                    {/* EDITAR */}
                                                     <Restricted scope="Roles" action="Editar">
                                                         <button
                                                             onClick={() => handleEditNavigation(role)}
@@ -224,15 +202,16 @@ export default function Roles() {
                                                         <button
                                                             onClick={() => !PROTECTED_ROLES.includes(role.nombre) && handleDelete(role)}
                                                             disabled={PROTECTED_ROLES.includes(role.nombre)}
+                                                            title={PROTECTED_ROLES.includes(role.nombre) ? "No se puede eliminar este rol" : "Eliminar"}
                                                             className={`p-2 rounded-lg transition
                                                                 ${PROTECTED_ROLES.includes(role.nombre)
                                                                     ? "bg-gray-100 cursor-not-allowed opacity-40"
                                                                     : "bg-red-100 hover:bg-red-200 cursor-pointer"}`}
-                                                            title={PROTECTED_ROLES.includes(role.nombre) ? "No se puede eliminar este rol" : "Eliminar"}
                                                         >
                                                             <Trash size={18} className={PROTECTED_ROLES.includes(role.nombre) ? "text-gray-400" : "text-red-500"} />
                                                         </button>
                                                     </Restricted>
+
                                                 </div>
                                             </td>
                                         </tr>
@@ -243,7 +222,7 @@ export default function Roles() {
                     </div>
                 </div>
 
-                {!loading && paginatedRoles.length > 0 && (
+                {paginatedRoles.length > 0 && (
                     <div className="flex justify-end mt-auto">
                         <Pagination
                             currentPage={pageActual}
