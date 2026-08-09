@@ -135,6 +135,13 @@ export function useUserForm({ userToEdit, navigate }) {
                         documento: exists ? "Este documento ya está registrado" : ""
                     }));
                 }
+                if (name === "nombre") {
+                    sanitized = value
+                        .replace(/[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ\s]/g, "")
+                        .split(" ")
+                        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                        .join(" ");
+                }
             }, 600); // espera 600ms después de que el usuario deje de escribir
         }
     };
