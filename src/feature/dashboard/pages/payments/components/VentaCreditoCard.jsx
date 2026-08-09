@@ -1,4 +1,6 @@
 import { FileText, Eye, Plus, AlertCircle, ChevronRight } from "lucide-react";
+import { Restricted } from "../../../components/ui/Restricted";
+
 
 const fmt = (val) => new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0
@@ -15,14 +17,14 @@ export default function VentaCreditoCard({ venta, onDetalle, onAbonar }) {
 
     return (
         <div className={`bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-5 flex items-center gap-4 overflow-x-auto border border-transparent ${isVencida ? "border-l-4 border-l-red-400" :
-                isFinalizado ? "border-l-4 border-l-green-400" :
-                    "border-l-4 border-l-yellow-400"
+            isFinalizado ? "border-l-4 border-l-green-400" :
+                "border-l-4 border-l-yellow-400"
             }`}>
             <div className="flex items-center gap-4 min-w-max w-full">
                 {/* Ícono */}
                 <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${isVencida ? "bg-red-100" :
-                        isFinalizado ? "bg-green-100" :
-                            "bg-yellow-100"
+                    isFinalizado ? "bg-green-100" :
+                        "bg-yellow-100"
                     }`}>
                     <FileText size={18} className={
                         isVencida ? "text-red-500" :
@@ -44,8 +46,8 @@ export default function VentaCreditoCard({ venta, onDetalle, onAbonar }) {
                         )}
                     </div>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full w-fit ${isVencida ? "bg-red-100 text-red-600" :
-                            isFinalizado ? "bg-green-100 text-green-600" :
-                                "bg-yellow-100 text-yellow-700"
+                        isFinalizado ? "bg-green-100 text-green-600" :
+                            "bg-yellow-100 text-yellow-700"
                         }`}>
                         {isVencida ? "Vencida" : isFinalizado ? "Finalizado" : "Pendiente"}
                     </span>
@@ -110,21 +112,25 @@ export default function VentaCreditoCard({ venta, onDetalle, onAbonar }) {
 
                 {/* Botones */}
                 <div className="flex gap-2 shrink-0">
-                    <button
-                        onClick={onDetalle}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-medium transition cursor-pointer"
-                    >
-                        <Eye size={13} />
-                        Detalle
-                    </button>
-                    {!isFinalizado && (
+                    <Restricted scope="Pagos y abonos" action="Ver">
                         <button
-                            onClick={onAbonar}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-xs font-medium transition cursor-pointer"
+                            onClick={onDetalle}
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-medium transition cursor-pointer"
                         >
-                            <Plus size={13} />
-                            Abonar
+                            <Eye size={13} />
+                            Detalle
                         </button>
+                    </Restricted>
+                    {!isFinalizado && (
+                        <Restricted scope="Pagos y abonos" action="Abonar">
+                            <button
+                                onClick={onAbonar}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-xs font-medium transition cursor-pointer"
+                            >
+                                <Plus size={13} />
+                                Abonar
+                            </button>
+                        </Restricted>
                     )}
                 </div>
             </div>

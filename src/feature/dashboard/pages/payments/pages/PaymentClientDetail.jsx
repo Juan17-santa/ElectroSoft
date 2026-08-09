@@ -6,6 +6,7 @@ import VentaCreditoCard from "../components/VentaCreditoCard";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import { generarReporteCliente, generarReporteClientePDF } from "../hooks/reportesPayments";
 import { useToast } from "../../../../../context/ToastContext";
+import { Restricted } from "../../../components/ui/Restricted";
 
 const fmt = (val) => new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0
@@ -193,13 +194,15 @@ export default function PaymentClientDetail() {
                             <p className="text-xs text-gray-400">Cupo total</p>
                             <div className="flex items-center gap-2">
                                 <p className="text-sm font-bold text-gray-800">{fmt(resumen.cupoCredito)}</p>
-                                <button
-                                    onClick={handleAbrirModal}
-                                    className={`p-1 rounded-lg transition cursor-pointer ${resumen.cupoOcupado > 0 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-200"}`}
-                                    title={resumen.cupoOcupado > 0 ? `No se puede modificar hasta liberar el cupo ocupado (${fmt(resumen.cupoOcupado)})` : "Editar cupo"}
-                                >
-                                    <Pencil size={13} className={resumen.cupoOcupado > 0 ? "text-gray-300" : "text-gray-400 hover:text-yellow-500"} />
-                                </button>
+                                <Restricted scope="Pagos y abonos" action="editar-cupo">
+                                    <button
+                                        onClick={handleAbrirModal}
+                                        className={`p-1 rounded-lg transition cursor-pointer ${resumen.cupoOcupado > 0 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-200"}`}
+                                        title={resumen.cupoOcupado > 0 ? `No se puede modificar hasta liberar el cupo ocupado (${fmt(resumen.cupoOcupado)})` : "Editar cupo"}
+                                    >
+                                        <Pencil size={13} className={resumen.cupoOcupado > 0 ? "text-gray-300" : "text-gray-400 hover:text-yellow-500"} />
+                                    </button>
+                                </Restricted>
                             </div>
                         </div>
                         <div className="flex-1 bg-orange-50 rounded-xl px-4 py-2.5 flex justify-between items-center">
@@ -223,9 +226,9 @@ export default function PaymentClientDetail() {
                         <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                             <div
                                 className={`h-full rounded-full transition-all duration-500 ${isSuspendido ? "bg-red-400" :
-                                        porcentaje >= 80 ? "bg-orange-400" :
-                                            porcentaje >= 50 ? "bg-yellow-400" :
-                                                "bg-green-400"
+                                    porcentaje >= 80 ? "bg-orange-400" :
+                                        porcentaje >= 50 ? "bg-yellow-400" :
+                                            "bg-green-400"
                                     }`}
                                 style={{ width: `${porcentaje}%` }}
                             />

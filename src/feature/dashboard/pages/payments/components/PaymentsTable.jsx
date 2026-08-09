@@ -1,4 +1,5 @@
 import { Eye } from "lucide-react";
+import { Restricted } from "../../../components/ui/Restricted";
 
 const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
@@ -38,15 +39,14 @@ export default function PaymentsTable({ data, onDetails }) {
                                     : null;
 
                                 const isPendiente = payment.estado === "Vigente";
-                                const isVencida  = payment.estado === "Anulada"; //   nuevo
-                                const esPedido   = payment.fuente === "pedido";
+                                const isVencida = payment.estado === "Anulada"; //   nuevo
+                                const esPedido = payment.fuente === "pedido";
 
                                 return (
                                     <tr
                                         key={payment.id}
-                                        className={`border-b border-gray-200 ${
-                                            isVencida ? "bg-red-50" : ""  //   fila roja si vencida
-                                        }`}
+                                        className={`border-b border-gray-200 ${isVencida ? "bg-red-50" : ""  //   fila roja si vencida
+                                            }`}
                                     >
 
                                         {/* ID */}
@@ -106,26 +106,24 @@ export default function PaymentsTable({ data, onDetails }) {
                                         </td>
 
                                         {/* SALDO PENDIENTE */}
-                                        <td className={`px-4 py-2 font-semibold ${
-                                            isVencida ? "text-red-600" : ""
-                                        }`}>
+                                        <td className={`px-4 py-2 font-semibold ${isVencida ? "text-red-600" : ""
+                                            }`}>
                                             ${fmt(payment.montoPorPagar)}
                                         </td>
 
                                         {/* ESTADO */}
                                         <td className="px-4 py-2">
                                             <div className="flex items-center justify-center gap-2">
-                                                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                                                    isVencida   ? "bg-red-500"    :
-                                                    isPendiente ? "bg-yellow-400" :
-                                                                  "bg-green-500"
-                                                }`} />
+                                                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isVencida ? "bg-red-500" :
+                                                        isPendiente ? "bg-yellow-400" :
+                                                            "bg-green-500"
+                                                    }`} />
                                                 <span className={
                                                     isVencida ? "text-red-600 font-semibold" : ""
                                                 }>
-                                                    {isVencida   ? "Vencida"   :
-                                                     isPendiente ? "Pendiente" :
-                                                                   "Finalizado"}
+                                                    {isVencida ? "Vencida" :
+                                                        isPendiente ? "Pendiente" :
+                                                            "Finalizado"}
                                                 </span>
                                             </div>
                                         </td>
@@ -133,13 +131,15 @@ export default function PaymentsTable({ data, onDetails }) {
                                         {/* ACCIONES */}
                                         <td className="px-4 py-2">
                                             <div className="flex justify-center">
-                                                <button
-                                                    onClick={() => onDetails(payment)}
-                                                    className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
-                                                    title="Ver detalle"
-                                                >
-                                                    <Eye size={18} className="text-yellow-600" />
-                                                </button>
+                                                <Restricted scope="Pagos" action="Ver">
+                                                    <button
+                                                        onClick={() => onDetails(payment)}
+                                                        className="p-2 rounded-lg bg-yellow-100 hover:bg-yellow-200 transition cursor-pointer"
+                                                        title="Ver detalle"
+                                                    >
+                                                        <Eye size={18} className="text-yellow-600" />
+                                                    </button>
+                                                </Restricted>
                                             </div>
                                         </td>
 
