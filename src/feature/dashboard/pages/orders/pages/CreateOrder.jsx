@@ -45,7 +45,8 @@ export default function CreateOrder() {
         setShowSummaryModal,
         requestedCredit,
         setRequestedCredit,
-        handleOpenSummary
+        handleOpenSummary,
+        isSearchingClient
     } = useOrdersForm({
         onSuccess: () => {
             showToast("success", "Pedido registrado con éxito.");
@@ -126,6 +127,7 @@ export default function CreateOrder() {
                     setShowSummaryModal={setShowSummaryModal}
                     requestedCredit={requestedCredit}
                     setRequestedCredit={setRequestedCredit}
+                    isSearchingClient={isSearchingClient}
                 />
             </div>
 

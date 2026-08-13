@@ -20,20 +20,34 @@ export default function OrderDetails() {
     const itemsPerPage = 4;
 
     useEffect(() => {
+        let isMounted = true;
         const loadOrderDetails = async () => {
+            setLoading(true);
             try {
-                setLoading(true);
-                const res = await ServicesOrders.getOrderById(id);
-                if (res) setOrder(res.data || res);
+                const data = await ServicesOrders.getOrderById(id);
+                if (isMounted) {
+                    setOrder(data);
+                }
             } catch (error) {
-                console.error("Error al cargar los detalles:", error);
-                showToast("error", "No se pudieron cargar los detalles del pedido.");
+                if (isMounted) {
+                    showToast("error", error.message || "No se pudieron cargar los detalles del pedido.");
+                }
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         };
-        if (id) loadOrderDetails();
-    }, [id, showToast]);
+
+        if (id) {
+            loadOrderDetails();
+        }
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id]);
+
 
     const formatDate = (date) => date ? new Date(date).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : "-";
     const formatCurrency = (value) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value || 0);
@@ -111,15 +125,15 @@ export default function OrderDetails() {
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => setShowPrintModal(true)} className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-xl text-sm font-medium bg-white hover:bg-gray-50 text-gray-600 transition shadow-sm hover:shadow-md cursor-pointer w-fit">
-                                <FileText size={18} className="text-gray-500" /> Imprimir
-                            </button>
-                            <button
-                                onClick={handleBack}
-                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm hover:shadow-md transition cursor-pointer"
-                            >
-                                <ArrowLeft size={16} />
-                                Volver
-                            </button>
+                                    <FileText size={18} className="text-gray-500" /> Imprimir
+                                </button>
+                                <button
+                                    onClick={handleBack}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm hover:shadow-md transition cursor-pointer"
+                                >
+                                    <ArrowLeft size={16} />
+                                    Volver
+                                </button>
                             </div>
                         </div>
 

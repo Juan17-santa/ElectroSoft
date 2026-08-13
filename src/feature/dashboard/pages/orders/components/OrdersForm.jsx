@@ -35,7 +35,8 @@ export default function OrdersForm({
     showSummaryModal,
     setShowSummaryModal,
     requestedCredit,
-    setRequestedCredit
+    setRequestedCredit,
+    isSearchingClient
 }) {
 
     const [isClientDropdownOpen, setIsClientDropdownOpen] = useState(false);
@@ -176,9 +177,9 @@ export default function OrdersForm({
                             )}
 
                             <ValidationMessage
-                                error={errors.documento}
+                                error={errors.documento && !isSearchingClient ? errors.documento : ""}
                                 success={formData.clienteId}
-                                successMessage="Listo"
+                                successMessage={isSearchingClient ? "Buscando cliente..." : "Listo"}
                             />
                         </div>
 

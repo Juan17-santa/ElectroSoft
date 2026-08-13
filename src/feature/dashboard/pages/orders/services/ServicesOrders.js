@@ -27,7 +27,6 @@ export const ServicesOrders = {
 
             return resJson.data || resJson;
         } catch (error) {
-            console.error(`Error en getOrderById (ID: ${id}):`, error);
             throw error;
         }
     },
