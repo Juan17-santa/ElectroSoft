@@ -22,6 +22,22 @@ export default function useProductCategoryModal({
     // ESTADO PARA LOS ERRORES DE VALIDACION
     const [errors, setErrors] = useState({});
 
+    // ESTADO PARA ALMACENAR TODAS LAS CATEGORÍAS EXISTENTES
+    const [existingCategories, setExistingCategories] = useState([]);
+
+    // CARGAR LAS CATEGORÍAS EXISTENTES AL MONTAR EL COMPONENTE
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const categories = await ServiceProductCategory.get();
+                setExistingCategories(categories);
+            } catch (error) {
+                console.error("Error cargando categorías:", error);
+            }
+        };
+        loadCategories();
+    }, []);
+
     useEffect(() => {
         if (initialData && mode === "update") {
             setFormData({
@@ -47,6 +63,20 @@ export default function useProductCategoryModal({
                     error = "El nombre no puede contener números";
                 } else if (value.trim().length < 5) {
                     error = "El nombre debe tener mínimo 5 caracteres";
+                } else {
+                    // VERIFICAR SI EL NOMBRE YA EXISTE (VALIDACIÓN EN TIEMPO REAL)
+                    const nameLower = value.trim().toLowerCase();
+                    const isDuplicate = existingCategories.some(category => {
+                        // Si estamos en modo edición, no contar la categoría actual como duplicado
+                        if (mode === "update" && category.id === initialData?.id) {
+                            return false;
+                        }
+                        return category.name.toLowerCase() === nameLower;
+                    });
+
+                    if (isDuplicate) {
+                        error = "Esta categoría ya se encuentra registrada";
+                    }
                 }
                 break;
             default:

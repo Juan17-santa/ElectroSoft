@@ -91,7 +91,8 @@ export default function useProvidersTable({
         if (!query) return true;
 
         // CONVERTIR TELEFONO Y DOCUMENTO A STRING PARA EVITAR ERRORES DE TIPO
-        const phone = pro.contactPhone ? String(pro.contactPhone) : "";
+        const contactPhone = pro.contactPhone ? String(pro.contactPhone) : "";
+        const providerPhone = pro.providerPhone ? String(pro.providerPhone) : "";
         const documentStr = pro.document ? String(pro.document).toLowerCase() : "";
 
         // EXTRAER ABREVIATURA DEL TIPO DE DOCUMENTO 
@@ -117,7 +118,8 @@ export default function useProvidersTable({
             matchesDocTypeAbbreviation ||
             providerType.includes(query) ||
             providerEmail.includes(query) ||
-            phone.includes(query) ||
+            contactPhone.includes(query) ||
+            providerPhone.includes(query) ||
             matchesStatus
         );
     });

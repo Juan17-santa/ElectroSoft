@@ -45,6 +45,9 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
 
+    // ESTADO PARA RASTREAR SI SE ESTÁ BUSCANDO UN CLIENTE
+    const [isSearchingClient, setIsSearchingClient] = useState(false);
+
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
@@ -91,6 +94,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                 clienteCupoTotal: 0,
                 clienteCupoDisponible: 0,
             }));
+            setIsSearchingClient(false);
             return;
         }
 
@@ -101,6 +105,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
         if (found && found.estado) {
             // When selecting from cached clients, attempt to fetch cupoDisponible
             (async () => {
+                setIsSearchingClient(true);
                 let resumen = null;
                 try {
                     resumen = await paymentsService.getResumenCliente(found.documento);
@@ -118,8 +123,11 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                     clienteCupoDisponible: resumen?.cupoDisponible ?? (found.cupoTotal || 0),
                 }));
                 setErrors(prev => ({ ...prev, documento: "" }));
+                setIsSearchingClient(false);
             })();
         } else if (formData.documento.length >= 8) {
+            // Establecer isSearchingClient en true cuando comienza la búsqueda
+            setIsSearchingClient(true);
             const timer = setTimeout(async () => {
                 try {
                     const clienteEncontrado = await ClientsService.getByDocument(formData.documento);
@@ -153,6 +161,8 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                             clienteCupoTotal: 0,
                             clienteCupoDisponible: 0,
                         }));
+                        // Solo mostrar error si realmente no se encontró después de buscar
+                        setErrors(prev => ({ ...prev, documento: "Cliente no encontrado. Verifique el documento o créelo desde el módulo de Clientes." }));
                     }
                 } catch (error) {
                     setFormData(prev => ({
@@ -165,10 +175,13 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                         clienteCupoTotal: 0,
                         clienteCupoDisponible: 0,
                     }));
+                    setErrors(prev => ({ ...prev, documento: "Error buscando el cliente. Intente de nuevo." }));
                 }
+                setIsSearchingClient(false);
             }, 500);
             return () => clearTimeout(timer);
         } else {
+            setIsSearchingClient(false);
             setFormData(prev => ({
                 ...prev,
                 clienteId: null,
@@ -212,7 +225,8 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             case "documento":
                 if (!value || !value.trim()) {
                     error = "El documento o cliente es obligatorio";
-                } else if (!formData.clienteId) {
+                } else if (!formData.clienteId && !isSearchingClient && value.length >= 8) {
+                    // Solo mostrar error si NO se está buscando y el documento tiene 8+ caracteres
                     error = "Seleccione un cliente de la lista o verifique la cédula";
                 }
                 break;
@@ -541,5 +555,6 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
         requestedCredit,
         setRequestedCredit,
         handleOpenSummary,
+        isSearchingClient
     };
 }
