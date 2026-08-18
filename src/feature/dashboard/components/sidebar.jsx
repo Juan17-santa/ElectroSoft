@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import {
     ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck,
-    LogOut, ChevronDown, X, Lightbulb, PanelLeftClose, PanelLeftOpen,
+    LogOut, ChevronDown, X, Lightbulb,
     Layers, Package, Truck, ShoppingBag, UserRound, ClipboardList, Receipt, Wallet, Undo2
 } from 'lucide-react';
 import { getAuthUser, logout } from "../../auth/services/authService";
@@ -28,15 +28,12 @@ const ventasItems = [
     { key: "Devoluciones", path: "/dashboard/devolutions", label: "Devoluciones", icon: Undo2 },
 ];
 
-export const Sidebar = ({ isOpen, setIsOpen }) => {
+export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     const { hasAccessToScope } = usePermissions();
     const location = useLocation();
     const navigate = useNavigate();
     const { showToast } = useToast();
     const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-    // Colapsar/expandir (solo desktop)
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleLogout = () => {
         setShowLogoutModal(true);
@@ -261,17 +258,6 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                         className="p-2 rounded-lg hover:bg-gray-200 transition cursor-pointer"
                     >
                         <X size={22} />
-                    </button>
-                </div>
-
-                {/* Toggle colapsar - solo desktop */}
-                <div className={`hidden md:flex items-center px-3 py-1 border-b border-gray-200 ${isCollapsed ? "justify-start" : "justify-start"}`}>
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="p-2 rounded-lg hover:bg-gray-200 transition cursor-pointer text-gray-600"
-                        title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
-                    >
-                        {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
                     </button>
                 </div>
 
