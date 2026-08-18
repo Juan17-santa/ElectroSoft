@@ -12,6 +12,7 @@ export default function ClientForm({
     tocado,
     handleChange,
     handleSelectChange,
+    handleBlur,
     handleForm,
     formError,
     setFormError,
@@ -29,7 +30,10 @@ export default function ClientForm({
     }, [formError, showToast, setFormError]);
 
     const ringClass = (campo) => {
-        return errors[campo], "focus:ring-yellow-400 bg-gray-200";
+        if (!tocado[campo]) return "focus:ring-yellow-400 bg-gray-200";
+        return errors[campo]
+            ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"
+            : "ring-2 ring-green-400 bg-green-50 focus:ring-green-400";
     };
 
     const [documentTypes, setDocumentTypes] = useState([]);
@@ -82,6 +86,7 @@ export default function ClientForm({
                         name="documento"
                         value={formData.documento}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Ingrese su documento"
                         className={`rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 w-full ${ringClass("documento")}`}
                     />
@@ -102,6 +107,7 @@ export default function ClientForm({
                         name="nombres"
                         value={formData.nombres}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Ingrese su nombre completo"
                         className={`rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 w-full ${ringClass("nombres")}`}
                     />
@@ -122,6 +128,7 @@ export default function ClientForm({
                         name="apellidos"
                         value={formData.apellidos}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Ingrese sus apellidos"
                         className={`rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 w-full ${ringClass("apellidos")}`}
                     />
@@ -142,6 +149,7 @@ export default function ClientForm({
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Ingrese su email"
                         className={`rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 w-full ${ringClass("email")}`}
                     />
@@ -167,6 +175,7 @@ export default function ClientForm({
                         name="telefono"
                         value={formData.telefono}
                         onChange={handleChange}
+                        onBlur={handleBlur}
                         placeholder="Digite su teléfono"
                         className={`rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 transition-all duration-300 w-full ${ringClass("telefono")}`}
                     />

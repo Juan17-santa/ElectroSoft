@@ -692,15 +692,15 @@ export default function AddProductModal({
                             <span className="text-base font-extrabold text-gray-900">{fmt(totalValue)}</span>
                         </div>
                     )}
-                    <div className="flex gap-3">
+                    <div className="flex justify-end gap-3 mt-2">
                         <button type="button" onClick={onClose}
-                            className="flex-1 py-3 text-sm font-medium rounded-xl transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                            style={{ backgroundColor: "#f3f4f6", border: "none" }}>
+                            className="px-6 py-2.5 text-sm font-medium rounded-xl transition-colors text-gray-600 hover:text-gray-800 hover:bg-gray-200"
+                            style={{ backgroundColor: "#e5e7eb", border: "none" }}>
                             Cancelar
                         </button>
 
                         <button type="button" onClick={handleConfirm} disabled={queue.length === 0 || isExceedingQuota}
-                            className="flex-[2.5] flex items-center justify-center gap-2 py-3 text-sm font-semibold rounded-xl transition-all btn-confirm"
+                            className="px-6 py-2.5 flex items-center justify-center gap-2 text-sm font-semibold rounded-xl transition-all btn-confirm"
                             style={{
                                 backgroundColor: (queue.length === 0 || isExceedingQuota) ? "#e5e7eb" : "#facc15",
                                 color: (queue.length === 0 || isExceedingQuota) ? "#9ca3af" : "#1f2937",

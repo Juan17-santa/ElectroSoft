@@ -1,20 +1,16 @@
-import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import UserForm from "../components/UserForm";
 import { useUserForm } from "../hooks/useUserForm";
 import api from "../../../../../utils/api.js";
 
-export default function UpdateUser() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const userToEdit = location.state?.user;
-
+export default function UpdateUser({ isOpen, onClose, onSuccess, userToEdit }) {
     const [roles, setRoles] = useState([]);
     const [documentTypes, setDocumentTypes] = useState([]);
-    const [dataLoaded, setDataLoaded] = useState(false); // ← controla el skeleton
+    const [dataLoaded, setDataLoaded] = useState(false);
 
     useEffect(() => {
+        if (!isOpen) return;
         const loadData = async () => {
             try {
                 const [rolesRes, docTypesRes] = await Promise.all([
@@ -36,7 +32,7 @@ export default function UpdateUser() {
             }
         };
         loadData();
-    }, []);
+    }, [isOpen]);
 
     const {
         formData,
@@ -45,28 +41,23 @@ export default function UpdateUser() {
         handleChange,
         validateForm,
         updateUser,
-    } = useUserForm({ userToEdit: userToEdit || {}, navigate });
+    } = useUserForm({ userToEdit: userToEdit || {} });
 
-    useEffect(() => {
-        if (!userToEdit) {
-            navigate("/dashboard/users");
-        }
-    }, [userToEdit, navigate]);
-
-    if (!userToEdit) return null;
+    if (!isOpen || !userToEdit) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
         const success = await updateUser();
         if (success) {
-            setTimeout(() => navigate("/dashboard/users"), 2000);
+            onSuccess();
+            onClose();
         }
     };
 
     return (
-        <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4 sm:p-6">
+            <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 w-full max-w-4xl max-h-[90vh] shadow-xl overflow-y-auto relative animate-scale-in border border-gray-200">
 
                 <div className="flex justify-between items-start">
                     <div>
@@ -74,14 +65,13 @@ export default function UpdateUser() {
                         <p className="text-sm text-gray-600">Modifique los campos necesarios</p>
                     </div>
                     <button
-                        onClick={() => navigate("/dashboard/users")}
+                        onClick={onClose}
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* ── Skeleton (igual que UpdateProvider) ── */}
                 {!dataLoaded ? (
                     <div className="animate-pulse flex flex-col gap-10 mt-6 px-4 md:px-20">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16">
@@ -103,13 +93,13 @@ export default function UpdateUser() {
                         errors={errors}
                         handleChange={handleChange}
                         handleSubmit={handleSubmit}
-                        onCancel={() => navigate("/dashboard/users")}
+                        onCancel={onClose}
                         buttonText={loading ? "Guardando..." : "Guardar cambios"}
                         roles={roles}
                         documentTypes={documentTypes}
                     />
                 )}
             </div>
-        </>
+        </div>
     );
 }

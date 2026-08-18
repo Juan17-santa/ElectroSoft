@@ -1,5 +1,5 @@
 import { Trash2, AlertTriangle, Info } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Calendar from "./Calendar";
 
 export default function ConfirmModal({
@@ -15,6 +15,8 @@ export default function ConfirmModal({
 }) {
 
     const [isLoading, setIsLoading] = useState(false);
+    const isConfirmingRef = useRef(false);
+
     const today = new Date();
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const fmt = (d) => d.toISOString().split("T")[0];
@@ -36,6 +38,8 @@ export default function ConfirmModal({
     const [format, setFormat] = useState("pdf");
 
     const handleConfirm = async () => {
+        if (isConfirmingRef.current) return;
+        isConfirmingRef.current = true;
         try {
             setIsLoading(true);
 
@@ -54,6 +58,7 @@ export default function ConfirmModal({
             }
         } finally {
             setIsLoading(false);
+            isConfirmingRef.current = false;
         }
     };
 

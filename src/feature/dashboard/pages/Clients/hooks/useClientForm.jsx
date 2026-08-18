@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Validations } from "../../../../../utils/validations";
+import api from "../../../../../utils/api.js";
 
 export function useClientForm({ initialData = null, onSubmit }) {
     const defaultData = {
@@ -10,6 +11,8 @@ export function useClientForm({ initialData = null, onSubmit }) {
 
     const [formData, setFormData] = useState(defaultData);
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
+    const debounceRef = useRef(null);
 
     const [tocado, setTocado] = useState({
         tipoDocumento: false, documento: false, nombres: false,
@@ -32,25 +35,51 @@ export function useClientForm({ initialData = null, onSubmit }) {
 
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
 
-    const validate = () => {
-        return {
-            tipoDocumento: Validations.campoRequerido(formData.tipoDocumento) ? null : "Seleccione un tipo de documento.",
-            documento: Validations.validarDocumentoCliente(formData.documento).valido ? null : Validations.validarDocumentoCliente(formData.documento).mensaje,
-            nombres: Validations.validarNombreApellido(formData.nombres).valido ? null : Validations.validarNombreApellido(formData.nombres).mensaje,
-            apellidos: Validations.validarNombreApellido(formData.apellidos).valido ? null : Validations.validarNombreApellido(formData.apellidos).mensaje,
-            email: Validations.validarEmail(formData.email).valido ? null : Validations.validarEmail(formData.email).mensaje,
-            telefono: Validations.validarTelefono(formData.telefono).valido ? null : Validations.validarTelefono(formData.telefono).mensaje
-        };
+    const checkEmailExists = async (email, excludeId) => {
+        try {
+            const params = { email };
+            if (excludeId) params.excludeId = excludeId;
+            const response = await api.get("/clients/check-email", { params });
+            return response.data.exists;
+        } catch {
+            return false;
+        }
     };
-    const currentValidation = validate();
 
-    const errors = {
-        tipoDocumento: tocado.tipoDocumento ? currentValidation.tipoDocumento : null,
-        documento: tocado.documento ? currentValidation.documento : null,
-        nombres: tocado.nombres ? currentValidation.nombres : null,
-        apellidos: tocado.apellidos ? currentValidation.apellidos : null,
-        email: tocado.email ? currentValidation.email : null,
-        telefono: tocado.telefono ? currentValidation.telefono : null,
+    const checkDocumentExists = async (documento, excludeId) => {
+        try {
+            const params = { document: documento };
+            if (excludeId) params.excludeId = excludeId;
+            const response = await api.get("/clients/check-document", { params });
+            return response.data.exists;
+        } catch {
+            return false;
+        }
+    };
+
+    const validateField = (name, value) => {
+        let error = null;
+        switch (name) {
+            case "tipoDocumento":
+                if (!Validations.campoRequerido(value)) error = "Seleccione un tipo de documento.";
+                break;
+            case "documento":
+                error = Validations.validarDocumentoCliente(value).valido ? null : Validations.validarDocumentoCliente(value).mensaje;
+                break;
+            case "nombres":
+            case "apellidos":
+                error = Validations.validarNombreApellido(value).valido ? null : Validations.validarNombreApellido(value).mensaje;
+                break;
+            case "email":
+                error = Validations.validarEmail(value).valido ? null : Validations.validarEmail(value).mensaje;
+                break;
+            case "telefono":
+                error = Validations.validarTelefono(value).valido ? null : Validations.validarTelefono(value).mensaje;
+                break;
+            default:
+                break;
+        }
+        return error;
     };
 
     const handleChange = (e) => {
@@ -61,34 +90,60 @@ export function useClientForm({ initialData = null, onSubmit }) {
 
         setFormData(prev => ({ ...prev, [name]: value }));
         tocar(name);
+
+        const syncError = validateField(name, value);
+        setErrors(prev => ({ ...prev, [name]: syncError }));
+
+        if ((name === "email" || name === "documento") && !syncError) {
+            clearTimeout(debounceRef.current);
+            debounceRef.current = setTimeout(async () => {
+                if (name === "email") {
+                    const exists = await checkEmailExists(value, formData.id);
+                    setErrors(prev => ({ ...prev, email: exists ? "Este email ya está registrado" : null }));
+                }
+                if (name === "documento") {
+                    const exists = await checkDocumentExists(value, formData.id);
+                    setErrors(prev => ({ ...prev, documento: exists ? "Este documento ya está registrado" : null }));
+                }
+            }, 600);
+        }
     };
 
     const handleSelectChange = (name, value) => {
         setFormData(prev => ({ ...prev, [name]: value }));
         tocar(name);
+        const syncError = validateField(name, value);
+        setErrors(prev => ({ ...prev, [name]: syncError }));
     };
 
     const handleForm = async (e) => {
         e.preventDefault();
 
         setTocado({
-            tipoDocumento: true,
-            documento: true,
-            nombres: true,
-            apellidos: true,
-            email: true,
-            telefono: true
+            tipoDocumento: true, documento: true, nombres: true,
+            apellidos: true, email: true, telefono: true
         });
 
-        const currentErrors = validate();
+        const newErrors = {
+            tipoDocumento: validateField("tipoDocumento", formData.tipoDocumento),
+            documento: validateField("documento", formData.documento) || errors.documento,
+            nombres: validateField("nombres", formData.nombres),
+            apellidos: validateField("apellidos", formData.apellidos),
+            email: validateField("email", formData.email) || errors.email,
+            telefono: validateField("telefono", formData.telefono),
+        };
 
-        if (Object.values(currentErrors).some(err => err !== null)) return;
+        setErrors(newErrors);
+
+        if (Object.values(newErrors).some(err => err !== null)) return;
 
         setLoading(true);
 
         try {
             await onSubmit(formData);
         } catch (error) {
+            console.error(error);
+        } finally {
             setLoading(false);
         }
     };
@@ -99,14 +154,30 @@ export function useClientForm({ initialData = null, onSubmit }) {
             tipoDocumento: false, documento: false, nombres: false,
             apellidos: false, email: false, telefono: false
         });
+        setErrors({});
+    };
+
+    const handleBlur = (e) => {
+        const { name, value } = e.target;
+        tocar(name);
+        const syncError = validateField(name, value);
+        setErrors(prev => ({ ...prev, [name]: syncError }));
     };
 
     return {
         formData,
-        errors,
+        errors: {
+            tipoDocumento: tocado.tipoDocumento ? errors.tipoDocumento : null,
+            documento: tocado.documento ? errors.documento : null,
+            nombres: tocado.nombres ? errors.nombres : null,
+            apellidos: tocado.apellidos ? errors.apellidos : null,
+            email: tocado.email ? errors.email : null,
+            telefono: tocado.telefono ? errors.telefono : null,
+        },
         tocado,
         handleChange,
         handleSelectChange,
+        handleBlur,
         handleForm,
         resetForm,
         loading
