@@ -19,6 +19,11 @@ export default function VentaSearchSelect({
     const [open, setOpen]     = useState(false);
     const containerRef        = useRef(null);
     const inputRef            = useRef(null);
+    const onBlurRef           = useRef(onBlur);
+
+    useEffect(() => {
+        onBlurRef.current = onBlur;
+    }, [onBlur]);
 
     const selectedLabel = (() => {
         const found = ventasList.find((v) => String(v.id) === String(value));
@@ -42,7 +47,7 @@ export default function VentaSearchSelect({
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (containerRef.current && !containerRef.current.contains(e.target)) {
-                if (open) onBlur?.();
+                if (open) onBlurRef.current?.();
                 setOpen(false);
                 setQuery("");
             }

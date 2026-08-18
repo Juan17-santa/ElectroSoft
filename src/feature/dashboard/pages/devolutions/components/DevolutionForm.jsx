@@ -4,7 +4,6 @@ import {
     GitBranch, AlertCircle, CheckCircle2, DollarSign,
     Plus
 } from "lucide-react";
-import Calendar, { formatearFecha } from "../../../components/ui/Calendar";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import GarantiaCheckbox from "./GarantiaCheckbox";
@@ -15,7 +14,8 @@ import {
 } from "../helpers/devolutionsHelpers";
 import { ArrowLeft } from "lucide-react";
 
-function Field({ icon: Icon, label, children, className = "" }) {
+function Field({ icon, label, children, className = "" }) {
+    const Icon = icon;
     return (
         <div className={`flex flex-col ${className}`}>
             <p className="flex items-center gap-2 text-yellow-400 text-sm font-medium mb-2">
@@ -66,7 +66,6 @@ export default function DevolutionForm({
     title            = "Devolución",
     submitText       = "Guardar",
     productosList    = [],
-    ventasList       = [],
     estadoCampo      = () => null,
     onFieldBlur      = () => {},
     sinProductos     = false,

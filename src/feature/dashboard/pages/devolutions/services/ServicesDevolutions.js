@@ -1,51 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-const DEVOLUTIONS_URL = `${API_BASE}/devolutions`;
-
-function getToken() {
-    const directToken =
-        localStorage.getItem("token") ||
-        localStorage.getItem("auth_token") ||
-        localStorage.getItem("accessToken");
-
-    if (directToken) return directToken;
-
-    try {
-        const authUser = JSON.parse(localStorage.getItem("auth_user") || "null");
-        return authUser?.token || authUser?.accessToken || null;
-    } catch {
-        return null;
-    }
-}
-
-function getHeaders() {
-    const token = getToken();
-    if (!token) {
-        throw new Error("Tu sesión no tiene token de acceso. Inicia sesión nuevamente para cargar devoluciones.");
-    }
-
-    return {
-        "Content-Type": "application/json",
-        Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}`,
-    };
-}
-
-async function request(path = "", options = {}) {
-    const response = await fetch(`${DEVOLUTIONS_URL}${path}`, {
-        ...options,
-        headers: {
-            ...getHeaders(),
-            ...(options.headers || {}),
-        },
-    });
-
-    const body = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-        throw new Error(body.error || body.message || "No se pudo completar la solicitud");
-    }
-
-    return body.data ?? body;
-}
+import api from "../../../../../utils/api.js";
 
 function toDateOnly(value) {
     if (!value) return "";
@@ -133,60 +86,94 @@ function toApiPayload(data) {
 }
 
 export const ServicesDevolutions = {
-    async getAll() {
-        const devolutions = await request("");
-        return (Array.isArray(devolutions) ? devolutions : []).map(normalizeDevolution);
+    /**
+     * Obtiene los grupos de devoluciones paginados (una fila = una venta).
+     * El backend devuelve data como arreglo de arreglos de devoluciones y la
+     * paginación en `pagination` (mismo contrato que Shopping).
+     */
+    async getAll({ page = 1, limit = 8, search = "" } = {}) {
+        const params = { page, limit };
+        if (search) params.search = String(search).trim();
 
+        const payload = (await api.get("/devolutions", { params })).data;
+        const result = payload?.data ?? [];
+        const groups = (Array.isArray(result) ? result : []).map((devoluciones) => {
+            const items = Array.isArray(devoluciones) ? devoluciones : [devoluciones];
+            return items.map(normalizeDevolution).filter(Boolean);
+        });
+
+        return {
+            groups,
+            total: Number(payload?.pagination?.total ?? 0),
+            totalPages: Number(payload?.pagination?.totalPages ?? 1),
+        };
     },
 
     async getById(id) {
-        return normalizeDevolution(await request(`/${id}`));
+        const payload = (await api.get(`/devolutions/${id}`)).data;
+        return normalizeDevolution(payload?.data ?? payload);
     },
 
     async getBySaleId(saleId) {
-        const devolutions = await request(`/sale/${saleId}`);
+        const payload = (await api.get(`/devolutions/sale/${saleId}`)).data;
+        const devolutions = payload?.data ?? payload ?? [];
         return (Array.isArray(devolutions) ? devolutions : []).map(normalizeDevolution);
     },
 
     async create(data) {
-        return normalizeDevolution(
-            await request("", {
-                method: "POST",
-                body: JSON.stringify(toApiPayload(data)),
-            }),
-        );
+        const payload = (await api.post("/devolutions", toApiPayload(data))).data;
+        return normalizeDevolution(payload?.data ?? payload);
     },
 
     async createBatch(saleId, devoluciones) {
-        const result = await request("/batch", {
-            method: "POST",
-            body: JSON.stringify({ saleId, devoluciones: devoluciones.map(toApiPayload) }),
-        });
+        const payload = (await api.post("/devolutions/batch", {
+            saleId,
+            devoluciones: devoluciones.map(toApiPayload),
+        })).data;
+        const result = payload?.data ?? payload ?? [];
         return (Array.isArray(result) ? result : []).map(normalizeDevolution);
     },
 
     async update(id, data) {
-        const { idVenta, saleId, productos, productoId, producto, fechaCreacion, creadoEn, ...editable } =
-            data;
+        const {
+            idVenta: _idVenta,
+            saleId: _saleId,
+            productos: _productos,
+            productoId: _productoId,
+            producto: _producto,
+            fechaCreacion: _fechaCreacion,
+            creadoEn: _creadoEn,
+            ...editable
+        } = data;
 
-        return normalizeDevolution(
-            await request(`/${id}`, {
-                method: "PATCH",
-                body: JSON.stringify(editable),
-            }),
-        );
+        const payload = (await api.patch(`/devolutions/${id}`, editable)).data;
+        return normalizeDevolution(payload?.data ?? payload);
     },
 
     async anular(id) {
-        return normalizeDevolution(
-            await request(`/${id}/anular`, {
-                method: "PATCH",
-                body: JSON.stringify({}),
-            }),
-        );
+        const payload = (await api.patch(`/devolutions/${id}/anular`, {})).data;
+        return normalizeDevolution(payload?.data ?? payload);
     },
 
     async delete(id) {
         return this.anular(id);
+    },
+
+    /**
+     * Exporta las devoluciones por rango de fecha de devolución (fechaDevolucion)
+     * de forma paginada (el backend filtra; el cliente descarga por lotes).
+     * Retorna { data, pagination }.
+     */
+    async exportReport({ from, to, page = 1, limit = 5000 } = {}) {
+        const params = { page: String(page), limit: String(limit) };
+        if (from) params.from = from;
+        if (to) params.to = to;
+
+        const payload = (await api.get("/devolutions/export", { params })).data;
+        const data = payload?.data ?? [];
+        return {
+            data: (Array.isArray(data) ? data : []).map(normalizeDevolution),
+            pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 },
+        };
     },
 };

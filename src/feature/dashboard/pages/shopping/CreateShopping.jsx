@@ -63,7 +63,7 @@ export default function CreateShopping() {
     const [proveedoresList, setProveedoresList] = useState([]);
     const [confirmData, setConfirmData] = useState(null);
     const [navegarACompras, setNavegarACompras] = useState(false);
-    const [catalogLoading, setCatalogLoading] = useState(false);
+    const [, setCatalogLoading] = useState(false);
 
     // Formulario superior
     const [proveedorId, setProveedorId] = useState("");
@@ -403,7 +403,7 @@ export default function CreateShopping() {
                                     }))}
                                     value={proveedorId}
                                     onChange={(val) => handleSelectProveedor(val)}
-                                    placeholder={"No seleccionado —"}
+                                    placeholder={"No seleccionado"}
                                 />
                             </div>
                             <button

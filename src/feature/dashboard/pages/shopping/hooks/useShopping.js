@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ServicesShopping } from "../services/ServicesShopping";
 
-export const ITEMS_PER_PAGE = 11;
+export const ITEMS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
 
 function getRemainingHours(fechaCreacion) {

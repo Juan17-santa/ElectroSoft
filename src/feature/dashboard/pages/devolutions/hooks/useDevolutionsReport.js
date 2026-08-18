@@ -1,41 +1,6 @@
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-
-async function fetchSales() {
-    const response = await fetch(`${API_BASE}/sales`);
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.error || body.message || "No se pudieron cargar las ventas");
-    return Array.isArray(body.data) ? body.data.map(normalizeSale) : [];
-}
-
-function normalizeSale(sale) {
-    return {
-        ...sale,
-        id: sale._id || sale.id,
-        numeroVenta: sale.numeroVenta || sale.numeroFactura,
-        numeroDocumento: sale.numeroDocumento || sale.clienteId?.documentNumber,
-        cliente:
-            sale.cliente ||
-            [sale.clienteId?.firstName, sale.clienteId?.lastName].filter(Boolean).join(" "),
-        fecha: sale.fecha || sale.fechaVenta || sale.fechaCreacion?.slice?.(0, 10),
-        estado: sale.estado === "ANULADA" ? "Anulado" : sale.estado,
-        productos: (sale.productos || []).map((producto) => ({
-            ...producto,
-            nombre:
-                producto.productoId?.name ||
-                producto.nombre ||
-                producto.producto?.name ||
-                producto.name,
-            precio:
-                producto.precioUnitario ??
-                producto.precio ??
-                producto.productoId?.price ??
-                producto.producto?.price ??
-                0,
-        })),
-    };
-}
+import { ServicesDevolutions } from "../services/ServicesDevolutions";
+import { fetchSalesByIds } from "../services/fetchSales";
 
 const fmt = (n) => "$" + Number(n || 0).toLocaleString("es-CO");
 
@@ -63,23 +28,43 @@ function formatFechaDisplay(fechaISO) {
     return `${d}/${m}/${y}`;
 }
 
-export function useDevolutionsReport(devolucionesFiltradas, notify) {
+export function useDevolutionsReport(notify) {
     const exportReport = async (fechaInicio, fechaFin) => {
-        let ventas = [];
+        let filtradas = [];
         try {
-            ventas = await fetchSales();
+            // Se descarga por lotes hasta agotar las páginas del rango.
+            const limit = 5000;
+            let page = 1;
+            let totalPages = 1;
+            do {
+                const result = await ServicesDevolutions.exportReport({
+                    from: fechaInicio,
+                    to: fechaFin,
+                    page,
+                    limit,
+                });
+                filtradas = filtradas.concat(result.data);
+                totalPages = result.pagination?.totalPages ?? 1;
+                page += 1;
+                if (page > 500) break;
+            } while (page <= totalPages);
         } catch (err) {
             notify("error", err.message);
             return;
         }
 
-        const filtradas = devolucionesFiltradas.filter((devolucion) => {
-            const fecha = devolucion.fechaDevolucion ?? devolucion.fechaEstado ?? "";
-            return fecha >= fechaInicio && fecha <= fechaFin;
-        });
-
         if (filtradas.length === 0) {
             notify("error", "No hay devoluciones en el rango de fechas seleccionado.");
+            return;
+        }
+
+        // Solo las ventas involucradas en el rango (evita descargar todo el histórico).
+        let ventas = [];
+        try {
+            const idsVentas = [...new Set(filtradas.map((d) => String(d.idVenta || "")).filter(Boolean))];
+            ventas = await fetchSalesByIds(idsVentas);
+        } catch (err) {
+            notify("error", err.message);
             return;
         }
 
@@ -132,7 +117,7 @@ export function useDevolutionsReport(devolucionesFiltradas, notify) {
         excelData.push([]);
 
         // ─── LISTADO ─────────────────────────────────────────
-        excelData.push(["TIPO", "REFERENCIA", "CLIENTE / PRODUCTO", "FECHA", "CANTIDAD", "VALOR", "MOTIVO", "GESTION", "ESTADO"]);
+         excelData.push(["TIPO", "REFERENCIA", "CLIENTE / PRODUCTO", "FECHA", "CANTIDAD", "VALOR", "MONTO REEMBOLSADO", "MOTIVO", "GESTION", "ESTADO"]);
 
         grupos.forEach((grupo) => {
             const idVenta = grupo[0].idVenta;
@@ -147,12 +132,13 @@ export function useDevolutionsReport(devolucionesFiltradas, notify) {
                 "VENTA",
                 referenciaVenta,
                 venta?.cliente || venta?.numeroDocumento || "-",
-                venta?.fecha || "-",
-                "",
-                "",
-                "",
-                "",
-                venta?.estado || "-",
+                 venta?.fecha || "-",
+                 "",
+                 "",
+                 "",
+                 "",
+                 "",
+                 venta?.estado || "-",
             ]);
 
             grupo
@@ -163,10 +149,13 @@ export function useDevolutionsReport(devolucionesFiltradas, notify) {
                         "DEVOLUCION",
                         "",
                         devolucion.producto || "-",
-                        formatFechaDisplay(devolucion.fechaDevolucion),
-                        String(devolucion.cantidad ?? "-"),
-                        fmt(calcularMonto(devolucion, venta)),
-                        devolucion.motivo || "-",
+                         formatFechaDisplay(devolucion.fechaDevolucion),
+                         String(devolucion.cantidad ?? "-"),
+                         fmt(calcularMonto(devolucion, venta)),
+                         devolucion.gestion === "REEMBOLSO_TOTAL" || devolucion.gestion === "REEMBOLSO_PARCIAL"
+                             ? (Number(devolucion.montoReembolso) > 0 ? fmt(devolucion.montoReembolso) : "N/A")
+                             : "N/A",
+                         devolucion.motivo || "-",
                         devolucion.gestion || "-",
                         devolucion.estadoResolucion || "-",
                     ]);

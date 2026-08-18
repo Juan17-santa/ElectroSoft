@@ -4,7 +4,7 @@ import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import {
     ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck,
     LogOut, ChevronDown, X, Lightbulb, PanelLeftClose, PanelLeftOpen,
-    Tags, Package, Truck, ShoppingBag, UserRound, ClipboardList, Receipt, Wallet, Undo2
+    Layers, Package, Truck, ShoppingBag, UserRound, ClipboardList, Receipt, Wallet, Undo2
 } from 'lucide-react';
 import { getAuthUser, logout } from "../../auth/services/authService";
 import { usePermissions } from "../../../hooks/usePermissions";
@@ -13,7 +13,7 @@ import ConfirmModal from "./ui/ConfirmModal";
 
 // Submódulos de Compras
 const comprasItems = [
-    { key: "Categoria de productos", path: "/dashboard/productCategory", label: "Categoría de productos", icon: Tags },
+    { key: "Categoria de productos", path: "/dashboard/productCategory", label: "Categoría de productos", icon: Layers },
     { key: "Productos", path: "/dashboard/products", label: "Productos", icon: Package },
     { key: "Proveedores", path: "/dashboard/providers", label: "Proveedores", icon: Truck },
     { key: "Compras", path: "/dashboard/shopping", label: "Compras", icon: ShoppingBag },
@@ -265,7 +265,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                 </div>
 
                 {/* Toggle colapsar - solo desktop */}
-                <div className={`hidden md:flex items-center px-4 py-4 border-b border-gray-200 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+                <div className={`hidden md:flex items-center px-3 py-1 border-b border-gray-200 ${isCollapsed ? "justify-start" : "justify-start"}`}>
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
                         className="p-2 rounded-lg hover:bg-gray-200 transition cursor-pointer text-gray-600"
@@ -365,7 +365,9 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                                                         className={activeSubLink(item.path)}
                                                         onClick={handleNavigate}
                                                     >
-                                                        <item.icon size={16} />
+                                                        <item.icon
+                                                            size={item.key === "Categoria de productos" ? 19 : 16}
+                                                        />
                                                         <span>{item.label}</span>
                                                     </NavLink>
                                                 ))}

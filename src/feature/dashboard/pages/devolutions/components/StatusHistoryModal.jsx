@@ -82,7 +82,6 @@ export default function StatusHistoryModal({ devolucion, onClose }) {
                                 const isLast  = idx === historial.length - 1;
                                 const colorClasses = getEstadoColor(entry.estado);
                                 const bgColor = colorClasses.split(" ").find((c) => c.startsWith("bg-")) ?? "bg-gray-100";
-                                const textColor = colorClasses.split(" ").find((c) => c.startsWith("text-")) ?? "text-gray-600";
 
                                 return (
                                     <li key={idx} className="flex gap-3 pb-4 last:pb-0">

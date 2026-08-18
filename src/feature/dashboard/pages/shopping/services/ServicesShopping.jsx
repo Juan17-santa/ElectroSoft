@@ -1,38 +1,7 @@
-const API_BASE_URL = (
-    import.meta.env.VITE_API_URL ||
-    import.meta.env.VITE_API_BASE_URL ||
-    "http://localhost:4000/api"
-).replace(/\/$/, "");
+import api from "../../../../../utils/api.js";
 
 const formatCOP = (value) => "$" + Number(value || 0).toLocaleString("es-CO");
 const roundToNextHundred = (value) => Math.ceil(Number(value || 0) / 100) * 100;
-
-function getMessageFromResponse(payload, fallback) {
-    return payload?.error || payload?.message || fallback;
-}
-
-async function request(path, options = {}) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-        headers: {
-            "Content-Type": "application/json",
-            ...(options.headers || {}),
-        },
-        ...options,
-    });
-
-    let payload = null;
-    try {
-        payload = await response.json();
-    } catch {
-        payload = null;
-    }
-
-    if (!response.ok) {
-        throw new Error(getMessageFromResponse(payload, "No se pudo completar la solicitud."));
-    }
-
-    return payload;
-}
 
 function getId(entity) {
     return String(entity?._id ?? entity?.id ?? "");
@@ -240,27 +209,23 @@ function toShoppingPayload({ numeroFactura, fechaFactura, proveedorId, productos
 }
 
 export const ServicesShopping = {
-    getApiBaseUrl() {
-        return API_BASE_URL;
-    },
-
     async fetchProducts() {
-        const payload = await request("/products");
+        const payload = (await api.get("/products")).data;
         return (payload?.data || []).map(normalizeProduct);
     },
 
     async fetchProviders() {
-        const payload = await request("/providers");
+        const payload = (await api.get("/providers")).data;
         return (payload?.data || []).map(normalizeProvider);
     },
 
     async fetchCategories() {
-        const payload = await request("/productCategory");
+        const payload = (await api.get("/productCategory")).data;
         return (payload?.data || []).map(normalizeCategory);
     },
 
     async fetchDocumentTypes() {
-        const payload = await request("/documentTypes");
+        const payload = (await api.get("/documentTypes")).data;
         return (payload?.data || []).map(normalizeDocumentType);
     },
 
@@ -273,12 +238,12 @@ export const ServicesShopping = {
     },
 
     async fetchAll({ page = 1, limit = 15, search = "" } = {}) {
-        const params = new URLSearchParams();
-        params.set("page", String(page));
-        params.set("limit", String(limit));
-        if (search) params.set("search", String(search).trim());
+        const params = {};
+        params.page = String(page);
+        params.limit = String(limit);
+        if (search) params.search = String(search).trim();
 
-        const payload = await request(`/shopping?${params.toString()}`);
+        const payload = (await api.get("/shopping", { params })).data;
         const data = (payload?.data || []).map((shopping) => normalizeShopping(shopping));
         return {
             data,
@@ -287,71 +252,59 @@ export const ServicesShopping = {
     },
 
     async fetchById(id) {
-        const payload = await request(`/shopping/${id}`);
+        const payload = (await api.get(`/shopping/${id}`)).data;
         return normalizeShopping(payload?.data);
     },
 
     async createRemote(compra) {
-        const payload = await request("/shopping", {
-            method: "POST",
-            body: JSON.stringify(toShoppingPayload(compra)),
-        });
+        const payload = (await api.post("/shopping", toShoppingPayload(compra))).data;
         return normalizeShopping(payload?.data);
     },
 
     async createProduct(producto) {
-        const payload = await request("/products", {
-            method: "POST",
-            body: JSON.stringify({
-                name: producto.nombre,
-                categoryId: producto.categoriaId,
-                price: Number(producto.precio),
-                stock: Number(producto.stock),
-                typeStock: producto.tipoStock || "unidad",
-                serial: producto.serial,
-                warranty: producto.garantia,
-                characteristics: (producto.caracteristicas || []).map((item) => ({
-                    name: item.nombre ?? item.name,
-                    unit: item.medida ?? item.unit ?? "-",
-                    value: item.valor ?? item.value ?? "",
-                    visible: item.visible !== false,
-                })),
-            }),
-        });
+        const payload = (await api.post("/products", {
+            name: producto.nombre,
+            categoryId: producto.categoriaId,
+            price: Number(producto.precio),
+            stock: Number(producto.stock),
+            typeStock: producto.tipoStock || "unidad",
+            serial: producto.serial,
+            warranty: producto.garantia,
+            characteristics: (producto.caracteristicas || []).map((item) => ({
+                name: item.nombre ?? item.name,
+                unit: item.medida ?? item.unit ?? "-",
+                value: item.valor ?? item.value ?? "",
+                visible: item.visible !== false,
+            })),
+        })).data;
         return normalizeProduct(payload?.data);
     },
 
     async createProvider(provider) {
-        const payload = await request("/providers", {
-            method: "POST",
-            body: JSON.stringify({
-                providerType: provider.providerType,
-                documentType: provider.documentType,
-                document: provider.document,
-                providerName: provider.providerName,
-                providerPhone: provider.providerPhone,
-                providerEmail: provider.providerEmail,
-                address: provider.address,
-                contactName: provider.contactName || undefined,
-                contactEmail: provider.contactEmail || undefined,
-                contactPhone: provider.contactPhone || undefined,
-                categoriesAssociated: provider.categoriesAssociated || [],
-            }),
-        });
+        const payload = (await api.post("/providers", {
+            providerType: provider.providerType,
+            documentType: provider.documentType,
+            document: provider.document,
+            providerName: provider.providerName,
+            providerPhone: provider.providerPhone,
+            providerEmail: provider.providerEmail,
+            address: provider.address,
+            contactName: provider.contactName || undefined,
+            contactEmail: provider.contactEmail || undefined,
+            contactPhone: provider.contactPhone || undefined,
+            categoriesAssociated: provider.categoriesAssociated || [],
+        })).data;
         return normalizeProvider(payload?.data);
     },
 
     async cancelRemote(id, motivo = null) {
         const body = motivo ? { motivo } : {};
-        const payload = await request(`/shopping/${id}/cancel`, {
-            method: "PATCH",
-            body: JSON.stringify(body),
-        });
+        const payload = (await api.patch(`/shopping/${id}/cancel`, body)).data;
         return normalizeShopping(payload?.data);
     },
 
     async getCancellationStatus(id) {
-        const payload = await request(`/shopping/${id}/cancellation-status`);
+        const payload = (await api.get(`/shopping/${id}/cancellation-status`)).data;
         return {
             puedeAnularse: payload?.puedeAnularse === true,
             razon: payload?.razon || "",
@@ -366,7 +319,7 @@ export const ServicesShopping = {
         try {
             const number = String(numeroFactura || "").trim();
             if (!number) return false;
-            const payload = await request(`/shopping/invoice-exists/${encodeURIComponent(number)}`);
+            const payload = (await api.get(`/shopping/invoice-exists/${encodeURIComponent(number)}`)).data;
             return payload?.exists === true;
         } catch {
             return false;
@@ -379,14 +332,30 @@ export const ServicesShopping = {
      */
     async checkProviderUnique(data) {
         try {
-            const payload = await request("/providers/check-unique", {
-                method: "POST",
-                body: JSON.stringify(data),
-            });
+            const payload = (await api.post("/providers/check-unique", data)).data;
             return payload || { exists: false };
         } catch {
             return null;
         }
+    },
+
+    /**
+     * Exporta las compras por rango de fecha de factura (purchaseDate) de forma
+     * paginada (el backend filtra; el cliente descarga por lotes).
+     * Retorna { data, pagination }.
+     */
+    async exportReport({ from, to, search = "", page = 1, limit = 5000 } = {}) {
+        const params = { page: String(page), limit: String(limit) };
+        if (from) params.from = from;
+        if (to) params.to = to;
+        if (search) params.search = String(search).trim();
+
+        const payload = (await api.get("/shopping/export", { params })).data;
+        const data = payload?.data ?? [];
+        return {
+            data: (Array.isArray(data) ? data : []).map((shopping) => normalizeShopping(shopping)),
+            pagination: payload?.pagination || { page, limit, total: 0, totalPages: 1 },
+        };
     },
 
     calculateWac({ stockAnterior, precioAnterior, cantidad, precioVenta }) {

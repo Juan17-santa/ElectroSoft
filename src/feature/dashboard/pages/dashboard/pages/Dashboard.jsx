@@ -39,7 +39,10 @@ export default function Dashboard() {
                     SalesService.get().catch(() => []),
                     ServicesProducts.get().catch(() => []),
                     ClientsService.get().catch(() => []),
-                    ServicesDevolutions.getAll().catch(() => []),
+                    ServicesDevolutions.getAll({ page: 1, limit: 1000 }).then((r) => {
+                        const groups = Array.isArray(r?.groups) ? r.groups : [];
+                        return groups.flatMap((g) => (Array.isArray(g) ? g : [g]));
+                    }).catch(() => []),
                     ServiceProductCategory.get().catch(() => []),
                 ]);
 
