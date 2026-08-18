@@ -34,3 +34,37 @@ body {
 .animate-slide-out-right {
   animation: slide-out-right 0.35s ease-in forwards;
 }
+
+/* ANIMACION NUDGE PARA LAS FLECHAS DE SCROLL DEL SIDEBAR */
+@keyframes nudge-up {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes nudge-down {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(3px);
+  }
+}
+
+.animate-nudge-up {
+  animation: nudge-up 1.4s ease-in-out infinite;
+}
+
+.animate-nudge-down {
+  animation: nudge-down 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-nudge-up,
+  .animate-nudge-down {
+    animation: none;
+  }
+}

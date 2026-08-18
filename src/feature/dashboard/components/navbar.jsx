@@ -81,7 +81,7 @@ export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
                         </button>
                         <button
                             onClick={() => setIsCollapsed(!isCollapsed)}
-                            className="hidden md:flex rounded-lg pl-1 hover:bg-gray-200 transition cursor-pointer text-gray-600"
+                            className="hidden md:flex rounded-lg p-2 ml-1 hover:bg-gray-200 transition cursor-pointer text-gray-600"
                             title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
                         >
                             {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}

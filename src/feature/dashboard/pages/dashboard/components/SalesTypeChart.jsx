@@ -15,7 +15,11 @@ export const SalesTypeChart = ({ data, monthName, year }) => {
             {data.length === 0 ? <Empty msg="Sin ventas en este período" /> : (
                 <div className="flex flex-col flex-1 min-h-0">
                     <div className="flex-1 min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer
+                            width="100%"
+                            height="100%"
+                            initialDimension={{ width: 1, height: 1 }}
+                        >
                             <PieChart>
                                 <Pie data={data} cx="50%" cy="50%" innerRadius={46} outerRadius={72}
                                      paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>
