@@ -1,4 +1,5 @@
 import { generateExcelReport } from "../../../../../utils/ExcelReportGenerator";
+import { ServicesShopping } from "../services/ServicesShopping";
 
 const parseMoney = (value) => {
     if (!value) return 0;
@@ -36,16 +37,31 @@ function parsePurchaseDate(dateStr) {
     return null;
 }
 
-export function useShoppingReport(loadCompras, notify) {
+export function useShoppingReport(getSearchTerm, notify) {
 
     const exportReport = async (fechaInicio, fechaFin) => {
-        let comprasFiltradas;
+        let comprasFiltradas = [];
 
-        // Carga el dataset completo (con la búsqueda actual) desde el servidor
-        // para que el reporte no quede limitado a la página visible.
+        // El backend filtra por fecha de factura (purchaseDate) y la búsqueda actual.
+        // Se descarga por lotes hasta agotar las páginas del rango.
         try {
-            const data = await loadCompras();
-            comprasFiltradas = Array.isArray(data) ? data : [];
+            const search = (typeof getSearchTerm === "function" ? getSearchTerm() : "") || "";
+            const limit = 5000;
+            let page = 1;
+            let totalPages = 1;
+            do {
+                const result = await ServicesShopping.exportReport({
+                    from: fechaInicio,
+                    to: fechaFin,
+                    search,
+                    page,
+                    limit,
+                });
+                comprasFiltradas = comprasFiltradas.concat(result.data);
+                totalPages = result.pagination?.totalPages ?? 1;
+                page += 1;
+                if (page > 500) break;
+            } while (page <= totalPages);
         } catch {
             notify("error", "No se pudieron cargar las compras para el reporte.");
             return;

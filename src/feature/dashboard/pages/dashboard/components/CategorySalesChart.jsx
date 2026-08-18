@@ -9,7 +9,11 @@ export const CategorySalesChart = ({ data, monthName, year, total }) => {
             {data.length === 0 ? <Empty msg="Sin datos de categorías" /> : (
                 <div className="flex flex-col flex-1 min-h-0">
                     <div className="flex-1 min-h-0">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer
+                            width="100%"
+                            height="100%"
+                            initialDimension={{ width: 1, height: 1 }}
+                        >
                             <PieChart>
                                 <Pie data={data} cx="50%" cy="50%" innerRadius={44} outerRadius={68} 
                                      paddingAngle={3} dataKey="value" startAngle={90} endAngle={-270}>

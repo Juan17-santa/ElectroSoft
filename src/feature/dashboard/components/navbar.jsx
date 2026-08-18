@@ -1,4 +1,4 @@
-import { ChevronDown, Lightbulb, Pencil, LogOut } from "lucide-react";
+import { ChevronDown, Lightbulb, Pencil, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAuthUser, logout } from "../../auth/services/authService";
@@ -6,7 +6,7 @@ import { useToast } from "../../../context/ToastContext";
 import ConfirmModal from "./ui/ConfirmModal";
 import { Menu } from "lucide-react";
 
-export const Navbar = ({ setIsOpen }) => {
+export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
     const [open, setOpen] = useState(false);
     const [user, setUser] = useState(null);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -70,14 +70,21 @@ export const Navbar = ({ setIsOpen }) => {
             )}
 
             <header className="bg-white border-b-2 border-yellow-300 shadow-[0_2px_6px_rgba(234,179,8,0.15)]">
-                <div className="flex items-center justify-between px-3 py-2 md:px-6 md:py-1">
+                <div className="flex items-center justify-between px-3 py-2 md:py-1">
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
                         <button
                             onClick={() => setIsOpen(true)}
-                            className="md:hidden p-2 rounded-lg hover:bg-gray-100"
+                            className="md:hidden rounded-lg hover:bg-gray-100"
                         >
                             <Menu size={28} />
+                        </button>
+                        <button
+                            onClick={() => setIsCollapsed(!isCollapsed)}
+                            className="hidden md:flex rounded-lg p-2 ml-1 hover:bg-gray-200 transition cursor-pointer text-gray-600"
+                            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+                        >
+                            {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
                         </button>
                         <div className="hidden md:flex items-center gap-2">
                             <Lightbulb size={35} className="text-yellow-400" />

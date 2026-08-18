@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Eye, Ban, ShoppingCart } from "lucide-react";
+import { Eye, Ban } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useShopping, ITEMS_PER_PAGE } from "../shopping/hooks/useShopping";
 import Searchbar from "../../components/ui/Searchbar";
@@ -10,7 +10,6 @@ import CancellationInfoTooltip from "../../components/ui/CancellationInfoTooltip
 import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
 import { useShoppingReport } from "../shopping/hooks/useShoppingReport";
-import { ServicesShopping } from "../shopping/services/ServicesShopping";
 import { useToast } from "../../../../context/ToastContext";
 
 // ─── Botón anular con tooltip informativo cuando no se puede anular ───────────
@@ -106,10 +105,7 @@ export default function Shopping() {
         }
     }, [error, showToast, clearError]);
 
-    const { exportReport } = useShoppingReport(
-        () => ServicesShopping.fetchAll({ page: 1, limit: 100000, search: searchTerm }).then((r) => r.data),
-        showToast,
-    );
+    const { exportReport } = useShoppingReport(() => searchTerm, showToast);
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);

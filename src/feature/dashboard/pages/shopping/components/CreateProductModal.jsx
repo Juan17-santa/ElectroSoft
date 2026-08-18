@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
     X, Package, Layers, Ruler,
     AlertCircle, CheckCircle2, Hash, ShieldCheck,
-    Plus, Trash, Tag, ChevronDown
+    Plus, Trash, Tag
 } from "lucide-react";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import { toTitleCase } from "../helpers/shoppingHelpers";
@@ -86,7 +86,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
             try {
                 const productos = await ServicesShopping.fetchProducts();
                 if (mounted) setNombresExistentes((Array.isArray(productos) ? productos : []).map((p) => p.nombre.trim().toLowerCase()));
-            } catch (_) {
+            } catch {
                 if (mounted) setNombresExistentes([]);
             }
         })();

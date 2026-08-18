@@ -13,15 +13,7 @@ import {
     calcularReembolsoTotal,
 } from "../helpers/devolutionsHelpers";
 import { ArrowLeft } from "lucide-react";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-
-async function fetchSales() {
-    const response = await fetch(`${API_BASE}/sales`);
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.error || body.message || "No se pudieron cargar las ventas");
-    return Array.isArray(body.data) ? body.data.map(normalizeSale) : [];
-}
+import { fetchSales } from "../services/fetchSales";
 
 function normalizeSale(sale) {
     return {
@@ -188,17 +180,6 @@ function validarObservaciones(val) {
     return { valido: true, mensaje: "" };
 }
 
-function validarFecha(fechaDevolucion, idVenta, ventasList) {
-    if (!fechaDevolucion) return { valido: false, mensaje: "Selecciona la fecha de devolución." };
-    const hoy = new Date().toISOString().split("T")[0];
-    if (fechaDevolucion > hoy)
-        return { valido: false, mensaje: "La fecha no puede ser futura." };
-    const venta = ventasList.find((v) => String(v.id) === String(idVenta));
-    if (venta?.fecha && fechaDevolucion < venta.fecha)
-        return { valido: false, mensaje: "La fecha no puede ser anterior a la fecha de la venta." };
-    return { valido: true, mensaje: "" };
-}
-
 function buscarEnLocalStorage(id) {
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -240,7 +221,7 @@ export default function EditDevolution() {
                     if (!active) return;
 
                     if (tempDev) {
-                        const ventas = await fetchSales();
+                        const ventas = (await fetchSales()).map(normalizeSale);
                         if (!active) return;
                         const ventasActivas = ventas.filter((v) => v.estado !== "Anulado");
                         setVentasList(ventasActivas);
@@ -252,7 +233,7 @@ export default function EditDevolution() {
                     }
                 } else {
                     const [ventas, found] = await Promise.all([
-                        fetchSales(),
+                        fetchSales().then((ventas) => ventas.map(normalizeSale)),
                         ServicesDevolutions.getById(id),
                     ]);
 

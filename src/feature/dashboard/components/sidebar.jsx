@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import {
     ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck,
-    LogOut, ChevronDown, X, Lightbulb, PanelLeftClose, PanelLeftOpen,
-    Tags, Package, Truck, ShoppingBag, UserRound, ClipboardList, Receipt, Wallet, Undo2
+    LogOut, ChevronDown, ChevronUp, X, Lightbulb,
+    Layers, Package, Truck, ShoppingBag, UserRound, ClipboardList, Receipt, Wallet, Undo2
 } from 'lucide-react';
 import { getAuthUser, logout } from "../../auth/services/authService";
 import { usePermissions } from "../../../hooks/usePermissions";
@@ -13,7 +13,7 @@ import ConfirmModal from "./ui/ConfirmModal";
 
 // Submódulos de Compras
 const comprasItems = [
-    { key: "Categoria de productos", path: "/dashboard/productCategory", label: "Categoría de productos", icon: Tags },
+    { key: "Categoria de productos", path: "/dashboard/productCategory", label: "Categoría de productos", icon: Layers },
     { key: "Productos", path: "/dashboard/products", label: "Productos", icon: Package },
     { key: "Proveedores", path: "/dashboard/providers", label: "Proveedores", icon: Truck },
     { key: "Compras", path: "/dashboard/shopping", label: "Compras", icon: ShoppingBag },
@@ -28,15 +28,21 @@ const ventasItems = [
     { key: "Devoluciones", path: "/dashboard/devolutions", label: "Devoluciones", icon: Undo2 },
 ];
 
-export const Sidebar = ({ isOpen, setIsOpen }) => {
+export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     const { hasAccessToScope } = usePermissions();
     const location = useLocation();
     const navigate = useNavigate();
     const { showToast } = useToast();
     const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-    // Colapsar/expandir (solo desktop)
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    // Pista de scroll integrada (solo desktop)
+    const scrollRef = useRef(null);
+    const trackRef = useRef(null);
+    const scrollTimer = useRef(null);
+    const [scrollMetrics, setScrollMetrics] = useState({ scrollTop: 0, scrollHeight: 1, clientHeight: 1, trackTop: 0, trackHeight: 1 });
+    const [isHovering, setIsHovering] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isScrolling, setIsScrolling] = useState(false);
 
     const handleLogout = () => {
         setShowLogoutModal(true);
@@ -141,6 +147,99 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
         setIsOpen(false);
     };
 
+    // Sincroniza el deslizador con el scroll nativo del contenedor (única fuente de scroll)
+    const updateScrollMetrics = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        let trackTop = 0;
+        let trackHeight = el.clientHeight;
+        if (trackRef.current) {
+            const trackRect = trackRef.current.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+            trackTop = elRect.top - trackRect.top;
+            trackHeight = el.clientHeight;
+        }
+        setScrollMetrics({
+            scrollTop: el.scrollTop,
+            scrollHeight: el.scrollHeight,
+            clientHeight: el.clientHeight,
+            trackTop,
+            trackHeight,
+        });
+    }, []);
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+
+        const onScroll = () => {
+            updateScrollMetrics();
+            setIsScrolling(true);
+            if (scrollTimer.current) clearTimeout(scrollTimer.current);
+            scrollTimer.current = setTimeout(() => setIsScrolling(false), 400);
+        };
+
+        el.addEventListener('scroll', onScroll);
+        window.addEventListener('resize', updateScrollMetrics);
+
+        const observer = new ResizeObserver(() => updateScrollMetrics());
+        observer.observe(el);
+        if (el.firstElementChild) observer.observe(el.firstElementChild);
+
+        updateScrollMetrics();
+
+        return () => {
+            el.removeEventListener('scroll', onScroll);
+            window.removeEventListener('resize', updateScrollMetrics);
+            observer.disconnect();
+            if (scrollTimer.current) clearTimeout(scrollTimer.current);
+        };
+    }, [updateScrollMetrics]);
+
+    // Arrastre del deslizador -> scrollTop nativo
+    useEffect(() => {
+        if (!isDragging) return;
+
+        const handleMove = (e) => {
+            const el = scrollRef.current;
+            const track = trackRef.current;
+            if (!el || !track) return;
+            const { trackTop, trackHeight, clientHeight, scrollHeight } = scrollMetrics;
+            const thumbHeight = Math.max((clientHeight / scrollHeight) * trackHeight, 24);
+            const usable = trackHeight - thumbHeight;
+            if (usable <= 0) return;
+            const trackRect = track.getBoundingClientRect();
+            const ratio = Math.min(Math.max((e.clientY - trackRect.top - trackTop) / usable, 0), 1);
+            el.scrollTop = ratio * (scrollHeight - clientHeight);
+        };
+
+        const handleUp = () => setIsDragging(false);
+
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMove);
+            window.removeEventListener('mouseup', handleUp);
+        };
+    }, [isDragging, scrollMetrics]);
+
+    const handleThumbMouseDown = (e) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const scrollByDirection = (direction) => {
+        const el = scrollRef.current;
+        if (!el) return;
+        el.scrollBy({ top: direction * el.clientHeight * 0.8, behavior: 'smooth' });
+    };
+
+    const { scrollTop, scrollHeight, clientHeight, trackTop, trackHeight } = scrollMetrics;
+    const maxScroll = scrollHeight - clientHeight;
+    const thumbHeight = Math.max(maxScroll > 0 ? (clientHeight / scrollHeight) * trackHeight : 0, 24);
+    const thumbTop = maxScroll > 0 ? trackTop + (scrollTop / maxScroll) * (trackHeight - thumbHeight) : trackTop;
+    const thumbActive = isHovering || isDragging || isScrolling;
+
     // Ícono + tooltip para modo colapsado (con portal para evitar el clipping del overflow)
     const CollapsedIcon = ({ path, label, Icon, exact = false }) => {
         const [showTooltip, setShowTooltip] = useState(false);
@@ -244,7 +343,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                 />
             )}
 
-            <aside className={`fixed md:relative top-0 left-0 h-screen md:h-full flex flex-col z-40 bg-white border-r-2 border-yellow-300 shadow-[2px_0_6px_rgba(234,179,8,0.15)] transform transition-all duration-300 ease-in-out
+            <aside className={`fixed md:relative top-0 left-0 h-screen md:h-full flex flex-col z-40 overflow-hidden bg-white border-r-2 border-yellow-300 shadow-[2px_0_6px_rgba(234,179,8,0.15)] transform transition-[width,transform] duration-300 ease-in-out
             ${isOpen ? "translate-x-0" : "-translate-x-full"}
             md:translate-x-0
             w-64 ${isCollapsed ? "md:w-20" : "md:w-64"}`}>
@@ -264,20 +363,9 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                     </button>
                 </div>
 
-                {/* Toggle colapsar - solo desktop */}
-                <div className={`hidden md:flex items-center px-4 py-4 border-b border-gray-200 ${isCollapsed ? "justify-center" : "justify-between"}`}>
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="p-2 rounded-lg hover:bg-gray-200 transition cursor-pointer text-gray-600"
-                        title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
-                    >
-                        {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
-                    </button>
-                </div>
-
                 <nav className="flex flex-col h-full">
 
-                    <div className="flex-1 overflow-y-auto">
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
 
                         {isCollapsed ? (
                             /* ---------- MODO COLAPSADO: solo íconos + tooltip ---------- */
@@ -365,7 +453,9 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                                                         className={activeSubLink(item.path)}
                                                         onClick={handleNavigate}
                                                     >
-                                                        <item.icon size={16} />
+                                                        <item.icon
+                                                            size={item.key === "Categoria de productos" ? 19 : 16}
+                                                        />
                                                         <span>{item.label}</span>
                                                     </NavLink>
                                                 ))}
@@ -470,6 +560,42 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                         )}
                     </div>
                 </nav>
+
+{/* Pista de scroll integrada (solo desktop): el borde del Sidebar es la pista */}
+                <div
+                    ref={trackRef}
+                    onMouseEnter={() => setIsHovering(true)}
+                    onMouseLeave={() => setIsHovering(false)}
+                    className="hidden md:block absolute right-0 top-0 bottom-0 w-2.5 bg-transparent select-none"
+                >
+                    {scrollTop > 0 && (
+                        <button
+                            onClick={() => scrollByDirection(-1)}
+                            title="Desplazar hacia arriba"
+                            style={{ top: trackTop + 2 }}
+                            className={`absolute right-0 w-6 h-6 flex items-center justify-center text-gray-700 cursor-pointer transition-opacity duration-300 ${thumbActive ? "opacity-100" : "opacity-90"}`}
+                        >
+                            <ChevronUp size={24} className="animate-nudge-up" />
+                        </button>
+                    )}
+                    {maxScroll > 0 && scrollTop < maxScroll && (
+                        <button
+                            onClick={() => scrollByDirection(1)}
+                            title="Desplazar hacia abajo"
+                            style={{ top: trackTop + trackHeight - 32 }}
+                            className={`absolute right-0 w-6 h-6 flex items-center justify-center text-gray-700 cursor-pointer transition-opacity duration-300 ${thumbActive ? "opacity-100" : "opacity-90"}`}
+                        >
+                            <ChevronDown size={24} className="animate-nudge-down" />
+                        </button>
+                    )}
+                    {maxScroll > 0 && (
+                        <div
+                            onMouseDown={handleThumbMouseDown}
+                            style={{ top: thumbTop, height: thumbHeight }}
+                            className={`absolute right-[1px] w-1 rounded-full bg-gray-400 transition-opacity duration-300 cursor-grab ${thumbActive ? "opacity-100" : "opacity-60"} ${isDragging ? "cursor-grabbing" : ""}`}
+                        />
+                    )}
+                </div>
             </aside>
         </>
     )

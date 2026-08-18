@@ -173,7 +173,7 @@ export default function CreateProviderModal({ onClose, onSuccess }) {
             setContactPhone("");
         }
         setTocados((t) => ({ ...t, documentType: false }));
-    }, [providerType]);
+    }, [providerType, isJuridica, nitDocumentType?._id]);
 
     const tocar = (campo) => setTocados((t) => ({ ...t, [campo]: true }));
 

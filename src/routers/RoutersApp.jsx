@@ -137,7 +137,7 @@ export default function RoutersApp() {
 
                 {/* DEVOLUCIONES */}
                 <Route path="devolutions" element={<ProtectedRoute scope="Devoluciones" element={<Devolutions />} />} />
-                <Route path="devolutions/create" element={<ProtectedRoute scope="Devoluciones" action="Crear" element={<CreateDevolution />} />} />
+                <Route path="devolutions/create" element={<ProtectedRoute scope="Ventas" action="Devolver" element={<CreateDevolution />} />} />
                 <Route path="devolutions/edit/:id" element={<ProtectedRoute scope="Devoluciones" action="Editar" element={<EditDevolution />} />} />
                 <Route path="devolutions/product-details/:id" element={<ProtectedRoute scope="Devoluciones" element={<DevolutionProductDetails />} />} />
 

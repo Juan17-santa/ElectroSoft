@@ -7,6 +7,17 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+{
+      name: 'browser-stream-stub',
+      resolveId(id) {
+        if (id === 'stream') return '\0browser-stream-stub'
+      },
+      load(id) {
+        if (id === '\0browser-stream-stub') {
+          return 'export default {}'
+        }
+      },
+    },
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ['favicon.png'],
@@ -57,4 +68,20 @@ export default defineConfig({
       }
     })
   ],
+  optimizeDeps: {
+    esbuildOptions: {
+      plugins: [
+        {
+          name: 'browser-stream-stub-esbuild',
+          setup(build) {
+            build.onResolve({ filter: /^stream$/ }, () => ({ path: 'stream', namespace: 'stream-stub' }))
+            build.onLoad({ filter: /.*/, namespace: 'stream-stub' }, () => ({
+              contents: 'module.exports = {}',
+              loader: 'js',
+            }))
+          },
+        },
+      ],
+    },
+  },
 })

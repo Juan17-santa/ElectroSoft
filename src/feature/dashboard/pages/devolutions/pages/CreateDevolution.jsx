@@ -13,14 +13,7 @@ import {
     calcularReembolsoTotal,
 } from "../helpers/devolutionsHelpers";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-
-async function fetchSales() {
-    const response = await fetch(`${API_BASE}/sales`);
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.error || body.message || "No se pudieron cargar las ventas");
-    return Array.isArray(body.data) ? body.data.map(normalizeSale) : [];
-}
+import { fetchSales } from "../services/fetchSales";
 
 function normalizeSale(sale) {
     return {
@@ -172,14 +165,6 @@ function validarObservaciones(val) {
     if (!val || !val.trim()) return { valido: false, mensaje: "Las observaciones son obligatorias." };
     return { valido: true, mensaje: "" };
 }
-function validarFecha(fechaDevolucion, idVenta, ventasList) {
-    if (!fechaDevolucion) return { valido: false, mensaje: "Selecciona la fecha de devolución." };
-    const hoy = new Date().toISOString().split("T")[0];
-    if (fechaDevolucion > hoy) return { valido: false, mensaje: "La fecha no puede ser futura." };
-    const venta = ventasList.find((v) => String(v.id) === String(idVenta));
-    if (venta?.fecha && fechaDevolucion < venta.fecha) return { valido: false, mensaje: "La fecha no puede ser anterior a la fecha de la venta." };
-    return { valido: true, mensaje: "" };
-}
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 export default function CreateDevolution() {
@@ -213,6 +198,7 @@ export default function CreateDevolution() {
         let active = true;
 
         fetchSales()
+            .then((ventas) => ventas.map(normalizeSale))
             .then((ventas) => {
                 if (active) setVentasList(ventas.filter((v) => v.estado !== "Anulado"));
             })

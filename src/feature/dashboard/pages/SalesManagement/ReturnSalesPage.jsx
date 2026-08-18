@@ -5,6 +5,7 @@ import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { getEstadoColor } from "../devolutions/helpers/devolutionsHelpers";
 import ConfirmModal from "../../components/ui/ConfirmModal";
+import Pagination from "../../components/ui/Pagination";
 import StatusHistoryModal from "../devolutions/components/StatusHistoryModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -12,7 +13,7 @@ import { useToast } from "../../../../context/ToastContext";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
 const PROD_PER_PAGE = 5;
-const DEV_PER_PAGE = 5;
+const DEV_PER_PAGE = 3;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 
 
@@ -31,7 +32,6 @@ export default function ReturnSalesPage() {
     // ─── Modo ─────────────────────────────────────────────────────────────────
     const mode = location.state?.mode ?? "from-sales";
     const isFromSales = mode === "from-sales";
-    const isViewOnly = mode === "view-only";
     const isEditable = mode === "editable";
     // Cuando se abre desde Ventas se ocultan anuladas/RECHAZADAS; cuando se abre
     // desde Control de Devoluciones (sin origin "sales") se muestran todas como
@@ -47,7 +47,7 @@ export default function ReturnSalesPage() {
             const data = localStorage.getItem("saleToReturn");
             if (data) setSale(JSON.parse(data));
         }
-    }, [location.key]);
+    }, [location.key, location.state?.idVenta]);
 
     // ─── Cargar devoluciones ──────────────────────────────────────────────────
     const recargarDevoluciones = useCallback(() => {
@@ -191,7 +191,7 @@ export default function ReturnSalesPage() {
 
                     if (localDevs.length > 0) {
                         const payloads = localDevs.map((dev) => {
-                            const { id, ...rest } = dev;
+                            const { id: _id, ...rest } = dev;
                             return rest;
                         });
                         await ServicesDevolutions.createBatch(sale.id, payloads);
@@ -201,7 +201,9 @@ export default function ReturnSalesPage() {
                     localStorage.removeItem("saleToReturn");
                     showToast("success", "Devolución registrada correctamente.");
                     setConfirmData(null);
-                    setTimeout(() => navigate("/dashboard/sales-management"), 1500);
+                     setTimeout(() => {
+                         navigate(isFromSales ? "/dashboard/sales-management" : "/dashboard/devolutions");
+                     }, 1500);
                 } catch (error) {
                     showToast("error", "Error registrando devolución: " + error.message);
                     setConfirmData(null);
@@ -303,28 +305,9 @@ export default function ReturnSalesPage() {
         }
     };
 
-    // ─── Paginador ────────────────────────────────────────────────────────────
-    const Paginator = ({ currentPage, totalPages: tp, onPageChange }) => {
-        if (tp <= 1) return null;
-        return (
-            <div className="flex justify-end mt-3">
-                <div className="flex items-center gap-2 bg-gray-200 px-3 py-1 rounded-2xl w-fit shadow">
-                    <button onClick={() => onPageChange(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-1.5 rounded hover:bg-gray-300 transition disabled:opacity-40">←</button>
-                    {Array.from({ length: tp }, (_, i) => i + 1).map((p) => (
-                        <button key={p} onClick={() => onPageChange(p)}
-                            className={`px-2.5 py-1 rounded text-sm transition ${currentPage === p ? "bg-yellow-400 font-medium shadow-sm" : "hover:bg-gray-300"}`}>
-                            {p}
-                        </button>
-                    ))}
-                    <button onClick={() => onPageChange(Math.min(tp, currentPage + 1))} disabled={currentPage === tp} className="p-1.5 rounded hover:bg-gray-300 transition disabled:opacity-40">→</button>
-                </div>
-            </div>
-        );
-    };
-
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-5 w-full h-full shadow-inner overflow-y-auto">
+            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-4 w-full h-full shadow-inner overflow-y-auto">
 
                 {/* Header */}
                 <div className="flex flex-col md:flex-row gap-4 justify-between">
@@ -380,7 +363,7 @@ export default function ReturnSalesPage() {
                                     <th className="px-4 py-2.5 font-semibold text-center">Cantidad</th>
                                     <th className="px-4 py-2.5 font-semibold">Precio</th>
                                     <th className="px-4 py-2.5 font-semibold">Subtotal</th>
-                                    {isFromSales && <th className="px-4 py-2.5 font-semibold text-center">Acciones</th>}
+                                     {(isFromSales || isEditable) && <th className="px-4 py-2.5 font-semibold text-center">Acciones</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -425,7 +408,7 @@ export default function ReturnSalesPage() {
                                             </td>
                                             <td className="px-4 py-2.5">{formatCOP(prod.precio)}</td>
                                             <td className="px-4 py-2.5">{formatCOP(prod.precio * prod.cantidad)}</td>
-                                            {isFromSales && (
+                                             {(isFromSales || isEditable) && (
                                                 <td className="px-4 py-2.5 text-center">
                                                     {!totalDevuelto
                                                         ? <button onClick={() => handleDevolver(prod)} title="Devolver este producto" className="text-yellow-600 hover:text-yellow-800 transition cursor-pointer"><Undo2 size={16} /></button>
@@ -439,7 +422,11 @@ export default function ReturnSalesPage() {
                             </tbody>
                         </table>
                     </div>
-                    <Paginator currentPage={prodActual} totalPages={totalProdPages} onPageChange={setProdPage} />
+                    {totalProdPages > 1 && (
+                        <div className="flex justify-end mt-3">
+                            <Pagination currentPage={prodActual} totalPages={totalProdPages} onPageChange={setProdPage} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Productos devueltos */}
@@ -457,7 +444,7 @@ export default function ReturnSalesPage() {
                                     <th className="px-3 py-2.5 font-semibold">Motivo</th>
                                     <th className="px-3 py-2.5 font-semibold">Condición</th>
                                     <th className="px-3 py-2.5 font-semibold">Gestión</th>
-                                    <th className="px-3 py-2.5 font-semibold text-right">Subtotal</th>
+                                    <th className="px-3 py-2.5 font-semibold">Monto reembolsado</th>
                                     <th className="px-3 py-2.5 font-semibold">Estado resolución</th>
                                     <th className="px-3 py-2.5 font-semibold text-center w-32">Acciones</th>
                                 </tr>
@@ -483,7 +470,7 @@ export default function ReturnSalesPage() {
                                                 <td className="px-3 py-2.5 text-xs">{dev.motivo?.replace(/_/g, " ") || "—"}</td>
                                                 <td className="px-3 py-2.5 text-xs">{dev.condicionProducto?.replace(/_/g, " ") || "—"}</td>
                                                 <td className="px-3 py-2.5 text-xs">{dev.gestion?.replace(/_/g, " ") || "—"}</td>
-                                                <td className="px-3 py-2.5 text-xs text-right">
+                                                <td className="px-3 py-2.5 text-xs">
                                                     {dev.gestion === "REEMBOLSO_TOTAL" || dev.gestion === "REEMBOLSO_PARCIAL"
                                                         ? (Number(dev.montoReembolso) > 0 ? formatCOP(dev.montoReembolso) : "N/A")
                                                         : "N/A"}
@@ -500,13 +487,15 @@ export default function ReturnSalesPage() {
                                                             <Eye size={14} className="text-blue-600" />
                                                         </button>
                                                         {/* Historial de estados — 1.6 */}
-                                                        <button
-                                                            title="Ver historial de estados"
-                                                            onClick={() => setHistoryDev(dev)}
-                                                            className="p-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 transition cursor-pointer"
-                                                        >
-                                                            <History size={14} className="text-purple-600" />
-                                                        </button>
+                                                         {!esTemporal && (
+                                                             <button
+                                                                 title="Ver historial de estados"
+                                                                 onClick={() => setHistoryDev(dev)}
+                                                                 className="p-1.5 rounded-lg bg-purple-100 hover:bg-purple-200 transition cursor-pointer"
+                                                             >
+                                                                 <History size={14} className="text-purple-600" />
+                                                             </button>
+                                                         )}
                                                         {/* Editar — from-sales y editable */}
                                                         {(isFromSales || isEditable) && (
                                                             <button
@@ -518,8 +507,8 @@ export default function ReturnSalesPage() {
                                                                 <Pencil size={14} className="text-yellow-600" />
                                                             </button>
                                                         )}
-                                                        {/* Eliminar — solo from-sales */}
-                                                        {isFromSales && (
+                                                         {/* Eliminar — from-sales y editable */}
+                                                         {(isFromSales || isEditable) && (
                                                             <button
                                                                 title={bloqueado ? "No se puede anular una devolución en estado final" : "Eliminar devolución"}
                                                                 onClick={() => handleEliminar(dev)}
@@ -538,23 +527,25 @@ export default function ReturnSalesPage() {
                             </tbody>
                         </table>
                     </div>
-                    <div className="flex justify-end pt-3">
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="font-semibold text-gray-700">Total monto reembolsado:</span>
-                            <span className="font-bold text-green-700 text-base">
-                                {formatCOP(totalMontoReembolsado)}
-                            </span>
-                        </div>
-                    </div>
-                    <Paginator currentPage={devActual} totalPages={totalDevPages} onPageChange={setDevPage} />
-                </div>
+                     {totalDevPages > 1 && (
+                         <div className="flex justify-end mt-3">
+                             <Pagination currentPage={devActual} totalPages={totalDevPages} onPageChange={setDevPage} />
+                         </div>
+                     )}
+                 </div>
 
-                {/* Footer */}
-                <div className="flex justify-end gap-4 items-center pt-4 border-t border-gray-200 mt-auto">
-                    {isFromSales && !isYaDevuelto && (
-                        <button
-                            onClick={handleRegistrar}
-                            className="px-6 py-2.5 bg-linear-to-r from-white to-yellow-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
+                 {/* Footer */}
+                 <div className={`flex items-center pt-4 justify-end gap-6 border-t border-gray-200`}>
+                     <div className="flex items-center gap-2 text-sm">
+                         <span className="font-semibold text-gray-700">Total monto reembolsado:</span>
+                         <span className="font-bold text-green-700 text-base">
+                             {formatCOP(totalMontoReembolsado)}
+                         </span>
+                     </div>
+                      {(isFromSales || (isEditable && devolucionesVenta.some((d) => String(d.id).startsWith("temp-")))) && !isYaDevuelto && (
+                         <button
+                             onClick={handleRegistrar}
+                             className="px-6 py-2.5 bg-linear-to-r from-white to-yellow-300 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer font-medium text-sm"
                         >
                             Registrar devolución
                         </button>

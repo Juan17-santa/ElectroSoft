@@ -1,7 +1,7 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, Pencil, Ban, RotateCcw, Check, X } from "lucide-react";
-import { useDevolutions } from "../hooks/useDevolutions";
+import { useDevolutions, ITEMS_PER_PAGE } from "../hooks/useDevolutions";
 import { useDevolutionsReport } from "../hooks/useDevolutionsReport";
 import { SalesService } from "../../SalesManagement/services/SalesService";
 import { getEstadoColor } from "../helpers/devolutionsHelpers";
@@ -12,8 +12,30 @@ import { Restricted } from "../../../components/ui/Restricted";
 import { useToast } from "../../../../../context/ToastContext";
 import { usePermissions } from "../../../../../hooks/usePermissions";
 
-const ITEMS_PER_PAGE = 8;
 const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
+
+function getProductoId(value) {
+    return String(value?._id ?? value?.productoId ?? value?.id ?? value ?? "");
+}
+
+function hayProductosRetornables(sale, devolucionesContables) {
+    const devueltoPorProducto = new Map();
+
+    devolucionesContables.forEach((devolucion) => {
+        const productoId = getProductoId(devolucion.productoId);
+        if (!productoId) return;
+        devueltoPorProducto.set(
+            productoId,
+            (devueltoPorProducto.get(productoId) ?? 0) + Number(devolucion.cantidad ?? 0),
+        );
+    });
+
+    return (sale?.productos || []).some((producto) => {
+        const productoId = getProductoId(producto.productoId ?? producto.id);
+        const cantidadDisponible = Number(producto.cantidad ?? 0) - (devueltoPorProducto.get(productoId) ?? 0);
+        return cantidadDisponible > 0;
+    });
+}
 
 function formatFechaDisplay(fechaISO) {
     if (!fechaISO) return "—";
@@ -34,56 +56,36 @@ function formatFechaEstadoDisplay(fechaISO) {
 export default function Devolutions() {
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [ventasMap, setVentasMap] = useState(null);
     const { hasPermission } = usePermissions();
     
     const {
-        devolucionesFiltradas,
+        groups,
         searchTerm,
         setSearchTerm,
+        page,
+        totalPages,
+        handlePageChange,
         anularPorVenta,
         loading,
         error,
-    } = useDevolutions(ventasMap);
+    } = useDevolutions();
 
     useEffect(() => {
         SalesService.get().then((ventas) => {
             const map = {};
-            ventas.forEach((v) => { map[v.id] = v.numeroVenta; });
+            ventas.forEach((v) => { map[v.id] = v; });
             setVentasMap(map);
         }).catch(() => { });
     }, []);
 
-    const { exportReport } = useDevolutionsReport(devolucionesFiltradas, showToast);
+    const { exportReport } = useDevolutionsReport(showToast);
 
     useEffect(() => {
         if (error) showToast("error", error);
     }, [error, showToast]);
-
-    // Agrupar por idVenta — una fila por venta
-    const gruposPorVenta = useMemo(() => {
-        const map = {};
-        devolucionesFiltradas.forEach((d) => {
-            const key = String(d.idVenta);
-            if (!map[key]) map[key] = [];
-            map[key].push(d);
-        });
-        return Object.values(map).sort((a, b) => {
-            const maxA = a.reduce((max, d) => (d.creadoEn > max ? d.creadoEn : max), "");
-            const maxB = b.reduce((max, d) => (d.creadoEn > max ? d.creadoEn : max), "");
-            return maxB.localeCompare(maxA);
-        });
-    }, [devolucionesFiltradas]);
-
-    const totalPages = Math.max(1, Math.ceil(gruposPorVenta.length / ITEMS_PER_PAGE));
-    const paginaActual = Math.min(currentPage, totalPages);
-    const itemsPagina = gruposPorVenta.slice(
-        (paginaActual - 1) * ITEMS_PER_PAGE,
-        paginaActual * ITEMS_PER_PAGE
-    );
 
     // ─── Helpers de grupo ────────────────────────────────────────────────────
 
@@ -112,17 +114,25 @@ export default function Devolutions() {
             return tb.localeCompare(ta);
         })[0];
 
-    const editBloqueado = (g) =>
-        g.every((d) => ESTADOS_BLOQUEADOS.includes(d.estadoResolucion));
+    const editBloqueado = (g) => {
+        if (g.every((d) => d.estadoResolucion === "Anulada")) return true;
+        const todasFinales = g.every((d) => ESTADOS_BLOQUEADOS.includes(d.estadoResolucion));
+        if (!todasFinales) return false;
+        const contables = g.filter(
+            (d) => d.estadoResolucion !== "Anulada" && d.estadoResolucion !== "RECHAZADA",
+        );
+        const sale = ventasMap?.[g[0].idVenta];
+        return !hayProductosRetornables(sale, contables);
+    };
 
     // ─── Handlers ────────────────────────────────────────────────────────────
 
-    const handleSearch = (e) => { setSearchTerm(e.target.value); setCurrentPage(1); };
+    const handleSearch = (e) => { setSearchTerm(e.target.value); };
 
     const handleAnularGrupo = (grupo) => {
         const idVenta = grupo[0].idVenta;
         const numeroVenta = ventasMap && ventasMap[idVenta] != null
-            ? String(ventasMap[idVenta]).padStart(2, "0")
+            ? String(ventasMap[idVenta].numeroVenta).padStart(2, "0")
             : idVenta;
         setConfirmData({
             type: "warning",
@@ -165,29 +175,32 @@ export default function Devolutions() {
                         <table className="min-w-250 w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
-                                    <th className="px-3 py-2 font-semibold">#</th>
-                                    <th className="px-3 py-2 font-semibold">ID Venta</th>
-                                    <th className="px-3 py-2 font-semibold">Productos devueltos</th>
-                                    <th className="px-3 py-2 font-semibold">Fecha inicio / última actualización</th>
-                                    <th className="px-3 py-2 font-semibold">Estado resolución</th>
-                                    <th className="px-3 py-2 font-semibold text-center">Acciones</th>
+                                    <th className="px-2 py-2 font-semibold">#</th>
+                                    <th className="px-2 py-2 font-semibold">ID Venta</th>
+                                    <th className="px-2 py-2 font-semibold">Productos devueltos</th>
+                                    <th className="px-2 py-2 font-semibold">Fecha inicio / última actualización</th>
+                                    <th className="px-2 py-2 font-semibold">Estado resolución</th>
+                                    <th className="px-2 py-2 font-semibold text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white text-gray-700">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={6} className="px-4 py-4 text-center text-gray-400">
-                                            Cargando devoluciones...
-                                        </td>
-                                    </tr>
-                                ) : itemsPagina.length === 0 ? (
+                                 {loading ? (
+                                     <tr>
+                                         <td colSpan={6} className="px-4 py-4 text-center text-gray-400">
+                                             <div className="flex items-center justify-center gap-2">
+                                                 <svg className="animate-spin h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                                                 Cargando devoluciones...
+                                             </div>
+                                         </td>
+                                     </tr>
+                                ) : groups.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="px-4 py-4 text-center text-gray-400">
                                             No hay devoluciones registradas.
                                         </td>
                                     </tr>
                                 ) : (
-                                    itemsPagina.map((grupo, index) => {
+                                    groups.map((grupo, index) => {
                                         const idVenta = grupo[0].idVenta;
                                         const reciente = getMasReciente(grupo);
                                         const estado = reciente?.estadoResolucion ?? "—";
@@ -218,11 +231,11 @@ export default function Devolutions() {
                                         return (
                                             <tr key={idVenta} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                                                 <td className="px-3 py-2 font-medium">
-                                                    {String((paginaActual - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
+                                                    {String((page - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                                 </td>
-                                                <td className="px-4 py-2 font-medium">{ventasMap ? (ventasMap[idVenta] ? String(ventasMap[idVenta]).padStart(2, "0") : "—") : "—"}</td>
-                                                <td className="px-4 py-2">
-                                                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full">
+                                                <td className="px-2 py-2 ">{ventasMap ? (ventasMap[idVenta] ? String(ventasMap[idVenta].numeroVenta).padStart(2, "0") : "—") : "—"}</td>
+                                                <td className="px-2 py-2">
+                                                    <span className="px-2 py-0.5 rounded-full">
                                                         {cantidadDevuelta} producto{cantidadDevuelta !== 1 ? "s" : ""}
                                                         {cantidadRechazada > 0 && (
                                                             <span className="ml-1 text-red-500">({cantidadRechazada} rechazado{cantidadRechazada !== 1 ? "s" : ""})</span>
@@ -234,23 +247,25 @@ export default function Devolutions() {
                                                 </td>
 
                                                 {/* Fecha inicio / última actualización en la misma línea */}
-                                                <td className="px-4 py-2">
-                                                    <div className="flex items-center gap-1.5 text-xs">
-                                                        <span className="text-gray-500 font-semibold">{fechaInicio}</span>
+                                                <td className="px-2 py-2">
+                                                    <div className="flex items-center gap-1.5 text-s">
+                                                        <span className="text-gray-500">{fechaInicio}</span>
                                                         <span className="text-gray-300">/</span>
                                                         <span className={`font-semibold ${textColor}`}>{fechaEstado}</span>
                                                     </div>
                                                 </td>
 
                                                 {/* Estado + nombre del producto más recientemente actualizado */}
-                                                <td className="px-4 py-2">
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colorEstado}`}>
-                                                        {estado}
-                                                    </span>
-                                                    <p className="text-xs text-gray-400 mt-0.5 truncate max-w-35" title={producto}>
-                                                        {producto}
-                                                    </p>
-                                                </td>
+                                                 <td className="px-1 py-2 max-w-55">
+                                                     <div className="max-w-39.5 min-w-0">
+                                                         <span className={`inline-block max-w-full px-2 py-0.5 rounded-full text-xs font-medium whitespace-normal wrap-break-word ${colorEstado}`}>
+                                                             {estado.replace(/_/g, " ")}
+                                                         </span>
+                                                         <p className="text-xs text-gray-400 mt-0.5 truncate max-w-35" title={producto}>
+                                                             {producto}
+                                                         </p>
+                                                     </div>
+                                                 </td>
 
                                                 <td className="px-4 py-2">
                                                     <div className="flex justify-center gap-2">
@@ -334,12 +349,12 @@ export default function Devolutions() {
                     </div>
                 </div>
 
-                {itemsPagina.length > 0 && (
+                {groups.length > 0 && (
                     <div className="flex justify-end mt-auto">
                         <Pagination
-                            currentPage={paginaActual}
+                            currentPage={page}
                             totalPages={totalPages}
-                            onPageChange={setCurrentPage}
+                            onPageChange={handlePageChange}
                         />
                     </div>
                 )}
