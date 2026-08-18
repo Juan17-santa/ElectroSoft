@@ -22,24 +22,29 @@ export const generatePDFReport = ({
     // --- BANNER INSTITUCIONAL ---
     // Fondo claro para ahorrar tinta en impresión
     doc.setFillColor(245, 245, 245); 
-    doc.rect(0, 0, pageWidth, 26, "F");
+    doc.rect(0, 0, pageWidth, 32, "F");
 
     // Logo (bombillo)
     try {
-        doc.addImage(logoBase64, "PNG", 12, 3, 20, 20);
+        doc.addImage(logoBase64, "PNG", 12, 6, 20, 20);
     } catch(e) {}
 
     // Nombre de Empresa
     doc.setTextColor(50, 50, 50); // Gris oscuro
-    doc.setFontSize(26);
+    doc.setFontSize(24);
     doc.setFont("helvetica", "bold");
-    doc.text("ElectroSoft", 35, 18);
+    doc.text("ElectroSoft", 35, 15);
+
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text("CL 51 # 55 - 69 Local 133", 35, 21);
+    doc.text("Tel: +57 313 6345398", 35, 26);
 
     // Título del Reporte (alineado a la derecha)
     doc.setTextColor(80, 80, 80); // Gris oscuro
     doc.setFontSize(12);
     doc.setFont("helvetica", "bold");
-    doc.text(title.toUpperCase(), pageWidth - 14, 17, { align: "right" });
+    doc.text(title.toUpperCase(), pageWidth - 14, 21, { align: "right" });
 
     // --- INFORMACIÓN DEL REPORTE ---
     doc.setTextColor(80, 80, 80);
@@ -50,12 +55,12 @@ export const generatePDFReport = ({
     doc.text(
         `Fecha de emisión: ${new Date().toLocaleDateString()}`, 
         pageWidth - 14, 
-        35, 
+        41, 
         { align: "right" }
     );
 
     // INFO EXTRA
-    let currentY = 35;
+    let currentY = 41;
     extraInfo.forEach(info => {
         doc.text(info, 14, currentY);
         currentY += 6;

@@ -138,9 +138,14 @@ export default function SaleDetailsPage() {
             onConfirm: () => {
                 const formatCurrency = (val) => val ? `$${val.toLocaleString('es-CO')}` : "$0";
                 
+                const tipoDocumento = sale.clienteId?.documentType?.abbreviation || sale.clienteId?.documentType?.name || "";
+                const numeroDoc = sale.numeroDocumento || sale.clienteId?.documentNumber || '-';
+                const docText = tipoDocumento ? `${tipoDocumento} ${numeroDoc}` : numeroDoc;
+
                 const extraInfo = [
                     `Cliente: ${sale.cliente || '-'}`,
-                    `Documento: ${sale.numeroDocumento || '-'}`,
+                    `Documento: ${docText}`,
+                    `Correo: ${sale.clienteId?.email || '-'}`,
                     `Fecha creación: ${sale.fecha}`,
                     `Estado: ${sale.estado}`,
                     `Tipo de Venta: ${sale.tipoVenta || "Contado"}`

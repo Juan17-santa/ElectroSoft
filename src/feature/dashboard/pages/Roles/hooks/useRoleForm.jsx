@@ -16,7 +16,8 @@ export function useRoleForm({ initialData = null, onSubmit }) {
     const [formError, setFormError] = useState(null);
 
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
-    const estadoNombre = tocado.nombre ? Validations.validarNombreRol(formData.nombre) : null;
+    // Validación en tiempo real
+    const estadoNombre = (formData.nombre !== "" || tocado.nombre) ? Validations.validarNombreRol(formData.nombre) : null;
 
     useEffect(() => {
         if (initialData) {

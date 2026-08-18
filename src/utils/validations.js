@@ -6,7 +6,7 @@ export const Validations = {
 
     // Permite solo letras (incluye tildes y ñ) y espacios. Puede estar vacío.
     soloLetras: (value) => {
-        return /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/.test(value);
+        return /^[\p{L}\s]*$/u.test(value ? value.normalize("NFC") : "");
     },
 
     // Permite letras y números sin espacios ni símbolos. Puede estar vacío.
@@ -77,7 +77,7 @@ export const Validations = {
         if (value.trim().length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
         if (value.length > 40) return { valido: false, mensaje: "Máximo 40 caracteres." };
         if (/[0-9]/.test(value)) return { valido: false, mensaje: "No debe contener números." };
-        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) return { valido: false, mensaje: "Solo se permiten letras." };
+        if (!/^[\p{L}\s]+$/u.test(value.normalize("NFC"))) return { valido: false, mensaje: "Solo se permiten letras." };
         if (/\s{2,}/.test(value)) return { valido: false, mensaje: "No se permiten espacios dobles." };
         return { valido: true, mensaje: "" };
     },
