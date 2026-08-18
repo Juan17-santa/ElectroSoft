@@ -71,9 +71,11 @@ export default function Devolutions() {
             if (!map[key]) map[key] = [];
             map[key].push(d);
         });
-        return Object.values(map).sort((a, b) =>
-            (b[0]?.creadoEn ?? "").localeCompare(a[0]?.creadoEn ?? "")
-        );
+        return Object.values(map).sort((a, b) => {
+            const maxA = a.reduce((max, d) => (d.creadoEn > max ? d.creadoEn : max), "");
+            const maxB = b.reduce((max, d) => (d.creadoEn > max ? d.creadoEn : max), "");
+            return maxB.localeCompare(maxA);
+        });
     }, [devolucionesFiltradas]);
 
     const totalPages = Math.max(1, Math.ceil(gruposPorVenta.length / ITEMS_PER_PAGE));

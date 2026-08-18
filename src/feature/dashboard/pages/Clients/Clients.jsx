@@ -5,6 +5,9 @@ import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
 import ConfirmModal from "../../components/ui/ConfirmModal";
 import AssignQuotaModal from "./components/AssignQuotaModal";
+import CreateClients from "./CreateClients";
+import UpdateClients from "./UpdateClients";
+import ClientDetailsPage from "./ClientDetailsPage";
 import { Eye, Pencil, Trash, CreditCard } from "lucide-react";
 import { generateExcelReport } from "../../../../utils/ExcelReportGenerator";
 import { usePermissions } from "../../../../hooks/usePermissions";
@@ -23,6 +26,9 @@ export default function Clients() {
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmData, setConfirmData] = useState(null);
     const [assignQuotaClient, setAssignQuotaClient] = useState(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [clientToEdit, setClientToEdit] = useState(null);
+    const [clientToView, setClientToView] = useState(null);
 
     const filteredClients = clients.filter(client =>
         `${client.nombres} ${client.apellidos}`.toLowerCase().includes(search.toLowerCase()) ||
@@ -98,13 +104,11 @@ export default function Clients() {
     };
 
     const handleEditNavigation = (client) => {
-        localStorage.setItem("clientToEdit", JSON.stringify(client));
-        navigate("/dashboard/clients/update");
+        setClientToEdit(client);
     };
 
     const handleViewDetails = (client) => {
-        localStorage.setItem("clientToView", JSON.stringify(client));
-        navigate("/dashboard/clients/details");
+        setClientToView(client);
     };
 
     const handleGenerarReporte = () => {
@@ -149,7 +153,7 @@ export default function Clients() {
                     searchTerm={search}
                     onSearchChange={handleSearch}
                     placeholder="Buscar clientes..."
-                    onCreateClick={() => navigate("/dashboard/clients/create")}
+                    onCreateClick={() => setIsCreateModalOpen(true)}
                     createButtonText="Nuevo cliente"
                     showCreateButton={hasPermission("Clientes", "Crear")}
                     showReportButton={hasPermission("Clientes", "Reporte")}
@@ -261,11 +265,16 @@ export default function Clients() {
                                                     <Restricted scope="Clientes" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             <button
-                                                                className="p-2 rounded-lg bg-red-100 hover:bg-red-200 transition cursor-pointer"
+                                                                className={`p-2 rounded-lg transition ${
+                                                                    client.totalCompras > 0
+                                                                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                                                        : "bg-red-100 hover:bg-red-200 text-red-600 cursor-pointer"
+                                                                }`}
                                                                 onClick={() => handleDelete(client)}
-                                                                title="Eliminar cliente"
+                                                                disabled={client.totalCompras > 0}
+                                                                title={client.totalCompras > 0 ? "No se puede eliminar: el cliente tiene historial de compras" : "Eliminar cliente"}
                                                             >
-                                                                <Trash size={18} className="text-red-600" />
+                                                                <Trash size={18} />
                                                             </button>
                                                         </div>
                                                     </Restricted>
@@ -309,6 +318,31 @@ export default function Clients() {
                 onConfirm={confirmAssignQuota}
                 clientName={assignQuotaClient ? `${assignQuotaClient.nombres} ${assignQuotaClient.apellidos}` : ''}
                 currentQuota={assignQuotaClient?.cupoTotal || 0}
+            />
+
+            {/* MODAL CREAR CLIENTE */}
+            <CreateClients
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => {
+                    getClients();
+                    setCurrentPage(1);
+                }}
+            />
+
+            {/* MODAL EDITAR CLIENTE */}
+            <UpdateClients
+                isOpen={!!clientToEdit}
+                onClose={() => setClientToEdit(null)}
+                onSuccess={getClients}
+                initialClient={clientToEdit}
+            />
+
+            {/* MODAL DETALLES */}
+            <ClientDetailsPage
+                isOpen={!!clientToView}
+                onClose={() => setClientToView(null)}
+                client={clientToView}
             />
         </>
     );

@@ -25,8 +25,9 @@ const mapSaleToFrontend = (sale) => {
         id: sale._id,
         // Extrae solo los números del numeroFactura, eliminando prefijos como "FAC"
         numeroVenta: String(sale.numeroFactura || "").replace(/\D/g, ""),
-        numeroDocumento: sale.clienteId?.documentNumber ? `${abbreviateDocType(sale.clienteId.documentType)} ${sale.clienteId.documentNumber}`.trim() : "N/A",
+        numeroDocumento: sale.clienteId?.documentNumber ? `${abbreviateDocType(sale.clienteId.documentType?.name || sale.clienteId.documentType)} ${sale.clienteId.documentNumber}`.trim() : "N/A",
         cliente: sale.clienteId ? `${sale.clienteId.firstName} ${sale.clienteId.lastName}` : "Cliente Desconocido",
+        clienteId: sale.clienteId,
         //   FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
         tipoVenta: sale.tipoVenta === "Crédito" ? "Credito" : (sale.tipoVenta || "Contado"),
         diasPlazo: sale.diasPlazo,

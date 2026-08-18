@@ -51,10 +51,21 @@ export default function Payments() {
 
     const filtered = clientes.filter(c => {
         const q = search.toLowerCase();
+        const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        
+        const getEstadoStr = (cliente) => {
+            if (cliente.estado === false) return "suspendido";
+            if (cliente.cupoOcupado > 0) return "por pagar";
+            return "al dia al día";
+        };
+
+        const estadoStr = getEstadoStr(c);
+
         return (
-            `${c.nombres} ${c.apellidos}`.toLowerCase().includes(q) ||
+            normalize(`${c.nombres} ${c.apellidos}`).includes(normalize(q)) ||
             String(c.documento).includes(q) ||
-            String(c.tipoDocumento || "").toLowerCase().includes(q)
+            String(c.tipoDocumento || "").toLowerCase().includes(q) ||
+            estadoStr.includes(normalize(q))
         );
     });
 

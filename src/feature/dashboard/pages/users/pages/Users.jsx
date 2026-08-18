@@ -7,6 +7,9 @@ import ConfirmModal from "../../../components/ui/ConfirmModal";
 import UsersTable from "../components/UsersTable";
 import { useUsersTable } from "../hooks/useUsersTable";
 import SearchBar from "../../../components/ui/Searchbar";
+import CreateUser from "./CreateUser";
+import UpdateUser from "./UpdateUser";
+import UserDetail from "./UserDetail";
 import { usePermissions } from "../../../../../hooks/usePermissions";
 import { useToast } from "../../../../../context/ToastContext";
 
@@ -19,6 +22,9 @@ export default function Users() {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [confirmData, setConfirmData] = useState(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [userToEdit, setUserToEdit] = useState(null);
+    const [userToView, setUserToView] = useState(null);
 
     const [currentPage, setCurrentPage] = useState(1);
     const recordsPerPage = 6;
@@ -77,11 +83,11 @@ export default function Users() {
     const currentRecords = filteredUsers.slice(firstIndex, lastIndex);
 
     const handleEditNavigation = (user) => {
-        navigate(`/dashboard/users/${user.id}/update`, { state: { user } });
+        setUserToEdit(user);
     };
 
     const handleDetailsNavigation = (user) => {
-        navigate(`/dashboard/users/${user.id}`, { state: { user } });
+        setUserToView(user);
     };
 
     const { deleteUser, toggleEstado } = useUsersTable({
@@ -99,7 +105,7 @@ export default function Users() {
                     searchTerm={search}
                     onSearchChange={(e) => setSearch(e.target.value)}
                     placeholder="Buscar usuario ..."
-                    onCreateClick={() => navigate("/dashboard/users/create")}
+                    onCreateClick={() => setIsCreateModalOpen(true)}
                     createButtonText="Nuevo usuario"
                     showCreateButton={hasPermission("Usuarios", "Crear")}
                 />
@@ -132,6 +138,28 @@ export default function Users() {
                     onCancel={() => setConfirmData(null)}
                 />
             )}
+
+            <CreateUser
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                onSuccess={() => {
+                    getUsers();
+                    setCurrentPage(1);
+                }}
+            />
+
+            <UpdateUser
+                isOpen={!!userToEdit}
+                onClose={() => setUserToEdit(null)}
+                onSuccess={getUsers}
+                userToEdit={userToEdit}
+            />
+
+            <UserDetail
+                isOpen={!!userToView}
+                onClose={() => setUserToView(null)}
+                user={userToView}
+            />
         </>
     );
 }

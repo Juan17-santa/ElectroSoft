@@ -189,6 +189,19 @@ export function useUserForm({ userToEdit, navigate }) {
         }
     };
 
+    const resetForm = () => {
+        setFormData({
+            tipoDoc: "",
+            documento: "",
+            nombre: "",
+            email: "",
+            telefono: "",
+            rol: "",
+            estado: true
+        });
+        setErrors({});
+    };
+
     return {
         formData,
         errors,
@@ -197,5 +210,6 @@ export function useUserForm({ userToEdit, navigate }) {
         validateForm,
         createUser,
         updateUser,
+        resetForm,
     };
 }
