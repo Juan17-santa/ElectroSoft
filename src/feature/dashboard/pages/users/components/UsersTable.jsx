@@ -1,5 +1,6 @@
 import { Trash, Pencil, Eye } from "lucide-react";
 import { Restricted } from "../../../components/ui/Restricted";
+import { authStorage } from "../../../../../utils/authStorage";
 
 export default function UsersTable({
     data = [],
@@ -11,7 +12,7 @@ export default function UsersTable({
     onDelete,
 }) {
     const GLOBAL_USER_EMAIL = "administrador@gmail.com";
-
+    const currentUser = authStorage.getUser();
 
     return (
         <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
@@ -149,14 +150,36 @@ export default function UsersTable({
 
                                             <Restricted scope="Usuarios" action="Eliminar">
                                                 <button
-                                                    onClick={() => user.email !== GLOBAL_USER_EMAIL && user.estado && onDelete(user.id)}
-                                                    disabled={user.email === GLOBAL_USER_EMAIL || !user.estado}
+                                                    onClick={() => {
+                                                        if (user.email === GLOBAL_USER_EMAIL) return;
+                                                        if (user.id === currentUser?.id) return;
+                                                        if (!user.estado) return;
+                                                        onDelete(user.id);
+                                                    }}
+                                                    disabled={
+                                                        user.email === GLOBAL_USER_EMAIL ||
+                                                        user.id === currentUser?.id ||
+                                                        !user.estado
+                                                    }
                                                     className={`p-2 rounded-lg transition
-                                                        ${user.email === GLOBAL_USER_EMAIL || !user.estado
+            ${user.email === GLOBAL_USER_EMAIL ||
+                                                            user.id === currentUser?.id ||
+                                                            !user.estado
                                                             ? "bg-gray-100 cursor-not-allowed opacity-40"
                                                             : "bg-red-100 hover:bg-red-200 cursor-pointer"}`}
+                                                    title={
+                                                        user.id === currentUser?.id
+                                                            ? "No puedes eliminarte a ti mismo"
+                                                            : "Eliminar"
+                                                    }
                                                 >
-                                                    <Trash size={18} className={user.email === GLOBAL_USER_EMAIL || !user.estado ? "text-gray-400" : "text-red-600"} />
+                                                    <Trash size={18} className={
+                                                        user.email === GLOBAL_USER_EMAIL ||
+                                                            user.id === currentUser?.id ||
+                                                            !user.estado
+                                                            ? "text-gray-400"
+                                                            : "text-red-600"
+                                                    } />
                                                 </button>
                                             </Restricted>
 
