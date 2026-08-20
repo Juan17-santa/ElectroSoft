@@ -3,7 +3,7 @@ import api from "../../../../../utils/api.js";
 // Permisos en el mismo formato que el backend
 export const PERMISSION_SCOPES = [
   { name: "dashboard", label: "Dashboard", actions: ["acceso"] },
-  { name: "categorias", label: "Categoria de productos", actions: ["acceso", "ver", "crear", "editar", "estado", "eliminar"] },
+  { name: "categorias", label: "Categoria de productos", actions: ["acceso", "crear", "editar", "estado", "eliminar"] },
   { name: "productos", label: "Productos", actions: ["acceso", "ver", "crear", "editar", "estado", "eliminar", "reporte"] },
   { name: "proveedores", label: "Proveedores", actions: ["acceso", "ver", "crear", "editar", "estado", "eliminar"] },
   { name: "compras", label: "Compras", actions: ["acceso", "ver", "crear", "anular", "reporte"] },
