@@ -26,6 +26,9 @@ const mapSaleToFrontend = (sale) => {
         // Extrae solo los números del numeroFactura, eliminando prefijos como "FAC"
         numeroVenta: String(sale.numeroFactura || "").replace(/\D/g, ""),
         numeroDocumento: sale.clienteId?.documentNumber ? `${abbreviateDocType(sale.clienteId.documentType?.name || sale.clienteId.documentType)} ${sale.clienteId.documentNumber}`.trim() : "N/A",
+        // NUEVO: número de documento sin el tipo (CC/CE/TI...), para usar en navegación
+        // y lookups del módulo de Pagos, donde solo se necesita el número puro.
+        documentoNumero: sale.clienteId?.documentNumber || "",
         cliente: sale.clienteId ? `${sale.clienteId.firstName} ${sale.clienteId.lastName}` : "Cliente Desconocido",
         clienteId: sale.clienteId,
         //   FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
@@ -127,9 +130,9 @@ export const SalesService = {
     },
 
     async addPayment(id, monto) {
-         // Delegated to paymentsService /api/payments, but keeping signature for compatibility if needed.
-         // Recommend using paymentsService.js instead.
-         console.warn("addPayment called on SalesService. Use paymentsService instead.");
+        // Delegated to paymentsService /api/payments, but keeping signature for compatibility if needed.
+        // Recommend using paymentsService.js instead.
+        console.warn("addPayment called on SalesService. Use paymentsService instead.");
     },
 
     async voidPayment(saleId, paymentId) {

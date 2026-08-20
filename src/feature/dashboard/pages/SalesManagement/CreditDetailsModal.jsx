@@ -71,7 +71,7 @@ export default function CreditDetailsPage() {
     const getPaymentRows = () => {
         if (!sale) return [];
         let saldoPendiente = sale.tipoVenta === 'Mixto' ? (sale.montoCredito || 0) : (sale.total || 0);
-        
+
         //   FIX: Ordenar cronológicamente (más antiguos primero)
         // El backend envía los abonos en orden descendente, lo que causa un cálculo visual inverso
         // si no se ordenan primero cronológicamente.
@@ -93,10 +93,10 @@ export default function CreditDetailsPage() {
                 saldoPendiente: saldoPendiente > 0 ? saldoPendiente : 0
             };
         });
-        
+
         // Revertir para mostrar el abono más reciente arriba en la UI
         const reversedRows = rows.reverse();
-        
+
         let foundUltimoValido = false;
         return reversedRows.map(row => {
             let esUltimoActivo = false;
@@ -138,10 +138,9 @@ export default function CreditDetailsPage() {
     const handleIrAPagos = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         if (!sale?.id) return;
-        // Guardar el documento para que la pantalla de crear abono lo preseleccione
         navigate(
             `/dashboard/payments/create/${sale.id}`,
-            { state: { venta: sale, documento: sale.numeroDocumento } }
+            { state: { venta: sale, documento: sale.documentoNumero } } // antes: sale.numeroDocumento
         );
     };
 
