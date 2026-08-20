@@ -8,7 +8,6 @@ import { X } from "lucide-react";
 import { useToast } from "../../../../../context/ToastContext";
 
 export default function CreateOrder() {
-
     // ESTADO PARA NAVEGAR
     const navigate = useNavigate();
     const { showToast } = useToast();
@@ -59,7 +58,6 @@ export default function CreateOrder() {
 
     // FUNCIÓN PARA GUARDAR UN NUEVO CLIENTE DESDE LA MODAL
     const handleSaveClient = (clienteCreado) => {
-
         // ACTUALIZAR EL CAMPO DE CLIENTE EN EL FORMULARIO CON EL NUEVO CLIENTE CREADO
         setFormData(prev => ({
             ...prev,
@@ -78,7 +76,7 @@ export default function CreateOrder() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 shadow-inner">
+            <div className="p-6 flex flex-col gap-6">
 
                 {/* HEADER DE LA PÁGINA */}
                 <div className="flex justify-between items-start">
@@ -100,7 +98,7 @@ export default function CreateOrder() {
                     </button>
                 </div>
 
-                {/* FORMULARIO: SE LE PASAN TODAS LAS PROPS DEL HOOK */}
+                {/* FORMULARIO */}
                 <OrdersForm
                     formData={formData}
                     errors={errors}
@@ -123,6 +121,7 @@ export default function CreateOrder() {
                     itemsPerPage={itemsPerPage}
                     paymentOptions={paymentOptions}
                     loading={loading}
+                    submitted={submitted}
                     showSummaryModal={showSummaryModal}
                     setShowSummaryModal={setShowSummaryModal}
                     requestedCredit={requestedCredit}

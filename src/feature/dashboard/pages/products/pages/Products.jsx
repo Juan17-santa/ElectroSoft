@@ -8,6 +8,8 @@ import useProductTable from "../hooks/useProductTable";
 import { usePermissions } from "../../../../../hooks/usePermissions";
 import Pagination from "../../../components/ui/Pagination";
 import { useToast } from "../../../../../context/ToastContext";
+import { ServicesProducts } from "../services/ServicesProducts";
+import ProductDetails from "./ProductDetails";
 
 export default function Products() {
     const { hasPermission } = usePermissions();
@@ -16,12 +18,13 @@ export default function Products() {
 
     const [search, setSearch] = useState("");
     const [confirmData, setConfirmData] = useState(null);
+    const [productToView, setProductToView] = useState(null);
     const [presentPage, setPresentPage] = useState(1);
     const recordsPerPage = 6;
 
     const {
         data,
-        filteredProducts,
+        categories,
         totalPages,
         loading,
         deleteProduct,
@@ -43,7 +46,7 @@ export default function Products() {
     };
 
     const handleViewNavigation = (product) => {
-        navigate(`/dashboard/products/details/${product.id}`, { state: { product } });
+        setProductToView(product);
     };
 
     const handleGenerateReport = () => {
@@ -51,39 +54,37 @@ export default function Products() {
             type: "info",
             title: "Generar reporte",
             message: "¿Deseas descargar el reporte de productos en Excel?",
-            onConfirm: () => {
-                generateExcelReport({
-                    title: "Gestión de Productos - Reporte",
-                    fileName: "reporte_productos.xlsx",
-                    columns: [
-                        "Nombre",
-                        "Categoría",
-                        "Precio",
-                        "Stock",
-                        "Serial",
-                        "Garantía",
-                        "Estado"
-                    ],
-                    data: filteredProducts.map(prod => [
-                        prod.nombre,
-                        prod.categoriaName || "Sin categoría",
-                        `$${prod.precio?.toLocaleString()}`,
-                        prod.stock,
-                        prod.serial,
-                        prod.garantia,
-                        prod.estado ? "Activo" : "Inactivo"
-                    ])
-                });
-
-                showToast("success", "Reporte generado correctamente.");
-                setConfirmData(null);
+            onConfirm: async () => {
+                try {
+                    const reportProducts = await ServicesProducts.get({ search });
+                    const categoryById = new Map(categories.map(category => [category.id, category.name]));
+                    generateExcelReport({
+                        title: "Gestión de Productos - Reporte",
+                        fileName: "reporte_productos.xlsx",
+                        columns: ["Nombre", "Categoría", "Precio", "Stock", "Serial", "Garantía", "Estado"],
+                        data: reportProducts.map(prod => [
+                            prod.nombre,
+                            categoryById.get(prod.categoriaId) || "Sin categoría",
+                            `$${prod.precio?.toLocaleString()}`,
+                            prod.stock,
+                            prod.serial,
+                            prod.garantia,
+                            prod.estado ? "Activo" : "Inactivo"
+                        ])
+                    });
+                    showToast("success", "Reporte generado correctamente.");
+                } catch (error) {
+                    showToast("error", error.message || "No se pudo generar el reporte");
+                } finally {
+                    setConfirmData(null);
+                }
             }
         });
     };
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-white p-6 flex flex-col gap-6 w-full h-full">
 
                 <p className="text-xl font-semibold">Control de productos</p>
 
@@ -112,7 +113,7 @@ export default function Products() {
                     onDelete={handleDelete}
                 />
 
-                {filteredProducts.length > 0 && (
+                {data.length > 0 && (
                     <div className="flex justify-end mt-auto pt-4">
                         <Pagination
                             currentPage={presentPage}
@@ -132,6 +133,12 @@ export default function Products() {
                     onCancel={() => setConfirmData(null)}
                 />
             )}
+
+            <ProductDetails
+                isOpen={!!productToView}
+                onClose={() => setProductToView(null)}
+                product={productToView}
+            />
         </>
     );
 }

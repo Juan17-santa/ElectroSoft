@@ -1,4 +1,12 @@
-const API_URL = "http://localhost:4000/api/products";
+import api from "../../../../../utils/api.js";
+
+const API_URL = "/products";
+
+const getApiError = (error, fallback) => {
+    const apiError = new Error(error.response?.data?.error || error.response?.data?.message || error.message || fallback);
+    apiError.status = error.response?.status;
+    return apiError;
+};
 
 // Función auxiliar para mapear un producto de API (backend) al formato del frontend
 const mapProductFromAPI = (apiProduct) => {
@@ -31,19 +39,40 @@ const mapProductFromAPI = (apiProduct) => {
 };
 
 export const ServicesProducts = {
-    /**
-     * Obtener todos los productos
-     */
-    async get() {
+    /** Mantiene compatibilidad con reportes y validaciones legacy recorriendo páginas de 100. */
+    async get({ search = "" } = {}) {
         try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error("Error al obtener los productos");
-            const resJson = await response.json();
-            // Mapear todos los productos al formato del frontend
-            return (resJson.data || []).map(mapProductFromAPI);
+            const firstParams = { page: "1", limit: "100" };
+            if (search.trim()) firstParams.search = search.trim();
+            const firstPayload = (await api.get(API_URL, { params: firstParams })).data;
+            const products = [...(firstPayload.data || firstPayload.items || [])];
+            for (let page = 2; page <= (firstPayload.totalPages || 1); page += 1) {
+                const params = { page: String(page), limit: "100" };
+                if (search.trim()) params.search = search.trim();
+                const payload = (await api.get(API_URL, { params })).data;
+                products.push(...(payload.data || payload.items || []));
+            }
+            return products.map(mapProductFromAPI);
         } catch (error) {
-            console.error("Error en get:", error);
-            throw error;
+            throw getApiError(error, "Error al obtener los productos");
+        }
+    },
+
+    async getPage({ page = 1, limit = 15, search = "" } = {}) {
+        try {
+            const params = { page: String(page), limit: String(Math.min(limit, 100)) };
+            if (search.trim()) params.search = search.trim();
+            const payload = (await api.get(API_URL, { params })).data;
+            const data = (payload.data || payload.items || []).map(mapProductFromAPI);
+            return {
+                data,
+                page: payload.page ?? page,
+                limit: payload.limit ?? limit,
+                total: payload.total ?? data.length,
+                totalPages: payload.totalPages ?? 1,
+            };
+        } catch (error) {
+            throw getApiError(error, "Error al obtener los productos");
         }
     },
 
@@ -52,14 +81,10 @@ export const ServicesProducts = {
      */
     async getById(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}`);
-            if (!response.ok) throw new Error("Error al obtener el producto");
-            const resJson = await response.json();
-            // Mapear el producto al formato del frontend
-            return mapProductFromAPI(resJson.data);
+            const payload = (await api.get(`${API_URL}/${id}`)).data;
+            return mapProductFromAPI(payload.data);
         } catch (error) {
-            console.error("Error en getById:", error);
-            throw error;
+            throw getApiError(error, "Error al obtener el producto");
         }
     },
 
@@ -97,21 +122,10 @@ export const ServicesProducts = {
                 characteristics: mappedCharacteristics
             };
 
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(productData)
-            });
-
-            const resJson = await response.json();
-            if (!response.ok) {
-                throw new Error(resJson.error || "Error al crear el producto");
-            }
-            // Mapear el producto al formato del frontend
-            return mapProductFromAPI(resJson.data);
+            const payload = (await api.post(API_URL, productData)).data;
+            return mapProductFromAPI(payload.data);
         } catch (error) {
-            console.error("Error en create:", error);
-            throw error;
+            throw getApiError(error, "Error al crear el producto");
         }
     },
 
@@ -141,21 +155,10 @@ export const ServicesProducts = {
                 characteristics: mappedCharacteristics
             };
 
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(productData)
-            });
-
-            const resJson = await response.json();
-            if (!response.ok) {
-                throw new Error(resJson.error || "Error al actualizar el producto");
-            }
-            // Mapear el producto al formato del frontend
-            return mapProductFromAPI(resJson.data);
+            const payload = (await api.put(`${API_URL}/${id}`, productData)).data;
+            return mapProductFromAPI(payload.data);
         } catch (error) {
-            console.error("Error en update:", error);
-            throw error;
+            throw getApiError(error, "Error al actualizar el producto");
         }
     },
 
@@ -164,17 +167,9 @@ export const ServicesProducts = {
      */
     async delete(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: "DELETE"
-            });
-            const resJson = await response.json();
-            if (!response.ok) {
-                throw new Error(resJson.error || "Error al eliminar el producto");
-            }
-            return resJson.data;
+            return (await api.delete(`${API_URL}/${id}`)).data.data;
         } catch (error) {
-            console.error("Error en delete:", error);
-            throw error;
+            throw getApiError(error, "Error al eliminar el producto");
         }
     },
 
@@ -183,19 +178,9 @@ export const ServicesProducts = {
      */
     async toggleEstado(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}/status`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" }
-            });
-
-            const resJson = await response.json();
-            if (!response.ok) {
-                throw new Error(resJson.error || "Error al cambiar el estado del producto");
-            }
-            return resJson.data;
+            return (await api.patch(`${API_URL}/${id}/status`)).data.data;
         } catch (error) {
-            console.error("Error en toggleEstado:", error);
-            throw error;
+            throw getApiError(error, "Error al cambiar el estado del producto");
         }
     },
 
@@ -207,15 +192,13 @@ export const ServicesProducts = {
      */
     async checkSerialExists(serial, excludeId = null) {
         try {
-            const productos = await this.get();
-            const serialExists = productos.some(prod => 
-                prod.serial?.toLowerCase() === serial.toLowerCase() && 
+            const result = await this.getPage({ page: 1, limit: 100, search: serial });
+            return result.data.some(prod =>
+                prod.serial?.toLowerCase() === serial.toLowerCase() &&
                 prod.id !== excludeId
             );
-            return serialExists;
         } catch (error) {
-            console.error("Error en checkSerialExists:", error);
-            throw error;
+            throw getApiError(error, "No se pudo validar el serial");
         }
     }
 };

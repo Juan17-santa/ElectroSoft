@@ -11,8 +11,8 @@ export default function ProductCategoryTable({
     recordsPerPage = 6
 }) {
     return (
-        <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-            <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
+        <div className="p-0.5 rounded-2xl bg-yellow-200">
+            <div className="rounded-2xl border-none overflow-x-auto">
                 <table className="min-w-175 w-full text-sm table-fixed">
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
@@ -91,8 +91,6 @@ export default function ProductCategoryTable({
                                                     >
                                                         <Pencil size={18} className="text-yellow-600" />
                                                     </button>
-
-
                                                 </Restricted>
 
                                                 {/* BOTON ELIMINAR */}

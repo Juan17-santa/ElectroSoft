@@ -39,6 +39,7 @@ export default function CreateProvider() {
         handleSubmit,
         setCategoriasAsociadas,
         loading,
+        checkingUnique,
         isNatural,
         isJuridica
     } = useProviderForm({
@@ -58,7 +59,7 @@ export default function CreateProvider() {
 
     return (
         <>
-            <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 shadow-inner h-full overflow-y-auto">
+            <div className="p-4 md:p-8 flex flex-col gap-6 h-full overflow-y-auto">
 
                 <div className="flex justify-between items-start">
                     <div>
@@ -87,6 +88,7 @@ export default function CreateProvider() {
                     handleBlur={handleBlur}
                     setCategoriasAsociadas={setCategoriasAsociadas}
                     loading={loading}
+                    checkingUnique={checkingUnique}
                     isNatural={isNatural}
                     isJuridica={isJuridica}
                     handleSubmit={handleSubmit}

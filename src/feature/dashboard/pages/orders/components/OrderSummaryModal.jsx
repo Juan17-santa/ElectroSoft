@@ -54,9 +54,6 @@ export default function OrderSummaryModal({
             minimumFractionDigits: 0
         }).format(value || 0);
 
-    // Quita todo lo que no sea dígito y convierte a número.
-    // Así evitamos el problema de "01000" y de paso ya queda
-    // listo para formatear con separador de miles.
     const handleCreditChange = (e) => {
         const rawDigits = e.target.value.replace(/\D/g, "").slice(0, 11);
         const numericValue = rawDigits === "" ? 0 : parseInt(rawDigits, 10);

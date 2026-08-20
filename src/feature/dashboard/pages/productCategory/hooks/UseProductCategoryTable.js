@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ServiceProductCategory } from "../services/ServicesProductCategory";
 
 export default function useProductCategoryTable({
@@ -9,25 +9,35 @@ export default function useProductCategoryTable({
     recordsPerPage
 }) {
     const [categories, setCategories] = useState([]);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
+    const requestIdRef = useRef(0);
+    const searchTimerRef = useRef(null);
 
     // FUNCION ASÍNCRONA PARA CARGAR LAS CATEGORIAS DESDE EL BACKEND
     const loadCategories = async () => {
         setLoading(true);
         try {
-            const data = await ServiceProductCategory.get();
-            setCategories(data);
+            const requestId = ++requestIdRef.current;
+            const result = await ServiceProductCategory.getPage({ page: currentPage, limit: recordsPerPage, search: searchTerm });
+            if (requestId !== requestIdRef.current) return;
+            setCategories(result.data);
+            setTotalPages(result.totalPages);
         } catch (error) {
-            console.error(error);
-            showAlert("error", "No se pudieron cargar las categorías");
+            if (requestIdRef.current) showAlert("error", error.message || "No se pudieron cargar las categorías");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        loadCategories();
-    }, []);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(loadCategories, 300);
+        return () => {
+            clearTimeout(searchTimerRef.current);
+            requestIdRef.current += 1;
+        };
+    }, [searchTerm, currentPage, recordsPerPage]);
 
     // FUNCION PARA ELIMINAR UNA CATEGORIA DE PRODUCTO
     const deleteCategory = (id) => {
@@ -80,34 +90,8 @@ export default function useProductCategoryTable({
         });
     };
 
-    // FILTRAR LAS CATEGORIAS
-    const filteredCategories = categories.filter(cat => {
-        const query = searchTerm.toLowerCase();
-
-        let matchesStatus = false;
-        if (query === "activo") {
-            matchesStatus = cat.status === true;
-        } else if (query === "inactivo") {
-            matchesStatus = cat.status === false;
-        } else {
-            matchesStatus = (cat.status ? "activo" : "inactivo").includes(query);
-        }
-
-        return (
-            cat.name?.toLowerCase().includes(query) ||
-            cat.description?.toLowerCase().includes(query) ||
-            matchesStatus
-        );
-    });
-
-    // LOGICA DE PAGINACION
-    const totalPages = Math.ceil(filteredCategories.length / recordsPerPage);
-    const lastIndex = currentPage * recordsPerPage;
-    const firstIndex = lastIndex - recordsPerPage;
-    const currentRecords = filteredCategories.slice(firstIndex, lastIndex);
-
     return {
-        data: currentRecords,
+        data: categories,
         totalPages,
         deleteCategory,
         toggleEstado,

@@ -1,5 +1,5 @@
 import PrimaryButton from "../../../components/ui/PrimaryButton";
-import { IdCard, FileText, User, Mail, MapPin, Package, Phone, Building2, Info } from "lucide-react";
+import { IdCard, FileText, User, Mail, MapPin, Package, Phone, Building2 } from "lucide-react";
 import ValidationMessage from "../../../components/ui/ValidationMessage";
 import CustomSelect from "../../../components/ui/CustomSelect";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +16,7 @@ export default function ProviderForm({
     buttonText,
     setCategoriasAsociadas,
     loading,
+    checkingUnique = {},
     isNatural,
     isJuridica
 }) {
@@ -64,7 +65,6 @@ export default function ProviderForm({
                             `}
                         >
                             <div className="flex items-center gap-3">
-                                {/* Bolita tipo radio */}
                                 <span
                                     className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isNatural ? "border-yellow-400" : "border-gray-300"
                                         }`}
@@ -105,7 +105,6 @@ export default function ProviderForm({
                                 }`}
                         >
                             <div className="flex items-center gap-3">
-                                {/* Bolita tipo radio */}
                                 <span
                                     className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isJuridica ? "border-yellow-400" : "border-gray-300"
                                         }`}
@@ -191,7 +190,7 @@ export default function ProviderForm({
                         />
                         <ValidationMessage
                             error={errors.document}
-                            success={formData.document}
+                            success={formData.document && !checkingUnique.document}
                             successMessage="Documento válido" />
                     </div>
 
@@ -238,7 +237,7 @@ export default function ProviderForm({
                         />
                         <ValidationMessage
                             error={errors.providerEmail}
-                            success={formData.providerEmail}
+                            success={formData.providerEmail && !checkingUnique.providerEmail}
                             successMessage="Correo válido"
                         />
                     </div>
@@ -325,7 +324,6 @@ export default function ProviderForm({
                                 <Mail size={16} />
                                 <span>Correo electrónico del contacto *</span>
                             </div>
-
                             <input
                                 type="email"
                                 name="contactEmail"
@@ -335,10 +333,9 @@ export default function ProviderForm({
                                 placeholder="Ingrese el correo del contacto"
                                 className={getInputClasses("contactEmail")}
                             />
-
                             <ValidationMessage
                                 error={errors.contactEmail}
-                                success={formData.contactEmail}
+                                success={formData.contactEmail && !checkingUnique.contactEmail}
                                 successMessage="Correo válido"
                             />
                         </div>
@@ -351,7 +348,6 @@ export default function ProviderForm({
                                 <Phone size={16} />
                                 <span>Teléfono del contacto *</span>
                             </div>
-
                             <input
                                 type="text"
                                 name="contactPhone"
@@ -360,7 +356,6 @@ export default function ProviderForm({
                                 placeholder="Ingrese el teléfono del contacto"
                                 className={getInputClasses("contactPhone")}
                             />
-
                             <ValidationMessage
                                 error={errors.contactPhone}
                                 success={formData.contactPhone}

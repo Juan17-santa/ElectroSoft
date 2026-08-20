@@ -60,6 +60,20 @@ export const ClientsService = {
         }
     },
 
+    async checkEmailExists(email) {
+        const response = await api.get("/clients/check-email", {
+            params: { email }
+        });
+        return response.data.exists === true;
+    },
+
+    async checkDocumentExists(documento) {
+        const response = await api.get("/clients/check-document", {
+            params: { document: documento }
+        });
+        return response.data.exists === true;
+    },
+
     async create({ tipoDocumento, documento, nombres, apellidos, email, telefono }) {
         try {
             const payload = {

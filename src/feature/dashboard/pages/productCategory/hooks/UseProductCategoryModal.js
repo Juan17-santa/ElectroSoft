@@ -67,7 +67,6 @@ export default function useProductCategoryModal({
                     // VERIFICAR SI EL NOMBRE YA EXISTE (VALIDACIÓN EN TIEMPO REAL)
                     const nameLower = value.trim().toLowerCase();
                     const isDuplicate = existingCategories.some(category => {
-                        // Si estamos en modo edición, no contar la categoría actual como duplicado
                         if (mode === "update" && category.id === initialData?.id) {
                             return false;
                         }

@@ -1,22 +1,23 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { Info, X } from "lucide-react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Info } from "lucide-react";
 import { ServicesProducts } from "../services/ServicesProducts";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
-import PrimaryButton from "../../../components/ui/PrimaryButton";
 
-export default function ProductDetails() {
+export default function ProductDetails({ isOpen, onClose, product: productProp }) {
     const navigate = useNavigate();
     const location = useLocation();
     const { id } = useParams();
 
-    const [product, setProduct] = useState(location.state?.product || null);
+    const [product, setProduct] = useState(productProp || location.state?.product || null);
     const [categoryName, setCategoryName] = useState("");
+
+    const isModal = typeof isOpen === "boolean";
 
     useEffect(() => {
         const cargarDatos = async () => {
             try {
-                let p = product;
+                let p = productProp || product;
                 
                 // Si no tenemos el producto de location.state, obtenerlo de la API
                 if (!p && id) {
@@ -36,7 +37,13 @@ export default function ProductDetails() {
         };
         
         cargarDatos();
-    }, [id, product]);
+    }, [id, productProp]);
+
+    useEffect(() => {
+        if (productProp) setProduct(productProp);
+    }, [productProp]);
+
+    if (isModal && !isOpen) return null;
 
     if (!product) {
         return (
@@ -46,30 +53,43 @@ export default function ProductDetails() {
         );
     }
 
-    const handleBack = () => navigate("/dashboard/products");
+    const handleBack = () => {
+        if (isModal) {
+            onClose();
+            return;
+        }
+        navigate("/dashboard/products");
+    };
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
-
-            <div
-                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"
-                style={{
-                    backgroundImage: 'url("/background-details.jpg")',
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat"
-                }}
+        <div className={isModal
+            ? "fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4"
+            : "bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto"}
+        >
+            <div className={isModal
+                ? "w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-white p-6 rounded-2xl flex flex-col gap-6 shadow-2xl relative animate-scale-in"
+                : "relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden h-full"}
             >
-                <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
+                {!isModal && <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>}
 
                 <div className="relative z-10 flex flex-col gap-6">
 
-                    <div className="flex items-center gap-2">
-                        <Info size={22} />
-                        <h2 className="text-xl font-semibold">Ver información de producto</h2>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Info size={22} className="text-gray-800" />
+                            <h2 className="text-xl font-semibold text-gray-800">Ver información del producto</h2>
+                        </div>
+
+                        <button
+                            onClick={handleBack}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
+                        >
+                            <ArrowLeft size={16} />
+                            Volver
+                        </button>
                     </div>
 
-                    <div className="bg-gray-50 rounded-2xl p-4 md:p-6 shadow-md max-w-3xl w-full mx-auto">
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 max-w-3xl w-full mx-auto">
 
                         <div className="flex flex-col gap-6">
 
@@ -147,13 +167,6 @@ export default function ProductDetails() {
                     </div>
                 </div>
             </div>
-
-            <div className="flex justify-end">
-                <PrimaryButton type="button" onClick={handleBack}>
-                    <X size={18} className="inline-block mr-2" /> Volver
-                </PrimaryButton>
-            </div>
-
         </div>
     );
 }

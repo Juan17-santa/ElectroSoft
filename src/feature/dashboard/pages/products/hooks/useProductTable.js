@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ServicesProducts } from "../services/ServicesProducts";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 
@@ -11,7 +11,10 @@ export default function useProductTable({
 }) {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
+    const requestIdRef = useRef(0);
+    const searchTimerRef = useRef(null);
 
     const getCategoryName = (id) => {
         const category = categories.find(cat => cat.id === id);
@@ -21,11 +24,17 @@ export default function useProductTable({
     const loadProducts = async () => {
         setLoading(true);
         try {
-            const response = await ServicesProducts.get();
-            setProducts(response);
+            const requestId = ++requestIdRef.current;
+            const response = await ServicesProducts.getPage({
+                page: currentPage,
+                limit: recordsPerPage,
+                search: searchTerm,
+            });
+            if (requestId !== requestIdRef.current) return;
+            setProducts(response.data);
+            setTotalPages(response.totalPages);
         } catch (error) {
-            console.error(error);
-            showAlert("error", "No se pudieron cargar los productos");
+            if (requestIdRef.current) showAlert("error", error.message || "No se pudieron cargar los productos");
         } finally {
             setLoading(false);
         }
@@ -40,37 +49,23 @@ export default function useProductTable({
         }
     };
 
-    const loadData = async () => {
-        await loadProducts();
-        await loadCategories();
-    };
+    useEffect(() => {
+        loadCategories();
+    }, []);
 
     useEffect(() => {
-        loadData();
-    }, []);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(loadProducts, 300);
+        return () => {
+            clearTimeout(searchTimerRef.current);
+            requestIdRef.current += 1;
+        };
+    }, [searchTerm, currentPage, recordsPerPage]);
 
     const enrichedProducts = products.map(product => ({
         ...product,
         categoriaName: getCategoryName(product.categoriaId)
     }));
-
-    const filteredProducts = enrichedProducts.filter(prod => {
-        const q = searchTerm.toLowerCase();
-        const estado = prod.estado ? "activo" : "inactivo";
-
-        return (
-            prod.nombre?.toLowerCase().includes(q) ||
-            prod.categoriaName?.toLowerCase().includes(q) ||
-            prod.stock?.toString().includes(q) ||
-            prod.precio?.toString().includes(q) ||
-            estado.includes(q)
-        );
-    });
-
-    const totalPages = Math.max(1, Math.ceil(filteredProducts.length / recordsPerPage));
-    const lastIndex = currentPage * recordsPerPage;
-    const firstIndex = lastIndex - recordsPerPage;
-    const currentRecords = filteredProducts.slice(firstIndex, lastIndex);
 
     const deleteProduct = (id) => {
         setConfirmData({
@@ -78,11 +73,11 @@ export default function useProductTable({
             title: "Eliminar producto",
             message: "¿Seguro que deseas eliminar este producto? Esta acción no se puede deshacer.",
             onConfirm: async () => {
+                if (loading) return;
                 setLoading(true);
                 try {
                     await ServicesProducts.delete(id);
-                    const updated = await ServicesProducts.get();
-                    setProducts(updated);
+                    await loadProducts();
                     showAlert("success", "Producto eliminado con éxito");
                 } catch (error) {
                     console.error(error);
@@ -102,11 +97,11 @@ export default function useProductTable({
             title: "Cambiar estado del producto",
             message: "¿Seguro que deseas cambiar el estado de este producto?",
             onConfirm: async () => {
+                if (loading) return;
                 setLoading(true);
                 try {
                     await ServicesProducts.toggleEstado(id);
-                    const updated = await ServicesProducts.get();
-                    setProducts(updated);
+                    await loadProducts();
                     showAlert("success", "Estado del producto actualizado con éxito");
                 } catch (error) {
                     console.error(error);
@@ -121,9 +116,12 @@ export default function useProductTable({
     };
 
     return {
-        data: currentRecords,
-        filteredProducts,
+        data: products.map(product => ({
+            ...product,
+            categoriaName: getCategoryName(product.categoriaId)
+        })),
         totalPages,
+        categories,
         loading,
         deleteProduct,
         toggleEstado,

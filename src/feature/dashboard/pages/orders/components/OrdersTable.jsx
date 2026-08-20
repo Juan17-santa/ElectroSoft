@@ -21,7 +21,7 @@ export default function OrdersTable({
     };
 
     return (
-        <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white ">
+        <div className="p-0.5 rounded-2xl bg-yellow-200">
             <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
                 <table className="min-w-250 w-full text-sm table-fixed">
 
@@ -61,15 +61,13 @@ export default function OrdersTable({
                                 const consecutivo = (currentPage - 1) * recordsPerPage + index + 1;
                                 const idFormateado = String(consecutivo).padStart(2, "0");
 
-                                // 🛠️ CORRECCIÓN 1: Unificar nombre completo (Validando si viene plano o separado)
+                                // NOMBRE DEL CLIENTE (NOMBRES + APELLIDOS)
                                 const clientName = order.client
                                     ? `${order.client.firstName || order.client.name || ""} ${order.client.lastName || ""}`.trim()
                                     : "Sin nombre";
 
-                                // 🛠️ CORRECCIÓN 2: Obtener la abreviatura del tipo de documento correctamente
+                                // TIPO Y NÚMERO DE DOCUMENTO DEL CLIENTE
                                 const docType = order.client?.documentType?.abbreviation || "";
-
-                                // 🛠️ CORRECCIÓN 3: El número de documento vive dentro del objeto 'client'
                                 const docNumber = order.client?.documentNumber || order.documentNumber || "";
 
                                 return (
@@ -90,19 +88,19 @@ export default function OrdersTable({
                                             </div>
                                         </td>
 
-                                        {/* FECHA CREACION (orderDate) */}
+                                        {/* FECHA CREACION */}
                                         <td className="px-4 py-2">{formatDate(order.orderDate)}</td>
 
                                         {/* TOTAL */}
                                         <td className="px-4 py-2">${order.total?.toLocaleString() || "0"}</td>
 
-                                        {/* FECHA VENCIMIENTO (dueDate) */}
+                                        {/* FECHA VENCIMIENTO */}
                                         <td className="px-4 py-2">{formatDate(order.dueDate)}</td>
 
-                                        {/* FORMA PAGO (paymentMethod) */}
+                                        {/* FORMA PAGO */}
                                         <td className="px-4 py-2">{order.paymentMethod || "-"}</td>
 
-                                        {/* ESTADO (status) */}
+                                        {/* ESTADO */}
                                         <td className="px-4 py-2 text-center">
                                             <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${order.status === "Pendiente"
                                                 ? "bg-yellow-100 text-yellow-700"
@@ -171,7 +169,6 @@ export default function OrdersTable({
                                                         }}
                                                     />
                                                 )}
-
                                             </div>
                                         </td>
                                     </tr>

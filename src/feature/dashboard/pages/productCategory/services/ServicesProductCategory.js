@@ -1,6 +1,14 @@
-const API_URL = "http://localhost:4000/api/productCategory";
+import api from "../../../../../utils/api.js";
 
-// Función para mapear categoría del backend al formato del frontend
+const API_URL = "/productCategory";
+
+const getApiError = (error, fallback) => {
+    const apiError = new Error(error.response?.data?.error || error.response?.data?.message || error.message || fallback);
+    apiError.status = error.response?.status;
+    return apiError;
+};
+
+// FUNCION PARA MAPEAR CATEGORÍA DEL BACKEND AL FORMATO DEL FRONTEND
 const mapCategoryFromAPI = (apiCategory) => {
     if (!apiCategory) return null;
 
@@ -22,87 +30,63 @@ const mapCategoryFromAPI = (apiCategory) => {
 export const ServiceProductCategory = {
     async get() {
         try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error("Error al obtener las categorías");
-            const resJson = await response.json();
-            // Mapear todas las categorías al formato del frontend
-            return (resJson.data || []).map(mapCategoryFromAPI);
+            const firstPayload = (await api.get(API_URL, { params: { page: "1", limit: "100" } })).data;
+            const categories = [...(firstPayload.data || firstPayload.items || [])];
+            for (let page = 2; page <= (firstPayload.totalPages || 1); page += 1) {
+                const payload = (await api.get(API_URL, { params: { page: String(page), limit: "100" } })).data;
+                categories.push(...(payload.data || payload.items || []));
+            }
+            return categories.map(mapCategoryFromAPI);
         } catch (error) {
-            console.error("Error en get:", error);
-            throw error;
+            throw getApiError(error, "Error al obtener las categorías");
+        }
+    },
+
+    async getPage({ page = 1, limit = 15, search = "" } = {}) {
+        try {
+            const params = { page: String(page), limit: String(Math.min(limit, 100)) };
+            if (search.trim()) params.search = search.trim();
+            const payload = (await api.get(API_URL, { params })).data;
+            const data = (payload.data || payload.items || []).map(mapCategoryFromAPI);
+            return { data, page: payload.page ?? page, limit: payload.limit ?? limit, total: payload.total ?? data.length, totalPages: payload.totalPages ?? 1 };
+        } catch (error) {
+            throw getApiError(error, "Error al obtener las categorías");
         }
     },
 
     async create({ name, description }) {
         try {
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, description })
-            });
-
-            const resJson = await response.json();
-            if (!response.ok) {
-                // lANZA EL MENSAJE DEL BACKEND: "Esta categoría ya se encuentra registrada"
-                throw new Error(resJson.error || "Error al crear la categoría");
-            }
-            return mapCategoryFromAPI(resJson.data);
+            const payload = (await api.post(API_URL, { name, description })).data;
+            return mapCategoryFromAPI(payload.data);
         } catch (error) {
-            console.error("Error en create:", error);
-            throw error;
+            throw getApiError(error, "Error al crear la categoría");
         }
     },
 
     async update(id, { name, description, status }) {
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, description, status })
-            });
-
-            const resJson = await response.json();
-            if (!response.ok) {
-                throw new Error(resJson.error || "Error al actualizar la categoría");
-            }
-            return mapCategoryFromAPI(resJson.data);
+            const payload = (await api.put(`${API_URL}/${id}`, { name, description, status })).data;
+            return mapCategoryFromAPI(payload.data);
         } catch (error) {
-            console.error("Error en update:", error);
-            throw error;
+            throw getApiError(error, "Error al actualizar la categoría");
         }
     },
 
     async toggleEstado(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}/status`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" }
-            });
-
-            const resJson = await response.json();
-            if (!response.ok) {
-                throw new Error(resJson.error || "Error al cambiar el estado");
-            }
-            return mapCategoryFromAPI(resJson.data);
+            const payload = (await api.patch(`${API_URL}/${id}/status`)).data;
+            return mapCategoryFromAPI(payload.data);
         } catch (error) {
-            console.error("Error en toggleEstado:", error);
-            throw error;
+            throw getApiError(error, "Error al cambiar el estado");
         }
     },
 
     async delete(id) {
         try {
-            const response = await fetch(`${API_URL}/${id}`, {
-                method: "DELETE"
-            });
-            const resJson = await response.json();
-            if (!response.ok) {
-                throw new Error(resJson.error || "Error al eliminar la categoría");
-            }
-            return mapCategoryFromAPI(resJson.data);
+            const payload = (await api.delete(`${API_URL}/${id}`)).data;
+            return mapCategoryFromAPI(payload.data);
         } catch (error) {
-            console.error("Error en delete:", error);
-            throw error;
+            throw getApiError(error, "Error al eliminar la categoría");
         }
     }
 };

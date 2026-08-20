@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ServicesProviders } from "../services/ServicesProviders";
 
@@ -52,16 +52,28 @@ export function useProviderForm({
 
     // ESTADO PARA LOS ERRORES DE VALIDACIÓN
     const [errors, setErrors] = useState({});
+    const [checkingUnique, setCheckingUnique] = useState({});
 
     // ESTADO DE CARGA
     const [loading, setLoading] = useState(false);
+    const uniqueCheckTimerRef = useRef(null);
+    const uniqueCheckRequestRef = useRef(0);
 
     const isNatural = formData.providerType === "NATURAL";
     const isJuridica = formData.providerType === "JURIDICA";
     const isCreate = mode === "create";
     const isUpdate = mode === "update";
 
-    // Obtiene automáticamente el tipo de documento NIT
+    const uniqueFields = ["document", "providerEmail", "contactEmail"];
+
+    useEffect(() => {
+        return () => {
+            clearTimeout(uniqueCheckTimerRef.current);
+            uniqueCheckRequestRef.current += 1;
+        };
+    }, []);
+
+    // OBTENER EL TIPO DE DOCUMENTO NIT
     const nitDocumentType = documentTypes.find(
         doc => doc.abbreviation === "NIT"
     );
@@ -166,6 +178,37 @@ export function useProviderForm({
         return error;
     };
 
+    const checkUniqueField = async (name, value) => {
+        if (!uniqueFields.includes(name) || !value.trim()) return;
+
+        const formatError = validateField(name, value);
+        if (formatError) return;
+
+        const requestId = ++uniqueCheckRequestRef.current;
+        setCheckingUnique(prev => ({ ...prev, [name]: true }));
+
+        try {
+            const result = await ServicesProviders.checkUnique({
+                _id: formData._id,
+                [name]: value
+            });
+
+            if (requestId !== uniqueCheckRequestRef.current) return;
+
+            setErrors(prev => ({
+                ...prev,
+                [name]: result.exists ? result.message || "Este valor ya está registrado" : ""
+            }));
+        } catch (error) {
+            if (requestId !== uniqueCheckRequestRef.current) return;
+            console.error(error);
+        } finally {
+            if (requestId === uniqueCheckRequestRef.current) {
+                setCheckingUnique(prev => ({ ...prev, [name]: false }));
+            }
+        }
+    };
+
     // FUNCIÓN PARA MANEJAR CAMBIOS EN LOS INPUTS
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -217,13 +260,23 @@ export function useProviderForm({
 
         const error = validateField(name, newValue);
         setErrors(prev => ({ ...prev, [name]: error }));
+
+        if (uniqueFields.includes(name)) {
+            clearTimeout(uniqueCheckTimerRef.current);
+            uniqueCheckRequestRef.current += 1;
+
+            if (!error && newValue.trim()) {
+                checkUniqueField(name, newValue);
+            } else {
+                setCheckingUnique(prev => ({ ...prev, [name]: false }));
+            }
+        }
     };
 
     // FUNCIÓN PARA VALIDAR CAMPOS ÚNICOS AL SALIR DEL INPUT
     const handleBlur = async (e) => {
         const { name, value } = e.target;
 
-        // Solo validar estos campos
         if (
             name !== "document" &&
             name !== "providerEmail" &&
@@ -232,25 +285,13 @@ export function useProviderForm({
             return;
         }
 
-        // Si el campo ya tiene un error de formato, no consultar el backend
         const formatError = validateField(name, value);
         if (formatError || !value.trim()) {
             return;
         }
 
-        try {
-            const result = await ServicesProviders.checkUnique({
-    _id: formData._id,
-    [name]: value
-});
-
-            setErrors(prev => ({
-                ...prev,
-                [name]: result.exists ? result.message : ""
-            }));
-        } catch (error) {
-            console.error(error);
-        }
+        clearTimeout(uniqueCheckTimerRef.current);
+        await checkUniqueField(name, value);
     };
 
     // FUNCIÓN PARA VALIDAR TODO EL FORMULARIO
@@ -344,6 +385,7 @@ export function useProviderForm({
         loading,
         isNatural,
         isJuridica,
+        checkingUnique,
         isCreate,
         isUpdate
     };

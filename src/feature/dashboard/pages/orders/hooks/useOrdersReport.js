@@ -7,7 +7,6 @@ export function useOrdersReport(data, notify) {
     }).format(val ?? 0);
 
     const exportReport = async (fechaInicio, fechaFin) => {
-
         const pedidos = await ServicesOrders.getAllOrders();
 
         const filtrados = pedidos.filter(order => {
@@ -27,7 +26,6 @@ export function useOrdersReport(data, notify) {
         const excelData = [];
 
         filtrados.forEach((order, index) => {
-
             order.products.forEach((prod, i) => {
                 excelData.push([
                     i === 0 ? String(index + 1) : "",

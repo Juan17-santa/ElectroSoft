@@ -1,5 +1,5 @@
 import { ServicesProviders } from "../services/ServicesProviders";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function useProvidersTable({
     setConfirmData,
@@ -10,25 +10,35 @@ export default function useProvidersTable({
 }) {
 
     const [providers, setProviders] = useState([]);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
+    const requestIdRef = useRef(0);
+    const searchTimerRef = useRef(null);
 
     // FUNCION ASÍNCRONA PARA CARGAR LOS PROVEEDORES DESDE EL BACKEND
     const loadProviders = async () => {
         setLoading(true);
         try {
-            const data = await ServicesProviders.get();
-            setProviders(data);
+            const requestId = ++requestIdRef.current;
+            const result = await ServicesProviders.getPage({ page: currentPage, limit: recordsPerPage, search: searchTerm });
+            if (requestId !== requestIdRef.current) return;
+            setProviders(result.data);
+            setTotalPages(result.totalPages);
         } catch (error) {
-            console.error(error);
-            showAlert("error", "No se pudieron cargar los proveedores");
+            if (requestIdRef.current) showAlert("error", error.message || "No se pudieron cargar los proveedores");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        loadProviders();
-    }, [])
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(loadProviders, 300);
+        return () => {
+            clearTimeout(searchTimerRef.current);
+            requestIdRef.current += 1;
+        };
+    }, [searchTerm, currentPage, recordsPerPage]);
 
     // FUNCION PARA ELIMINAR UN PROVEEDOR
     const deleteProvider = (id) => {
@@ -85,54 +95,9 @@ export default function useProvidersTable({
         });
     };
 
-    // FILTRADO DEL BUSCADOR
-    const filteredProviders = providers.filter(pro => {
-        const query = searchTerm.trim().toLowerCase();
-        if (!query) return true;
-
-        // CONVERTIR TELEFONO Y DOCUMENTO A STRING PARA EVITAR ERRORES DE TIPO
-        const contactPhone = pro.contactPhone ? String(pro.contactPhone) : "";
-        const providerPhone = pro.providerPhone ? String(pro.providerPhone) : "";
-        const documentStr = pro.document ? String(pro.document).toLowerCase() : "";
-
-        // EXTRAER ABREVIATURA DEL TIPO DE DOCUMENTO 
-        const docTypeAbbreviation = pro.documentType?.abbreviation ? String(pro.documentType.abbreviation).toLowerCase() : "";
-
-        const providerType = pro.providerType?.toLowerCase() || "";
-        const providerEmail = pro.providerEmail?.toLowerCase() || "";
-
-        const matchesDocTypeAbbreviation = docTypeAbbreviation === query;
-
-        let matchesStatus = false;
-        if (query === "activo") {
-            matchesStatus = pro.status === true;
-        } else if (query === "inactivo") {
-            matchesStatus = pro.status === false;
-        } else {
-            matchesStatus = (pro.status ? "activo" : "inactivo").includes(query);
-        }
-
-        return (
-            pro.providerName?.toLowerCase().includes(query) ||
-            documentStr.includes(query) ||
-            matchesDocTypeAbbreviation ||
-            providerType.includes(query) ||
-            providerEmail.includes(query) ||
-            contactPhone.includes(query) ||
-            providerPhone.includes(query) ||
-            matchesStatus
-        );
-    });
-
-    // LOGICA DE PAGINACION
-    const totalPages = Math.ceil(filteredProviders.length / recordsPerPage);
-    const lastIndex = currentPage * recordsPerPage;
-    const firstIndex = lastIndex - recordsPerPage;
-    const currentRecords = filteredProviders.slice(firstIndex, lastIndex);
-
     // RETORNAMOS LAS FUNCIONES PARA USAR EN LA TABLA
     return {
-        data: currentRecords,
+        data: providers,
         totalPages,
         deleteProvider,
         toggleEstado,
