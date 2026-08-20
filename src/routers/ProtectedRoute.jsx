@@ -1,17 +1,20 @@
-// src/routers/ProtectedRoute.jsx
 import React from 'react';
 import { usePermissions } from '../hooks/usePermissions';
 import NotFound from '../feature/dashboard/components/ui/NotFound';
 
-export const ProtectedRoute = ({ scope, action, element }) => {
+export const ProtectedRoute = ({ scope, action, actions, element }) => {
     const { hasPermission, hasAccessToScope } = usePermissions();
 
-    // Si se pide una acción específica (Crear, Editar...), verificar esa acción
-    // Si no se pide acción (ruta principal del módulo), verificar que tenga
-    // AL MENOS UN permiso en ese módulo
-    const allowed = action
-        ? hasPermission(scope, action)
-        : hasAccessToScope(scope);
+    let allowed;
+
+    if (actions) {
+        // Múltiples permisos — tiene acceso si tiene AL MENOS UNO
+        allowed = actions.some(({ scope: s, action: a }) => hasPermission(s, a));
+    } else if (action) {
+        allowed = hasPermission(scope, action);
+    } else {
+        allowed = hasAccessToScope(scope);
+    }
 
     if (!allowed) {
         return <NotFound />;

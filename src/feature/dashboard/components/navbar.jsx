@@ -69,7 +69,7 @@ export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
 
             )}
 
-            <header className="bg-white border-b-2 border-yellow-300 shadow-[0_2px_6px_rgba(234,179,8,0.15)]">
+            <header className="bg-gray-100 border-b-2 border-yellow-300 shadow-[0_2px_6px_rgba(234,179,8,0.15)]">
                 <div className="flex items-center justify-between px-3 py-2 md:py-1">
 
                     <div className="flex items-center gap-4">

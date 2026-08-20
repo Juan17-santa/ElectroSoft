@@ -29,7 +29,7 @@ export default function CreateRoles() {
 
     return (
         <>
-            <div className="bg-gray-100 p-8 rounded-2xl min-h-full h-full font-sans shadow-inner flex flex-col gap-4 overflow-y-auto">
+            <div className="bg-white p-8 rounded-2xl min-h-full h-full font-sans flex flex-col gap-4 overflow-y-auto">
                 <div className="flex justify-between mb-0">
                     <h1 className="text-2xl font-bold text-gray-800">Nuevo rol</h1>
                     <button

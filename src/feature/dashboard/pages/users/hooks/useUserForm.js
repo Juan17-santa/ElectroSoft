@@ -35,7 +35,7 @@ export function useUserForm({ userToEdit, navigate }) {
                 estado: userToEdit.estado ?? true,
             });
         }
-    }, [userToEdit]);
+    }, [userToEdit?.id]);
 
     // VALIDACIÓN EN TIEMPO REAL CON DEBOUNCE
     const checkEmailExists = async (email, excludeId) => {

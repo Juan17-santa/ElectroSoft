@@ -34,7 +34,7 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
                 if (found) {
                     setFormData(prev => ({
                         ...prev,
-                        documento: found.numeroDocumento || documentoPreseleccionado || "",
+                        documento: documentoPreseleccionado || found.numeroDocumento || "",
                         clienteNombre: found.cliente,
                         ventaId: found.id,
                         numeroVenta: found.numeroVenta || `V-${found.id}`,
@@ -67,9 +67,10 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
             return;
         }
 
-        const encontradas = allSales.filter(
-            s => s.numeroDocumento === formData.documento.trim()
-        );
+        const encontradas = allSales.filter(s => {
+            const docS = String(s.numeroDocumento || "").split(" ").pop().trim();
+            return docS === formData.documento.trim();
+        });
 
         setVentasDelDocumento(encontradas);
 
@@ -127,16 +128,16 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
                 if (!raw || raw <= 0) return "Ingresa un monto válido";
                 const exactTotal = Math.round(formData.montoPorPagar);
                 const maxTotal = currentMetodo?.toUpperCase() === "EFECTIVO" ? Math.ceil(exactTotal / 50) * 50 : exactTotal;
-                
+
                 const minAbono = Math.min(10000, exactTotal);
                 if (raw < minAbono) return `El abono mínimo es de $${fmt(minAbono)}`;
-                
+
                 if (currentMetodo?.toUpperCase() === "EFECTIVO" && raw % 50 !== 0) {
                     return "En efectivo, el abono debe ser múltiplo de $50";
                 }
-                
+
                 if (raw > maxTotal) return `El monto no puede superar $${fmt(maxTotal)}`;
-                
+
                 return "";
             }
             default:
@@ -146,22 +147,22 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        
+
         if (name === "metodoPago") {
             const exactTotal = Math.round(formData.montoPorPagar);
             const newMax = value?.toUpperCase() === "EFECTIVO" ? Math.ceil(exactTotal / 50) * 50 : exactTotal;
             const rawMonto = parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0;
-            
+
             let newMonto = formData.monto;
             if (rawMonto > newMax) {
                 newMonto = fmt(newMax);
             }
-            
+
             setFormData(prev => ({ ...prev, [name]: value, monto: newMonto }));
-            setErrors(prev => ({ 
-                ...prev, 
+            setErrors(prev => ({
+                ...prev,
                 [name]: validateField(name, value),
-                monto: validateField("monto", newMonto, value) 
+                monto: validateField("monto", newMonto, value)
             }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));

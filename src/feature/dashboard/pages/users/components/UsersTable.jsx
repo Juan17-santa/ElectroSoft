@@ -15,7 +15,7 @@ export default function UsersTable({
     const currentUser = authStorage.getUser();
 
     return (
-        <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
+        <div className="p-0.5 rounded-2xl bg-yellow-200">
             <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
 
                 <table className="min-w-230 w-full text-sm table-fixed">

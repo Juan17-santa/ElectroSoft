@@ -47,11 +47,16 @@ export default function CreateUser({ isOpen, onClose, onSuccess }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
-        const success = await createUser();
-        if (success) {
-            onSuccess();
-            resetForm();
-            onClose();
+
+        try {
+            const success = await createUser();
+            if (success) {
+                resetForm();
+                onClose();
+                onSuccess();
+            }
+        } catch (error) {
+            console.error(error);
         }
     };
 

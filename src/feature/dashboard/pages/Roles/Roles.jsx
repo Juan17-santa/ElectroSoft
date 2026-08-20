@@ -106,7 +106,7 @@ export default function Roles() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-white p-6 flex flex-col gap-6 w-full h-full">
                 <p className="text-xl font-semibold">Control de roles</p>
 
                 <Searchbar
@@ -118,7 +118,7 @@ export default function Roles() {
                     showCreateButton={hasPermission("Roles", "Crear")}
                 />
 
-                <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
+                <div className="p-0.5 rounded-2xl bg-yellow-200">
                     <div className="bg-white rounded-2xl border-none overflow-y-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">

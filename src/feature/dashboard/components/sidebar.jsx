@@ -343,7 +343,7 @@ export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
                 />
             )}
 
-            <aside className={`fixed md:relative top-0 left-0 h-screen md:h-full flex flex-col z-40 overflow-hidden bg-white border-r-2 border-yellow-300 shadow-[2px_0_6px_rgba(234,179,8,0.15)] transform transition-[width,transform] duration-300 ease-in-out
+            <aside className={`fixed md:relative top-0 left-0 h-screen md:h-full flex flex-col z-40 overflow-hidden bg-gray-100 border-r-2 border-yellow-300 shadow-[2px_0_6px_rgba(234,179,8,0.15)] transform transition-[width,transform] duration-300 ease-in-out
             ${isOpen ? "translate-x-0" : "-translate-x-full"}
             md:translate-x-0
             w-64 ${isCollapsed ? "md:w-20" : "md:w-64"}`}>
@@ -592,7 +592,7 @@ export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
                         <div
                             onMouseDown={handleThumbMouseDown}
                             style={{ top: thumbTop, height: thumbHeight }}
-                            className={`absolute right-[1px] w-1 rounded-full bg-gray-400 transition-opacity duration-300 cursor-grab ${thumbActive ? "opacity-100" : "opacity-60"} ${isDragging ? "cursor-grabbing" : ""}`}
+                            className={`absolute right-px w-1 rounded-full bg-gray-400 transition-opacity duration-300 cursor-grab ${thumbActive ? "opacity-100" : "opacity-60"} ${isDragging ? "cursor-grabbing" : ""}`}
                         />
                     )}
                 </div>
