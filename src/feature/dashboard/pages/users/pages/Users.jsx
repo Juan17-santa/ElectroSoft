@@ -98,7 +98,7 @@ export default function Users() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="bg-white p-6 flex flex-col gap-6 w-full h-full">
                 <p className="text-xl font-semibold">Control de usuarios</p>
 
                 <SearchBar
