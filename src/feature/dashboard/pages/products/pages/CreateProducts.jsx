@@ -284,7 +284,7 @@ export default function CreateProducts() {
     const displayedCaracteristicas = caracteristicas.slice(startIndex, endIndex);
 
     return (
-        <div className="w-full h-full bg-gray-100 p-4 md:p-6 rounded-2xl flex flex-col gap-6 shadow-inner box-border overflow-y-auto">
+        <div className="w-full h-full bg-white p-4 md:p-6 flex flex-col gap-6 box-border overflow-y-auto">
 
             <div className="flex justify-between items-start">
                 <p className="text-xl font-semibold">

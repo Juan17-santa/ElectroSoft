@@ -91,11 +91,8 @@ export default function Orders() {
             setTimeout(() => {
                 navigate("/dashboard/sales-management");
             }, 1500);
-
         } catch (error) {
-
             showToast("error", error.message);
-
         }
     };
 
@@ -105,12 +102,11 @@ export default function Orders() {
 
         try {
             await cancelOrder(orderToCancel._id, motivo);
-
             setOrderToCancel(null);
-
             showToast("success", "Pedido anulado con éxito.");
         } catch (error) {
             setOrderToCancel(null);
+            showToast("error", error.message || "No se pudo anular el pedido.");
         }
     };
 
@@ -118,14 +114,17 @@ export default function Orders() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="p-6 flex flex-col gap-6 w-full h-full">
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Control de pedidos</p>
 
                 {/* BARRA DE BÚSQUEDA Y ACCIONES PRINCIPALES */}
                 <SearchBar
                     searchTerm={search}
-                    onSearchChange={(e) => setSearch(e.target.value)}
+                    onSearchChange={(e) => {
+                        setSearch(e.target.value);
+                        setPresentPage(1);
+                    }}
                     placeholder="Buscar pedidos..."
                     onCreateClick={() => navigate("/dashboard/orders/create")}
                     createButtonText="Nuevo pedido"

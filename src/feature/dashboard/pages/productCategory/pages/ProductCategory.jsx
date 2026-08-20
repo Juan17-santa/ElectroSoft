@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import Pagination from "../../../components/ui/Pagination";
 import SearchBar from "../../../components/ui/Searchbar";
@@ -13,9 +12,6 @@ import { useToast } from "../../../../../context/ToastContext";
 export default function ProductCategory() {
     const { hasPermission } = usePermissions();
     const { showToast } = useToast();
-
-    // ESTADO PARA NAVEGAR
-    const navigate = useNavigate();
 
     // ESTADO PARA EL TEXTO DEL BUSCADOR
     const [searchTerm, setSearchTerm] = useState("");
@@ -61,14 +57,17 @@ export default function ProductCategory() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner">
+            <div className="p-6 flex flex-col gap-6 w-full h-full">
                 {/* TITULO */}
                 <p className="text-xl font-semibold">Control de categorias de productos</p>
 
                 {/* BUSCADOR Y BOTON CREAR */}
                 <SearchBar
                     searchTerm={searchTerm}
-                    onSearchChange={(e) => setSearchTerm(e.target.value)}
+                    onSearchChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setPresentPage(1);
+                    }}
                     placeholder="Buscar categorias de productos..."
                     onCreateClick={handleOpenCreate}
                     createButtonText="Nueva categoria"

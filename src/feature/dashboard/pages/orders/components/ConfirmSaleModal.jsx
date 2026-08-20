@@ -32,7 +32,6 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                         const freshClient = await ClientsService.getById(clientId);
                         setLatestClientCupo(freshClient?.cupoTotal || 0);
 
-                        // Also fetch latest cupoDisponible from payments service
                         try {
                             const resumen = await paymentsService.getResumenCliente(freshClient.documento || freshClient.documentNumber || freshClient?.documento);
                             setLatestClientCupoDisponible(resumen?.cupoDisponible ?? (freshClient?.cupoTotal || 0));
@@ -72,13 +71,11 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
         }
     }, [isOpen, activeOrder]);
 
-    // VALIDACIÓN DE APERTURA Y EXISTENCIA DE DATOS
     if (!isOpen || !activeOrder) return null;
 
     // DETERMINACIÓN DEL ESTADO SEGÚN LA FORMA DE PAGO
     const estadoFinal = activeOrder.paymentMethod === "Contado" ? "Finalizado" : "Vigente";
 
-    const clienteCupoTotal = latestClientCupo || activeOrder.client?.cupoTotal || 0;
     const clienteCupoDisponible = latestClientCupoDisponible || activeOrder.client?.cupoDisponible || activeOrder.client?.cupoTotal || 0;
 
     const cashAmount = Math.max(
@@ -105,15 +102,14 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
 
     return (
         <>
-            {
-                modalAlert && (
-                    <Alert
-                        type={modalAlert.type}
-                        message={modalAlert.message}
-                        onClose={() => setModalAlert(null)}
-                    />
-                )
-            }
+            {modalAlert && (
+                <Alert
+                    type={modalAlert.type}
+                    message={modalAlert.message}
+                    onClose={() => setModalAlert(null)}
+                />
+            )}
+
             {/* OVERLAY */}
             <div
                 className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
@@ -157,7 +153,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                         {/* ESTRUCTURA DE FILAS */}
                         <div className="flex flex-col gap-5">
 
-                            {/* FILA 1: DATOS GENERALES (Siempre 3 columnas iguales) */}
+                            {/* FILA 1: DATOS GENERALES */}
                             <div className="grid grid-cols-3 gap-5">
                                 {/* CLIENTE */}
                                 <div className="flex flex-col gap-2">
@@ -207,7 +203,6 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                             )}
 
                             {activeOrder.paymentMethod === "Credito" && (
-                                /* 50% y 50% (equivalente a 1.5 columnas cada uno) */
                                 <div className="grid grid-cols-2 gap-5 w-full">
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
@@ -240,7 +235,6 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                             )}
 
                             {activeOrder.paymentMethod === "Mixto" && (
-                                /* 3 columnas iguales (1 cada uno) */
                                 <div className="grid grid-cols-3 gap-5 w-full">
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center gap-2 text-yellow-400 text-sm font-medium">
@@ -282,7 +276,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                                 </div>
                             )}
 
-                            {/* FILA 3 (EXCLUSIVA PAGO MIXTO): Crédito a utilizar y Monto en efectivo al 50% cada uno */}
+                            {/* FILA 3 (EXCLUSIVA PAGO MIXTO) */}
                             {activeOrder.paymentMethod === "Mixto" && (
                                 <div className="grid grid-cols-2 gap-5 w-full items-end">
                                     <div className="flex flex-col gap-2">

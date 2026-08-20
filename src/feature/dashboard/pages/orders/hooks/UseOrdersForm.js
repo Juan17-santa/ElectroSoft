@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ServicesOrders } from "../services/ServicesOrders";
 import { ClientsService } from "../../Clients/services/ClientsService";
 import paymentsService from "../../payments/services/paymentsService";
@@ -47,6 +47,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     // ESTADO PARA RASTREAR SI SE ESTÁ BUSCANDO UN CLIENTE
     const [isSearchingClient, setIsSearchingClient] = useState(false);
+    const clientSearchRequestRef = useRef(0);
 
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -81,9 +82,12 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
         }
     }, [formData.productos, totalPages]);
 
-    // BUSCAR CLIENTE POR MEDIO DEL DOCUMENTO EN TIEMPO REAL
     useEffect(() => {
-        if (!formData.documento) {
+        const query = formData.documento.trim();
+        const normalizedQuery = query.toLowerCase();
+        const requestId = ++clientSearchRequestRef.current;
+
+        if (!query) {
             setFormData(prev => ({
                 ...prev,
                 clienteId: null,
@@ -99,19 +103,19 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
         }
 
         const found = clients.find(c =>
-            c.documento === formData.documento ||
-            `${c.nombres} ${c.apellidos}`.toLowerCase() === formData.documento.toLowerCase()
+            String(c.documento) === query ||
+            `${c.nombres} ${c.apellidos}`.toLowerCase() === normalizedQuery
         );
         if (found && found.estado) {
-            // When selecting from cached clients, attempt to fetch cupoDisponible
             (async () => {
                 setIsSearchingClient(true);
                 let resumen = null;
                 try {
                     resumen = await paymentsService.getResumenCliente(found.documento);
                 } catch (e) {
-                    // ignore and fallback
                 }
+
+                if (requestId !== clientSearchRequestRef.current) return;
 
                 setFormData(prev => ({
                     ...prev,
@@ -125,19 +129,17 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                 setErrors(prev => ({ ...prev, documento: "" }));
                 setIsSearchingClient(false);
             })();
-        } else if (formData.documento.length >= 8) {
-            // Establecer isSearchingClient en true cuando comienza la búsqueda
+        } else if (/^\d+$/.test(query) && query.length >= 8) {
             setIsSearchingClient(true);
             const timer = setTimeout(async () => {
                 try {
-                    const clienteEncontrado = await ClientsService.getByDocument(formData.documento);
+                    const clienteEncontrado = await ClientsService.getByDocument(query);
+                    if (requestId !== clientSearchRequestRef.current) return;
                     if (clienteEncontrado?.estado) {
-                        // Also fetch latest cupo disponible from payments service (considers abonos/pagos)
                         let resumen = null;
                         try {
                             resumen = await paymentsService.getResumenCliente(clienteEncontrado.documento);
                         } catch (e) {
-                            // fallback to assigned cupo if resumen fails
                         }
 
                         setFormData(prev => ({
@@ -161,10 +163,10 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                             clienteCupoTotal: 0,
                             clienteCupoDisponible: 0,
                         }));
-                        // Solo mostrar error si realmente no se encontró después de buscar
                         setErrors(prev => ({ ...prev, documento: "Cliente no encontrado. Verifique el documento o créelo desde el módulo de Clientes." }));
                     }
                 } catch (error) {
+                    if (requestId !== clientSearchRequestRef.current) return;
                     setFormData(prev => ({
                         ...prev,
                         clienteId: null,
@@ -178,7 +180,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                     setErrors(prev => ({ ...prev, documento: "Error buscando el cliente. Intente de nuevo." }));
                 }
                 setIsSearchingClient(false);
-            }, 500);
+            }, 250);
             return () => clearTimeout(timer);
         } else {
             setIsSearchingClient(false);
@@ -217,27 +219,24 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     // FUNCIÓN DE VALIDACIÓN PARA CAMPOS INDIVIDUALES
     const validateField = (name, value) => {
-
         let error = "";
 
         switch (name) {
-
             case "documento":
                 if (!value || !value.trim()) {
                     error = "El documento o cliente es obligatorio";
                 } else if (!formData.clienteId && !isSearchingClient && value.length >= 8) {
-                    // Solo mostrar error si NO se está buscando y el documento tiene 8+ caracteres
                     error = "Seleccione un cliente de la lista o verifique la cédula";
                 }
                 break;
 
             case "formaPago":
-                    if (!value) {
+                if (!value) {
                     error = "La forma de pago es obligatoria";
                 } else if (value === "Credito" || value === "Mixto") {
                     if (!formData.clienteCupoActivo) {
                         error = "Este cliente no tiene cupo de crédito asignado. Asígnale uno desde el módulo de Clientes para poder fiarle.";
-                        } else if (formData.clienteCupoDisponible <= 0) {
+                    } else if (formData.clienteCupoDisponible <= 0) {
                         error = "El cliente no tiene cupo disponible.";
                     } else if (formData.total > 0 && formData.total < 10000) {
                         error = "El total es inferior a $10.000. No se permiten pedidos a crédito por montos tan bajos; cóbralo de Contado.";
@@ -254,7 +253,6 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             default:
                 break;
         }
-
         return error;
     };
 
@@ -420,7 +418,6 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     // VALIDAR TODO EL FORMULARIO
     const validateForm = () => {
-
         let newErrors = {};
 
         // RECORRER TODOS LOS CAMPOS Y EJECUTAR LA VALIDACIÓN INDIVIDUAL
@@ -433,7 +430,6 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
         if (!formData.productos.length) {
             newErrors.productos = "Debe agregar al menos un producto";
         }
-
 
         setErrors(newErrors);
 
@@ -461,7 +457,6 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     // PROCESAMIENTO DEL ENVÍO DEL FORMULARIO
     const handleSubmit = async (e) => {
-
         if (e && typeof e.preventDefault === "function") {
             e.preventDefault();
         }
@@ -513,7 +508,6 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             onSuccess(nuevoPedido);
         } catch (error) {
             console.error(error);
-            // Close the summary modal and show the backend error in the page-level Alert
             try {
                 setShowSummaryModal(false);
             } catch (e) { }

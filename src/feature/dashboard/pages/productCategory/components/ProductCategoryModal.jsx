@@ -27,30 +27,29 @@ export default function ProductCategoryModal({
     });
 
     return (
-        <>
-            <div
-                className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
-                onClick={onClose}
-            />
-
-            <div className="fixed inset-0 flex items-center justify-center z-50 px-4">
-                <div
-                    className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 border border-gray-200"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="flex justify-between items-start mb-4">
-                        <div>
-                            <p className="text-lg font-semibold">
-                                {isEdit ? "Editar" : "Nueva"} categoría
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                {isEdit ? "Modifique los campos de la categoría" : "Complete los campos para la nueva categoría"}
-                            </p>
-                        </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4 sm:p-6">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full max-w-3xl max-h-[90vh] shadow-xl overflow-y-auto relative animate-scale-in border border-gray-200">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="text-lg sm:text-xl font-semibold mb-1">
+                            {isEdit ? "Editar categoría" : "Nueva categoría"}
+                        </p>
+                        <p className="text-xs sm:text-sm text-gray-600">
+                            {isEdit ? "Modifique los campos de la categoría" : "Complete todos los campos del formulario"}
+                        </p>
                     </div>
 
-                    {/* FORMULARIO */}
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* FORMULARIO */}
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
                         {/* NOMBRE DE CATEGORÍA */}
                         <div className="flex flex-col gap-2">
@@ -63,7 +62,7 @@ export default function ProductCategoryModal({
                                 value={formData.name}
                                 onChange={handleChange}
                                 placeholder="Ingrese el nombre de la categoria"
-                                className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 
+                                className={`w-full bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 
                                 ${errors.name ? "focus:ring-red-500" : "focus:ring-yellow-400"}`}
                             />
                             <ValidationMessage
@@ -85,7 +84,7 @@ export default function ProductCategoryModal({
                                 onChange={handleChange}
                                 placeholder="Breve descripción de los productos en esta categoría"
                                 rows="3"
-                                className={"bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"}
+                                className="w-full bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
                             />
                         </div>
 
@@ -95,7 +94,7 @@ export default function ProductCategoryModal({
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-5 py-2  text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer"
+                                className="px-5 py-2.5 text-sm rounded-lg shadow-md font-medium flex items-center gap-2 cursor-pointer hover:shadow-lg"
                             >
                                 <X size={16} />
                                 Cancelar
@@ -109,9 +108,8 @@ export default function ProductCategoryModal({
                                 {isEdit ? "Guardar cambios" : "Crear categoría"}
                             </PrimaryButton>
                         </div>
-                    </form>
-                </div>
+                </form>
             </div>
-        </>
+        </div>
     );
 }

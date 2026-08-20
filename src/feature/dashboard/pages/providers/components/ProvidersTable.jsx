@@ -13,12 +13,9 @@ export default function ProvidersTable({
     recordsPerPage = 6
 }) {
     return (
-
-        <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
-            <div className="bg-gray-100 rounded-2xl border-none overflow-hidden">
-
+        <div className="p-0.5 rounded-2xl bg-yellow-200">
+            <div className="rounded-2xl border-none overflow-hidden">
                 <table className="w-full text-sm">
-
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
                             <th className="px-3 py-2 font-semibold w-12">#</th>
@@ -88,7 +85,6 @@ export default function ProvidersTable({
                                         {/* ACCIONES */}
                                         <td className="px-1 py-1">
                                             <div className="flex justify-center gap-2">
-
                                                 {/* BOTON DE VER DETALLE */}
                                                 <Restricted scope="Proveedores" action="Ver">
                                                     <button

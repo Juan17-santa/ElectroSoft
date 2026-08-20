@@ -21,7 +21,7 @@ Dependencias:
 - Validations → Para reglas de validación reutilizables
 */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ServicesProducts } from "../services/ServicesProducts";
 
@@ -49,28 +49,11 @@ export default function useProductForm({
         //ESTADO DE CARGA
     const [loading, setLoading] = useState(false);
     
-    // ESTADO PARA ALMACENAR PRODUCTOS EXISTENTES (para validar serial)
-    const [existingProducts, setExistingProducts] = useState([]);
-    
     // ESTADO PARA INDICAR SI SE ESTÁ VALIDANDO EL SERIAL
     const [validatingSerial, setValidatingSerial] = useState(false);
     
     // REF PARA CONTROLAR LOS TIMEOUTS DE VALIDACIÓN ASINCRÓNICA
     const validationTimeoutRef = useRef(null);
-
-    // CARGAR PRODUCTOS AL MONTAR PARA VALIDAR SERIALES
-    useEffect(() => {
-        const loadProducts = async () => {
-            try {
-                const products = await ServicesProducts.get();
-                setExistingProducts(products || []);
-            } catch (error) {
-                console.error("Error al cargar productos para validación:", error);
-            }
-        };
-        
-        loadProducts();
-    }, []);
 
     const normalizeNumericString = (name, value) => {
         const raw = String(value ?? "").trim().replace(/\s+/g, "");
@@ -231,24 +214,19 @@ export default function useProductForm({
             setValidatingSerial(true);
 
             // Esperar a que el usuario deje de escribir antes de validar
-            validationTimeoutRef.current = setTimeout(() => {
-                const serialAlreadyExists = existingProducts.some(prod => 
-                    prod.serial?.toLowerCase() === value.toLowerCase()
-                );
-
-                if (serialAlreadyExists) {
+            validationTimeoutRef.current = setTimeout(async () => {
+                try {
+                    const serialAlreadyExists = await ServicesProducts.checkSerialExists(value);
                     setErrors(prev => ({
                         ...prev,
-                        serial: "Este serial ya existe en otro producto"
+                        serial: serialAlreadyExists ? "Este serial ya existe en otro producto" : ""
                     }));
-                } else {
-                    setErrors(prev => ({
-                        ...prev,
-                        serial: ""
-                    }));
+                } catch (validationError) {
+                    setErrors(prev => ({ ...prev, serial: validationError.message }));
+                } finally {
+                    setValidatingSerial(false);
                 }
-                setValidatingSerial(false);
-            }, 500); // Esperar 500ms después de que deje de escribir
+            }, 500);
         }
     };
 
@@ -299,6 +277,7 @@ export default function useProductForm({
         handleChange,
         handleSubmit,
         setFormData,
-        loading
+        loading,
+        validatingSerial
     };
 }

@@ -1,22 +1,24 @@
 import { Info, ArrowLeft } from "lucide-react";
 
+function InfoCard({ title, value }) {
+    return (
+        <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
+            <p className="text-xs text-gray-400">{title}</p>
+            <p className="text-sm font-semibold text-gray-800 break-all">
+                {value || "No registrado"}
+            </p>
+        </div>
+    );
+}
+
 export default function ClientDetailsPage({ isOpen, onClose, client }) {
     if (!isOpen || !client) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4">
             <div
-                className="w-full max-w-5xl max-h-[90vh] overflow-y-auto p-6 rounded-2xl flex flex-col gap-6 shadow-2xl relative animate-scale-in"
-                style={{
-                    backgroundImage: 'url("/background-details.jpg")',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat'
-                }}
+                className="w-full max-w-5xl max-h-[90vh] overflow-y-auto bg-white p-6 rounded-2xl flex flex-col gap-6 shadow-2xl relative animate-scale-in"
             >
-                {/* Capa de transparencia */}
-                <div className="absolute inset-0 bg-white/20 pointer-events-none rounded-2xl"></div>
-
                 <div className="relative z-10 flex flex-col gap-6">
                     {/* TÍTULO */}
                     <div className="flex items-center justify-between">
@@ -33,16 +35,22 @@ export default function ClientDetailsPage({ isOpen, onClose, client }) {
                         </button>
                     </div>
 
-                    <div className="bg-white/70 backdrop-blur-md rounded-2xl p-6 shadow-lg border border-white/40">
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
 
                         {/* HEADER */}
                         <div className="border-b border-gray-200 pb-5 mb-6">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-16 h-16 rounded-full bg-amber-100 ring-2 ring-amber-300 flex items-center justify-center text-amber-500 font-bold text-2xl shadow-md">
+                                        {(client.nombres || "C").charAt(0).toUpperCase()}
+                                    </div>
+
+                                    <div>
                                     <h3 className="text-2xl font-bold text-gray-800 break-all">
                                         {client.nombres} {client.apellidos}
                                     </h3>
                                     <p className="text-gray-500 mt-1 text-sm">{client.email}</p>
+                                    </div>
                                 </div>
 
                                 <span
@@ -63,33 +71,19 @@ export default function ClientDetailsPage({ isOpen, onClose, client }) {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
 
-                            <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-                                <p className="text-xs text-gray-400">Tipo documento</p>
-                                <p className="text-sm font-semibold text-gray-800">
-                                    {client.tipoDocumento} ({client.abreviacion})
-                                </p>
-                            </div>
+                            <InfoCard
+                                title="Tipo documento"
+                                value={`${client.tipoDocumento || "No registrado"}${client.abreviacion ? ` (${client.abreviacion})` : ""}`}
+                            />
 
-                            <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-                                <p className="text-xs text-gray-400">Número</p>
-                                <p className="text-sm font-semibold text-gray-800">
-                                    {client.documento}
-                                </p>
-                            </div>
+                            <InfoCard title="Número" value={client.documento} />
 
-                            <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-                                <p className="text-xs text-gray-400">Teléfono</p>
-                                <p className="text-sm font-semibold text-gray-800">
-                                    {client.telefono}
-                                </p>
-                            </div>
+                            <InfoCard title="Teléfono" value={client.telefono} />
 
-                            <div className="flex flex-col gap-1 bg-white rounded-xl p-3 shadow-sm border border-gray-100">
-                                <p className="text-xs text-gray-400">Fecha creación</p>
-                                <p className="text-sm font-semibold text-gray-800">
-                                    {client.fechaCreacion || new Date().toISOString().split("T")[0]}
-                                </p>
-                            </div>
+                            <InfoCard
+                                title="Fecha creación"
+                                value={client.fechaCreacion || "No registrado"}
+                            />
                         </div>
 
                         {/* INFO FINANCIERA */}
@@ -99,19 +93,15 @@ export default function ClientDetailsPage({ isOpen, onClose, client }) {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
 
-                            <div className="flex flex-col gap-1 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                                <p className="text-xs text-gray-400 mb-1">Total Compras</p>
-                                <p className="text-lg font-bold text-gray-800">
-                                    ${client.totalCompras?.toLocaleString("es-CO") || "0"}
-                                </p>
-                            </div>
+                            <InfoCard
+                                title="Total Compras"
+                                value={`$${client.totalCompras?.toLocaleString("es-CO") || "0"}`}
+                            />
 
-                            <div className="flex flex-col gap-1 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-                                <p className="text-xs text-gray-400 mb-1">Cupo Asignado</p>
-                                <p className="text-lg font-bold text-gray-800">
-                                    ${client.cupoTotal?.toLocaleString("es-CO") || "0"}
-                                </p>
-                            </div>
+                            <InfoCard
+                                title="Cupo Asignado"
+                                value={`$${client.cupoTotal?.toLocaleString("es-CO") || "0"}`}
+                            />
 
                         </div>
                     </div>

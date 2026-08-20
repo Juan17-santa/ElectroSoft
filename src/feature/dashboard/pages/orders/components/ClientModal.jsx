@@ -8,7 +8,6 @@ import { useToast } from "../../../../../context/ToastContext";
 
 // COMPONENTE PRINCIPAL DE LA MODAL DE CREAR CLIENTE
 export default function ClientModal({ onClose, onSave }) {
-
     const { showToast } = useToast();
 
     // CONFIGURACIÓN DEL HOOK PERSONALIZADO PARA EL FORMULARIO
@@ -21,10 +20,8 @@ export default function ClientModal({ onClose, onSave }) {
         formError,
         setFormError
     } = useClientModal((clienteRecibido) => {
-        // ENVIAMOS LOS DATOS REALES AL PADRE
         if (onSave) onSave(clienteRecibido);
 
-        // QUE TARDE 4 SEGUNDOS EN CERRAR LA ALERTA
         setTimeout(() => {
             onClose();
         }, 4000);

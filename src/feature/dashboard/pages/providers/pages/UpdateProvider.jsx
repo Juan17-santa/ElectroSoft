@@ -26,6 +26,7 @@ export default function UpdateProvider() {
         setCategoriasAsociadas,
         setFormData,
         loading,
+        checkingUnique,
         isNatural,
         isJuridica
     } = useProviderForm({
@@ -83,7 +84,7 @@ export default function UpdateProvider() {
 
     return (
         <>
-            <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 shadow-inner h-full overflow-y-auto">
+            <div className="p-4 md:p-8 flex flex-col gap-6 h-full overflow-y-auto">
 
                 <div className="flex justify-between items-start">
                     <div>
@@ -114,6 +115,7 @@ export default function UpdateProvider() {
                     isNatural={isNatural}
                     isJuridica={isJuridica}
                     loading={loading}
+                    checkingUnique={checkingUnique}
                 />
             </div>
         </>

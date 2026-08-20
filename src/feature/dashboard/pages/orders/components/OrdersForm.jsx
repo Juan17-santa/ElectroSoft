@@ -55,13 +55,8 @@ export default function OrdersForm({
     // ESTADO PARA VER LA MODAL DE AÑADIR PRODUCTOS
     const [openProductModal, setOpenProductModal] = useState(false);
 
-    // Lógica de fechas locales (evita desfase UTC de toISOString)
-    const nowLocal = new Date();
-    const hoy = `${nowLocal.getFullYear()}-${String(nowLocal.getMonth() + 1).padStart(2, '0')}-${String(nowLocal.getDate()).padStart(2, '0')}`;
-
     const tempDate = new Date();
     tempDate.setDate(tempDate.getDate() - 3);
-    const haceTresDias = `${tempDate.getFullYear()}-${String(tempDate.getMonth() + 1).padStart(2, '0')}-${String(tempDate.getDate()).padStart(2, '0')}`;
 
     // FUNCIÓN PARA FORMATEAR NÚMEROS A MONEDA (PESOS COLOMBIANOS)
     const formatCurrency = (value) => {
@@ -74,8 +69,6 @@ export default function OrdersForm({
     // FUNCION PARA ELIMINAR UN PRODUCTO SELECCIONADO DE LA LISTA
     const handleRemoveProduct = (index) => {
         const nuevosProductos = formData.productos.filter((_, i) => i !== index);
-
-        // ACTUALIZACIÓN DEL ESTADO GLOBAL MEDIANTE EL MANEJADOR DE CAMBIOS
         handleChange({
             target: {
                 name: "productos",
@@ -150,7 +143,7 @@ export default function OrdersForm({
                             {isClientDropdownOpen && formData.documento && (
                                 <div className="absolute top-18.75 w-full bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-60 overflow-y-auto">
                                     {clients?.filter(c =>
-                                        (c.documento?.toLowerCase() || "").includes(formData.documento.toLowerCase()) ||
+                                        String(c.documento || "").toLowerCase().includes(formData.documento.toLowerCase()) ||
                                         (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.documento.toLowerCase())
                                     ).map(c => (
                                         <div
@@ -162,11 +155,11 @@ export default function OrdersForm({
                                             }}
                                         >
                                             <p className="text-sm font-medium text-gray-800">{c.nombres} {c.apellidos}</p>
-                                            <p className="text-xs text-gray-500">C.C. {c.documento}</p>
+                                            <p className="text-xs text-gray-500">{c.abreviacion || "DOC"} {c.documento}</p>
                                         </div>
                                     ))}
                                     {clients?.filter(c =>
-                                        (c.documento?.toLowerCase() || "").includes(formData.documento.toLowerCase()) ||
+                                        String(c.documento || "").toLowerCase().includes(formData.documento.toLowerCase()) ||
                                         (`${c.nombres} ${c.apellidos}`.toLowerCase()).includes(formData.documento.toLowerCase())
                                     ).length === 0 && (
                                             <div className="px-4 py-3 text-sm text-gray-400 text-center">
@@ -239,9 +232,7 @@ export default function OrdersForm({
                                 }
                                 label="Fecha pedido"
                                 required
-                                // readOnly (Bloquear futuro y pasado, solo HOY)
-                                minDate={haceTresDias}
-                                maxDate={hoy}
+                                readOnly={true}
                             />
                         </div>
 
@@ -309,7 +300,7 @@ export default function OrdersForm({
 
                     {/* ================= TERCERA FILA ================= */}
                     {/* SECCIÓN DE PRODUCTOS */}
-                    <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-full">
+                    <div className="bg-white rounded-2xl p-5 shadow-lg flex flex-col gap-4 w-full">
 
                         {/* ENCABEZADO */}
                         <div className="flex flex-col md:flex-row items-start justify-between mb-3 gap-4">
@@ -401,7 +392,6 @@ export default function OrdersForm({
                             </table>
                         </div>
 
-                        {/* VALIDACION DE PRODUCTOS */}
                         <ValidationMessage
                             error={errors.productos}
                         />
@@ -409,7 +399,6 @@ export default function OrdersForm({
                         {/* ================= TOTALES ================= */}
                         <div className="w-full flex flex-col md:flex-row px-2 md:px-6 py-3 justify-between items-start md:items-center gap-4">
                             <div>
-                                {/* PAGINADOR PARA LOS PRODUCTOS */}
                                 {(formData?.productos?.length || 0) > itemsPerPage && (
                                     <div className="flex justify-center mt-4 mb-2">
                                         <Pagination
@@ -419,7 +408,6 @@ export default function OrdersForm({
                                         />
                                     </div>
                                 )}
-
                             </div>
                             <div className="flex flex-wrap gap-4 md:gap-6">
                                 <span className="text-gray-600 text-sm">Subtotal: <span className="font-bold text-gray-800">{formatCurrency(formData.subtotal)}</span></span>

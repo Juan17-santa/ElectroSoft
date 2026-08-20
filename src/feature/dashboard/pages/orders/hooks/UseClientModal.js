@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Validations } from "../../../../../utils/validations";
 import { ClientsService } from "../../Clients/services/ClientsService";
 
@@ -21,6 +21,8 @@ export const useClientModal = (onSave) => {
 
     // ESTADO PARA OBTENER LOS TIPOS DE DOCUMENTO DESDE EL BACKEND
     const [documentTypes, setDocumentTypes] = useState([]);
+    const validationTimerRef = useRef(null);
+    const validationRequestRef = useRef(0);
 
     useEffect(() => {
         const loadDocumentTypes = async () => {
@@ -29,15 +31,18 @@ export const useClientModal = (onSave) => {
         };
 
         loadDocumentTypes();
+
+        return () => {
+            clearTimeout(validationTimerRef.current);
+            validationRequestRef.current += 1;
+        };
     }, []);
 
     // FUNCIÓN PARA VALIDAR UN CAMPO INDIVIDUAL
     const validateField = (name, value) => {
         let error = "";
 
-        // EVALUACIÓN DE REGLAS SEGÚN EL NOMBRE DEL CAMPO
         switch (name) {
-
             case "tipoDocumento":
                 if (!Validations.campoRequerido(value)) error = "Seleccione un tipo de documento.";
                 break;
@@ -87,17 +92,14 @@ export const useClientModal = (onSave) => {
                 }
                 break;
 
-
             default:
                 return error;
         }
-
         return error;
     };
 
     // MANEJADOR DE CAMBIOS EN LOS INPUTS
     const handleChange = (e) => {
-
         const { name, value } = e.target;
 
         let newValue = value;
@@ -116,7 +118,6 @@ export const useClientModal = (onSave) => {
             [name]: newValue
         }));
 
-        // Limpiar cualquier error global del formulario cuando el usuario edita un campo
         if (formError) setFormError("");
 
         // VALIDAR EL CAMPO EN TIEMPO REAL MIENTRAS EL USUARIO ESCRIBE
@@ -127,11 +128,40 @@ export const useClientModal = (onSave) => {
             ...prev,
             [name]: error
         }));
+
+        if (name === "documento" || name === "email") {
+            clearTimeout(validationTimerRef.current);
+            validationRequestRef.current += 1;
+            const requestId = validationRequestRef.current;
+
+            if (!error) {
+                validationTimerRef.current = setTimeout(async () => {
+                    try {
+                        const exists = name === "documento"
+                            ? await ClientsService.checkDocumentExists(newValue)
+                            : await ClientsService.checkEmailExists(newValue);
+
+                        if (requestId !== validationRequestRef.current) return;
+
+                        setErrors(prev => ({
+                            ...prev,
+                            [name]: exists
+                                ? name === "documento"
+                                    ? "Este documento ya está registrado."
+                                    : "Este correo ya está registrado."
+                                : ""
+                        }));
+                    } catch {
+                        if (requestId !== validationRequestRef.current) return;
+                        setErrors(prev => ({ ...prev, [name]: "" }));
+                    }
+                }, 600);
+            }
+        }
     };
 
     // FUNCIÓN PARA VALIDAR EL FORMULARIO COMPLETO
     const validateForm = () => {
-
         let newErrors = {};
 
         // RECORRER TODOS LOS CAMPOS Y EJECUTAR LA VALIDACIÓN INDIVIDUAL
@@ -156,17 +186,23 @@ export const useClientModal = (onSave) => {
         if (!validateForm()) return;
 
         try {
-            const existingClient = await ClientsService.getByDocument(formData.documento);
-            if (existingClient) {
-                setFormError("Este documento ya está registrado.");
+            const [documentExists, emailExists] = await Promise.all([
+                ClientsService.checkDocumentExists(formData.documento),
+                ClientsService.checkEmailExists(formData.email)
+            ]);
+
+            if (documentExists || emailExists) {
+                setErrors(prev => ({
+                    ...prev,
+                    documento: documentExists ? "Este documento ya está registrado." : prev.documento,
+                    email: emailExists ? "Este correo ya está registrado." : prev.email
+                }));
                 return;
             }
         } catch (error) {
-            if (error.response?.status !== 404) {
-                console.error("Error verificando documento existente:", error);
-                setFormError("No fue posible verificar si el documento ya existe.");
-                return;
-            }
+            console.error("Error verificando datos duplicados:", error);
+            setFormError("No fue posible verificar si el documento o correo ya existe.");
+            return;
         }
 
         try {
