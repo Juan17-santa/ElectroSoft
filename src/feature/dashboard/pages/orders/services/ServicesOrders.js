@@ -75,7 +75,7 @@ export const ServicesOrders = {
 
             if (search.trim()) {
                 const query = normalizeSearch(search);
-                const isDateSearch = /^(\d{4}|\d{1,4}[\/-]\d{1,2}([\/-]\d{1,4})?|\d{1,2})$/.test(query);
+                const isDateSearch = /^(\d{4}|\d{1,4}[-/]\d{1,2}([-/]\d{1,4})?|\d{1,2})$/.test(query);
                 const isDocumentTypeSearch = /^(cc|ce|ti|nit|pas|rc)$/.test(query);
                 const isPaymentSearch = /^(contado|credito|crédito|mixto)$/.test(query);
                 const isTotalSearch = /^[$\s\d.,]+$/.test(query) && normalizeNumber(query).length >= 3;

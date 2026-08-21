@@ -252,7 +252,7 @@ export default function SalesManagement() {
             const sortedSales = response.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
             setSales(sortedSales);
         } catch (err) {
-            const message = "No se pudieron cargar las ventas." || err.message;
+            const message = err.message || "No se pudieron cargar las ventas.";
             showToast("error", message);
         } finally {
             setLoading(false);
@@ -305,19 +305,16 @@ export default function SalesManagement() {
     };
 
     const handleViewDetails = (sale) => {
-        localStorage.setItem("saleToView", JSON.stringify(sale));
-        navigate("/dashboard/sales-management/details");
+        navigate(`/dashboard/sales-management/details/${sale.id}`);
     };
 
     const handleViewCredit = (sale) => {
-        localStorage.setItem("saleToView", JSON.stringify(sale));
-        navigate("/dashboard/sales-management/credit-details");
+        navigate(`/dashboard/sales-management/credit-details/${sale.id}`);
     };
 
     const handleReturn = (sale, mode) => {
-        localStorage.setItem("saleToReturn", JSON.stringify(sale));
-        navigate("/dashboard/sales-management/return", {
-            state: { idVenta: sale.id, mode, origin: "sales" },
+        navigate(`/dashboard/sales-management/return/${sale.id}`, {
+            state: { mode, origin: "sales" },
         });
     };
 
@@ -341,17 +338,6 @@ export default function SalesManagement() {
 
     const handleGenerarReporte = () => {
         setShowReportModal(true);
-    };
-
-    const getEstadoBadge = (estado) => {
-        switch (estado) {
-            case "Finalizado": case "Finalizadas": return "bg-green-100 text-green-700";
-            case "Vigente": return "bg-yellow-100 text-yellow-700";
-            case "Anulado": case "ANULADA": return "bg-red-100 text-red-700";
-            case "Devuelto": return "bg-gray-100 text-gray-700";
-            case "Devolución Parcial": return "bg-amber-100 text-amber-700";
-            default: return "bg-gray-100 text-gray-700";
-        }
     };
 
     return (
@@ -419,9 +405,10 @@ export default function SalesManagement() {
                                             <td className="px-3 py-3">{formatCOP(sale.montoPorPagar)}</td>
                                             <td className="px-3 py-3 text-center">
                                                 <span className={`inline-block px-2 py-1 rounded-lg text-xs font-medium whitespace-normal wrap-break-words leading-tight max-w-27.5 ${(sale.estado === "Finalizado" || sale.estado === "Finalizadas") ? "bg-green-100 text-green-700" :
-                                                    sale.estado === "Vigente" ? "bg-yellow-100 text-yellow-600" :
-                                                        (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
-                                                            "bg-red-100 text-red-600"
+                                                    (sale.estado === "Anulado" || sale.estado === "ANULADA") ? "bg-red-100 text-red-600" :
+                                                        sale.estado === "Vigente" || sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto" ? "bg-yellow-100 text-yellow-600" :
+                                                            (sale.estado === "Devuelto" || sale.estado === "Devolución Parcial") ? "bg-amber-100 text-amber-600" :
+                                                                "bg-gray-100 text-gray-600"
                                                     }`}>
                                                     {sale.estado}
                                                 </span>

@@ -6,7 +6,7 @@ import {
     LogOut, ChevronDown, ChevronUp, X, Lightbulb,
     Layers, Package, Truck, ShoppingBag, UserRound, ClipboardList, Receipt, Wallet, Undo2
 } from 'lucide-react';
-import { getAuthUser, logout } from "../../auth/services/authService";
+import { logout } from "../../auth/services/authService";
 import { usePermissions } from "../../../hooks/usePermissions";
 import { useToast } from "../../../context/ToastContext";
 import ConfirmModal from "./ui/ConfirmModal";
@@ -59,20 +59,6 @@ export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
             navigate("/");
         }, 1500);
     };
-
-    const [userRole, setUserRole] = useState("Empleado");
-
-    useEffect(() => {
-        const authUser = getAuthUser();
-        if (authUser) setUserRole(authUser.role || authUser.rol || "Empleado");
-
-        const handler = () => {
-            const auth = getAuthUser();
-            if (auth) setUserRole(auth.role || auth.rol || "Empleado");
-        };
-        window.addEventListener("profile-updated", handler);
-        return () => window.removeEventListener("profile-updated", handler);
-    }, []);
 
     const comprasVisible = comprasItems.filter(item => hasAccessToScope(item.key));
     const ventasVisible = ventasItems.filter(item => hasAccessToScope(item.key));

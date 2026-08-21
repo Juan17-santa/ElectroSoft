@@ -6,7 +6,7 @@ const fmt = (val) => new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0
 }).format(val ?? 0);
 
-export default function VentaCreditoCard({ venta, onDetalle, onAbonar }) {
+export default function VentaCreditoCard({ venta, onDetalle, onAbonar, isAbonarDisabled = false }) {
     const isVencida = venta.estado === "Anulada";
     const isFinalizado = venta.estado === "Finalizado";
     const isPedido = venta.fuente === "pedido";
@@ -124,11 +124,13 @@ export default function VentaCreditoCard({ venta, onDetalle, onAbonar }) {
                     {!isFinalizado && (
                         <Restricted scope="Pagos y abonos" action="Abonar">
                             <button
+                                type="button"
                                 onClick={onAbonar}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-xs font-medium transition cursor-pointer"
+                                disabled={isAbonarDisabled}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-xs font-medium transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Plus size={13} />
-                                Abonar
+                                <Plus size={13} className={isAbonarDisabled ? "animate-spin" : ""} />
+                                {isAbonarDisabled ? "Abriendo..." : "Abonar"}
                             </button>
                         </Restricted>
                     )}

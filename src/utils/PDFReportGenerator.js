@@ -27,7 +27,7 @@ export const generatePDFReport = ({
     // Logo (bombillo)
     try {
         doc.addImage(logoBase64, "PNG", 12, 6, 20, 20);
-    } catch(e) {}
+    } catch { void 0; }
 
     // Nombre de Empresa
     doc.setTextColor(50, 50, 50); // Gris oscuro

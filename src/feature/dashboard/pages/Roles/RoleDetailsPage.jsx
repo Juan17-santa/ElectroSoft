@@ -27,21 +27,35 @@ export default function RoleDetailsPage() {
 
     return (
         <>
-            <div className="bg-gray-100 p-4 rounded-2xl flex flex-col gap-4 h-full shadow-inner">
-                <div
-                    className="relative bg-white rounded-3xl p-5 shadow-lg overflow-hidden flex-1 flex flex-col"
-                >
-                    <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
+            <div className="flex flex-col gap-4 h-full">
+                <div className="relative bg-white p-5 flex-1 flex flex-col">
 
-                    <div className="relative z-10 flex flex-col gap-4 h-full">
-
-                        {/* TÍTULO */}
+                    {/* ENCABEZADO */}
+                    <div className="flex items-center justify-between pb-5">
                         <div className="flex items-center gap-2">
-                            <Info size={22} className="text-gray-800" />
-                            <h2 className="text-xl font-semibold text-gray-800">
+                            <Info
+                                size={22}
+                                className="text-gray-700"
+                            />
+
+                            <h2 className="text-base sm:text-xl font-semibold text-gray-800">
                                 Ver información del rol
                             </h2>
                         </div>
+
+                        {/* BOTÓN VOLVER */}
+                        <button
+                            type="button"
+                            onClick={() => navigate("/dashboard/roles")}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200
+                        hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
+                        >
+                            <ArrowLeft size={16} />
+                            Volver
+                        </button>
+                    </div>
+
+                    <div className="relative z-10 flex flex-col gap-4 h-full">
 
                         {/* TARJETA INFO */}
                         <div className="bg-gray-50 rounded-2xl p-4 shadow-md flex-1 overflow-hidden flex flex-col">
@@ -90,7 +104,6 @@ export default function RoleDetailsPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 flex-1 overflow-y-auto pb-2 pr-2">
                                 {PERMISSION_SCOPES.map((scope) => {
-                                    // Filtra los permisos de este módulo
                                     const scopePermisos = (roleData.permisos || []).filter(
                                         p => p.startsWith(`${scope.name}:`)
                                     );
@@ -124,19 +137,6 @@ export default function RoleDetailsPage() {
                             </div>
                         </div>
                     </div>
-                </div>
-
-                {/* BOTÓN VOLVER */}
-                <div className="flex justify-end shrink-0">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/dashboard/roles")}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200
-                         hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
-                    >
-                        <ArrowLeft size={16} />
-                        Volver
-                    </button>
                 </div>
             </div>
         </>

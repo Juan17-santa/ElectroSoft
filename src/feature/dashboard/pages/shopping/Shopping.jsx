@@ -115,7 +115,7 @@ export default function Shopping() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="p-6 flex flex-col gap-6 h-full">
 
                 {/* TITULO */}
                 <p className="text-xl font-semibold flex items-center gap-2">
@@ -135,7 +135,7 @@ export default function Shopping() {
                 />
 
                 {/* TABLA */}
-                <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
+                <div className="p-0.5 rounded-2xl bg-yellow-200">
                     <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">
@@ -171,14 +171,14 @@ export default function Shopping() {
                                         const validacion = validarAnulacion(compra);
                                         return (
                                             <tr key={compra.id}>
-                                                <td className="px-4 py-1 border-b border-gray-300">
+                                                <td className="px-4 py-2 border-b border-gray-300">
                                                     {String((page - 1) * ITEMS_PER_PAGE + index + 1).padStart(2, "0")}
                                                 </td>
-                                                <td className="px-4 py-1 border-b border-gray-300">{compra.numeroFactura}</td>
-                                                <td className="px-4 py-1 border-b border-gray-300">{compra.fechaCompra}</td>
-                                                <td className="px-4 py-1 border-b border-gray-300">{compra.proveedor}</td>
-                                                <td className="px-4 py-1 border-b border-gray-300">{compra.total}</td>
-                                                <td className="px-4 py-1 border-b border-gray-300">
+                                                <td className="px-4 py-2 border-b border-gray-300">{compra.numeroFactura}</td>
+                                                <td className="px-4 py-2 border-b border-gray-300">{compra.fechaCompra}</td>
+                                                <td className="px-4 py-2 border-b border-gray-300">{compra.proveedor}</td>
+                                                <td className="px-4 py-2 border-b border-gray-300">{compra.total}</td>
+                                                <td className="px-4 py-2 border-b border-gray-300">
                                                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${compra.estado === "Completada"
                                                         ? "bg-green-100 text-green-700"
                                                         : "bg-red-100 text-red-600"
@@ -186,7 +186,7 @@ export default function Shopping() {
                                                         {compra.estado}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-1 border-b border-gray-300">
+                                                <td className="px-4 py-2 border-b border-gray-300">
                                                     <div className="flex justify-center gap-4">
                                                         <Restricted scope="Compras" action="Ver">
                                                             <button

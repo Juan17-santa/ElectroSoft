@@ -21,6 +21,15 @@ const localDate = (dateParam) => {
 
 // Mapea el modelo del backend al modelo del frontend
 const mapSaleToFrontend = (sale) => {
+    const tipoVenta = sale.tipoVenta || "Contado";
+    const saldo = Number(sale.montoPorPagar ?? sale.total ?? 0);
+    const estadoNormalizado = sale.estado === "ANULADA" ? "Anulado" : sale.estado;
+    const estado = estadoNormalizado === "Anulado"
+        ? "Anulado"
+        : tipoVenta === "Contado" || saldo <= 0
+            ? "Finalizado"
+            : "Vigente";
+
     return {
         id: sale._id,
         // Extrae solo los números del numeroFactura, eliminando prefijos como "FAC"
@@ -32,12 +41,12 @@ const mapSaleToFrontend = (sale) => {
         cliente: sale.clienteId ? `${sale.clienteId.firstName} ${sale.clienteId.lastName}` : "Cliente Desconocido",
         clienteId: sale.clienteId,
         //   FIX: normalizar tipoVenta a sin-tilde para comparaciones frontend simples
-        tipoVenta: sale.tipoVenta === "Crédito" ? "Credito" : (sale.tipoVenta || "Contado"),
+        tipoVenta: tipoVenta === "Crédito" ? "Credito" : tipoVenta,
         diasPlazo: sale.diasPlazo,
         fecha: sale.fechaVenta || localDate(sale.fechaCreacion),
         fechaCreacion: sale.fechaCreacion,
         //   FIX: estado más preciso (Finalizado se calcula en paymentsService al enriquecer con pagos, pero para Contado es automático)
-        estado: sale.estado === 'ACTIVA' ? (sale.tipoVenta === 'Contado' ? 'Finalizado' : 'Vigente') : (sale.estado === 'ANULADA' ? 'Anulado' : sale.estado),
+        estado,
         productos: (sale.productos || []).map(p => ({
             productoId: p.productoId?._id || p.productoId,
             nombre: p.productoId?.name || p.nombre || "Producto",
@@ -73,7 +82,7 @@ export const SalesService = {
         }
     },
 
-    async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos, subtotal, iva, total, montoPagado, montoPorPagar, montoCredito, montoContado }) {
+    async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, productos, total, montoPagado, montoPorPagar, montoCredito, montoContado }) {
         try {
             const allSalesRes = await api.get('/sales');
             const allSalesData = allSalesRes.data.data || allSalesRes.data;
@@ -102,41 +111,11 @@ export const SalesService = {
             const newSale = response.data.data || response.data;
             const mappedSale = mapSaleToFrontend(newSale);
 
-            //   FIX: Registrar el pago inicial SOLO para ventas Mixtas.
-            //   El Contado se considera pagado por el backend (pago base), por lo que
-            //   registrar un pago por el total daría error de "venta ya pagada".
-            const pagoInicial = (tipoVenta === 'Mixto' || tipoVenta === "Mixto")
-                ? Number(montoPagado || mappedSale.montoContado || 0)
-                : 0;
-
-            if (pagoInicial > 0) {
-                try {
-                    await api.post('/payments', {
-                        ventaId: mappedSale.id,
-                        monto: pagoInicial,
-                        metodoPago: "EFECTIVO",
-                        notas: "Pago inicial en efectivo (Venta Mixta)"
-                    });
-                } catch (paymentErr) {
-                    console.warn("[SalesService] Venta creada pero el pago inicial falló:", paymentErr?.response?.data || paymentErr.message);
-                }
-            }
-
             return mappedSale;
         } catch (error) {
             console.error("Error creating sale via API:", error);
             throw error;
         }
-    },
-
-    async addPayment(id, monto) {
-        // Delegated to paymentsService /api/payments, but keeping signature for compatibility if needed.
-        // Recommend using paymentsService.js instead.
-        console.warn("addPayment called on SalesService. Use paymentsService instead.");
-    },
-
-    async voidPayment(saleId, paymentId) {
-        console.warn("voidPayment called on SalesService. Not supported in backend.");
     },
 
     async anullSale(id, motivo) {

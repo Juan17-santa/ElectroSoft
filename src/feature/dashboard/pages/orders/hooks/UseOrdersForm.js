@@ -112,7 +112,8 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                 let resumen = null;
                 try {
                     resumen = await paymentsService.getResumenCliente(found.documento);
-                } catch (e) {
+                } catch {
+                    resumen = null;
                 }
 
                 if (requestId !== clientSearchRequestRef.current) return;
@@ -139,7 +140,8 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                         let resumen = null;
                         try {
                             resumen = await paymentsService.getResumenCliente(clienteEncontrado.documento);
-                        } catch (e) {
+                        } catch {
+                            resumen = null;
                         }
 
                         setFormData(prev => ({
@@ -165,7 +167,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                         }));
                         setErrors(prev => ({ ...prev, documento: "Cliente no encontrado. Verifique el documento o créelo desde el módulo de Clientes." }));
                     }
-                } catch (error) {
+                } catch {
                     if (requestId !== clientSearchRequestRef.current) return;
                     setFormData(prev => ({
                         ...prev,
@@ -508,9 +510,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             onSuccess(nuevoPedido);
         } catch (error) {
             console.error(error);
-            try {
-                setShowSummaryModal(false);
-            } catch (e) { }
+            setShowSummaryModal(false);
 
             if (onShowAlert) {
                 onShowAlert(error.message || "Error al crear el pedido");

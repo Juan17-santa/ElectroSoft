@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ClientsService } from "./services/ClientsService";
 import Searchbar from "../../components/ui/Searchbar";
 import Pagination from "../../components/ui/Pagination";
@@ -19,7 +18,6 @@ const ITEMS_PER_PAGE = 6;
 export default function Clients() {
     const { hasPermission } = usePermissions();
     const { showToast } = useToast();
-    const navigate = useNavigate();
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -54,7 +52,7 @@ export default function Clients() {
             const data = await ClientsService.get();
             setClients(data);
         } catch (err) {
-            const message = "No se pudieron cargar los clientes." || err.message;
+            const message = err.message || "No se pudieron cargar los clientes.";
             showToast("error", message);
         } finally {
             setLoading(false);

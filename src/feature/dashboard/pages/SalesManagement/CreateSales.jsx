@@ -176,7 +176,6 @@ export default function CreateSales() {
 
     const estadoTipoVenta = tocado.tipoVenta ? validarTipoVenta() : null;
     const estadoDiasPlazo = tocado.diasPlazo ? validarDiasPlazo() : null;
-    const estadoFecha = { valido: true };
 
     const ringClass = () => "focus:ring-yellow-400";
 
@@ -354,8 +353,11 @@ export default function CreateSales() {
                 subtotal,
                 iva,
                 total,
-                montoPagado: formData.tipoVenta === "Contado" ? total : formData.tipoVenta === "Mixto" ? montoContado : 0,
-                montoPorPagar: formData.tipoVenta === "Contado" ? 0 : formData.tipoVenta === "Mixto" ? montoCreditoNum : total,
+                // En ventas mixtas, el pago inicial se registra una sola vez en
+                // payments; la venta se crea con su total bruto para que el
+                // backend calcule el saldo al descontar ese pago.
+                montoPagado: formData.tipoVenta === "Contado" ? total : 0,
+                montoPorPagar: formData.tipoVenta === "Contado" ? 0 : total,
                 montoCredito: formData.tipoVenta === "Mixto" ? montoCreditoNum : (formData.tipoVenta === "Credito" ? total : 0),
                 montoContado: formData.tipoVenta === "Mixto" ? montoContado : (formData.tipoVenta === "Contado" ? total : 0)
             };
@@ -382,7 +384,7 @@ export default function CreateSales() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner overflow-y-auto">
+            <div className="p-6 flex flex-col gap-6 h-full overflow-y-auto">
                 {/* HEADER */}
                 <div className="flex justify-between items-start">
                     <div>
@@ -643,7 +645,7 @@ export default function CreateSales() {
                     </div>
 
                     {/* TABLA DE PRODUCTOS */}
-                    <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4 w-full">
+                    <div className="bg-white rounded-2xl p-5 shadow-lg flex flex-col gap-4 w-full">
                         {/* ENCABEZADO */}
                         <div className="flex flex-col md:flex-row items-start justify-between mb-3 gap-4">
                             <div className="flex items-center gap-2 text-yellow-400 font-semibold text-base">

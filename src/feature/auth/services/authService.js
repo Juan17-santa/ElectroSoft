@@ -53,7 +53,7 @@ export async function verifyCode(email, code) {
     // Guarda el token temporal para usarlo en ResetPassword
     localStorage.setItem("reset_token", resetToken);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import paymentsService from "../services/paymentsService";
 
 export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, documentoPreseleccionado = null }) {
@@ -20,6 +20,7 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
     const [formError, setFormError] = useState("");
     const [initialized, setInitialized] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const submitLockRef = useRef(false);
 
     const fmt = (val) => new Intl.NumberFormat("es-CO").format(val ?? 0);
 
@@ -41,6 +42,19 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
                         montoPorPagar: found.montoPorPagar,
                         abonos: found.abonos || [],
                     }));
+                } else {
+                    const selectedSale = await paymentsService.getById(ventaIdPreseleccionada);
+                    if (selectedSale && selectedSale.montoPorPagar > 0) {
+                        setFormData(prev => ({
+                            ...prev,
+                            documento: documentoPreseleccionado || selectedSale.documentoNumero || selectedSale.numeroDocumento || "",
+                            clienteNombre: selectedSale.cliente || "",
+                            ventaId: selectedSale.id,
+                            numeroVenta: selectedSale.numeroVenta || `V-${selectedSale.id}`,
+                            montoPorPagar: selectedSale.montoPorPagar,
+                            abonos: selectedSale.abonos || [],
+                        }));
+                    }
                 }
             }
 
@@ -196,10 +210,12 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (submitLockRef.current || isSubmitting) return;
         if (!validateForm()) return;
 
         const raw = parseFloat(String(formData.monto).replace(/\./g, "").replace(",", ".")) || 0;
 
+        submitLockRef.current = true;
         setFormError("");
         setIsSubmitting(true);
         try {
@@ -226,8 +242,6 @@ export function usePaymentForm({ onSuccess, ventaIdPreseleccionada = null, docum
                 "Error al procesar el abono en el servidor";
 
             setFormError(msg);
-        } finally {
-            setIsSubmitting(false);
         }
     };
 

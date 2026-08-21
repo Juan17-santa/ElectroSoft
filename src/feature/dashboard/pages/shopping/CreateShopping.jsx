@@ -355,7 +355,7 @@ export default function CreateShopping() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner relative overflow-y-auto">
+            <div className="p-6 flex flex-col gap-6 h-full relative overflow-y-auto">
 
                 {/* TITULO */}
                 <div className="flex justify-between">
@@ -422,15 +422,6 @@ export default function CreateShopping() {
 
                     {/* FECHA FACTURA */}
                     <div className="flex flex-col gap-2 w-full md:w-56">
-                        {/*
-                         * Solución para bloquear fechas futuras:
-                         * 1. Pasamos maxDate como prop (soportado si Calendar lo acepta).
-                         * 2. El ref callback inyecta el atributo `max` directamente en el
-                         *    input[type=date] subyacente — funciona independientemente de
-                         *    cómo esté implementado Calendar, sin modificarlo.
-                         * 3. onFechaChange filtra programáticamente fechas futuras.
-                         * 4. validarFecha() rechaza fechas futuras al enviar el formulario.
-                         */}
                         <div
                             ref={(el) => {
                                 if (!el) return;
@@ -489,7 +480,7 @@ export default function CreateShopping() {
                 </div>
 
                 {/* SECCIÓN PRODUCTOS */}
-                <div className="bg-white rounded-2xl p-5 shadow-md flex flex-col gap-4">
+                <div className="bg-white rounded-2xl p-5 shadow-lg flex flex-col gap-4">
 
                     <div className="flex md:flex-row md:justify-between flex-col gap-4">
 

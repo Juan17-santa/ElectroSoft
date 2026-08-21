@@ -67,7 +67,7 @@ export default function PaymentForm({
             <div className="flex flex-col gap-6 mt-6 h-full">
 
                 {/* ===== NÚMERO DE VENTA (Encabezado) ===== */}
-                <div className="px-4 md:px-16 flex flex-col gap-2 border-b border-gray-100 pb-4">
+                <div className="px-4 md:px-16 flex flex-col gap-2 pb-4">
                     <div className="flex items-center text-yellow-400 gap-2 text-md font-medium">
                         <FileText size={18} />
                         <span>Número de venta seleccionada</span>

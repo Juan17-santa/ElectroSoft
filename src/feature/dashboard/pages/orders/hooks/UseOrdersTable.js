@@ -34,13 +34,8 @@ export function useOrdersTable(searchTerm, currentPage, recordsPerPage, showAler
 
     // FUNCION PARA ANULAR PEDIDO (LLAMADA DESDE EL MODAL)
     const cancelOrder = async (id, motivo) => {
-        try {
-            await ServicesOrders.cancelOrder(id, motivo);
-            await loadOrders();
-        } catch (error) {
-            await loadOrders();
-            throw error;
-        }
+        await ServicesOrders.cancelOrder(id, motivo);
+        await loadOrders();
     };
 
     const processOrderToSale = async (id, confirmationData) => {
