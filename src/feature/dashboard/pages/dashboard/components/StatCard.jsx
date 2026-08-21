@@ -8,7 +8,7 @@ export const StatCard = ({ icon: Icon, label, value, delta = 0, color, isMoney =
     const displayed = isMoney ? formatFull(animated) : animated.toLocaleString("es-CO");
     return (
         <div
-            className="bg-white/85 backdrop-blur-sm rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden shadow-sm"
+            className="bg-white rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden shadow-sm border border-gray-200"
             style={{ animation: "kpiFadeUp .5s ease both", animationDelay: `${delay}ms` }}
         >
             <div className="absolute left-0 top-0 bottom-0 w-0.75 rounded-l-2xl"

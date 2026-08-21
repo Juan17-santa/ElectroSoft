@@ -180,7 +180,7 @@ export default function Dashboard() {
 
     if (isLoading) {
         return (
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col items-center justify-center h-full shadow-inner min-h-125">
+            <div className="bg-white p-6 rounded-2xl flex flex-col items-center justify-center h-full shadow-inner min-h-125">
                 <Loader2 className="w-10 h-10 text-yellow-500 animate-spin mb-4" />
                 <p className="text-gray-500 font-medium">Cargando datos del dashboard...</p>
             </div>
@@ -196,7 +196,7 @@ export default function Dashboard() {
                 }
             `}</style>
 
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner overflow-auto">
+            <div className="bg-white p-6 rounded-2xl flex flex-col gap-6 h-full  overflow-auto">
 
                 {/* HEADER */}
                 <div className="flex flex-col md:flex-row gap-6 items-start justify-between shrink-0"
@@ -215,16 +215,11 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                <div className="relative rounded-3xl overflow-hidden shrink-0 shadow-md"
+                <div className="relative rounded-3xl overflow-hidden shrink-0 shadow-md bg-gray-100"
                     style={{
-                        backgroundImage: 'url("/background-details.jpg")',
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        backgroundRepeat: "no-repeat",
                         animation: "kpiFadeUp .5s ease both",
                         animationDelay: "50ms",
                     }}>
-                    <div className="absolute inset-0 bg-gray-100 md:bg-transparent rounded-3xl" />
                     <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
                         <StatCard icon={DollarSign} label="Monto de Ventas" value={totalVentas} delta={delta(totalVentas, prevVentas)} color="#FFC107" isMoney delay={0} />
                         <StatCard icon={Package} label="Productos Vendidos" value={prodVend} delta={delta(prodVend, prevProdVend)} color="#6366f1" isMoney={false} delay={80} />
