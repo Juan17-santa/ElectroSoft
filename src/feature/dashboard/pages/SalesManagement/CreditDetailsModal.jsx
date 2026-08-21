@@ -222,18 +222,12 @@ export default function CreditDetailsPage() {
     const paymentRows = getPaymentRows();
 
     return (
-        <>
+        <div className="p-6 flex flex-col gap-6 w-full h-full overflow-y-auto items-center">
             <div
-                className="h-full rounded-2xl shadow-lg relative overflow-hidden"
-                style={{
-                    backgroundImage: 'url("/background-details.jpg")',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat'
-                }}
+                className="w-full max-w-5xl bg-white p-6 md:p-8 rounded-3xl flex flex-col gap-6 shadow-xl relative animate-scale-in border border-gray-100"
             >
                 {/* ═══ CONTENIDO ═══ */}
-                <div className="px-4 md:px-10 py-6 md:py-8 relative z-10 flex flex-col h-full overflow-y-auto bg-gray-100 md:bg-transparent">
+                <div className="relative z-10 flex flex-col h-full bg-white md:bg-transparent">
 
                     {/* Header */}
                     <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-10">
@@ -390,6 +384,6 @@ export default function CreditDetailsPage() {
                     onCancel={confirmData.onCancel}
                 />
             )}
-        </>
+        </div>
     );
 }

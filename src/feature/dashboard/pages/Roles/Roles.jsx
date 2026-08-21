@@ -106,7 +106,7 @@ export default function Roles() {
 
     return (
         <>
-            <div className="bg-white p-6 flex flex-col gap-6 w-full h-full">
+            <div className="p-6 flex flex-col gap-6 w-full h-full">
                 <p className="text-xl font-semibold">Control de roles</p>
 
                 <Searchbar
@@ -119,7 +119,7 @@ export default function Roles() {
                 />
 
                 <div className="p-0.5 rounded-2xl bg-yellow-200">
-                    <div className="bg-white rounded-2xl border-none overflow-y-auto">
+                    <div className="rounded-2xl border-none overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
