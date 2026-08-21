@@ -30,12 +30,6 @@ export default function RoleDetailsPage() {
             <div className="bg-gray-100 p-4 rounded-2xl flex flex-col gap-4 h-full shadow-inner">
                 <div
                     className="relative bg-white rounded-3xl p-5 shadow-lg overflow-hidden flex-1 flex flex-col"
-                    style={{
-                        backgroundImage: 'url("/background-details.jpg")',
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        backgroundRepeat: "no-repeat",
-                    }}
                 >
                     <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
 

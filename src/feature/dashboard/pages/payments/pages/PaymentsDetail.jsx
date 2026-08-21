@@ -67,15 +67,9 @@ export default function PaymentDetail() {
         <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
 
             <div
-                className="relative bg-white rounded-3xl p-4 md:p-8 shadow-lg"
-                style={{
-                    backgroundImage: 'url("/background-details.jpg")',
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    backgroundRepeat: "no-repeat",
-                }}
+                className="relative bg-white rounded-3xl p-8 shadow-lg overflow-hidden min-h-[700px] flex flex-col max-w-6xl mx-auto w-full"
             >
-                <div className="absolute inset-0 bg-white/20 rounded-3xl" />
+                <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
 
                 <div className="relative z-10 flex flex-col gap-6">
 

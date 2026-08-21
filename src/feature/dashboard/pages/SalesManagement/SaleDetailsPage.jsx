@@ -206,15 +206,8 @@ export default function SaleDetailsPage() {
     };
 
     return (
-        <div
-            className="h-full rounded-2xl shadow-lg relative overflow-hidden"
-            style={{
-                backgroundImage: 'url("/background-details.jpg")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
-            }}
-        >
+        <div className="relative bg-white rounded-3xl p-4 shadow-lg overflow-hidden flex-1 flex flex-col max-w-5xl mx-auto w-full">
+            <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
             {/* ═══ CONTENIDO ═══ */}
             <div className="px-10 py-8 relative z-10 flex flex-col h-full overflow-y-auto bg-gray-100 md:bg-transparent">
 

@@ -7,7 +7,7 @@ import { useToast } from "../../../../../context/ToastContext";
 
 export default function CreatePayment() {
     const navigate = useNavigate();
-    const { ventaId } = useParams();
+    const { id: ventaId } = useParams();
     const location = useLocation();
     const documento = location.state?.documento || null;
     const { showToast } = useToast();

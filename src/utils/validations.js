@@ -45,21 +45,22 @@ export const Validations = {
 
     // Validaciones específicas para Clientes
     validarDocumentoCliente: (documento) => {
-        if (!documento) {
+        const docStr = String(documento || "");
+        if (!docStr) {
             return {
                 valido: false,
                 mensaje: "El documento es requerido."
             };
         }
 
-        if (!/^\d+$/.test(documento)) {
+        if (!/^\d+$/.test(docStr)) {
             return {
                 valido: false,
                 mensaje: "Solo se permiten números."
             };
         }
 
-        if (documento.length < 8 || documento.length > 12) {
+        if (docStr.length < 8 || docStr.length > 12) {
             return {
                 valido: false,
                 mensaje: "Debe tener entre 8 y 12 dígitos."
@@ -73,20 +74,22 @@ export const Validations = {
     },
 
     validarNombreApellido: (value) => {
-        if (!value) return { valido: false, mensaje: "Este campo es requerido." };
-        if (value.trim().length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
-        if (value.length > 40) return { valido: false, mensaje: "Máximo 40 caracteres." };
-        if (/[0-9]/.test(value)) return { valido: false, mensaje: "No debe contener números." };
-        if (!/^[\p{L}\s]+$/u.test(value.normalize("NFC"))) return { valido: false, mensaje: "Solo se permiten letras." };
-        if (/\s{2,}/.test(value)) return { valido: false, mensaje: "No se permiten espacios dobles." };
+        const valStr = String(value || "");
+        if (!valStr) return { valido: false, mensaje: "Este campo es requerido." };
+        if (valStr.trim().length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
+        if (valStr.length > 40) return { valido: false, mensaje: "Máximo 40 caracteres." };
+        if (/[0-9]/.test(valStr)) return { valido: false, mensaje: "No debe contener números." };
+        if (!/^[\p{L}\s]+$/u.test(valStr.normalize("NFC"))) return { valido: false, mensaje: "Solo se permiten letras." };
+        if (/\s{2,}/.test(valStr)) return { valido: false, mensaje: "No se permiten espacios dobles." };
         return { valido: true, mensaje: "" };
     },
 
     validarTelefono: (value) => {
-        if (!value) return { valido: false, mensaje: "El teléfono es requerido." };
-        if (!/^\d{8,14}$/.test(value)) return { valido: false, mensaje: "Debe tener entre 8 y 14 dígitos." };
-        if (/^(\d)\1{6,}$/.test(value)) return { valido: false, mensaje: "Número no válido (dígitos repetidos)." };
-        if (value.startsWith("0")) return { valido: false, mensaje: "El teléfono no puede comenzar con 0." };
+        const valStr = String(value || "");
+        if (!valStr) return { valido: false, mensaje: "El teléfono es requerido." };
+        if (!/^\d{8,14}$/.test(valStr)) return { valido: false, mensaje: "Debe tener entre 8 y 14 dígitos." };
+        if (/^(\d)\1{6,}$/.test(valStr)) return { valido: false, mensaje: "Número no válido (dígitos repetidos)." };
+        if (valStr.startsWith("0")) return { valido: false, mensaje: "El teléfono no puede comenzar con 0." };
         return { valido: true, mensaje: "" };
     },
 

@@ -12,7 +12,10 @@ export default function UpdateClients({ isOpen, onClose, onSuccess, initialClien
 
     useEffect(() => {
         if (isOpen && initialClient) {
-            setInitialData(initialClient);
+            setInitialData({
+                ...initialClient,
+                tipoDocumento: initialClient.documentTypeId || initialClient.tipoDocumento
+            });
         } else {
             setInitialData(null);
         }
