@@ -75,21 +75,17 @@ export const ClientsService = {
     },
 
     async create({ tipoDocumento, documento, nombres, apellidos, email, telefono }) {
-        try {
-            const payload = {
-                documentType: tipoDocumento,
-                documentNumber: documento,
-                firstName: nombres,
-                lastName: apellidos,
-                email,
-                phone: telefono
-            };
-            const response = await api.post('/clients', payload);
-            const data = response.data.data || response.data.client || response.data;
-            return mapClientToFrontend(data);
-        } catch (error) {
-            throw error;
-        }
+        const payload = {
+            documentType: tipoDocumento,
+            documentNumber: documento,
+            firstName: nombres,
+            lastName: apellidos,
+            email,
+            phone: telefono
+        };
+        const response = await api.post('/clients', payload);
+        const data = response.data.data || response.data.client || response.data;
+        return mapClientToFrontend(data);
     },
 
     async update(clientActualizado) {

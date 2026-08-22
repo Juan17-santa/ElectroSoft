@@ -31,7 +31,7 @@ export default function Payments() {
             const data = await paymentsService.getClientesConCupo();
             setClientes(data);
         } catch (err) {
-            const message = "No se pudieron cargar los créditos." || err.message;
+            const message = err.message || "No se pudieron cargar los créditos.";
             showToast("error", message);
         } finally {
             setLoading(false);
@@ -98,14 +98,13 @@ export default function Payments() {
                         <p className="text-gray-500 text-sm font-medium">Cargando créditos...</p>
                     </div>
                 ) : currentRecords.length === 0 ? (
-                    <div className="bg-white rounded-2xl p-10 flex flex-col items-center gap-3 text-center shadow-md">
+                    <div className="bg-white rounded-2xl p-10 flex flex-col items-center gap-3 text-center shadow-lg">
                         <CreditCard size={32} className="text-gray-300" />
                         <p className="text-gray-500 text-sm font-medium">
                             {search
                                 ? "No se encontraron clientes con ese criterio."
                                 : "No hay clientes con cupo de crédito asignado."}
                         </p>
-                        {/* Mensaje orientativo — el cupo se asigna desde Clientes */}
                         {!search && (
                             <p className="text-xs text-gray-400">
                                 Los cupos se asignan desde el módulo de{" "}
@@ -150,7 +149,7 @@ export default function Payments() {
 
                             showToast("success", "El reporte se generó correctamente");
 
-                        } catch (error) {
+                        } catch {
                             showToast("error", "Hubo un error al generar el reporte");
                         }
 

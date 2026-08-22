@@ -1,19 +1,6 @@
-/**
- * SaleDetailsPage.jsx
- * 
- * Vista de detalles generales de una venta.
- * Muestra la información de la venta (fecha, estado, subtotal, IVA, total)
- * y la tabla de productos comprados.
- * 
- * Diseño: Fondo con decoraciones SVG doradas, tarjeta blanca con borde izquierdo.
- * 
- * Navegación: Se accede desde SalesManagement (icono ojo).
- * Los datos de la venta se leen de localStorage (carga inicial rápida) y luego
- * se refrescan desde el backend para garantizar datos financieros actualizados.
- */
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { X, FileText, ArrowLeft, RefreshCw } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { FileText, ArrowLeft, RefreshCw, User, CalendarDays, CreditCard, Package, Receipt, Clock, AlertCircle } from "lucide-react";
 import { generatePDFReport } from "../../../../utils/PDFReportGenerator";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
 import { SalesService } from "./services/SalesService";
@@ -22,395 +9,760 @@ import { useToast } from "../../../../context/ToastContext";
 
 export default function SaleDetailsPage() {
     const navigate = useNavigate();
+    const { id } = useParams();
     const { showToast } = useToast();
+
     const [sale, setSale] = useState(null);
     const [loadingRefresh, setLoadingRefresh] = useState(false);
     const [confirmData, setConfirmData] = useState(null);
 
-    /**
-     * Carga inicial desde localStorage (instantánea) + refresco desde backend.
-     * Esto garantiza que los datos financieros (montoPagado, montoPorPagar, estado)
-     * siempre estén actualizados aunque se hayan registrado abonos recientemente.
-     */
     useEffect(() => {
-        const data = localStorage.getItem("saleToView");
-        if (!data) return;
+        if (!id) return;
 
-        const parsedSale = JSON.parse(data);
-        setSale(parsedSale); // Mostrar inmediatamente con datos de localStorage
-
-        // Refrescar desde el backend en segundo plano
-        if (parsedSale?.id) {
-            setLoadingRefresh(true);
-            SalesService.getById(parsedSale.id)
-                .then(freshSale => {
-                    if (freshSale) {
-                        setSale(freshSale);
-                        localStorage.setItem("saleToView", JSON.stringify(freshSale));
-                    }
-                })
-                .catch(err => {
-                    console.warn("[SaleDetailsPage] No se pudo refrescar desde el backend:", err?.message);
-                })
-                .finally(() => setLoadingRefresh(false));
-        }
-    }, []);
+        setLoadingRefresh(true);
+        SalesService.getById(id)
+            .then((freshSale) => {
+                if (freshSale) setSale(freshSale);
+            })
+            .catch((err) => {
+                console.warn(
+                    "[SaleDetailsPage] No se pudo cargar desde el backend:",
+                    err?.message
+                );
+            })
+            .finally(() => setLoadingRefresh(false));
+    }, [id]);
 
     const [productosNetos, setProductosNetos] = useState([]);
-    const [totalesNetos, setTotalesNetos] = useState({ subtotal: 0, iva: 0, total: 0 });
+
+    const [totalesNetos, setTotalesNetos] = useState({
+        subtotal: 0,
+        iva: 0,
+        total: 0
+    });
 
     useEffect(() => {
-        if (sale) {
-            ServicesDevolutions.getBySaleId(sale.id).then(devoluciones => {
-                const cantDevueltasMap = devoluciones.reduce((acc, d) => {
-                    acc[d.producto] = (acc[d.producto] || 0) + Number(d.cantidad || 0);
-                    return acc;
-                }, {});
+        if (!sale) return;
 
-                const netos = (sale.productos || []).map(p => {
-                    const devuelto = cantDevueltasMap[p.nombre] || 0;
+        ServicesDevolutions.getBySaleId(sale.id)
+            .then((devoluciones) => {
+                const cantDevueltasMap = devoluciones.reduce(
+                    (acc, d) => {
+                        acc[d.producto] =
+                            (acc[d.producto] || 0) +
+                            Number(d.cantidad || 0);
+
+                        return acc;
+                    },
+                    {}
+                );
+
+                const netos = (sale.productos || []).map((p) => {
+                    const devuelto =
+                        cantDevueltasMap[p.nombre] || 0;
+
                     return {
                         ...p,
                         cantOriginal: p.cantidad,
                         cantDevuelta: devuelto,
-                        cantNeta: Math.max(0, p.cantidad - devuelto)
+                        cantNeta: Math.max(
+                            0,
+                            p.cantidad - devuelto
+                        )
                     };
                 });
 
-                const newTotal = netos.reduce((sum, p) => sum + (p.precio * p.cantNeta), 0);
+                const newTotal = netos.reduce(
+                    (sum, p) =>
+                        sum +
+                        p.precio *
+                        p.cantNeta,
+                    0
+                );
+
                 const newIva = newTotal * 0.19;
-                const newSubtotal = newTotal - newIva;
+
+                const newSubtotal =
+                    newTotal - newIva;
 
                 setProductosNetos(netos);
-                setTotalesNetos({ subtotal: newSubtotal, iva: newIva, total: newTotal });
-            }).catch(e => console.error("Error al obtener devoluciones:", e));
-        }
+
+                setTotalesNetos({
+                    subtotal: newSubtotal,
+                    iva: newIva,
+                    total: newTotal
+                });
+            })
+            .catch((e) =>
+                console.error(
+                    "Error al obtener devoluciones:",
+                    e
+                )
+            );
     }, [sale]);
 
     const calculateDeadline = () => {
         if (!sale || !sale.fecha) return null;
-        if (sale.tipoVenta !== "Credito" && sale.tipoVenta !== "Crédito" && sale.tipoVenta !== "Mixto") return null;
+
+        if (
+            sale.tipoVenta !== "Credito" &&
+            sale.tipoVenta !== "Crédito" &&
+            sale.tipoVenta !== "Mixto"
+        ) {
+            return null;
+        }
 
         const diasPlazo = sale.diasPlazo != null ? Number(sale.diasPlazo) : 0;
         const creationDate = new Date(sale.fecha + "T00:00:00");
         const deadlineDate = new Date(creationDate);
         deadlineDate.setDate(deadlineDate.getDate() + diasPlazo);
 
-        // Obtener hoy en formato YYYY-MM-DD usando la hora local (evitar desfase UTC de toISOString)
         const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const todayDate = new Date(todayStr + "T00:00:00");
+        const todayStr =
+            `${now.getFullYear()}-${String(
+                now.getMonth() + 1
+            ).padStart(2, "0")}-${String(
+                now.getDate()
+            ).padStart(2, "0")}`;
 
+        const todayDate = new Date(todayStr + "T00:00:00");
         const diffTime = deadlineDate.getTime() - todayDate.getTime();
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        const deadStr =
+            `${deadlineDate.getFullYear()}-${String(
+                deadlineDate.getMonth() + 1
+            ).padStart(2, "0")}-${String(
+                deadlineDate.getDate()
+            ).padStart(2, "0")}`;
 
-        const deadStr = `${deadlineDate.getFullYear()}-${String(deadlineDate.getMonth() + 1).padStart(2, '0')}-${String(deadlineDate.getDate()).padStart(2, '0')}`;
-
-        return {
-            fechaLimite: deadStr,
-            diasRestantes: diffDays
-        };
+        return { fechaLimite: deadStr, diasRestantes: diffDays };
     };
 
     const deadlineInfo = calculateDeadline();
 
-    if (!sale) return null;
+    if (!sale) {
+        return (
+            <div className="bg-white p-6 flex items-center justify-center h-full">
+                <p className="text-gray-500 text-sm">
+                    Cargando información de la venta...
+                </p>
+            </div>
+        );
+    }
 
-    /** Lista de productos de la venta */
     const productos = sale.productos || [];
 
-    /** Cierra la vista y limpia localStorage, regresa a la lista de ventas */
     const handleClose = () => {
-        localStorage.removeItem("saleToView");
         navigate("/dashboard/sales-management");
     };
 
-    /**
-     * Genera un reporte PDF con la información de la venta y sus productos.
-     * Usa jsPDF v4 + jspdf-autotable v5.
-     * Se descarga como "venta_[numero].pdf".
-     */
     const handleGenerateReport = () => {
         setConfirmData({
             type: "info",
             title: "Imprimir venta",
             message: "¿Deseas imprimir el reporte de esta venta?",
             onConfirm: () => {
-                const formatCurrency = (val) => val ? `$${val.toLocaleString('es-CO')}` : "$0";
-                
-                const tipoDocumento = sale.clienteId?.documentType?.abbreviation || sale.clienteId?.documentType?.name || "";
-                const numeroDoc = sale.numeroDocumento || sale.clienteId?.documentNumber || '-';
-                const docText = tipoDocumento ? `${tipoDocumento} ${numeroDoc}` : numeroDoc;
+                const formatCurrency = (val) =>
+                    val
+                        ? `$${val.toLocaleString(
+                            "es-CO"
+                        )}`
+                        : "$0";
+
+                const tipoDocumento =
+                    sale.clienteId?.documentType
+                        ?.abbreviation ||
+                    sale.clienteId?.documentType
+                        ?.name ||
+                    "";
+
+                const numeroDoc =
+                    sale.numeroDocumento ||
+                    sale.clienteId
+                        ?.documentNumber ||
+                    "-";
+
+                const docText =
+                    tipoDocumento
+                        ? `${tipoDocumento} ${numeroDoc}`
+                        : numeroDoc;
 
                 const extraInfo = [
-                    `Cliente: ${sale.cliente || '-'}`,
+                    `Cliente: ${sale.cliente || "-"}`,
                     `Documento: ${docText}`,
-                    `Correo: ${sale.clienteId?.email || '-'}`,
+                    `Correo: ${sale.clienteId?.email || "-"}`,
                     `Fecha creación: ${sale.fecha}`,
                     `Estado: ${sale.estado}`,
-                    `Tipo de Venta: ${sale.tipoVenta || "Contado"}`
+                    `Tipo de Venta: ${sale.tipoVenta || "Contado"
+                    }`
                 ];
-                
+
                 if (sale.estado === "Anulado") {
-                    extraInfo.push(`Fecha Anulación: ${sale.anuladaEn ? new Date(sale.anuladaEn).toLocaleString('es-CO') : (sale.fecha || "N/A")}`);
-                    extraInfo.push(`Motivo Anulación: ${sale.observaciones || "Anulación registrada sin motivo."}`);
+                    extraInfo.push(
+                        `Fecha Anulación: ${sale.anuladaEn
+                            ? new Date(
+                                sale.anuladaEn
+                            ).toLocaleString(
+                                "es-CO"
+                            )
+                            : sale.fecha ||
+                            "N/A"
+                        }`
+                    );
+
+                    extraInfo.push(
+                        `Motivo Anulación: ${sale.observaciones ||
+                        "Anulación registrada sin motivo."
+                        }`
+                    );
                 }
-                
-                if ((sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto")) {
-                    extraInfo.push(`Plazo (Crédito): ${sale.diasPlazo != null ? sale.diasPlazo : 0} días`);
+
+                if (
+                    sale.tipoVenta ===
+                    "Credito" ||
+                    sale.tipoVenta ===
+                    "Crédito" ||
+                    sale.tipoVenta ===
+                    "Mixto"
+                ) {
+                    extraInfo.push(
+                        `Plazo (Crédito): ${sale.diasPlazo != null
+                            ? sale.diasPlazo
+                            : 0
+                        } días`
+                    );
+
                     if (deadlineInfo) {
-                        extraInfo.push(`Fecha Límite Pago: ${deadlineInfo.fechaLimite}`);
+                        extraInfo.push(
+                            `Fecha Límite Pago: ${deadlineInfo.fechaLimite}`
+                        );
                     }
                 }
 
                 generatePDFReport({
-                    title: `Reporte de la Venta #${String(sale.numeroVenta || "").padStart(2, '0')}`,
-                    fileName: `venta_${String(sale.numeroVenta || "").padStart(2, '0')}.pdf`,
-                    columns: ["Producto", "Precio", "Cant.", "Dev.", "Neto", "Subtotal"],
-                    data: productosNetos.map(p => [
-                        p.nombre,
-                        formatCurrency(p.precio),
-                        p.cantOriginal,
-                        p.cantDevuelta > 0 ? `-${p.cantDevuelta}` : '0',
-                        p.cantNeta,
-                        formatCurrency(p.precio * p.cantNeta)
-                    ]),
-                    extraInfo: extraInfo,
+                    title: `Reporte de la Venta #${String(
+                        sale.numeroVenta || ""
+                    ).padStart(2, "0")}`,
+
+                    fileName: `venta_${String(
+                        sale.numeroVenta || ""
+                    ).padStart(2, "0")}.pdf`,
+
+                    columns: [
+                        "Producto",
+                        "Precio",
+                        "Cant.",
+                        "Dev.",
+                        "Neto",
+                        "Subtotal"
+                    ],
+
+                    data: productosNetos.map(
+                        (p) => [
+                            p.nombre,
+                            formatCurrency(
+                                p.precio
+                            ),
+                            p.cantOriginal,
+                            p.cantDevuelta > 0
+                                ? `-${p.cantDevuelta}`
+                                : "0",
+                            p.cantNeta,
+                            formatCurrency(
+                                p.precio *
+                                p.cantNeta
+                            )
+                        ]
+                    ),
+                    extraInfo,
                     totals: [
-                        `Subtotal: ${formatCurrency(totalesNetos.subtotal)}`,
-                        `IVA: ${formatCurrency(totalesNetos.iva)}`,
-                        `Total: ${formatCurrency(totalesNetos.total)}`
+                        `Subtotal: ${formatCurrency(
+                            totalesNetos.subtotal
+                        )}`,
+
+                        `IVA: ${formatCurrency(
+                            totalesNetos.iva
+                        )}`,
+
+                        `Total: ${formatCurrency(
+                            totalesNetos.total
+                        )}`
                     ]
                 });
 
                 showToast("success", "Reporte generado correctamente.");
                 setConfirmData(null);
             },
-            onCancel: () => setConfirmData(null)
+            onCancel: () =>
+                setConfirmData(null)
         });
     };
 
-    /**
-     * Retorna la clase CSS del color de estado.
-     * Verde = Finalizado, Amarillo = Vigente, Rojo = Anulado, Gris = Devuelto
-     */
-    const getEstadoColor = (estado) => {
+    const getEstadoStyles = (estado) => {
         switch (estado) {
-            case "Finalizado": case "Finalizadas": case "Finalizada": return "bg-green-500";
-            case "Vigente": return "bg-yellow-500";
-            case "Anulado": return "bg-red-500";
-            case "Devuelto": return "bg-gray-500";
-            case "Devolución Parcial": return "bg-amber-500";
-            default: return "bg-gray-500";
+            case "Finalizado":
+            case "Finalizadas":
+            case "Finalizada":
+                return {
+                    container:
+                        "bg-green-50 border-green-200",
+                    text: "text-green-700",
+                    dot: "bg-green-500"
+                };
+
+            case "Vigente":
+                return {
+                    container:
+                        "bg-yellow-50 border-yellow-200",
+                    text: "text-yellow-700",
+                    dot: "bg-yellow-500"
+                };
+
+            case "Anulado":
+                return {
+                    container:
+                        "bg-red-50 border-red-200",
+                    text: "text-red-700",
+                    dot: "bg-red-500"
+                };
+
+            case "Devuelto":
+                return {
+                    container:
+                        "bg-gray-50 border-gray-200",
+                    text: "text-gray-600",
+                    dot: "bg-gray-500"
+                };
+
+            case "Devolución Parcial":
+                return {
+                    container:
+                        "bg-amber-50 border-amber-200",
+                    text: "text-amber-700",
+                    dot: "bg-amber-500"
+                };
+
+            default:
+                return {
+                    container:
+                        "bg-gray-50 border-gray-200",
+                    text: "text-gray-600",
+                    dot: "bg-gray-500"
+                };
         }
     };
 
+    const estadoStyles = getEstadoStyles(sale.estado);
+
+    const isCredito =
+        sale.tipoVenta === "Credito" ||
+        sale.tipoVenta === "Crédito" ||
+        sale.tipoVenta === "Mixto";
+
     return (
-        <div className="relative bg-white rounded-3xl p-4 shadow-lg overflow-hidden flex-1 flex flex-col max-w-5xl mx-auto w-full">
-            <div className="absolute inset-0 bg-white/20 rounded-3xl"></div>
-            {/* ═══ CONTENIDO ═══ */}
-            <div className="px-10 py-8 relative z-10 flex flex-col h-full overflow-y-auto bg-gray-100 md:bg-transparent">
+        <>
+            <div className="bg-white p-4 md:p-6 flex flex-col w-full h-full overflow-y-auto">
+                <div className="w-full max-w-5xl mx-auto">
 
-                {/* Header */}
-                <div className="flex flex-col md:flex-row gap-3 justify-between items-center mb-10">
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-[22px] font-bold italic text-gray-800">
-                           Ver información de la venta #{String(sale.numeroVenta || "").padStart(2, '0')}
-                        </h2>
-                        {loadingRefresh && (
-                            <RefreshCw size={16} className="animate-spin text-yellow-500" title="Actualizando datos..." />
-                        )}
+                    {/* ENCABEZADO */}
+                    <div className="flex flex-col md:flex-row gap-3 justify-between items-start md:items-center pb-5 border-b border-gray-300">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Receipt
+                                size={22}
+                                className="text-gray-700 shrink-0"
+                            />
+
+                            <h2 className="text-base sm:text-xl font-semibold text-gray-800">
+                                Ver información de la venta #
+                                {String(
+                                    sale.numeroVenta || ""
+                                ).padStart(2, "0")}
+                            </h2>
+
+                            {loadingRefresh && (
+                                <RefreshCw
+                                    size={16}
+                                    className="animate-spin text-yellow-500 shrink-0"
+                                    title="Actualizando datos..."
+                                />
+                            )}
+                        </div>
+
+                        {/* BOTONES */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            <button
+                                onClick={
+                                    handleGenerateReport
+                                }
+                                className="flex items-center gap-2 border border-gray-200 px-4 py-2 rounded-xl text-sm font-medium bg-white hover:bg-gray-50 text-gray-600 transition cursor-pointer"
+                            >
+                                <FileText size={16} />
+                                Imprimir
+                            </button>
+
+                            <button
+                                onClick={handleClose}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 transition cursor-pointer"
+                            >
+                                <ArrowLeft size={16} />
+                                Volver
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="flex w-full md:w-auto items-center gap-4">
-                        <button
-                            onClick={handleGenerateReport}
-                            className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium bg-gray-50 hover:bg-gray-100 text-gray-600  transition duration-300 shadow-sm cursor-pointer"
-                        >
-                            <FileText size={16} />
-                            Imprimir
-                        </button>
-                        <button
-                            onClick={handleClose}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
-                        >
-                            <ArrowLeft size={16} />
-                            Volver
-                        </button>
-                    </div>
-                </div>
 
-                {/* Tarjeta info */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 px-8 py-6 mb-8"
-                    style={{ borderLeft: '4px solid #fbbf24' }}
-                >
-                    {/* Nombre cliente */}
-                    <p className="text-[17px] font-bold text-gray-800 mb-5">{sale.cliente || 'Sin cliente'}</p>
+                    {/* INFORMACIÓN GENERAL */}
+                    <div className="py-6 border-b border-gray-300">
+                        <div className="grid grid-cols-1 lg:grid-cols-2">
 
-                    {/* Info grid — 2 columnas */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Columna izquierda */}
-                        <div className="flex flex-col gap-6 md:gap-3">
-                            <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">Fecha creacion</p>
-                                <p className="font-bold text-gray-800 text-[15px]">{sale.fecha}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">Estado Actual</p>
-                                <div className="flex items-center gap-1.5">
-                                    <span className={`w-2.5 h-2.5 rounded-full ${getEstadoColor(sale.estado)}`}></span>
-                                    <p className="font-bold text-[15px]">{sale.estado}</p>
-                                </div>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">Tipo de Venta</p>
-                                <p className="font-bold text-gray-800 text-[15px] capitalize">{sale.tipoVenta || "Contado"}</p>
-                            </div>
-                            {sale.estado === "Anulado" && (
-                                <>
-                                    <div className="mt-2">
-                                        <p className="text-xs text-red-500 leading-none mb-1">Motivo Anulación</p>
-                                        <p className="font-bold text-red-600 text-[14px]">{sale.observaciones || "Anulación registrada sin motivo."}</p>
-                                    </div>
+                            {/* INFORMACIÓN DE LA VENTA */}
+                            <div className="pb-6 lg:pb-0 lg:pr-8 lg:border-r lg:border-gray-300">
+                                <h3 className="text-sm font-bold uppercase text-gray-500 mb-5 flex items-center gap-2">
+                                    <CalendarDays
+                                        size={15}
+                                    />
+                                    Información de la Venta
+                                </h3>
+
+                                {/* FECHA */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
                                     <div>
-                                        <p className="text-xs text-red-500 leading-none mb-1">Fecha Anulación</p>
-                                        <p className="font-bold text-red-600 text-[14px]">
-                                            {sale.anuladaEn ? new Date(sale.anuladaEn).toLocaleString('es-CO') : (sale.fecha || "N/A")}
+                                        <p className="text-sm text-yellow-500 mb-1">
+                                            Fecha de creación
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-800">
+                                            {sale.fecha || "-"}
                                         </p>
                                     </div>
-                                </>
-                            )}
-                            {(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto") && (
-                                <>
-                                    <div className="mt-2">
-                                        <p className="text-xs text-yellow-600 leading-none mb-1">Plazo (Crédito)</p>
-                                        <p className="font-bold text-yellow-700 text-[14px]">{sale.diasPlazo != null ? sale.diasPlazo : 0} días</p>
-                                    </div>
-                                    {deadlineInfo && (
-                                        <>
-                                            <div className="mt-2">
-                                                <p className="text-xs text-blue-600 leading-none mb-1">Fecha Límite Pago</p>
-                                                <p className="font-bold text-blue-700 text-[14px]">{deadlineInfo.fechaLimite}</p>
-                                            </div>
-                                            <div className="mt-2">
-                                                <p className="text-xs text-gray-500 leading-none mb-1">Tiempo Restante</p>
-                                                <p className={`font-bold text-[14px] ${deadlineInfo.diasRestantes < 0 ? 'text-red-600' : deadlineInfo.diasRestantes <= 5 ? 'text-orange-500' : 'text-green-600'}`}>
-                                                    {deadlineInfo.diasRestantes < 0
-                                                        ? `Vencido hace ${Math.abs(deadlineInfo.diasRestantes)} días`
-                                                        : deadlineInfo.diasRestantes === 0
-                                                            ? 'Vence hoy'
-                                                            : `${deadlineInfo.diasRestantes} días restantes`}
-                                                </p>
-                                            </div>
-                                        </>
-                                    )}
-                                </>
-                            )}
-                        </div>
 
-                        {/* Columna derecha */}
-                        <div className="flex flex-col gap-6 md:gap-3">
-                            <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">Subtotal</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.subtotal?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+                                    {/* TIPO */}
+                                    <div>
+                                        <p className="text-sm text-yellow-500 mb-1">
+                                            Tipo de venta
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-800 capitalize">
+                                            {sale.tipoVenta || "Contado"}
+                                        </p>
+                                    </div>
+
+                                    {/* ESTADO */}
+                                    <div className="sm:col-span-2">
+                                        <p className="text-sm text-yellow-500 mb-2">
+                                            Estado actual
+                                        </p>
+                                        <span
+                                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold ${estadoStyles.container} ${estadoStyles.text}`}
+                                        >
+                                            <span
+                                                className={`w-2 h-2 rounded-full ${estadoStyles.dot}`}
+                                            />
+                                            {sale.estado || "Sin estado"}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">IVA</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.iva?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-gray-400 leading-none mb-1">Total</p>
-                                <p className="font-bold text-gray-800 text-[17px]">${totalesNetos.total?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+
+                            {/* INFORMACIÓN DEL CLIENTE */}
+                            <div className="pt-6 lg:pt-0 lg:pl-8">
+                                <h3 className="text-sm font-bold uppercase text-gray-500 mb-5 flex items-center gap-2">
+                                    <User size={15} />
+                                    Información del Cliente
+                                </h3>
+
+                                {/* CLIENTE */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
+                                    <div>
+                                        <p className="text-sm text-yellow-500 mb-1">
+                                            Cliente
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-800">
+                                            {sale.cliente || "Sin cliente"}
+                                        </p>
+                                    </div>
+
+                                    {/* DOCUMENTO */}
+                                    <div>
+                                        <p className="text-sm text-yellow-500 mb-1">
+                                            Documento
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-800">
+                                            {sale.clienteId?.documentType?.abbreviation ||
+                                                sale.clienteId?.documentType?.name || ""}
+                                            {" "}
+                                            {sale.numeroDocumento ||
+                                                sale.clienteId?.documentNumber || "-"}
+                                        </p>
+                                    </div>
+
+                                    {/* CORREO */}
+                                    <div className="sm:col-span-2">
+                                        <p className="text-sm text-yellow-500 mb-1">
+                                            Correo electrónico
+                                        </p>
+                                        <p className="text-sm font-semibold text-gray-800 break-all">
+                                            {sale.clienteId?.email || "-"}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Separador dorado */}
-                <div className="mb-8">
-                    <div className="h-[1.5px]" style={{ background: 'linear-gradient(90deg, #d4a843, #e8c34a, #d4a843)' }}></div>
-                </div>
+                    {/* INFORMACIÓN DE CRÉDITO / ANULACIÓN */}
 
-                {/* Productos */}
-                <div className="flex-1">
-                    <p className="text-[18px] font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <span className="w-1.5 h-6 bg-yellow-400 rounded-full"></span>
-                        Productos en esta venta
-                    </p>
-                    {productos.length > 0 ? (
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-                            <div className="overflow-x-auto flex-1">
-                                <table className="min-w-96 w-full text-left text-sm">
-                                    <thead className="text-gray-500 bg-white border-b border-gray-100">
+                    {(sale.estado === "Anulado" || isCredito) && (
+                        <div className="py-6 border-b border-gray-300">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
+
+                                {/* ANULACIÓN */}
+                                {sale.estado === "Anulado" && (
+                                    <div className="lg:pr-8 lg:border-r lg:border-gray-300">
+                                        <h3 className="text-sm font-bold uppercase text-red-500 mb-5 flex items-center gap-2">
+                                            <AlertCircle
+                                                size={15}
+                                            />
+                                            Información de Anulación
+                                        </h3>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                            <div>
+                                                <p className="text-sm text-red-500 mb-1">
+                                                    Motivo
+                                                </p>
+                                                <p className="text-sm font-semibold text-red-700">
+                                                    {sale.observaciones || "Anulación registrada sin motivo."}
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <p className="text-sm text-red-500 mb-1">
+                                                    Fecha de anulación
+                                                </p>
+                                                <p className="text-sm font-semibold text-red-700">
+                                                    {sale.anuladaEn
+                                                        ? new Date(
+                                                            sale.anuladaEn
+                                                        ).toLocaleString(
+                                                            "es-CO"
+                                                        )
+                                                        : sale.fecha ||
+                                                        "N/A"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* CRÉDITO */}
+                                {isCredito && (
+                                    <div
+                                        className={sale.estado === "Anulado" ? "lg:pl-0" : ""}
+                                    >
+                                        <h3 className="text-sm font-bold uppercase text-gray-500 mb-5 flex items-center gap-2">
+                                            <CreditCard
+                                                size={15}
+                                            />
+                                            Información de Crédito
+                                        </h3>
+
+                                        {/* PLAZO */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                                            <div>
+                                                <p className="text-sm text-yellow-500 mb-1">
+                                                    Plazo
+                                                </p>
+                                                <p className="text-sm font-semibold text-yellow-700">
+                                                    {sale.diasPlazo != null ? sale.diasPlazo : 0}{" "}
+                                                    días
+                                                </p>
+                                            </div>
+
+                                            {/* FECHA LÍMITE */}
+                                            {deadlineInfo && (
+                                                <div>
+                                                    <p className="text-sm text-blue-500 mb-1">
+                                                        Fecha límite
+                                                    </p>
+                                                    <p className="text-sm font-semibold text-blue-700">
+                                                        {deadlineInfo.fechaLimite}
+                                                    </p>
+                                                </div>
+                                            )}
+
+                                            {/* TIEMPO RESTANTE */}
+                                            {deadlineInfo && (
+                                                <div>
+                                                    <p className="text-sm text-gray-500 mb-1 flex items-center gap-1">
+                                                        <Clock
+                                                            size={13}
+                                                        />
+                                                        Tiempo restante
+                                                    </p>
+                                                    <p
+                                                        className={`text-sm font-semibold ${deadlineInfo.diasRestantes < 0
+                                                            ? "text-red-600" : deadlineInfo.diasRestantes <= 5
+                                                                ? "text-orange-500" : "text-green-600"
+                                                            }`}
+                                                    >
+                                                        {deadlineInfo.diasRestantes < 0
+                                                            ? `Vencido hace ${Math.abs(deadlineInfo.diasRestantes)} días`
+                                                            : deadlineInfo.diasRestantes === 0
+                                                                ? "Vence hoy"
+                                                                : `${deadlineInfo.diasRestantes} días restantes`}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* PRODUCTOS */}
+                    <div className="pt-6">
+
+                        {/* TÍTULO */}
+                        <div className="flex items-center gap-2 pb-4 border-b border-gray-300">
+                            <Package
+                                size={18}
+                                className="text-yellow-500"
+                            />
+                            <h3 className="text-sm font-bold uppercase text-gray-700">
+                                Productos de la venta
+                            </h3>
+                        </div>
+
+                        {/* TABLA */}
+                        {productos.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <table className="min-w-190 w-full text-left text-sm">
+                                    <thead className="text-gray-500 border-b border-gray-100">
                                         <tr>
-                                            <th className="px-4 py-3 font-semibold">Producto</th>
-                                            <th className="px-4 py-3 font-semibold text-center w-28">Cant. Original</th>
-                                            <th className="px-4 py-3 font-semibold text-center w-24">Devuelto</th>
-                                            <th className="px-4 py-3 font-semibold text-center w-24">Cant. Neta</th>
-                                            <th className="px-4 py-3 font-semibold text-center w-32">Precio Unit.</th>
-                                            <th className="px-4 py-3 font-semibold text-center w-32">Subtotal</th>
+                                            <th className="px-4 py-4 font-semibold">
+                                                Producto
+                                            </th>
+
+                                            <th className="px-4 py-4 font-semibold text-center w-28">
+                                                Cant. Original
+                                            </th>
+
+                                            <th className="px-4 py-4 font-semibold text-center w-24">
+                                                Devuelto
+                                            </th>
+
+                                            <th className="px-4 py-4 font-semibold text-center w-24">
+                                                Cant. Neta
+                                            </th>
+
+                                            <th className="px-4 py-4 font-semibold text-center w-32">
+                                                Precio Unit.
+                                            </th>
+
+                                            <th className="px-4 py-4 font-semibold text-center w-32">
+                                                Subtotal
+                                            </th>
                                         </tr>
                                     </thead>
+
                                     <tbody className="divide-y divide-gray-100">
-                                        {productosNetos.map((prod, index) => (
-                                            <tr key={index}>
-                                                <td className="px-4 py-3 font-medium text-gray-800">{prod.nombre}</td>
-                                                <td className="px-4 py-3 text-center">{prod.cantOriginal}</td>
-                                                <td className="px-4 py-3 text-center">
-                                                    {prod.cantDevuelta > 0 ? (
-                                                        <span className="text-red-600 font-semibold">
-                                                            -{prod.cantDevuelta}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-400">0</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3 text-center">{prod.cantNeta}</td>
-                                                <td className="px-4 py-3 text-center">${prod.precio?.toLocaleString()}</td>
-                                                <td className="px-4 py-3 text-center font-semibold">
-                                                    ${(prod.precio * prod.cantNeta).toLocaleString()}
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {productosNetos.map(
+                                            (prod, index) => (
+                                                <tr key={index}
+                                                    className="hover:bg-gray-50 transition"
+                                                >
+                                                    <td className="px-4 py-4 font-medium text-gray-800">
+                                                        {prod.nombre}
+                                                    </td>
+
+                                                    <td className="px-4 py-4 text-center text-gray-600">
+                                                        {prod.cantOriginal}
+                                                    </td>
+
+                                                    <td className="px-4 py-4 text-center">
+                                                        {prod.cantDevuelta > 0 ? (
+                                                            <span className="text-red-600 font-semibold">
+                                                                - {prod.cantDevuelta}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-gray-400">
+                                                                0
+                                                            </span>
+                                                        )}
+                                                    </td>
+
+                                                    <td className="px-4 py-4 text-center text-gray-600">
+                                                        {prod.cantNeta}
+                                                    </td>
+
+                                                    <td className="px-4 py-4 text-center text-gray-600">
+                                                        ${prod.precio?.toLocaleString("es-CO")}
+                                                    </td>
+
+                                                    <td className="px-4 py-4 text-center font-semibold text-gray-800">
+                                                        ${(prod.precio * prod.cantNeta).toLocaleString("es-CO")}
+                                                    </td>
+                                                </tr>
+                                            )
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
+                        ) : (
+                            <div className="text-center py-8 text-gray-400 text-sm border-b border-gray-100">
+                                No hay productos registrados.
+                            </div>
+                        )}
 
-                            {/* TOTALES (Estilo idéntico a Pedidos - OrderDetails.jsx) */}
-                            <div className="bg-gray-50 border-t border-gray-200 p-4 mt-auto">
-                                <div className="flex flex-wrap justify-end items-center gap-4 md:gap-10 text-xs md:text-sm">
-                                    <div className="flex gap-2">
-                                        <span className="text-gray-500 uppercase">Subtotal:</span>
-                                        <span className="text-gray-800 font-semibold">${totalesNetos.subtotal?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-gray-500 uppercase">IVA (19%):</span>
-                                        <span className="text-blue-600 font-semibold">${totalesNetos.iva?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-gray-700 uppercase font-bold">Total:</span>
-                                        <span className="text-green-600 font-bold">${totalesNetos.total?.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                    </div>
+                        {/* TOTALES */}
+                        <div className="border-t border-gray-200 pt-5 mt-2">
+                            <div className="flex flex-col items-end gap-2 text-sm">
+                                <div className="flex justify-between gap-8 min-w-65">
+                                    <span className="text-gray-500 uppercase">
+                                        Subtotal:
+                                    </span>
+                                    <span className="text-gray-800 font-semibold">
+                                        $ {totalesNetos.subtotal?.toLocaleString("es-CO", { maximumFractionDigits: 0 })}
+                                    </span>
+                                </div>
+
+                                <div className="flex justify-between gap-8 min-w-65">
+                                    <span className="text-gray-500 uppercase">
+                                        IVA (19%):
+                                    </span>
+                                    <span className="text-blue-600 font-semibold">
+                                        $ {totalesNetos.iva?.toLocaleString("es-CO", { maximumFractionDigits: 0 })}
+                                    </span>
+                                </div>
+
+                                <div className="flex justify-between gap-8 min-w-65 pt-2 border-t border-gray-300">
+                                    <span className="text-gray-700 uppercase font-bold">
+                                        Total:
+                                    </span>
+                                    <span className="text-green-600 font-bold text-base">
+                                        $ {totalesNetos.total?.toLocaleString("es-CO", { maximumFractionDigits: 0 })}
+                                    </span>
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        <div className="text-center py-6 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
-                            No hay productos registrados
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
 
+            {/* MODAL DE IMPRESIÓN */}
             {confirmData && (
                 <ConfirmModal
                     type={confirmData.type}
                     title={confirmData.title}
                     message={confirmData.message}
-                    onConfirm={confirmData.onConfirm}
-                    onCancel={confirmData.onCancel}
+                    onConfirm={
+                        confirmData.onConfirm
+                    }
+                    onCancel={
+                        confirmData.onCancel
+                    }
                 />
             )}
-        </div>
+        </>
     );
 }

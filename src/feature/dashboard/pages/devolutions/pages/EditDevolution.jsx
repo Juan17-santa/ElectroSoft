@@ -411,7 +411,7 @@ export default function EditDevolution() {
                     const mode = location.state?.mode ?? "from-sales";
                     setTimeout(() => {
                         if (idVenta) {
-                            navigate("/dashboard/sales-management/return", { state: { idVenta, mode } });
+                            navigate(`/dashboard/sales-management/return/${idVenta}`, { state: { mode } });
                         } else {
                             navigate("/dashboard/devolutions");
                         }
@@ -434,7 +434,7 @@ export default function EditDevolution() {
             const idVenta = location.state?.idVenta ?? form?.idVenta;
             const mode = location.state?.mode ?? "from-sales";
             if (idVenta) {
-                navigate("/dashboard/sales-management/return", { state: { idVenta, mode } });
+                navigate(`/dashboard/sales-management/return/${idVenta}`, { state: { mode } });
             } else {
                 navigate("/dashboard/devolutions");
             }
@@ -449,7 +449,7 @@ export default function EditDevolution() {
             message: "Los cambios no guardados se perderán. ¿Estás seguro?",
             onConfirm: () => {
                 if (idVenta) {
-                    navigate("/dashboard/sales-management/return", { state: { idVenta, mode } });
+                    navigate(`/dashboard/sales-management/return/${idVenta}`, { state: { mode } });
                 } else {
                     navigate("/dashboard/devolutions");
                 }

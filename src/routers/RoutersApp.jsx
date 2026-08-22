@@ -1,84 +1,86 @@
+import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router-dom";
 
 // ACCESO
 import Login from "../feature/auth/pages/login";
-import ForgotPassword from "../feature/auth/pages/ForgotPassword";
-import VerifyCode from "../feature/auth/pages/VerifyCode";
-import ResetPassword from "../feature/auth/pages/ResetPassword";
+const ForgotPassword = lazy(() => import("../feature/auth/pages/ForgotPassword"));
+const VerifyCode = lazy(() => import("../feature/auth/pages/VerifyCode"));
+const ResetPassword = lazy(() => import("../feature/auth/pages/ResetPassword"));
 
 // DASHBOARD
 import Layout from "../feature/dashboard/layout";
-import Dashboard from "../feature/dashboard/pages/dashboard/pages/Dashboard";
+const Dashboard = lazy(() => import("../feature/dashboard/pages/dashboard/pages/Dashboard"));
 
 // ========= COMPRAS =========
 // CATEGORIA DE PRODUCTOS
-import ProductCategory from "../feature/dashboard/pages/productCategory/pages/ProductCategory";
+const ProductCategory = lazy(() => import("../feature/dashboard/pages/productCategory/pages/ProductCategory"));
 
 // PRODUCTOS
-import Products from "../feature/dashboard/pages/products/pages/Products";
-import CreateProducts from "../feature/dashboard/pages/products/pages/CreateProducts";
-import EditProducts from "../feature/dashboard/pages/products/pages/EditProducts";
-import ProductDetails from "../feature/dashboard/pages/products/pages/ProductDetails";
+const Products = lazy(() => import("../feature/dashboard/pages/products/pages/Products"));
+const CreateProducts = lazy(() => import("../feature/dashboard/pages/products/pages/CreateProducts"));
+const EditProducts = lazy(() => import("../feature/dashboard/pages/products/pages/EditProducts"));
+const ProductDetails = lazy(() => import("../feature/dashboard/pages/products/pages/ProductDetails"));
 
 // PROVEEDORES
-import Providers from "../feature/dashboard/pages/providers/pages/Providers";
-import CreateProvider from "../feature/dashboard/pages/providers/pages/CreateProvider";
-import UpdateProvider from "../feature/dashboard/pages/providers/pages/UpdateProvider";
-import ProviderDetails from "../feature/dashboard/pages/providers/pages/ProviderDetails";
+const Providers = lazy(() => import("../feature/dashboard/pages/providers/pages/Providers"));
+const CreateProvider = lazy(() => import("../feature/dashboard/pages/providers/pages/CreateProvider"));
+const UpdateProvider = lazy(() => import("../feature/dashboard/pages/providers/pages/UpdateProvider"));
+const ProviderDetails = lazy(() => import("../feature/dashboard/pages/providers/pages/ProviderDetails"));
 
 // COMPRAS
-import Shopping from "../feature/dashboard/pages/shopping/Shopping";
-import CreateShopping from "../feature/dashboard/pages/shopping/CreateShopping";
-import ShoppingDetails from "../feature/dashboard/pages/shopping/ShoppingDetails";
+const Shopping = lazy(() => import("../feature/dashboard/pages/shopping/Shopping"));
+const CreateShopping = lazy(() => import("../feature/dashboard/pages/shopping/CreateShopping"));
+const ShoppingDetails = lazy(() => import("../feature/dashboard/pages/shopping/ShoppingDetails"));
 
 // ========= VENTAS =========
 // CLIENTES
-import Clients from "../feature/dashboard/pages/Clients/Clients";
-import CreateClients from "../feature/dashboard/pages/Clients/CreateClients";
-import UpdateClients from "../feature/dashboard/pages/Clients/UpdateClients";
-import ClientDetailsPage from "../feature/dashboard/pages/Clients/ClientDetailsPage";
+const Clients = lazy(() => import("../feature/dashboard/pages/Clients/Clients"));
+const CreateClients = lazy(() => import("../feature/dashboard/pages/Clients/CreateClients"));
+const UpdateClients = lazy(() => import("../feature/dashboard/pages/Clients/UpdateClients"));
+const ClientDetailsPage = lazy(() => import("../feature/dashboard/pages/Clients/ClientDetailsPage"));
 
 // PEDIDOS
-import Orders from "../feature/dashboard/pages/orders/pages/Orders";
-import CreateOrder from "../feature/dashboard/pages/orders/pages/CreateOrder"
-import OrderDetails from "../feature/dashboard/pages/orders/pages/OrderDetails"
+const Orders = lazy(() => import("../feature/dashboard/pages/orders/pages/Orders"));
+const CreateOrder = lazy(() => import("../feature/dashboard/pages/orders/pages/CreateOrder"));
+const OrderDetails = lazy(() => import("../feature/dashboard/pages/orders/pages/OrderDetails"));
 
 // VENTAS
-import SalesManagement from "../feature/dashboard/pages/SalesManagement/SalesManagement";
-import CreateSales from "../feature/dashboard/pages/SalesManagement/CreateSales";
-import CreditDetailsModal from "../feature/dashboard/pages/SalesManagement/CreditDetailsModal";
-import ReturnSalesPage from "../feature/dashboard/pages/SalesManagement/ReturnSalesPage";
-import SaleDetailsPage from "../feature/dashboard/pages/SalesManagement/SaleDetailsPage";
+const SalesManagement = lazy(() => import("../feature/dashboard/pages/SalesManagement/SalesManagement"));
+const CreateSales = lazy(() => import("../feature/dashboard/pages/SalesManagement/CreateSales"));
+const CreditDetailsModal = lazy(() => import("../feature/dashboard/pages/SalesManagement/CreditDetailsModal"));
+const ReturnSalesPage = lazy(() => import("../feature/dashboard/pages/SalesManagement/ReturnSalesPage"));
+const SaleDetailsPage = lazy(() => import("../feature/dashboard/pages/SalesManagement/SaleDetailsPage"));
 
 // PAGOS Y ABONOS
-import Payments from "../feature/dashboard/pages/payments/pages/Payments"
-import CreatePayment from "../feature/dashboard/pages/payments/pages/CreatePayment"
-import PaymentDetail from "../feature/dashboard/pages/payments/pages/PaymentsDetail"
-import PaymentClientDetail from "../feature/dashboard/pages/payments/pages/PaymentClientDetail"
+const Payments = lazy(() => import("../feature/dashboard/pages/payments/pages/Payments"));
+const CreatePayment = lazy(() => import("../feature/dashboard/pages/payments/pages/CreatePayment"));
+const PaymentDetail = lazy(() => import("../feature/dashboard/pages/payments/pages/PaymentsDetail"));
+const PaymentClientDetail = lazy(() => import("../feature/dashboard/pages/payments/pages/PaymentClientDetail"));
 
 // DEVOLUCIONES
-import Devolutions from "../feature/dashboard/pages/devolutions/pages/Devolutions";
-import CreateDevolution from "../feature/dashboard/pages/devolutions/pages/CreateDevolution";
-import EditDevolution from "../feature/dashboard/pages/devolutions/pages/EditDevolution";
-import DevolutionProductDetails from "../feature/dashboard/pages/devolutions/pages/Devolutionproductdetails";
+const Devolutions = lazy(() => import("../feature/dashboard/pages/devolutions/pages/Devolutions"));
+const CreateDevolution = lazy(() => import("../feature/dashboard/pages/devolutions/pages/CreateDevolution"));
+const EditDevolution = lazy(() => import("../feature/dashboard/pages/devolutions/pages/EditDevolution"));
+const DevolutionProductDetails = lazy(() => import("../feature/dashboard/pages/devolutions/pages/Devolutionproductdetails"));
 
 //USUARIOS
-import Users from "../feature/dashboard/pages/users/pages/Users";
-import UserDetail from "../feature/dashboard/pages/users/pages/UserDetail";
+const Users = lazy(() => import("../feature/dashboard/pages/users/pages/Users"));
+const UserDetail = lazy(() => import("../feature/dashboard/pages/users/pages/UserDetail"));
 import EditProfile from "../feature/auth/pages/EditProfile";
-import CreateUser from "../feature/dashboard/pages/users/pages/CreateUser";
-import UpdateUser from "../feature/dashboard/pages/users/pages/UpdateUser";
+const CreateUser = lazy(() => import("../feature/dashboard/pages/users/pages/CreateUser"));
+const UpdateUser = lazy(() => import("../feature/dashboard/pages/users/pages/UpdateUser"));
 
 // ROLES
-import Roles from "../feature/dashboard/pages/Roles/Roles";
-import CreateRoles from "../feature/dashboard/pages/Roles/CreateRoles";
-import UpdateRoles from "../feature/dashboard/pages/Roles/UpdateRoles";
-import RoleDetailsPage from "../feature/dashboard/pages/Roles/RoleDetailsPage";
+const Roles = lazy(() => import("../feature/dashboard/pages/Roles/Roles"));
+const CreateRoles = lazy(() => import("../feature/dashboard/pages/Roles/CreateRoles"));
+const UpdateRoles = lazy(() => import("../feature/dashboard/pages/Roles/UpdateRoles"));
+const RoleDetailsPage = lazy(() => import("../feature/dashboard/pages/Roles/RoleDetailsPage"));
 
 import { ProtectedRoute } from "./ProtectedRoute";
 
 export default function RoutersApp() {
     return (
+        <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-gray-500">Cargando...</div>}>
         <Routes>
             {/* ACCESO */}
             <Route path="/" element={<Login />} />
@@ -124,9 +126,9 @@ export default function RoutersApp() {
                 {/* GESTION DE VENTAS */}
                 <Route path="sales-management" element={<ProtectedRoute scope="Ventas" element={<SalesManagement />} />} />
                 <Route path="sales-management/create" element={<ProtectedRoute scope="Ventas" action="Crear" element={<CreateSales />} />} />
-                <Route path="sales-management/credit-details" element={<ProtectedRoute scope="Ventas" element={<CreditDetailsModal />} />} />
-                <Route path="sales-management/return" element={<ProtectedRoute scope="Ventas" element={<ReturnSalesPage />} />} />
-                <Route path="sales-management/details" element={<ProtectedRoute scope="Ventas" element={<SaleDetailsPage />} />} />
+                <Route path="sales-management/credit-details/:id" element={<ProtectedRoute scope="Ventas" element={<CreditDetailsModal />} />} />
+                <Route path="sales-management/return/:id" element={<ProtectedRoute scope="Ventas" element={<ReturnSalesPage />} />} />
+                <Route path="sales-management/details/:id" element={<ProtectedRoute scope="Ventas" element={<SaleDetailsPage />} />} />
 
                 {/* PAGOS Y ABONOS */}
                 <Route path="payments" element={<ProtectedRoute scope="Pagos y abonos" element={<Payments />} />} />
@@ -175,6 +177,7 @@ export default function RoutersApp() {
                 </Route>
             </Route> */}
         </Routes>
+        </Suspense>
     )
 }
 

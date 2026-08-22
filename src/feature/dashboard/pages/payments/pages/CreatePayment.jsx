@@ -44,7 +44,7 @@ export default function CreatePayment() {
 
     return (
         <>
-            <div className="bg-gray-100 p-4 md:p-8 rounded-2xl flex flex-col gap-6 h-full shadow-inner overflow-y-auto">
+            <div className="p-4 md:p-8 flex flex-col gap-6 h-full overflow-y-auto">
                 <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
                         <button

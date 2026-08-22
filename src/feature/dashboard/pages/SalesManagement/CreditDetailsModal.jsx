@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Plus, Ban, FileText, ArrowLeft, ExternalLink } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
@@ -18,63 +18,56 @@ const formatCOP = (val) => {
 
 export default function CreditDetailsPage() {
     const navigate = useNavigate();
+    const { id } = useParams();
     const { showToast } = useToast();
     const [sale, setSale] = useState(null);
     const [confirmData, setConfirmData] = useState(null);
     const [netTotal, setNetTotal] = useState(0);
+    const [isNavigatingToPayment, setIsNavigatingToPayment] = useState(false);
 
     useEffect(() => {
         window.scrollTo(0, 0);
         try {
-            const data = localStorage.getItem("saleToView");
-            if (data) {
-                const parsed = JSON.parse(data);
-                setSale(parsed);
+            if (id) {
+                SalesService.getById(id).then(parsed => {
+                    if (!parsed) return;
+                    setSale(parsed);
 
-                ServicesDevolutions.getBySaleId(parsed.id).then(devoluciones => {
-                    // RECHAZADA y anuladas no cuentan: se comportan como si nunca hubieran existido
+                    ServicesDevolutions.getBySaleId(parsed.id).then(devoluciones => {
                     const devolucionesValidas = devoluciones.filter(
                         (d) => d.estadoResolucion !== "Anulada" && d.estadoResolucion !== "RECHAZADA",
                     );
-                    //   FIX: usar el reembolso real persistido por el backend (regla R6)
-                    // en vez de recalcular cantidad × precio × IVA adivinando el precio
-                    // por nombre de producto (causaba el descuadre de 278.334 vs 279.000).
                     const reembolsos = devolucionesValidas
                         .filter((d) => d.estadoResolucion === "RESUELTO")
                         .reduce((sum, d) => sum + (Number(d.montoReembolso) || 0), 0);
                     setNetTotal(parsed.total - reembolsos);
-                }).catch(e => console.error("Error al cargar devoluciones:", e));
+                    }).catch(e => console.error("Error al cargar devoluciones:", e));
 
-
-                //   FIX: Cargar abonos reales desde el backend
-                paymentsService.getById(parsed.id).then(ventaEnriquecida => {
+                    paymentsService.getById(parsed.id).then(ventaEnriquecida => {
                     if (ventaEnriquecida) {
                         setSale(prev => ({
                             ...prev,
                             abonos: ventaEnriquecida.abonos || [],
                             montoPagado: ventaEnriquecida.montoPagado || 0,
-                            montoPorPagar: ventaEnriquecida.montoPorPagar ?? prev.montoPorPagar
+                            montoPorPagar: ventaEnriquecida.montoPorPagar ?? prev.montoPorPagar,
+                            estado: ventaEnriquecida.estado || prev.estado
                         }));
                     }
-                }).catch(e => console.error("Error cargando abonos:", e));
+                    }).catch(e => console.error("Error cargando abonos:", e));
+                }).catch(e => console.error("Error al cargar la venta:", e));
             }
         } catch (error) {
             console.error("Error al cargar detalles del crédito:", error);
             showToast("error", "Error al cargar los datos del crédito.");
         }
-    }, [showToast]);
+    }, [id, showToast]);
 
     if (!sale) return null;
 
-    const abonos = sale.abonos || [];
-
     const getPaymentRows = () => {
         if (!sale) return [];
-        let saldoPendiente = sale.tipoVenta === 'Mixto' ? (sale.montoCredito || 0) : (sale.total || 0);
+        let saldoPendiente = sale.total || 0;
 
-        //   FIX: Ordenar cronológicamente (más antiguos primero)
-        // El backend envía los abonos en orden descendente, lo que causa un cálculo visual inverso
-        // si no se ordenan primero cronológicamente.
         const abonosCronologicos = [...(sale.abonos || [])].sort((a, b) => {
             const valA = a.timestamp || a.id;
             const valB = b.timestamp || b.id;
@@ -94,7 +87,6 @@ export default function CreditDetailsPage() {
             };
         });
 
-        // Revertir para mostrar el abono más reciente arriba en la UI
         const reversedRows = rows.reverse();
 
         let foundUltimoValido = false;
@@ -113,8 +105,6 @@ export default function CreditDetailsPage() {
             const updatedSale = await SalesService.getById(sale?.id);
             if (updatedSale) {
                 setSale(updatedSale);
-                localStorage.setItem("saleToView", JSON.stringify(updatedSale));
-
                 ServicesDevolutions.getBySaleId(updatedSale.id).then(devoluciones => {
                     const devolucionesValidas = devoluciones.filter(
                         (d) => d.estadoResolucion !== "Anulada" && d.estadoResolucion !== "RECHAZADA",
@@ -131,22 +121,16 @@ export default function CreditDetailsPage() {
         }
     };
 
-    /**
-     * Navega directamente al módulo de Pagos para registrar un abono en esta venta.
-     * El módulo de Pagos está conectado al backend real y maneja toda la lógica.
-     */
     const handleIrAPagos = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        if (!sale?.id) return;
+        if (!sale?.id || isNavigatingToPayment) return;
+        setIsNavigatingToPayment(true);
         navigate(
             `/dashboard/payments/create/${sale.id}`,
-            { state: { venta: sale, documento: sale.documentoNumero } } // antes: sale.numeroDocumento
+            { state: { venta: sale, documento: sale.documentoNumero } }
         );
     };
 
-    /**
-     * Navega al historial de abonos de esta venta en el módulo de Pagos.
-     */
     const handleVerHistorialAbonos = (e) => {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         if (!sale?.id) return;
@@ -178,7 +162,6 @@ export default function CreditDetailsPage() {
 
     const handleBack = (e) => {
         if (e) e.preventDefault();
-        localStorage.removeItem("saleToView");
         navigate("/dashboard/sales-management");
     };
 
@@ -222,15 +205,15 @@ export default function CreditDetailsPage() {
     const paymentRows = getPaymentRows();
 
     return (
-        <div className="p-6 flex flex-col gap-6 w-full h-full overflow-y-auto items-center">
+        <div className="flex flex-col gap-6 w-full h-full overflow-y-auto items-center">
             <div
-                className="w-full max-w-5xl bg-white p-6 md:p-8 rounded-3xl flex flex-col gap-6 shadow-xl relative animate-scale-in border border-gray-100"
+                className="w-full p-6 md:p-8 flex flex-col gap-6 relative animate-scale-in"
             >
                 {/* ═══ CONTENIDO ═══ */}
-                <div className="relative z-10 flex flex-col h-full bg-white md:bg-transparent">
+                <div className="relative z-10 flex flex-col h-full">
 
                     {/* Header */}
-                    <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6">
                         <h2 className="text-[22px] font-bold text-gray-800">
                             Detalles del credito
                         </h2>
@@ -252,59 +235,115 @@ export default function CreditDetailsPage() {
                         </div>
                     </div>
 
-                    {/* Tarjeta info */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 px-4 md:pl-6 md:pr-8 py-6 mx-0 md:mx-8"
-                        style={{ borderLeft: '3px solid #e5e7eb' }}
-                    >
-                        {/* Nombre cliente */}
-                        <p className="text-[17px] font-bold text-gray-800 mb-5">{sale.cliente || 'Sin cliente'}</p>
+                    {/* INFORMACIÓN DEL CRÉDITO */}
+                    <div className="p-6">
 
-                        {/* Grid info */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-24 mb-6">
-                            {/* Columna izquierda */}
-                            <div className="flex flex-col gap-4">
-                                <div>
-                                    <p className="text-xs text-gray-400 leading-none mb-1">Numero de venta</p>
-                                    <p className="font-bold text-gray-800 text-[15px]">{String(sale.numeroVenta || "").padStart(2, '0')}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-400 leading-none mb-1">Estado</p>
-                                    <div className="flex items-center gap-1.5">
-                                        <span className={`w-2.5 h-2.5 rounded-sm rotate-45 ${sale.estado === 'Finalizado' ? 'bg-green-500' : 'bg-yellow-500'}`}></span>
-                                        <p className="font-bold text-[15px]">{sale.estado}</p>
-                                    </div>
-                                </div>
+                        {/* ID DE VENTA*/}
+                        <div className="pb-5 border-b border-gray-300">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-yellow-500 mb-1">
+                                Número de venta
+                            </p>
+                            <p className="text-xl font-bold text-gray-800">
+                                #{String(sale.numeroVenta || "").padStart(2, "0")}
+                            </p>
+                        </div>
+
+                        {/* CLIENTE + ESTADO*/}
+                        <div className="grid grid-cols-1 md:grid-cols-2">
+
+                            {/* CLIENTE */}
+                            <div className="py-5 md:pr-8">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                                    Cliente
+                                </p>
+                                <p className="text-[15px] font-bold text-gray-800">
+                                    {sale.cliente || "Sin cliente"}
+                                </p>
                             </div>
 
-                            {/* Columna derecha */}
-                            <div className="flex flex-col gap-4">
-                                <div>
-                                    <p className="text-xs text-gray-400 leading-none mb-1">Monto Neto (Tras Devoluciones)</p>
-                                    <p className="font-bold text-gray-800 text-[17px]">{formatCOP(netTotal)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-400 leading-none mb-1">Monto Pagado</p>
-                                    <p className="font-bold text-gray-800 text-[17px]">{formatCOP(sale.montoPagado)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-gray-400 leading-none mb-1">Saldo Real Pendiente</p>
-                                    <p className="font-bold text-yellow-600 text-[17px]">{formatCOP(sale.montoPorPagar ?? Math.max(0, netTotal - sale.montoPagado))}</p>
+                            {/* ESTADO */}
+                            <div className="py-5 md:pl-8">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+                                    Estado
+                                </p>
+                                <div className="flex items-center">
+                                    <span
+                                        className={`inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-bold
+                                            ${sale.estado === "Finalizado"
+                                                ? "bg-green-100 text-green-700"
+                                                : sale.estado === "Anulado"
+                                                    ? "bg-red-100 text-red-700"
+                                                    : "bg-yellow-100 text-yellow-700"
+                                            }`}
+                                    >
+                                        {sale.estado}
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Botones de acción — Pagos reales en el módulo de Pagos/Abonos */}
-                        <div className="flex items-center gap-3 mb-4">
+                        {/* MONTOS */}
+                        <div className="border-t border-gray-300 border-b">
+                            <div className="grid grid-cols-1 md:grid-cols-3">
+
+                                {/* MONTO NETO */}
+                                <div className="py-5 md:pr-8">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                                        Monto Neto
+                                    </p>
+                                    <p className="text-lg font-bold text-gray-800">
+                                        {formatCOP(netTotal)}
+                                    </p>
+                                </div>
+
+                                {/* MONTO PAGADO */}
+                                <div className="py-5 md:px-8">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                                        Monto Pagado
+                                    </p>
+                                    <p className="text-lg font-bold text-gray-800">
+                                        {formatCOP(sale.montoPagado)}
+                                    </p>
+                                </div>
+
+                                {/* SALDO PENDIENTE */}
+                                <div className="py-5 md:pl-8">
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                                        Saldo Real Pendiente
+                                    </p>
+                                    <p className="text-lg font-bold text-yellow-600">
+                                        {formatCOP(sale.montoPorPagar ??
+                                            Math.max(0, netTotal - sale.montoPagado)
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ACCIONES */}
+                        <div className="flex flex-wrap items-center gap-3 pt-5">
                             <button
                                 type="button"
                                 onClick={handleIrAPagos}
-                                disabled={sale.estado === "Finalizado" || sale.estado === "Anulado" || sale.estado === "ANULADA"}
+                                disabled={
+                                    isNavigatingToPayment ||
+                                    sale.estado === "Finalizado" ||
+                                    sale.estado === "Anulado" ||
+                                    sale.estado === "ANULADA"
+                                }
                                 className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-yellow-600 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             >
-                                <Plus size={18} className="text-gray-600 bg-gray-100 rounded-full p-0.5" />
-                                Registrar abono
+                                <Plus
+                                    size={18}
+                                    className={`text-gray-600 bg-gray-100 rounded-full p-0.5 ${isNavigatingToPayment ? "animate-spin" : ""}`}
+                                />
+                                {isNavigatingToPayment ? "Abriendo abonos..." : "Registrar abono"}
                             </button>
-                            <span className="text-gray-300">|</span>
+
+                            <span className="text-gray-300">
+                                |
+                            </span>
+
                             <button
                                 type="button"
                                 onClick={handleVerHistorialAbonos}
@@ -314,64 +353,64 @@ export default function CreditDetailsPage() {
                                 Ver historial completo
                             </button>
                         </div>
-
-                        {/* Tabla de abonos */}
-                        {paymentRows.length > 0 ? (
-                            <div className="border border-gray-200 rounded-sm overflow-auto">
-                                <table className="min-w-150 w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b border-gray-200">
-                                            <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Fecha</th>
-                                            <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Abono</th>
-                                            <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Saldo pendiente</th>
-                                            <th className="px-4 py-2.5 text-center font-semibold w-12"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {paymentRows.map((row, index) => {
-                                            const isPositive = row.monto > 0;
-                                            return (
-                                                <tr key={index} className={`border-b border-gray-100 last:border-b-0 ${row.anulado ? 'opacity-60 bg-red-50' : ''}`}>
-                                                    <td className="px-4 py-2.5">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`${row.anulado ? 'text-red-500' : (isPositive && index > 0 ? 'text-yellow-600' : 'text-gray-700')} text-sm`}>
-                                                                {row.fecha.split(' ')[0]}
-                                                            </span>
-                                                            {row.fecha.split(' ')[1] && (
-                                                                <span className={`text-sm italic font-medium ${row.anulado ? 'text-red-400' : 'text-blue-500'}`}>
-                                                                    {row.fecha.split(' ')[1]}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className={`px-4 py-3 font-semibold text-base ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-green-600' : 'text-gray-700')}`}>
-                                                        {isPositive ? '+' : ''}{formatCOP(row.monto)}
-                                                    </td>
-                                                    <td className={`px-4 py-3 text-base ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-yellow-600 font-semibold' : 'text-gray-700')}`}>{formatCOP(row.saldoPendiente)}</td>
-                                                    <td className="px-4 py-2.5 text-center">
-                                                        {!row.anulado && row.esUltimoActivo && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={(e) => { e.preventDefault(); handleRemovePayment(row.id); }}
-                                                                className="text-red-400 hover:text-red-600 transition cursor-pointer"
-                                                                title="Anular abono"
-                                                            >
-                                                                <Ban size={16} />
-                                                            </button>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <div className="text-center py-4 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
-                                No hay abonos registrados
-                            </div>
-                        )}
                     </div>
+
+                    {/* Tabla de abonos */}
+                    {paymentRows.length > 0 ? (
+                        <div className="border border-gray-200 rounded-sm overflow-auto">
+                            <table className="min-w-150 w-full text-sm">
+                                <thead>
+                                    <tr className="border-b border-gray-200">
+                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Fecha</th>
+                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Abono</th>
+                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Saldo pendiente</th>
+                                        <th className="px-4 py-2.5 text-center font-semibold w-12"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paymentRows.map((row, index) => {
+                                        const isPositive = row.monto > 0;
+                                        return (
+                                            <tr key={index} className={`border-b border-gray-100 last:border-b-0 ${row.anulado ? 'opacity-60 bg-red-50' : ''}`}>
+                                                <td className="px-4 py-2.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`${row.anulado ? 'text-red-500' : (isPositive && index > 0 ? 'text-yellow-600' : 'text-gray-700')} text-sm`}>
+                                                            {row.fecha.split(' ')[0]}
+                                                        </span>
+                                                        {row.fecha.split(' ')[1] && (
+                                                            <span className={`text-sm italic font-medium ${row.anulado ? 'text-red-400' : 'text-blue-500'}`}>
+                                                                {row.fecha.split(' ')[1]}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className={`px-4 py-3 font-semibold text-base ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-green-600' : 'text-gray-700')}`}>
+                                                    {isPositive ? '+' : ''}{formatCOP(row.monto)}
+                                                </td>
+                                                <td className={`px-4 py-3 text-base ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-yellow-600 font-semibold' : 'text-gray-700')}`}>{formatCOP(row.saldoPendiente)}</td>
+                                                <td className="px-4 py-2.5 text-center">
+                                                    {!row.anulado && row.esUltimoActivo && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.preventDefault(); handleRemovePayment(row.id); }}
+                                                            className="text-red-400 hover:text-red-600 transition cursor-pointer"
+                                                            title="Anular abono"
+                                                        >
+                                                            <Ban size={16} />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="text-center py-4 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
+                            No hay abonos registrados
+                        </div>
+                    )}
                 </div>
             </div>
 

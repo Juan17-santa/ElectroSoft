@@ -87,8 +87,6 @@ export default function Devolutions() {
         if (error) showToast("error", error);
     }, [error, showToast]);
 
-    // ─── Helpers de grupo ────────────────────────────────────────────────────
-
     const getFechaInicio = (g) =>
         g.reduce((min, d) => {
             const f = d.fechaDevolucion ?? "";
@@ -101,12 +99,6 @@ export default function Devolutions() {
             return (!max || f > max) ? f : max;
         }, null) ?? "—";
 
-    /**
-     * Devuelve la devolución más recientemente EDITADA del grupo.
-     * Usa actualizadoEn (ISO timestamp completo) para precisión exacta al segundo,
-     * evitando el empate que ocurre cuando varias devoluciones comparten la misma
-     * fechaEstado (solo fecha, sin hora). Fallback a creadoEn si falta actualizadoEn.
-     */
     const getMasReciente = (g) =>
         [...g].sort((a, b) => {
             const ta = a.actualizadoEn ?? a.creadoEn ?? "";
@@ -124,8 +116,6 @@ export default function Devolutions() {
         const sale = ventasMap?.[g[0].idVenta];
         return !hayProductosRetornables(sale, contables);
     };
-
-    // ─── Handlers ────────────────────────────────────────────────────────────
 
     const handleSearch = (e) => { setSearchTerm(e.target.value); };
 
@@ -155,7 +145,7 @@ export default function Devolutions() {
 
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-6 h-full shadow-inner">
+            <div className="p-6 flex flex-col gap-6 h-full">
 
                 <p className="text-xl font-semibold flex items-center gap-2">
                     Control de devoluciones
@@ -170,7 +160,7 @@ export default function Devolutions() {
                     onReportClick={handleGenerarReporte}
                 />
 
-                <div className="p-0.5 rounded-2xl bg-linear-to-r from-yellow-400 to-white">
+                <div className="p-0.5 rounded-2xl bg-yellow-200">
                     <div className="bg-gray-100 rounded-2xl overflow-auto">
                         <table className="min-w-250 w-full text-sm">
                             <thead className="bg-gray-200">
@@ -274,8 +264,8 @@ export default function Devolutions() {
                                                         <Restricted scope="Devoluciones" action="Ver">
                                                             <button
                                                                 title="Ver detalle"
-                                                                onClick={() => navigate("/dashboard/sales-management/return", {
-                                                                    state: { idVenta, mode: "view-only" },
+                                                                onClick={() => navigate(`/dashboard/sales-management/return/${idVenta}`, {
+                                                                    state: { mode: "view-only" },
                                                                 })}
                                                                 className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
                                                             >
@@ -290,8 +280,8 @@ export default function Devolutions() {
                                                                 <button
                                                                     onClick={() =>
                                                                         !bloqueado &&
-                                                                        navigate("/dashboard/sales-management/return", {
-                                                                            state: { idVenta, mode: "editable" },
+                                                                        navigate(`/dashboard/sales-management/return/${idVenta}`, {
+                                                                            state: { mode: "editable" },
                                                                         })
                                                                     }
                                                                     disabled={bloqueado}

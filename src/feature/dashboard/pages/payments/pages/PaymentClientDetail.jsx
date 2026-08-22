@@ -28,6 +28,7 @@ export default function PaymentClientDetail() {
     const [errorCupo, setErrorCupo] = useState("");
     const [loading, setLoading] = useState(true);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [navigatingVentaId, setNavigatingVentaId] = useState(null);
 
     const cargarDatos = async () => {
         setLoading(true);
@@ -113,7 +114,7 @@ export default function PaymentClientDetail() {
     };
 
     if (loading) return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
+        <div className="p-6 flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-3 text-yellow-500">
                 <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin" />
                 <p className="text-sm font-medium text-gray-500">Cargando cuenta de crédito...</p>
@@ -122,7 +123,7 @@ export default function PaymentClientDetail() {
     );
 
     if (!resumen) return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex items-center justify-center h-full shadow-inner">
+        <div className="p-6 flex items-center justify-center h-full">
             <p className="text-gray-500 text-sm">Cliente no encontrado.</p>
         </div>
     );
@@ -134,7 +135,7 @@ export default function PaymentClientDetail() {
 
     return (
         <>
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full h-full shadow-inner overflow-y-auto">
+            <div className="p-6 flex flex-col gap-6 w-full h-full overflow-y-auto">
 
                 {/* Header */}
                 <div className="flex items-center justify-between mb-2">
@@ -163,9 +164,8 @@ export default function PaymentClientDetail() {
                 </div>
 
                 {/* Card resumen cliente */}
-                <div className="bg-white rounded-2xl shadow-md p-5 flex flex-col gap-4">
+                <div className="bg-white rounded-2xl shadow-lg p-5 flex flex-col gap-4">
 
-                    {/* Fila superior: avatar + datos + estado */}
                     <div className="flex items-center gap-4">
                         <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0
                         ${isSuspendido ? "bg-red-100 text-red-500" : "bg-yellow-100 text-yellow-500"}`}>
@@ -189,7 +189,6 @@ export default function PaymentClientDetail() {
 
                     {/* Fila cupos */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                        {/* Cupo total — con botón editar */}
                         <div className="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 flex justify-between items-center">
                             <p className="text-xs text-gray-400">Cupo total</p>
                             <div className="flex items-center gap-2">
@@ -243,7 +242,7 @@ export default function PaymentClientDetail() {
                     </p>
 
                     {ventas.length === 0 ? (
-                        <div className="bg-white rounded-2xl p-8 text-center text-gray-400 shadow-md">
+                        <div className="bg-white rounded-2xl p-8 text-center text-gray-400 shadow-lg">
                             Este cliente no tiene ventas a crédito pendientes.
                         </div>
                     ) : (
@@ -256,10 +255,15 @@ export default function PaymentClientDetail() {
                                         `/dashboard/payments/detail/${venta.id}`,
                                         { state: { payment: venta, documento } }
                                     )}
-                                    onAbonar={() => navigate(
-                                        `/dashboard/payments/create/${venta.id}`,
-                                        { state: { venta, documento } }
-                                    )}
+                                    isAbonarDisabled={navigatingVentaId === venta.id}
+                                    onAbonar={() => {
+                                        if (navigatingVentaId) return;
+                                        setNavigatingVentaId(venta.id);
+                                        navigate(
+                                            `/dashboard/payments/create/${venta.id}`,
+                                            { state: { venta, documento } }
+                                        );
+                                    }}
                                 />
                             ))}
                         </div>
@@ -354,7 +358,7 @@ export default function PaymentClientDetail() {
                                 generarReporteCliente(resumen, ventas);
                             }
                             showToast("success", "Reporte generado correctamente");
-                        } catch (error) {
+                        } catch {
                             showToast("error", "Error al generar el reporte");
                         }
                         setShowReportModal(false);

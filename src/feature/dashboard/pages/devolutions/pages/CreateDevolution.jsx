@@ -376,8 +376,8 @@ export default function CreateDevolution() {
                 showToast("success", fromReturn ? "Devolución agregada a la lista." : "Devolución creada correctamente.");
                     setTimeout(() => {
                     if (fromReturn) {
-                        navigate("/dashboard/sales-management/return", {
-                            state: { idVenta: form.idVenta, mode: modeOrigen },
+                        navigate(`/dashboard/sales-management/return/${form.idVenta}`, {
+                            state: { mode: modeOrigen },
                         });
                     } else {
                         navigate("/dashboard/devolutions");
@@ -399,8 +399,8 @@ export default function CreateDevolution() {
 
         if (!hasChanges) {
             if (fromReturn) {
-                navigate("/dashboard/sales-management/return", {
-                    state: { idVenta: form.idVenta, mode: modeOrigen },
+                navigate(`/dashboard/sales-management/return/${form.idVenta}`, {
+                    state: { mode: modeOrigen },
                 });
             } else {
                 navigate("/dashboard/devolutions");
@@ -414,8 +414,8 @@ export default function CreateDevolution() {
             message: "Si cancelas ahora perderás los datos ingresados. ¿Estás seguro?",
             onConfirm: () => {
                 if (fromReturn) {
-                    navigate("/dashboard/sales-management/return", {
-                        state: { idVenta: form.idVenta, mode: modeOrigen },
+                    navigate(`/dashboard/sales-management/return/${form.idVenta}`, {
+                        state: { mode: modeOrigen },
                     });
                 } else {
                     navigate("/dashboard/devolutions");

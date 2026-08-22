@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Eye, Pencil, Trash2, Undo2, FileText, History, ArrowLeft } from "lucide-react";
 import { SalesService } from "./services/SalesService";
 import { ServicesDevolutions } from "../devolutions/services/ServicesDevolutions";
@@ -20,6 +20,7 @@ const ESTADOS_BLOQUEADOS = ["RESUELTO", "RECHAZADA", "Anulada"];
 export default function ReturnSalesPage() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { id } = useParams();
     const { showToast } = useToast();
 
     const [sale, setSale] = useState(null);
@@ -29,34 +30,22 @@ export default function ReturnSalesPage() {
     const [devPage, setDevPage] = useState(1);
     const [historyDev, setHistoryDev] = useState(null);
 
-    // ─── Modo ─────────────────────────────────────────────────────────────────
     const mode = location.state?.mode ?? "from-sales";
     const isFromSales = mode === "from-sales";
     const isEditable = mode === "editable";
-    // Cuando se abre desde Ventas se ocultan anuladas/RECHAZADAS; cuando se abre
-    // desde Control de Devoluciones (sin origin "sales") se muestran todas como
-    // registro de auditoría.
     const desdeVentas = isFromSales || location.state?.origin === "sales";
 
-    // ─── Cargar venta ─────────────────────────────────────────────────────────
     useEffect(() => {
-        const idVentaState = location.state?.idVenta;
-        if (idVentaState) {
-            SalesService.getById(idVentaState).then(found => setSale(found || null)).catch(e => console.error(e));
-        } else {
-            const data = localStorage.getItem("saleToReturn");
-            if (data) setSale(JSON.parse(data));
-        }
-    }, [location.key, location.state?.idVenta]);
+        if (!id) return;
+        SalesService.getById(id)
+            .then(found => setSale(found || null))
+            .catch(e => console.error(e));
+    }, [id]);
 
-    // ─── Cargar devoluciones ──────────────────────────────────────────────────
     const recargarDevoluciones = useCallback(() => {
         if (sale?.id) {
             ServicesDevolutions.getBySaleId(sale.id)
                 .then((devs) => {
-                    // En Ventas solo se muestran devoluciones contables activas: anuladas y
-                    // RECHAZADAS quedan ocultas (R1: RECHAZADA se comporta como si nunca
-                    // hubiera existido). Desde Control de Devoluciones sí se muestran todas.
                     const devsActivas = desdeVentas
                         ? devs.filter(
                             (d) => !d.anulada && d.estadoResolucion !== "Anulada" && d.estadoResolucion !== "RECHAZADA",
@@ -96,7 +85,6 @@ export default function ReturnSalesPage() {
         )
         .reduce((s, d) => s + Number(d.montoReembolso || 0), 0);
 
-    // ─── Paginación ───────────────────────────────────────────────────────────
     const totalProdPages = Math.max(1, Math.ceil(productos.length / PROD_PER_PAGE));
     const prodActual = Math.min(prodPage, totalProdPages);
     const paginatedProds = productos.slice((prodActual - 1) * PROD_PER_PAGE, prodActual * PROD_PER_PAGE);
@@ -121,14 +109,12 @@ export default function ReturnSalesPage() {
         });
     };
 
-    // Propaga mode para que DevolutionProductDetails sepa a dónde volver
     const handleVerDetalle = (devolucion) => {
         navigate(`/dashboard/devolutions/product-details/${devolucion.id}`, {
             state: { mode, idVenta: sale.id },
         });
     };
 
-    // Propaga mode para que EditDevolution sepa a dónde volver
     const handleEditar = (devolucion) => {
         navigate(`/dashboard/devolutions/edit/${devolucion.id}`, {
             state: { idVenta: sale.id, mode },
@@ -137,7 +123,6 @@ export default function ReturnSalesPage() {
 
     const handleEliminar = (devolucion) => {
         const esTemporal = String(devolucion.id).startsWith("temp-");
-
         if (!esTemporal && ESTADOS_BLOQUEADOS.includes(devolucion.estadoResolucion)) {
             showToast("error", `No se puede anular una devolución en estado ${devolucion.estadoResolucion}.`);
             return;
@@ -198,7 +183,6 @@ export default function ReturnSalesPage() {
                     }
 
                     localStorage.removeItem(key);
-                    localStorage.removeItem("saleToReturn");
                     showToast("success", "Devolución registrada correctamente.");
                     setConfirmData(null);
                      setTimeout(() => {
@@ -298,7 +282,6 @@ export default function ReturnSalesPage() {
             localStorage.removeItem(`pendingDevs_${sale.id}`);
         }
         if (isFromSales) {
-            localStorage.removeItem("saleToReturn");
             navigate("/dashboard/sales-management");
         } else {
             navigate("/dashboard/devolutions");
@@ -307,9 +290,7 @@ export default function ReturnSalesPage() {
 
     return (
         <>
-            <div className="bg-gray-50 p-6 rounded-2xl flex flex-col gap-4 w-full h-full shadow-inner overflow-y-auto">
-
-                {/* Header */}
+            <div className="p-6 flex flex-col gap-4 w-full h-full overflow-y-auto">
                 <div className="flex flex-col md:flex-row gap-4 justify-between">
                     <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                         Devolución de venta
@@ -339,9 +320,9 @@ export default function ReturnSalesPage() {
                 </div>
 
                 {/* Información venta */}
-                <div>
+                <div className="border-b border-gray-300 py-4">
                     <p className="font-semibold text-gray-800 mb-2">Información venta</p>
-                    <div className="bg-white rounded-xl border-l-4 border-yellow-400 px-5 py-4 grid grid-cols-1 md:grid-cols-5 items-center gap-8 shadow-sm">
+                    <div className="bg-white rounded-xl border-l-4 border-yellow-400 px-5 py-5 grid grid-cols-1 md:grid-cols-5 items-center gap-8 shadow-sm">
                         <div><p className="text-xs text-gray-400">ID venta</p><p className="font-semibold text-gray-800">{String(sale.numeroVenta || "").padStart(2, '0')}</p></div>
                         <div><p className="text-xs text-gray-400">Fecha creación</p><p className="font-semibold text-gray-800">{sale.fecha ?? "—"}</p></div>
                         <div><p className="text-xs text-gray-400">IVA</p><p className="font-bold text-gray-800">{formatCOP(sale.iva)}</p></div>
@@ -351,19 +332,19 @@ export default function ReturnSalesPage() {
                 </div>
 
                 {/* Productos de la venta */}
-                <div>
+                <div className="border-b border-gray-300 py-4">
                     <p className="font-semibold text-gray-800 mb-2">Productos de la venta</p>
                     <div className="rounded-xl overflow-x-auto border border-gray-200 bg-white shadow-sm">
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="bg-gray-50 border-b border-gray-200 text-left">
-                                    <th className="px-4 py-2.5 font-semibold">Producto</th>
-                                    <th className="px-4 py-2.5 font-semibold text-center">Estado</th>
-                                    <th className="px-4 py-2.5 font-semibold text-center">Garantía</th>
-                                    <th className="px-4 py-2.5 font-semibold text-center">Cantidad</th>
-                                    <th className="px-4 py-2.5 font-semibold">Precio</th>
-                                    <th className="px-4 py-2.5 font-semibold">Subtotal</th>
-                                     {(isFromSales || isEditable) && <th className="px-4 py-2.5 font-semibold text-center">Acciones</th>}
+                                    <th className="px-4 py-3 font-semibold">Producto</th>
+                                    <th className="px-4 py-3 font-semibold text-center">Estado</th>
+                                    <th className="px-4 py-3 font-semibold text-center">Garantía</th>
+                                    <th className="px-4 py-3 font-semibold text-center">Cantidad</th>
+                                    <th className="px-4 py-3 font-semibold">Precio</th>
+                                    <th className="px-4 py-3 font-semibold">Subtotal</th>
+                                     {(isFromSales || isEditable) && <th className="px-4 py-3 font-semibold text-center">Acciones</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -380,8 +361,8 @@ export default function ReturnSalesPage() {
 
                                     return (
                                         <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
-                                            <td className="px-4 py-2.5">{prod.nombre}</td>
-                                            <td className="px-4 py-2.5 text-center">
+                                            <td className="px-4 py-3">{prod.nombre}</td>
+                                            <td className="px-4 py-3 text-center">
                                                 {totalDevuelto
                                                     ? <span className="text-xs bg-orange-100 text-orange-600 font-medium px-2 py-0.5 rounded-full">Devuelto</span>
                                                     : devuelto > 0
@@ -389,7 +370,7 @@ export default function ReturnSalesPage() {
                                                         : <span className="text-xs bg-green-100 text-green-600 font-medium px-2 py-0.5 rounded-full">Disponible</span>
                                                 }
                                             </td>
-                                            <td className="px-4 py-2.5 text-center">
+                                            <td className="px-4 py-3 text-center">
                                                 {mesesGarantia === 0 ? (
                                                     <span className="text-xs text-gray-500">Sin garantía</span>
                                                 ) : garantiaValida ? (
@@ -398,7 +379,7 @@ export default function ReturnSalesPage() {
                                                     <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full font-medium">Expiró</span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-2.5 text-center">
+                                            <td className="px-4 py-3 text-center">
                                                 <span>{prod.cantidad}</span>
                                                 {devuelto > 0 && (
                                                     <span className="ml-1.5 text-xs text-orange-500 font-medium">
@@ -406,10 +387,10 @@ export default function ReturnSalesPage() {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-2.5">{formatCOP(prod.precio)}</td>
-                                            <td className="px-4 py-2.5">{formatCOP(prod.precio * prod.cantidad)}</td>
+                                            <td className="px-4 py-3">{formatCOP(prod.precio)}</td>
+                                            <td className="px-4 py-3">{formatCOP(prod.precio * prod.cantidad)}</td>
                                              {(isFromSales || isEditable) && (
-                                                <td className="px-4 py-2.5 text-center">
+                                                <td className="px-4 py-3 text-center">
                                                     {!totalDevuelto
                                                         ? <button onClick={() => handleDevolver(prod)} title="Devolver este producto" className="text-yellow-600 hover:text-yellow-800 transition cursor-pointer"><Undo2 size={16} /></button>
                                                         : <button disabled title="Stock completamente devuelto" className="text-gray-300 cursor-not-allowed"><Undo2 size={16} /></button>
@@ -430,7 +411,7 @@ export default function ReturnSalesPage() {
                 </div>
 
                 {/* Productos devueltos */}
-                <div>
+                <div className="border-b border-gray-300 py-4">
                     <p className="font-semibold text-gray-800 mb-2">
                         Productos devueltos
                         <span className="ml-2 text-xs font-normal text-gray-400">({devolucionesVenta.length})</span>
@@ -535,7 +516,7 @@ export default function ReturnSalesPage() {
                  </div>
 
                  {/* Footer */}
-                 <div className={`flex items-center pt-4 justify-end gap-6 border-t border-gray-200`}>
+                 <div className={`flex items-center pt-4 justify-end gap-6`}>
                      <div className="flex items-center gap-2 text-sm">
                          <span className="font-semibold text-gray-700">Total monto reembolsado:</span>
                          <span className="font-bold text-green-700 text-base">

@@ -11,7 +11,6 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
     const [activeOrder, setActiveOrder] = useState(order);
     const [diasPlazo, setDiasPlazo] = useState("");
     const [requestedCredit, setRequestedCredit] = useState(0);
-    const [latestClientCupo, setLatestClientCupo] = useState(0);
     const [latestClientCupoDisponible, setLatestClientCupoDisponible] = useState(0);
     const [modalAlert, setModalAlert] = useState(null);
 
@@ -30,27 +29,22 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                 if (clientId) {
                     try {
                         const freshClient = await ClientsService.getById(clientId);
-                        setLatestClientCupo(freshClient?.cupoTotal || 0);
-
                         try {
                             const resumen = await paymentsService.getResumenCliente(freshClient.documento || freshClient.documentNumber || freshClient?.documento);
                             setLatestClientCupoDisponible(resumen?.cupoDisponible ?? (freshClient?.cupoTotal || 0));
-                        } catch (e) {
+                        } catch {
                             setLatestClientCupoDisponible(freshClient?.cupoTotal || 0);
                         }
                     } catch (clientError) {
                         console.warn("No se pudo obtener el cliente actualizado:", clientError);
-                        setLatestClientCupo(orderData.client?.cupoTotal || 0);
                         setLatestClientCupoDisponible(orderData.client?.cupoTotal || 0);
                     }
                 } else {
-                    setLatestClientCupo(orderData.client?.cupoTotal || 0);
                     setLatestClientCupoDisponible(orderData.client?.cupoTotal || 0);
                 }
             } catch (error) {
                 console.warn("No se pudo obtener el pedido actualizado:", error);
                 setActiveOrder(order);
-                setLatestClientCupo(order.client?.cupoTotal || 0);
             }
         };
 

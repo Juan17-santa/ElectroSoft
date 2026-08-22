@@ -62,11 +62,6 @@ export default function useProductTable({
         };
     }, [searchTerm, currentPage, recordsPerPage]);
 
-    const enrichedProducts = products.map(product => ({
-        ...product,
-        categoriaName: getCategoryName(product.categoriaId)
-    }));
-
     const deleteProduct = (id) => {
         setConfirmData({
             type: "delete",

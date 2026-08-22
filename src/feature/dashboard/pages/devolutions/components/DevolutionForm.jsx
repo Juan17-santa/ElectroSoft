@@ -12,7 +12,7 @@ import {
     RESPONSABLES, ESTADOS_RESOLUCION,
     getGestionesPermitidas, getCondicionesPermitidas,
 } from "../helpers/devolutionsHelpers";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 
 function Field({ icon, label, children, className = "" }) {
     const Icon = icon;
@@ -114,7 +114,7 @@ export default function DevolutionForm({
         && parseFloat(form.montoReembolso) > valorTotalReferencia;
 
     return (
-        <div className="bg-gray-100 p-6 rounded-2xl flex flex-col h-full gap-6 shadow-inner overflow-auto">
+        <div className="p-6 flex flex-col h-full gap-6 overflow-auto">
 
             <div>
                 <p className="text-xl font-semibold flex items-center gap-2">
@@ -476,7 +476,7 @@ export default function DevolutionForm({
                     onClick={onCancel}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-600 shadow-sm transition cursor-pointer"
                 >
-                    <ArrowLeft size={16}/>
+                    {readOnly ? <ArrowLeft size={16} /> : <X size={16} />}
                     {readOnly ? "Volver" : "Cancelar"}
                 </button>
 

@@ -40,7 +40,6 @@ export default function useEditProfile() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const fileRef = useRef();
-    const debounceRef = useRef(null);
 
     useEffect(() => {
         const user = getAuthUser();

@@ -242,7 +242,7 @@ export const generarReporteClientePDF = (resumen, ventas) => {
                             styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248], halign: 'center' }
                         }, {
                             content: fmt(a.monto),
-                            styles: { fontStyle: 'italic', textColor: [34, 153, 84], fillColor: [248, 248, 248], fontStyle: 'bold' }
+                            styles: { fontStyle: 'bold', textColor: [34, 153, 84], fillColor: [248, 248, 248] }
                         }, {
                             content: '—',
                             styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248], halign: 'center' }

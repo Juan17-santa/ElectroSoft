@@ -4,7 +4,7 @@ import { Validations } from "../../../../../utils/validations";
 import api from "../../../../../utils/api.js";
 import { useToast } from "../../../../../context/ToastContext";
 
-export function useUserForm({ userToEdit, navigate }) {
+export function useUserForm({ userToEdit }) {
 
     const { showToast } = useToast();
 

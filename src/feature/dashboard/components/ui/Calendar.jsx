@@ -34,13 +34,6 @@ function CalendarDropdown({ fechaSeleccionada, onSeleccionar, onCerrar, readOnly
     const diasEnMes = new Date(viewYear, viewMonth + 1, 0).getDate();
     const celdas = Array(primerDia).fill(null).concat(Array.from({ length: diasEnMes }, (_, i) => i + 1));
 
-    const esFuturo = (dia) => {
-        const fecha = new Date(viewYear, viewMonth, dia);
-        fecha.setHours(0, 0, 0, 0);
-        const h = new Date(); h.setHours(0, 0, 0, 0);
-        return fecha > h;
-    };
-
     // NUEVA FUNCIÓN DE VALIDACIÓN
     const esInvalida = (dia) => {
         const fechaEvaluar = new Date(viewYear, viewMonth, dia);

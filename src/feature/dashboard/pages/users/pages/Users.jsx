@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { usersService } from "../services/usersService";
 
 import Pagination from "../../../components/ui/Pagination";
@@ -16,7 +15,6 @@ import { useToast } from "../../../../../context/ToastContext";
 export default function Users() {
     const { hasPermission } = usePermissions();
     const { showToast } = useToast();
-    const navigate = useNavigate();
 
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);

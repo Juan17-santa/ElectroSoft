@@ -48,14 +48,34 @@ const invalidateClientsCache = () => {
 const getClientName = async (documento, clienteId) => {
     try {
         const clients = await getCachedClients();
-        const found = documento
-            ? clients.find(c => c.documento === String(documento))
-            : clients.find(c => String(c.id) === String(clienteId));
+        const relationId = clienteId?._id || clienteId?.id || clienteId;
+        const documentNumber = String(documento || "").split(" ").pop().trim();
+        const found = clients.find(c =>
+            (relationId && String(c.id) === String(relationId)) ||
+            (documentNumber && documentNumber !== "N/A" && String(c.documento) === documentNumber)
+        );
         if (!found) return "Sin nombre";
         return `${found.nombres} ${found.apellidos}`;
     } catch {
         return "Sin nombre";
     }
+};
+
+const getSaleClientId = (sale) => {
+    const clienteId = sale?.clienteId;
+    return clienteId?._id || clienteId?.id || clienteId || null;
+};
+
+const belongsToClient = (sale, client) => {
+    const saleClientId = getSaleClientId(sale);
+    if (saleClientId && client?.id && String(saleClientId) === String(client.id)) {
+        return true;
+    }
+
+    const saleDocument = String(sale?.documentoNumero || sale?.numeroDocumento || "")
+        .split(" ").pop().trim();
+    return Boolean(saleDocument && saleDocument !== "N/A" &&
+        client?.documento && saleDocument === String(client.documento).trim());
 };
 
 
@@ -74,18 +94,35 @@ const enriquecerVenta = (venta) => {
     };
 };
 
-const esCredito = (tipoVenta) =>
-    tipoVenta === "Crédito" || tipoVenta === "Credito" || tipoVenta === "Mixto";
+const normalizeValue = (value) => String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
 
-const esAnulada = (estado) =>
-    estado === "Anulada" || estado === "Anulado" || estado === "ANULADA";
+const esCredito = (tipoVenta) => {
+    const tipo = normalizeValue(tipoVenta);
+    return tipo === "credito" || tipo === "mixto";
+};
+
+const esAnulada = (estado) => {
+    const estadoNormalizado = normalizeValue(estado);
+    return estadoNormalizado === "anulada" || estadoNormalizado === "anulado";
+};
 
 //   FIX: Las ventas ANULADAS no deben aparecer en pagos pendientes.
 // Incluye ventas con devoluciones activas (Devuelto / Devolución Parcial):
 // la regla R3 permite registrar abonos en esas ventas.
-const esPendiente = (estado) =>
-    estado === "Vigente" || estado === "ACTIVA" || estado === "Pendiente" ||
-    estado === "Devuelto" || estado === "Devolución Parcial";
+const esPendiente = (estado) => {
+    const estadoNormalizado = normalizeValue(estado);
+    return !esAnulada(estado) && (
+        estadoNormalizado === "vigente" ||
+        estadoNormalizado === "activa" ||
+        estadoNormalizado === "pendiente" ||
+        estadoNormalizado === "devuelto" ||
+        estadoNormalizado === "devolucion parcial"
+    );
+};
 
 //   Helper: parsea la respuesta de /payments/venta/:id correctamente.
 // El backend devuelve { venta, totalPagado, saldoPendiente, estadoPago, pagos: [] }
@@ -96,24 +133,34 @@ const parsePagosResponse = (responseData) => {
     return [];
 };
 
+const incluirPagoInicialMixto = (venta, abonos) => {
+    const esMixta = venta?.tipoVenta === "Mixto" || venta?.formaPago === "Mixto";
+    const montoContado = Number(venta?.montoContado || 0);
+    if (!esMixta || montoContado <= 0) return abonos;
+
+    const pagosActivos = abonos
+        .filter(abono => !abono.anulado)
+        .reduce((total, abono) => total + Number(abono.monto || 0), 0);
+
+    // El backend aplica el contado al crear la venta, pero no siempre lo
+    // devuelve como documento en /payments. Se representa solo en la UI.
+    if (pagosActivos >= montoContado) return abonos;
+
+    return [
+        ...abonos,
+        {
+            id: `inicial-${venta.id}`,
+            fecha: localDate(venta.fecha),
+            timestamp: new Date(venta.fecha || Date.now()).getTime(),
+            monto: montoContado,
+            metodoPago: "EFECTIVO",
+            anulado: false,
+            esPagoInicial: true,
+        },
+    ];
+};
+
 const paymentsService = {
-
-    getCupos() {
-        try {
-            return JSON.parse(localStorage.getItem("cupos") || "{}");
-        } catch { return {}; }
-    },
-
-    getCupo(documento) {
-        return this.getCupos()[String(documento)] || 0;
-    },
-
-    setCupo(documento, monto) {
-        const cupos = this.getCupos();
-        cupos[String(documento)] = monto;
-        localStorage.setItem("cupos", JSON.stringify(cupos));
-        window.dispatchEvent(new Event("payments-updated"));
-    },
 
     async checkAndExpireOverdue() {
         // Backend doesn't have overdue status logic yet, skip for now
@@ -154,7 +201,7 @@ const paymentsService = {
             .filter(s => esCredito(s.tipoVenta) && esPendiente(s.estado))
             .map(async s => {
                 const pagosRaw = paymentsByVentaId[String(s.id)] || [];
-                const abonos = pagosRaw.map(p => ({
+                let abonos = pagosRaw.map(p => ({
                     id: p._id || p.id,
                     fecha: localDate(p.fechaPago),
                     timestamp: new Date(p.fechaPago).getTime(),
@@ -162,18 +209,24 @@ const paymentsService = {
                     metodoPago: p.metodoPago,
                     anulado: p.estado === 'ANULADO' || false
                 }));
+                abonos = incluirPagoInicialMixto(s, abonos);
 
                 //   FIX: usar el saldo canónico que envía GET /sales (descuenta pagos
                 //   Y reembolsos de devoluciones RESUELTAS, regla R6). No recalcular a mano.
                 const montoPorPagar = Number(s.montoPorPagar) > 0 ? Number(s.montoPorPagar) : 0;
+                const pagosActivos = abonos
+                    .filter(abono => !abono.anulado)
+                    .reduce((total, abono) => total + Number(abono.monto || 0), 0);
                 //   FIX: calcular estado Finalizado cuando ya está pagado
-                const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : s.estado;
+                const estadoFinal = esAnulada(s.estado)
+                    ? "Anulado"
+                    : montoPorPagar <= 0 ? "Finalizado" : "Vigente";
 
                 return enriquecerVenta({
                     ...s,
                     fuente: "venta",
-                    cliente: s.cliente || await getClientName(s.numeroDocumento, null),
-                    montoPagado: Number(s.montoPagado) > 0 ? Number(s.montoPagado) : 0,
+                    cliente: s.cliente || await getClientName(s.documentoNumero || s.numeroDocumento, s.clienteId),
+                    montoPagado: Number(s.montoPagado) > 0 ? Number(s.montoPagado) : pagosActivos,
                     montoPorPagar,
                     estado: estadoFinal,
                     abonos
@@ -225,7 +278,7 @@ const paymentsService = {
         let venta = null;
         try {
             venta = await SalesService.getById(id);
-        } catch (e) {
+        } catch {
             // Might be order id
         }
 
@@ -246,6 +299,7 @@ const paymentsService = {
                     metodoPago: p.metodoPago,
                     anulado: p.estado === 'ANULADO' || false
                 }));
+                abonos = incluirPagoInicialMixto(venta, abonos);
                 //   FIX: usar el saldo canónico que calcula el backend (descuenta pagos
                 //   y reembolsos de devoluciones RESUELTAS, regla R6). No recalcular a mano.
                 if (responseData && !Array.isArray(responseData)) {
@@ -262,7 +316,10 @@ const paymentsService = {
                 ? (Number(saldoPendiente) > 0 ? Number(saldoPendiente) : 0)
                 : (venta.total - pagoInicial - sumaAbonos > 0 ? venta.total - pagoInicial - sumaAbonos : 0);
             const montoPagado = totalPagado != null ? (Number(totalPagado) || 0) : (pagoInicial + sumaAbonos);
-            const estadoFinal = montoPorPagar <= 0 ? "Finalizado" : venta.estado;
+            const ventaAnulada = esAnulada(venta.estado);
+            const estadoFinal = ventaAnulada
+                ? "Anulado"
+                : montoPorPagar <= 0 ? "Finalizado" : "Vigente";
             return enriquecerVenta({
                 ...venta,
                 montoPagado,
@@ -291,7 +348,7 @@ const paymentsService = {
             fuente: "pedido",
             numeroVenta: `P-${pedido.id}`,
             numeroDocumento: pedido.documento,
-            cliente: await getClientName(pedido.documento, pedido.clienteId),
+                cliente: await getClientName(pedido.documento, pedido.clienteId),
             fecha: pedido.fechaPedido,
             fechaLimite: pedido.fechaVencimiento,
             estado: "Vigente",
@@ -307,7 +364,7 @@ const paymentsService = {
         try {
             const sale = await SalesService.getById(ventaId);
             if (sale) isSale = true;
-        } catch (e) {
+        } catch {
             // No es una venta
         }
 
@@ -433,10 +490,8 @@ const paymentsService = {
         const allPendingSales = await this.getPending();
 
         const promises = filtered.map(async c => {
-            const docC = String(c.documento).trim();
             const ventasCredito = allPendingSales.filter(s => {
-                const docS = String(s.numeroDocumento).split(" ").pop().trim();
-                return docS === docC;
+                return belongsToClient(s, c);
             });
             const cupoOcupado = ventasCredito.reduce((acc, v) => acc + v.montoPorPagar, 0);
             return {
@@ -503,11 +558,10 @@ const paymentsService = {
 
     async getVentasCredito(documento) {
         const pendingSales = await this.getPending();
-        const targetDoc = String(documento).trim();
-        return pendingSales.filter(s => {
-            const docS = String(s.numeroDocumento).split(" ").pop().trim();
-            return docS === targetDoc;
-        });
+        const clients = await getCachedClients();
+        const client = clients.find(c => String(c.documento).trim() === String(documento).trim());
+        if (!client) return [];
+        return pendingSales.filter(s => belongsToClient(s, client));
     },
 
     // Anula el último abono activo de una venta usando el backend

@@ -83,8 +83,8 @@ export default function DevolutionProductDetails() {
                 <button
                     onClick={() => {
                         if (idVenta) {
-                            navigate("/dashboard/sales-management/return", {
-                                state: { idVenta, mode: location.state?.mode ?? "from-sales" },
+                            navigate(`/dashboard/sales-management/return/${idVenta}`, {
+                                state: { mode: location.state?.mode ?? "from-sales" },
                             });
                         } else {
                             navigate("/dashboard/devolutions");
@@ -102,8 +102,8 @@ export default function DevolutionProductDetails() {
     const handleVolver = () => {
         const idVenta = location.state?.idVenta ?? form.idVenta;
         const mode = location.state?.mode ?? "from-sales";
-        navigate("/dashboard/sales-management/return", {
-            state: { idVenta, mode },
+        navigate(`/dashboard/sales-management/return/${idVenta}`, {
+            state: { mode },
         });
     };
 

@@ -27,7 +27,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
     };
 
     return (
-        <div className="flex items-center gap-1 bg-[#E5E7EB] px-2 py-1 rounded-2xl w-fit shadow-sm">
+        <div className="flex items-center gap-1 bg-[#e7e9ee] px-2 py-1 rounded-2xl w-fit shadow-sm">
             {/* Botón Anterior */}
             <button
                 type="button"

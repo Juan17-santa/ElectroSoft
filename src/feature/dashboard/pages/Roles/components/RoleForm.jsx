@@ -134,9 +134,6 @@ export default function RoleForm({
             <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${!isUpdate ? "mt-1" : ""} flex-1`}>
                 {PERMISSION_SCOPES.map((scope) => {
                     // Permisos actuales de este módulo
-                    const currentPermissions = formData.permisos.filter(
-                        p => p.startsWith(`${scope.name}:`)
-                    );
                     const isAllSelected = scope.actions.every(
                         a => formData.permisos.includes(`${scope.name}:${a}`)
                     );
