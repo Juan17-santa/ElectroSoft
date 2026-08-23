@@ -82,15 +82,10 @@ export const SalesService = {
         }
     },
 
-    async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, productos, total, montoPagado, montoPorPagar, montoCredito, montoContado }) {
+    async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos, subtotal, iva, total, montoPagado, montoPorPagar, montoCredito, montoContado }) {
         try {
-            const allSalesRes = await api.get('/sales');
-            const allSalesData = allSalesRes.data.data || allSalesRes.data;
-            const count = Array.isArray(allSalesData) ? allSalesData.length + 1 : 1;
-            const numeroFactura = String(count).padStart(2, '0');
 
             const payload = {
-                numeroFactura,
                 clienteId: numeroDocumento, // ObjectId del cliente
                 //   FIX: el backend solo acepta "Crédito" (con tilde) en el enum
                 tipoVenta: tipoVenta === "Credito" ? "Crédito" : (tipoVenta || "Contado"),

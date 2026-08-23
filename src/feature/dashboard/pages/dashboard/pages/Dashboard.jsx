@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
+import DashboardEmpleado from "./DashboardEmpleado";
+import { authStorage } from "../../../../../utils/authStorage";
 import { DollarSign, Package, ShoppingBag, TrendingUp, Calendar, RotateCcw, Loader2 } from "lucide-react";
 import { getAuthUser } from "../../../../auth/services/authService";
 import { StatCard } from "../components/StatCard";
 import { currentMonth, toDate, currentYear, MESES, MESES_FULL, parseMoney, DONUT_COLORS } from "../utils/constants";
-import { Empty, Tip } from "../components/Ui";
 import { PurchasesChart } from "../components/PurchasesChart";
 import { TopProductsChart } from "../components/TopProductsChart";
-import { Card } from "../components/Card";
 import { CategorySalesChart } from "../components/CategorySalesChart";
 import { TotalSalesChart } from "../components/TotalSalesChart";
 import { SalesTypeChart } from "../components/SalesTypeChart";
@@ -20,7 +20,14 @@ import { ClientsService } from "../../Clients/services/ClientsService";
 import { ServicesDevolutions } from "../../devolutions/services/ServicesDevolutions";
 import { ServiceProductCategory } from "../../productCategory/services/ServicesProductCategory";
 
+
 export default function Dashboard() {
+    const user = authStorage.getUser();
+
+    if (user?.role !== "Administrador") {
+        return <DashboardEmpleado />;
+    }
+
     const [year, setYear] = useState(currentYear);
     const [month, setMonth] = useState(currentMonth);
 
@@ -251,13 +258,13 @@ export default function Dashboard() {
                         <TotalSalesChart data={serieVentas} year={year} />
                     </div>
 
-    {/* Columna de gráfica y StatCards */ }
-    <div className="col-span-1 flex flex-col gap-4" style={{ animation: "kpiFadeUp .6s ease both", animationDelay: "540ms" }}>
-        <SalesTypeChart data={tipoDonut} monthName={MESES_FULL[month]} year={year} />
-        <StatCard icon={RotateCcw} label="Devoluciones este mes" value={devMes} delta={delta(devMes, devMesPrev)} color="#f59e0b" isMoney={false} />
-        <StatCard icon={Package} label="Stock bajo (≤5 uds)" value={stockBajo} color={stockBajo > 0 ? "#ef4444" : "#9ca3af"} isMoney={false} showDelta={false} />
-        </div>
-    </div>
+                    {/* Columna de gráfica y StatCards */}
+                    <div className="col-span-1 flex flex-col gap-4" style={{ animation: "kpiFadeUp .6s ease both", animationDelay: "540ms" }}>
+                        <SalesTypeChart data={tipoDonut} monthName={MESES_FULL[month]} year={year} />
+                        <StatCard icon={RotateCcw} label="Devoluciones este mes" value={devMes} delta={delta(devMes, devMesPrev)} color="#f59e0b" isMoney={false} />
+                        <StatCard icon={Package} label="Stock bajo (≤5 uds)" value={stockBajo} color={stockBajo > 0 ? "#ef4444" : "#9ca3af"} isMoney={false} showDelta={false} />
+                    </div>
+                </div>
             </div >
 
         </>
