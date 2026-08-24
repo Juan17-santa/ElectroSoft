@@ -188,7 +188,7 @@ export default function EditProfile() {
     }, [success]);
 
     return (
-        <div className="bg-gray-100 p-3 sm:p-6 rounded-2xl flex flex-col gap-4 sm:gap-6 w-full h-full shadow-inner overflow-y-auto">
+        <div className="bg-white p-3 sm:p-6 rounded-2xl flex flex-col gap-4 sm:gap-6 w-full h-full shadow-inner overflow-y-auto">
 
             {/* MODAL CAMBIAR CONTRASEÑA */}
             {showPasswordSection && (

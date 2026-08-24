@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { DollarSign, ShoppingCart, Package, TrendingUp, Calendar } from "lucide-react";
+import { DollarSign, ShoppingCart, Package, TrendingUp, Calendar, Loader2 } from "lucide-react";
 import { StatCard } from "../components/StatCard";
 import { TotalSalesChart } from "../components/TotalSalesChart";
 import { SalesTypeChart } from "../components/SalesTypeChart";
@@ -77,7 +77,14 @@ export default function DashboardEmpleado() {
     const selectedMonthLabel = MONTHS.find(m => m.value === selectedMonth)?.label || "";
 
     return (
-        <div className="flex flex-col gap-6 p-4 md:p-6 h-full overflow-y-auto">
+        <div className="bg-white rounded-2xl flex flex-col gap-6 p-4 md:p-6 h-full overflow-y-auto">
+
+            {loading && (
+                <div className="bg-white p-6 rounded-2xl flex flex-col items-center justify-center shadow-inner min-h-125">
+                    <Loader2 className="w-10 h-10 text-yellow-500 animate-spin mb-4" />
+                    <p className="text-gray-500 font-medium">Cargando datos del dashboard...</p>
+                </div>
+            )}
 
             {/* HEADER */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -108,9 +115,7 @@ export default function DashboardEmpleado() {
             </div>
 
             {loading ? (
-                <div className="flex items-center justify-center h-64">
-                    <p className="text-gray-400">Cargando estadísticas...</p>
-                </div>
+                null
             ) : (
                 <>
                     {/* STAT CARDS */}
@@ -163,7 +168,7 @@ export default function DashboardEmpleado() {
                             year={selectedYear}
                         />
 
-                        <div className="bg-white rounded-2xl p-4 shadow-sm flex flex-col gap-4">
+                        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200 flex flex-col gap-4">
                             <div>
                                 <p className="font-semibold text-gray-800 mb-1">Resumen del mes</p>
                                 <p className="text-xs text-gray-400">{selectedMonthLabel} {selectedYear}</p>
