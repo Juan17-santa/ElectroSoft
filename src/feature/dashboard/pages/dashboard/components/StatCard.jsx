@@ -1,5 +1,5 @@
 import { ArrowDownRight, ArrowUpRight } from "lucide-react";
-import { useCountUp } from "../hooks/UseCountUp";
+import { useCountUp } from "../hooks/useCountUp";
 import { formatFull } from "../utils/constants";
 
 export const StatCard = ({ icon: Icon, label, value, delta = 0, color, isMoney = true, delay = 0, showDelta = true }) => {
