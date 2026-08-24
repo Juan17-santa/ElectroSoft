@@ -1,6 +1,6 @@
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Card } from './Card';
-import { Empty } from './ui';
+import { Empty } from './Ui';
 import { DONUT_COLORS } from '../utils/constants';
 
 export const CategorySalesChart = ({ data, monthName, year, total }) => {
