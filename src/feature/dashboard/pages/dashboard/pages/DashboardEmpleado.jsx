@@ -80,7 +80,7 @@ export default function DashboardEmpleado() {
         <div className="bg-white rounded-2xl flex flex-col gap-6 p-4 md:p-6 h-full overflow-y-auto">
 
             {loading && (
-                <div className="bg-white p-6 rounded-2xl flex flex-col items-center justify-center shadow-inner min-h-125">
+                <div className="bg-white rounded-2xl flex flex-col items-center justify-center min-h-125">
                     <Loader2 className="w-10 h-10 text-yellow-500 animate-spin mb-4" />
                     <p className="text-gray-500 font-medium">Cargando datos del dashboard...</p>
                 </div>

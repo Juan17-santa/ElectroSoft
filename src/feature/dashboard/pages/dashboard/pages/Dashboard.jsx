@@ -180,7 +180,7 @@ export default function Dashboard() {
 
     if (isLoading) {
         return (
-            <div className="bg-white p-6 rounded-2xl flex flex-col items-center justify-center h-full shadow-inner min-h-125">
+            <div className="bg-white p-6 rounded-2xl flex flex-col items-center justify-center h-full min-h-125">
                 <Loader2 className="w-10 h-10 text-yellow-500 animate-spin mb-4" />
                 <p className="text-gray-500 font-medium">Cargando datos del dashboard...</p>
             </div>

@@ -5,6 +5,7 @@ import { getAuthUser, logout } from "../../auth/services/authService";
 import { useToast } from "../../../context/ToastContext";
 import ConfirmModal from "./ui/ConfirmModal";
 import { Menu } from "lucide-react";
+import AvatarBadge from "../../../components/AvatarBadge";
 
 export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
     const [open, setOpen] = useState(false);
@@ -32,6 +33,8 @@ export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
     const email = user?.email || "";
     const rol = user?.role || user?.rol || "Sin rol";
     const avatar = user?.avatar || null;
+    const avatarLetter = user?.avatarLetter || nombre.charAt(0);
+    const avatarColor = user?.avatarColor;
     const ultimoAcc = user?.ultimoAcceso || null;
 
     const handleLogout = () => {
@@ -105,11 +108,7 @@ export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
                                     alt="avatar"
                                     className="w-9 h-9 rounded-full object-cover"
                                 />
-                            ) : (
-                                <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center font-bold text-amber-500">
-                                    {nombre.charAt(0).toUpperCase()}
-                                </div>
-                            )}
+                            ) : <AvatarBadge letter={avatarLetter} color={avatarColor} size="sm" />}
 
                             <div className="text-left leading-tight">
                                 <p className="text-sm font-medium">{nombre}</p>
@@ -139,12 +138,7 @@ export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
                                                 alt="avatar"
                                                 className="w-24 h-24 rounded-full object-cover mb-3 ring-2 ring-amber-300"
                                             />
-                                        ) : (
-                                            <div className="w-24 h-24 rounded-full bg-amber-100 ring-2 ring-amber-300
-                                                flex items-center justify-center text-amber-500 font-bold text-4xl mb-3">
-                                                {nombre.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
+                                        ) : <AvatarBadge letter={avatarLetter} color={avatarColor} size="lg" className="mb-3" />}
 
                                         <p className="font-semibold text-lg">{nombre}</p>
                                         <p className="text-blue-600 text-sm">{email}</p>

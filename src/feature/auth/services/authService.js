@@ -100,7 +100,8 @@ export async function updateProfile(updatedData) {
       phone: updatedData.phone,
       documentType: updatedData.documentType,
       documentNumber: updatedData.documentNumber,
-      avatar: updatedData.avatar || "",
+      avatarLetter: updatedData.avatarLetter,
+      avatarColor: updatedData.avatarColor,
     });
     const updatedUser = response.data.data;
 
@@ -112,6 +113,8 @@ export async function updateProfile(updatedData) {
       documentType: updatedUser.documentType,
       documentNumber: updatedUser.documentNumber,
       avatar: updatedUser.avatar || "",
+      avatarLetter: updatedUser.avatarLetter,
+      avatarColor: updatedUser.avatarColor,
     });
 
     window.dispatchEvent(new Event("profile-updated"));

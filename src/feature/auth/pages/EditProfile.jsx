@@ -1,11 +1,13 @@
 import { useNavigate } from "react-router-dom";
-import { X, User, Mail, Phone, Shield, Lock, Image, FileText, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import { X, User, Mail, Phone, Shield, Lock, FileText, Eye, EyeOff, AlertCircle, CheckCircle, ChevronDown, ChevronUp, Palette } from "lucide-react";
 import { useEffect, useState } from "react";
 import Modal from "../components/Modal";
 import PrimaryButton from "../../dashboard/components/ui/PrimaryButton";
 import CustomSelect from "../../dashboard/components/ui/CustomSelect";
 import useEditProfile, { getPasswordStrength } from "../hooks/useEditProfile";
 import api from "../../../utils/api.js";
+import AvatarBadge from "../../../components/AvatarBadge";
+import { AVATAR_COLORS, AVATAR_LETTERS } from "../../../utils/avatarOptions";
 
 // ── InputField ───────────────────────────────────────────────────────────────
 function InputField({ icon: Icon, label, name, value, onChange, placeholder, error, touched, type = "text", disabled = false, showToggle, onToggle, showValue }) {
@@ -148,6 +150,7 @@ export default function EditProfile() {
     const [showCurrent, setShowCurrent] = useState(false);
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
+    const [showAvatarPicker, setShowAvatarPicker] = useState(false);
     const [documentTypes, setDocumentTypes] = useState([]);
 
     useEffect(() => {
@@ -174,11 +177,9 @@ export default function EditProfile() {
         touched,
         passwordTouched,
         loading,
-        fileRef,
         success,
         handleChange,
         handlePasswordChange,
-        handleAvatarChange,
         handleSubmit,
         handleChangePassword,
     } = useEditProfile();
@@ -188,7 +189,7 @@ export default function EditProfile() {
     }, [success]);
 
     return (
-        <div className="bg-white p-3 sm:p-6 rounded-2xl flex flex-col gap-4 sm:gap-6 w-full h-full shadow-inner overflow-y-auto">
+        <div className="p-3 sm:p-6 rounded-2xl flex flex-col gap-4 sm:gap-6 w-full h-full overflow-y-auto">
 
             {/* MODAL CAMBIAR CONTRASEÑA */}
             {showPasswordSection && (
@@ -253,7 +254,7 @@ export default function EditProfile() {
             )}
 
             {/* FORMULARIO */}
-            <div className="w-full max-w-4xl bg-white rounded-3xl shadow-lg p-4 sm:p-8 md:p-12 flex flex-col gap-4 sm:gap-6 overflow-visible mx-auto">
+            <div className="w-full max-w-4xl bg-white rounded-3xl shadow-xl p-4 sm:p-8 md:p-12 flex flex-col gap-4 sm:gap-6 overflow-visible mx-auto">
 
                 {/* Header */}
                 <div className="flex justify-between items-center">
@@ -261,27 +262,64 @@ export default function EditProfile() {
                         <p className="text-lg sm:text-xl font-semibold">Editar perfil</p>
                         <p className="text-xs sm:text-sm text-gray-600">Actualiza tu información y foto de perfil</p>
                     </div>
-                    <button type="button" onClick={() => navigate(-1)}>
+                    <button type="button" onClick={() => navigate(-1)} className="cursor-pointer hover:bg-gray-50 rounded-full p-2 transition">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Avatar */}
-                <div className="flex items-center gap-4">
-                    {formData.avatar ? (
-                        <img src={formData.avatar} alt="avatar"
-                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover ring-2 ring-yellow-400" />
-                    ) : (
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-yellow-100 ring-2 ring-yellow-400 flex items-center justify-center text-yellow-400">
-                            <User size={30} />
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-4">
+                        <AvatarBadge letter={formData.avatarLetter} color={formData.avatarColor} size="lg" />
+                        <div>
+                            <p className="font-semibold text-gray-800">Avatar de perfil</p>
+                            <button
+                                type="button"
+                                onClick={() => setShowAvatarPicker(previous => !previous)}
+                                className="mt-1 flex items-center gap-1 text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition"
+                            >
+                                <Palette size={16} />
+                                Cambiar avatar
+                                {showAvatarPicker ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                            </button>
+                        </div>
+                    </div>
+                    {showAvatarPicker && (
+                        <div className="flex flex-col gap-4 rounded-2xl bg-gray-50 border border-gray-200 p-4">
+                            <div>
+                                <p className="text-sm font-semibold text-gray-700 mb-2">Elige una letra</p>
+                                <div className="grid grid-cols-7 sm:grid-cols-13 gap-2">
+                                    {AVATAR_LETTERS.map(letter => (
+                                        <button
+                                            key={letter}
+                                            type="button"
+                                            onClick={() => handleChange({ target: { name: "avatarLetter", value: letter } })}
+                                            className={`w-9 h-9 rounded-full text-sm font-bold transition ${formData.avatarLetter === letter ? "ring-2 ring-gray-800 ring-offset-2" : "hover:scale-105"}`}
+                                            style={{ backgroundColor: formData.avatarColor, color: "white" }}
+                                            aria-label={`Seleccionar letra ${letter}`}
+                                        >
+                                            {letter}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-gray-700 mb-2">Elige un color</p>
+                                <div className="flex flex-wrap gap-3">
+                                    {AVATAR_COLORS.map(color => (
+                                        <button
+                                            key={color.id}
+                                            type="button"
+                                            onClick={() => handleChange({ target: { name: "avatarColor", value: color.value } })}
+                                            className={`w-8 h-8 rounded-full ring-offset-2 transition hover:scale-110 ${formData.avatarColor === color.value ? "ring-2 ring-gray-800" : ""}`}
+                                            style={{ backgroundColor: color.value }}
+                                            aria-label={`Seleccionar color ${color.label}`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     )}
-                    <button type="button" onClick={() => fileRef.current.click()}
-                        className="flex flex-col items-center gap-1 text-yellow-500 hover:text-yellow-600 transition">
-                        <Image size={20} />
-                        <span className="text-xs sm:text-sm font-semibold">Cambiar foto</span>
-                    </button>
-                    <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                 </div>
 
                 {/* FORM */}

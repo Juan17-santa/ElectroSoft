@@ -1,4 +1,5 @@
 import { Info, ArrowLeft } from "lucide-react";
+import AvatarBadge from "../../../../../components/AvatarBadge";
 
 function InfoCard({ title, value }) {
     return (
@@ -16,6 +17,7 @@ export default function UserDetail({ isOpen, onClose, user }) {
 
     const nombre = user.nombre || "Usuario";
     const avatar = user.avatar || null;
+    const avatarLetter = user.avatarLetter || nombre.charAt(0);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4">
@@ -66,16 +68,7 @@ export default function UserDetail({ isOpen, onClose, user }) {
                                             className="w-16 h-16 rounded-full object-cover
                                             ring-2 ring-amber-300 shadow-md"
                                         />
-                                    ) : (
-                                        <div
-                                            className="w-16 h-16 rounded-full bg-amber-100
-                                            ring-2 ring-amber-300 flex items-center
-                                            justify-center text-amber-500
-                                            font-bold text-2xl shadow-md"
-                                        >
-                                            {nombre.charAt(0).toUpperCase()}
-                                        </div>
-                                    )}
+                                    ) : <AvatarBadge letter={avatarLetter} color={user.avatarColor} size="md" />}
 
                                     <div>
                                         <h3 className="text-2xl font-bold text-gray-800 break-all">

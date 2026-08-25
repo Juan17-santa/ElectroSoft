@@ -1,8 +1,9 @@
 import api from "../../../utils/api.js";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { getAuthUser, updateProfile, changePassword } from "../services/authService";
 import { Validations } from "../../../utils/validations";
 import { useToast } from "../../../context/ToastContext";
+import { DEFAULT_AVATAR_COLOR, DEFAULT_AVATAR_LETTER } from "../../../utils/avatarOptions";
 
 export const getPasswordStrength = (value) => {
     if (!value) return null;
@@ -30,6 +31,8 @@ export default function useEditProfile() {
         telefono: "",
         rol: "",
         avatar: "",
+        avatarLetter: DEFAULT_AVATAR_LETTER,
+        avatarColor: DEFAULT_AVATAR_COLOR,
     });
 
     const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -39,8 +42,6 @@ export default function useEditProfile() {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
-    const fileRef = useRef();
-
     useEffect(() => {
         const user = getAuthUser();
 
@@ -56,6 +57,8 @@ export default function useEditProfile() {
                     ? user.role?.name || ""
                     : user.role || "",
                 avatar: user.avatar || "",
+                avatarLetter: user.avatarLetter || DEFAULT_AVATAR_LETTER,
+                avatarColor: user.avatarColor || DEFAULT_AVATAR_COLOR,
             });
         }
     }, []);
@@ -178,14 +181,6 @@ export default function useEditProfile() {
         setErrors((prev) => ({ ...prev, ...newErrors }));
     };
 
-    const handleAvatarChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => setFormData((prev) => ({ ...prev, avatar: ev.target.result }));
-        reader.readAsDataURL(file);
-    };
-
     const validate = () => {
         const fields = ["tipoDoc", "documento", "nombre", "email", "telefono"];
         const newErrors = {};
@@ -241,7 +236,8 @@ export default function useEditProfile() {
             phone: formData.telefono,
             documentType: formData.tipoDoc,
             documentNumber: formData.documento,
-            avatar: formData.avatar,
+            avatarLetter: formData.avatarLetter,
+            avatarColor: formData.avatarColor,
         });
 
         setLoading(false);
@@ -275,9 +271,9 @@ export default function useEditProfile() {
 
     return {
         formData, passwordData, showPasswordSection, setShowPasswordSection,
-        errors, touched, passwordTouched, loading, fileRef,
+        errors, touched, passwordTouched, loading,
         success, // 🔥 NUEVO
-        handleChange, handlePasswordChange, handleAvatarChange,
+        handleChange, handlePasswordChange,
         handleSubmit, handleChangePassword,
     };
 }
