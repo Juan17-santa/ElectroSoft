@@ -541,7 +541,7 @@ export default function AddProductModal({
                     {showQuotaWarning && (
                         <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="flex items-start sm:items-center gap-2">
-                                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                                <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
                                 <p className="text-sm text-red-700">
                                     El monto total supera el cupo. ¿Deseas cambiar la venta a Mixto para continuar?
                                 </p>
