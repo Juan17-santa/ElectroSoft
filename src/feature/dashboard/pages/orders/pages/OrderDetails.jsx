@@ -227,15 +227,15 @@ export default function OrderDetails() {
 
                                 <div
                                     className={`border rounded-lg overflow-hidden ${
-                                        status === "Pendiente"
-                                            ? "border-yellow-200"
+                                        status === "Por procesar"
+                                            ? "border-blue-200"
                                             : "border-red-200"
                                     }`}
                                 >
                                     <div
                                         className={`px-4 py-2 font-semibold text-center uppercase text-sm ${
-                                            status === "Pendiente"
-                                                ? "bg-yellow-100 text-yellow-800"
+                                            status === "Por procesar"
+                                                ? "bg-blue-100 text-blue-700"
                                                 : "bg-red-100 text-red-800"
                                         }`}
                                     >

@@ -6,6 +6,8 @@ import { ServicesOrders } from "../services/ServicesOrders";
 import { ClientsService } from "../../Clients/services/ClientsService";
 import paymentsService from "../../payments/services/paymentsService";
 
+const MINIMUM_CREDIT_AMOUNT = 10000;
+
 // COMPONENTE PRINCIPAL DE LA MODAL DE CONFIRMACIÓN
 export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, loading = false }) {
     const [activeOrder, setActiveOrder] = useState(order);
@@ -141,7 +143,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                         {/* NOTA AZUL */}
                         <div className="flex gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 text-xs shadow-sm">
                             <Info size={18} className="shrink-0" />
-                            <p>Al confirmar, este pedido se convertirá en una <b>venta oficial</b> y se eliminará de la lista de pendientes.</p>
+                            <p>Al confirmar, este pedido se convertirá en una <b>venta oficial</b> y se eliminará de la lista de pedidos por procesar.</p>
                         </div>
 
                         {/* ESTRUCTURA DE FILAS */}
@@ -323,6 +325,13 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
 
                             <PrimaryButton
                                 onClick={() => {
+                                    if ((activeOrder.paymentMethod === "Credito" || activeOrder.paymentMethod === "Mixto") && activeOrder.total < MINIMUM_CREDIT_AMOUNT) {
+                                        setModalAlert({
+                                            type: "error",
+                                            message: "El total del pedido debe ser mínimo de $10.000 para usar crédito."
+                                        });
+                                        return;
+                                    }
                                     if (activeOrder.paymentMethod === "Mixto") {
                                         if (requestedCredit <= 0) {
                                             setModalAlert({
@@ -331,10 +340,24 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                                             });
                                             return;
                                         }
+                                        if (requestedCredit < MINIMUM_CREDIT_AMOUNT) {
+                                            setModalAlert({
+                                                type: "error",
+                                                message: "El monto a crédito debe ser mínimo de $10.000."
+                                            });
+                                            return;
+                                        }
                                         if (requestedCredit > clienteCupoDisponible) {
                                             setModalAlert({
                                                 type: "error",
                                                 message: "El crédito solicitado supera el cupo disponible."
+                                            });
+                                            return;
+                                        }
+                                        if (activeOrder.total - requestedCredit < MINIMUM_CREDIT_AMOUNT) {
+                                            setModalAlert({
+                                                type: "error",
+                                                message: "La parte de contado debe ser mínimo de $10.000."
                                             });
                                             return;
                                         }
@@ -351,6 +374,8 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                                 className="flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={
                                     loading ||
+                                    ((activeOrder?.paymentMethod === "Credito" || activeOrder?.paymentMethod === "Mixto") &&
+                                        activeOrder?.total < MINIMUM_CREDIT_AMOUNT) ||
                                     ((activeOrder?.paymentMethod === "Credito" ||
                                         activeOrder?.paymentMethod === "Mixto") &&
                                         (
@@ -360,8 +385,10 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                                         )) ||
                                     (activeOrder?.paymentMethod === "Mixto" && (
                                         requestedCredit <= 0 ||
+                                        requestedCredit < MINIMUM_CREDIT_AMOUNT ||
                                         requestedCredit > clienteCupoDisponible ||
-                                        requestedCredit > activeOrder.total
+                                        requestedCredit > activeOrder.total ||
+                                        activeOrder.total - requestedCredit < MINIMUM_CREDIT_AMOUNT
                                     ))
                                 }
                             >

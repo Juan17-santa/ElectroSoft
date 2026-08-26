@@ -121,6 +121,14 @@ export const ServicesOrders = {
         }
     },
 
+    async updateOrder(id, orderData) {
+        try {
+            return (await api.put(`${API_URL}/${id}`, orderData)).data.data;
+        } catch (error) {
+            throw getApiError(error, "Error al actualizar el pedido");
+        }
+    },
+
     async cancelOrder(id, cancelReason) {
         try {
             return (await api.patch(`${API_URL}/${id}/cancel`, { cancelReason })).data.data;

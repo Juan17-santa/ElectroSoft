@@ -18,6 +18,8 @@ export default function OrdersForm({
     buttonText,
     onCancel,
     onOpenClientModal,
+    showCreateClient = true,
+    isEdit = false,
     products,
     clients,
     addProduct,
@@ -92,8 +94,8 @@ export default function OrdersForm({
 
     return (
         <>
-            <form onSubmit={handleSubmit} className="h-full">
-                <div className="flex flex-col gap-12 mt-6 flex-1">
+            <form onSubmit={handleSubmit} className={isEdit ? "h-auto" : "h-full"}>
+                <div className={`flex flex-col gap-12 mt-6 ${isEdit ? "min-h-full" : "flex-1"}`}>
 
                     {/* ================= PRIMERA FILA ================= */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 w-full">
@@ -193,13 +195,15 @@ export default function OrdersForm({
                                 />
 
                                 {/* BOTON + PARA CREAR CLIENTE */}
-                                <button
-                                    type="button"
-                                    onClick={onOpenClientModal}
-                                    className="bg-yellow-400 hover:bg-yellow-500 transition-all rounded-xl px-4 shadow-md cursor-pointer"
-                                    title="Crear cliente">
-                                    +
-                                </button>
+                                {showCreateClient && (
+                                    <button
+                                        type="button"
+                                        onClick={onOpenClientModal}
+                                        className="bg-yellow-400 hover:bg-yellow-500 transition-all rounded-xl px-4 shadow-md cursor-pointer"
+                                        title="Crear cliente">
+                                        +
+                                    </button>
+                                )}
                             </div>
                             {formData.documento && !formData.clienteNombre && (
                                 <div className="flex items-center gap-1 text-xs mt-1 text-red-500">
@@ -418,7 +422,7 @@ export default function OrdersForm({
                     </div>
 
                     {/* ================= BOTONES ================= */}
-                    <div className="flex justify-end w-full gap-6 mt-auto">
+                    <div className="flex justify-end w-full gap-6 mt-auto pb-4">
                         <button
                             type="button"
                             onClick={onCancel}

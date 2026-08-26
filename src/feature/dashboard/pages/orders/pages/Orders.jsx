@@ -67,6 +67,11 @@ export default function Orders() {
         navigate(`/dashboard/orders/detail/${order._id}`)
     }
 
+    // FUNCION PARA ABRIR LA VISTA DE ACTUALIZAR PEDIDO
+    const handleUpdateNavigation = (order) => {
+        navigate(`/dashboard/orders/update/${order._id}`)
+    }
+
     // FUNCION PARA ABRIR LA MODAL DE VENTA
     const handleOpenSaleConfirm = (order) => {
         setOrderToProcess(order);
@@ -140,6 +145,7 @@ export default function Orders() {
                     currentPage={presentPage}
                     recordsPerPage={recordsPerPage}
                     onDetails={handleDetailsNavigation}
+                    onEdit={handleUpdateNavigation}
                     onCancel={(order, idVisual) => setOrderToCancel({ ...order, idVisual })}
                     onProcess={handleOpenSaleConfirm}
                 />
