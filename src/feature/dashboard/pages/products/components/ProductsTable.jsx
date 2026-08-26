@@ -135,7 +135,7 @@ export default function ProductsTable({
                                                         className={`p-2 rounded-lg transition ${product.canDelete ? "bg-red-100 hover:bg-red-200" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
                                                         onClick={() => onDelete(product.id)}
                                                         disabled={!product.canDelete}
-                                                        title={product.canDelete ? "Eliminar producto" : "No se puede eliminar un producto con ventas o pedidos asociados"}
+                                                        title={product.canDelete ? "Eliminar producto" : "No se puede eliminar un producto con compras, ventas o pedidos asociados"}
                                                     >
                                                         <Trash size={18} className={`${product.canDelete ? "text-red-600" : "text-gray-400"}`} />
                                                     </button>
