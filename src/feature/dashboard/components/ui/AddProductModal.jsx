@@ -531,7 +531,7 @@ export default function AddProductModal({
                                     padding: "10px 14px", height: "42px", border: "none",
                                     backgroundColor: !selectedProduct || !quantity ? "#e5e7eb" : "#facc15",
                                     color: !selectedProduct || !quantity ? "#9ca3af" : "#1f2937",
-                                    cursor: !selectedProduct || !quantity ? "not-allowed" : "pointer",
+                                    cursor: !selectedProduct || !quantity ? "not-allowed" : "var(--cursor-pointer)",
                                 }}>
                                 <Plus size={15} /> Añadir
                             </button>
@@ -704,7 +704,7 @@ export default function AddProductModal({
                             style={{
                                 backgroundColor: (queue.length === 0 || isExceedingQuota) ? "#e5e7eb" : "#facc15",
                                 color: (queue.length === 0 || isExceedingQuota) ? "#9ca3af" : "#1f2937",
-                                cursor: (queue.length === 0 || isExceedingQuota) ? "not-allowed" : "pointer",
+                                cursor: (queue.length === 0 || isExceedingQuota) ? "not-allowed" : "var(--cursor-pointer)",
                                 border: "none",
                                 boxShadow: (queue.length > 0 && !isExceedingQuota) ? "0 4px 14px rgba(250,204,21,0.35)" : "none",
                             }}>

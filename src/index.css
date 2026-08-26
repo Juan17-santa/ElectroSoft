@@ -1,4 +1,48 @@
 @import "tailwindcss";
+
+/* CURSORES PERSONALIZADOS
+   Imágenes de 16x16 px con relación de aspecto preservada (contenido
+   centrado con transparencia a los lados) y hotspots calculados.
+   El fallback "auto" garantiza un cursor nativo si la imagen no carga o
+   es rechazada por el navegador. */
+@theme {
+  --cursor-pointer: url("/hand-18.png") 5 1, auto;
+  --cursor-text: url("/text-16.png") 8 15, auto;
+  --cursor-default: url("/cursor-16.png") 3 2, auto;
+}
+
+* {
+  cursor: url("/cursor-16.png") 3 2, auto;
+}
+
+a,
+button,
+summary,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: url("/hand-18.png") 5 1, auto;
+}
+
+input,
+textarea,
+select,
+[contenteditable] {
+  cursor: url("/text-16.png") 8 15, auto;
+}
+
+/* Los descendientes de elementos interactivos (íconos, símbolos, spans)
+   deben heredar el cursor del elemento padre, para que la mano se muestre
+   incluso cuando el puntero está sobre el hijo y no sobre el botón/enlace. */
+a *,
+button *,
+summary *,
+[role="button"] *,
+input[type="checkbox"] *,
+input[type="radio"] * {
+  cursor: inherit;
+}
+
 body {
   font-family: "Poppins", sans-serif;
 }
