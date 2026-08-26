@@ -1,6 +1,100 @@
 @import "tailwindcss";
+
+/* CURSORES PERSONALIZADOS
+   Estilo Bibata Modern Ice (pack de cursores para Windows), versión 32x32.
+   Los hotspots son los exactos del pack para ese tamaño.
+   El fallback "auto" garantiza un cursor nativo si la imagen no carga o
+   es rechazada por el navegador. */
+@theme {
+  --cursor-pointer: url("/link-32.png") 11 1, auto;
+  --cursor-text: url("/text-32.png") 13 13, auto;
+  --cursor-default: url("/pointer-32.png") 5 1, auto;
+  --cursor-not-allowed: url("/unavailable-32.png") 5 1, auto;
+  --cursor-grabbing: url("/grabbing-32.png") 13 6, auto;
+}
+
+* {
+  cursor: url("/pointer-32.png") 5 1, auto;
+}
+
+a,
+button,
+summary,
+[role="button"],
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: url("/link-32.png") 11 1, auto;
+}
+
+input,
+textarea,
+select,
+[contenteditable] {
+  cursor: url("/text-32.png") 13 13, auto;
+}
+
+/* Los descendientes de elementos interactivos (íconos, símbolos, spans)
+   deben heredar el cursor del elemento padre, para que la mano se muestre
+   incluso cuando el puntero está sobre el hijo y no sobre el botón/enlace. */
+a *,
+button *,
+summary *,
+[role="button"] *,
+input[type="checkbox"] *,
+input[type="radio"] * {
+  cursor: inherit;
+}
+
 body {
   font-family: "Poppins", sans-serif;
+}
+
+/* SCROLLBARS
+   Estilo inspirado en la pista de scroll del Sidebar en modo colapsado:
+   thumb gris (gray-400) delgado y redondeado sobre pista transparente,
+   con opacidad 60% en reposo y 100% al pasar el mouse. */
+:root {
+  --scrollbar-thumb: rgba(156, 163, 175, 0.6); /* gray-400 @ 60% (reposo) */
+  --scrollbar-thumb-hover: #9ca3af;            /* gray-400 @ 100% (hover) */
+  --scrollbar-track: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Firefox: solo soporta estado estático, se usa la opacidad de reposo */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* WebKit/Blink (Chrome, Edge, Safari) */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background-clip: content-box;
+  transition: background-color 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 /* ANIMACION PARA LAS ALERTAS */
@@ -33,38 +127,4 @@ body {
 
 .animate-slide-out-right {
   animation: slide-out-right 0.35s ease-in forwards;
-}
-
-/* ANIMACION NUDGE PARA LAS FLECHAS DE SCROLL DEL SIDEBAR */
-@keyframes nudge-up {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
-@keyframes nudge-down {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(3px);
-  }
-}
-
-.animate-nudge-up {
-  animation: nudge-up 1.4s ease-in-out infinite;
-}
-
-.animate-nudge-down {
-  animation: nudge-down 1.4s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-nudge-up,
-  .animate-nudge-down {
-    animation: none;
-  }
 }
