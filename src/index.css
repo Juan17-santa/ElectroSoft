@@ -1,18 +1,20 @@
 @import "tailwindcss";
 
 /* CURSORES PERSONALIZADOS
-   Imágenes de 16x16 px con relación de aspecto preservada (contenido
-   centrado con transparencia a los lados) y hotspots calculados.
+   Estilo Bibata Modern Ice (pack de cursores para Windows), versión 32x32.
+   Los hotspots son los exactos del pack para ese tamaño.
    El fallback "auto" garantiza un cursor nativo si la imagen no carga o
    es rechazada por el navegador. */
 @theme {
-  --cursor-pointer: url("/hand-18.png") 5 1, auto;
-  --cursor-text: url("/text-16.png") 8 15, auto;
-  --cursor-default: url("/cursor-16.png") 3 2, auto;
+  --cursor-pointer: url("/link-32.png") 11 1, auto;
+  --cursor-text: url("/text-32.png") 13 13, auto;
+  --cursor-default: url("/pointer-32.png") 5 1, auto;
+  --cursor-not-allowed: url("/unavailable-32.png") 5 1, auto;
+  --cursor-grabbing: url("/grabbing-32.png") 13 6, auto;
 }
 
 * {
-  cursor: url("/cursor-16.png") 3 2, auto;
+  cursor: url("/pointer-32.png") 5 1, auto;
 }
 
 a,
@@ -21,14 +23,14 @@ summary,
 [role="button"],
 input[type="checkbox"],
 input[type="radio"] {
-  cursor: url("/hand-18.png") 5 1, auto;
+  cursor: url("/link-32.png") 11 1, auto;
 }
 
 input,
 textarea,
 select,
 [contenteditable] {
-  cursor: url("/text-16.png") 8 15, auto;
+  cursor: url("/text-32.png") 13 13, auto;
 }
 
 /* Los descendientes de elementos interactivos (íconos, símbolos, spans)
