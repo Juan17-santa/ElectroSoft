@@ -123,6 +123,7 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
         );
         const product = products.find((stored) => String(stored.id) === productId);
         const nombreProducto = item.nombre
+            ?? item.productName
             ?? item.productId?.name
             ?? product?.nombre
             ?? "Producto no encontrado";
@@ -315,11 +316,11 @@ export const ServicesShopping = {
      * Verifica si un número de factura ya existe en una compra activa.
      * Retorna true si ya existe, false si está libre.
      */
-    async checkInvoiceExists(numeroFactura) {
+    async checkInvoiceExists(numeroFactura, proveedorId) {
         try {
             const number = String(numeroFactura || "").trim();
-            if (!number) return false;
-            const payload = (await api.get(`/shopping/invoice-exists/${encodeURIComponent(number)}`)).data;
+            if (!number || !proveedorId) return false;
+            const payload = (await api.get(`/shopping/invoice-exists/${encodeURIComponent(number)}`, { params: { providerId: proveedorId } })).data;
             return payload?.exists === true;
         } catch {
             return false;

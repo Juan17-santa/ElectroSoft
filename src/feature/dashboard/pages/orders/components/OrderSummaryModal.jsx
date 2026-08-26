@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { X, Banknote } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 
+const MINIMUM_CREDIT_AMOUNT = 10000;
+
 export default function OrderSummaryModal({
     isOpen,
     onClose,
@@ -33,10 +35,14 @@ export default function OrderSummaryModal({
     const creditValidationError = paymentMethod === "Mixto"
         ? requestedCredit <= 0
             ? "Debe indicar cuánto crédito desea utilizar."
+            : requestedCredit < MINIMUM_CREDIT_AMOUNT
+                ? "El monto a crédito debe ser mínimo de $10.000."
             : requestedCredit > availableCredit
                 ? "El crédito solicitado supera el cupo disponible."
                 : requestedCredit > total
                     ? "El crédito no puede ser mayor al total."
+                : total - requestedCredit < MINIMUM_CREDIT_AMOUNT
+                    ? "La parte de contado debe ser mínimo de $10.000."
                     : ""
         : "";
 

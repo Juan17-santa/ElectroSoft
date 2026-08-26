@@ -181,6 +181,20 @@ export default function ShoppingDetails() {
                                 </span>
                             </div>
                         </div>
+
+                        {compra.estado === "Anulada" && compra.infoAnulacion && (
+                            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                                <p className="text-sm font-semibold text-red-700">Motivo de anulación</p>
+                                <p className="mt-1 text-sm text-red-600">
+                                    {compra.infoAnulacion.motivo || "Sin motivo especificado"}
+                                </p>
+                                {compra.infoAnulacion.fechaAnulacion && (
+                                    <p className="mt-1 text-xs text-red-500">
+                                        Fecha: {new Date(compra.infoAnulacion.fechaAnulacion).toLocaleString("es-CO")}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* PRODUCTOS */}

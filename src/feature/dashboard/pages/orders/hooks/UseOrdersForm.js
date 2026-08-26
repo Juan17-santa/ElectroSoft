@@ -4,8 +4,10 @@ import { ClientsService } from "../../Clients/services/ClientsService";
 import paymentsService from "../../payments/services/paymentsService";
 import { ServicesProducts } from "../../products/services/ServicesProducts";
 
+const MINIMUM_CREDIT_AMOUNT = 10000;
+
 // HOOK PERSONALIZADO PARA GESTIONAR LA LÓGICA DEL FORMULARIO DE PEDIDOS
-export function useOrdersForm({ onSuccess, onShowAlert }) {
+export function useOrdersForm({ onSuccess, onShowAlert, mode = "create", initialData = null }) {
 
     // FECHA ACTUAL
     const today = new Date();
@@ -51,6 +53,33 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+
+    useEffect(() => {
+        if (!initialData || mode !== "update") return;
+        setFormData({
+            documento: initialData.client?.documentNumber || initialData.documentNumber || "",
+            clienteId: initialData.client?._id || initialData.client || null,
+            clienteNombre: initialData.client ? `${initialData.client.firstName || initialData.client.name || ""} ${initialData.client.lastName || ""}`.trim() : "",
+            clienteTipoDocumento: initialData.client?.documentType?.abbreviation || "",
+            clienteCupoActivo: Boolean(initialData.client?.cupoActivo),
+            clienteCupoTotal: initialData.client?.cupoTotal || 0,
+            clienteCupoDisponible: initialData.client?.cupoTotal || 0,
+            fechaPedido: initialData.orderDate ? initialData.orderDate.split("T")[0] : todayFormatted,
+            formaPago: initialData.paymentMethod || "",
+            fechaVencimiento: initialData.dueDate ? initialData.dueDate.split("T")[0] : calculateVencimiento(todayFormatted),
+            productos: (initialData.products || []).map(product => ({
+                id: product.product?._id || product.product,
+                nombre: product.name,
+                precio: product.price,
+                cantidad: product.quantity,
+                subtotal: product.lineTotal
+            })),
+            subtotal: initialData.subtotal || 0,
+            iva: initialData.iva || 0,
+            total: initialData.total || 0
+        });
+        setRequestedCredit(initialData.requestedCredit || 0);
+    }, [initialData, mode]);
 
     // ESTADOS PARA EL MODAL DE RESUMEN Y EL CRÉDITO SOLICITADO
     const [showSummaryModal, setShowSummaryModal] = useState(false);
@@ -205,9 +234,7 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             try {
                 const allProducts = await ServicesProducts.get();
 
-                const activos = allProducts.filter(
-                    p => p.estado === true && p.stock > 0
-                );
+                const activos = allProducts.filter(p => p.estado === true);
 
                 setProducts(activos);
             } catch (error) {
@@ -350,7 +377,8 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
 
     const handleQuantityChange = (productId, newQuantity) => {
         const productInfo = products.find(p => (p.id || p._id) === productId);
-        const maxStock = productInfo ? (productInfo.stock || 999999) : 999999;
+        const currentQuantity = formData.productos.find(p => p.id === productId)?.cantidad || 0;
+        const maxStock = productInfo ? (productInfo.stock || 0) + (mode === "update" ? Number(currentQuantity) : 0) : 999999;
 
         if (newQuantity === "") {
             setFormData(prev => {
@@ -472,12 +500,20 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
                 setErrors(prev => ({ ...prev, requestedCredit: "Debe indicar cuánto crédito utilizará." }));
                 return;
             }
+            if (requestedCredit < MINIMUM_CREDIT_AMOUNT) {
+                setErrors(prev => ({ ...prev, requestedCredit: "El monto a crédito debe ser mínimo de $10.000." }));
+                return;
+            }
             if (requestedCredit > formData.clienteCupoDisponible) {
                 setErrors(prev => ({ ...prev, requestedCredit: "El crédito solicitado supera el cupo disponible." }));
                 return;
             }
             if (requestedCredit > formData.total) {
                 setErrors(prev => ({ ...prev, requestedCredit: "El crédito solicitado no puede ser mayor al total del pedido." }));
+                return;
+            }
+            if (formData.total - requestedCredit < MINIMUM_CREDIT_AMOUNT) {
+                setErrors(prev => ({ ...prev, requestedCredit: "La parte de contado debe ser mínimo de $10.000." }));
                 return;
             }
         }
@@ -503,7 +539,9 @@ export function useOrdersForm({ onSuccess, onShowAlert }) {
             };
 
             // ENVIAR LOS DATOS AL SERVICIO PARA CREAR EL PEDIDO
-            const nuevoPedido = await ServicesOrders.createOrder(orderData);
+            const nuevoPedido = mode === "update"
+                ? await ServicesOrders.updateOrder(initialData._id, orderData)
+                : await ServicesOrders.createOrder(orderData);
 
             setSubmitted(true);
             setShowSummaryModal(false);

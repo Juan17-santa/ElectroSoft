@@ -42,6 +42,7 @@ const ClientDetailsPage = lazy(() => import("../feature/dashboard/pages/Clients/
 // PEDIDOS
 const Orders = lazy(() => import("../feature/dashboard/pages/orders/pages/Orders"));
 const CreateOrder = lazy(() => import("../feature/dashboard/pages/orders/pages/CreateOrder"));
+const UpdateOrder = lazy(() => import("../feature/dashboard/pages/orders/pages/UpdateOrder"));
 const OrderDetails = lazy(() => import("../feature/dashboard/pages/orders/pages/OrderDetails"));
 
 // VENTAS
@@ -121,6 +122,7 @@ export default function RoutersApp() {
                 {/* PEDIDOS */}
                 <Route path="orders" element={<ProtectedRoute scope="Pedidos" element={<Orders />} />} />
                 <Route path="orders/create" element={<ProtectedRoute scope="Pedidos" action="Crear" element={<CreateOrder />} />} />
+                <Route path="orders/update/:id" element={<ProtectedRoute scope="Pedidos" action="Editar" element={<UpdateOrder />} />} />
                 <Route path="orders/detail/:id" element={<ProtectedRoute scope="Pedidos" element={<OrderDetails />} />} />
 
                 {/* GESTION DE VENTAS */}

@@ -8,7 +8,7 @@ export const PERMISSION_SCOPES = [
   { name: "proveedores", label: "Proveedores", actions: ["acceso", "ver", "crear", "editar", "estado", "eliminar"] },
   { name: "compras", label: "Compras", actions: ["acceso", "ver", "crear", "anular", "reporte"] },
   { name: "clientes", label: "Clientes", actions: ["acceso", "ver", "crear", "editar", "cupo", "eliminar", "reporte"] },
-  { name: "pedidos", label: "Pedidos", actions: ["acceso", "ver", "crear", "procesar", "anular", "reporte"] },
+  { name: "pedidos", label: "Pedidos", actions: ["acceso", "ver", "crear", "editar", "procesar", "anular", "reporte"] },
   { name: "ventas", label: "Ventas", actions: ["acceso", "ver", "crear", "anular", "devolver", "abonar", "reporte"] },
   { name: "pagos", label: "Pagos y abonos", actions: ["acceso", "ver", "abonar", "editar-cupo"] },
   { name: "devoluciones", label: "Devoluciones", actions: ["acceso", "ver", "editar", "anular", "reporte"] },

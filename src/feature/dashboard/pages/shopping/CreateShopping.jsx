@@ -85,10 +85,10 @@ export default function CreateShopping() {
     const validarNumeroFacturaAsync = useCallback(async (valor) => {
         if (!valor || valor === "") return { valido: false, mensaje: "Debes ingresar un número de factura." };
         if (!/^\d+$/.test(valor)) return { valido: false, mensaje: "Solo se permiten números." };
-        const existe = await ServicesShopping.checkInvoiceExists(valor);
+        const existe = await ServicesShopping.checkInvoiceExists(valor, proveedorId);
         if (existe) return { valido: false, mensaje: "Este numero de factura ya esta en uso." };
         return { valido: true, mensaje: "" };
-    }, []);
+    }, [proveedorId]);
 
     // Validación en tiempo real con debounce para no saturar el servidor.
     useEffect(() => {
@@ -111,7 +111,7 @@ export default function CreateShopping() {
         return () => {
             if (facturaTimerRef.current) clearTimeout(facturaTimerRef.current);
         };
-    }, [numeroFactura, numeroFacturaTocado, validarNumeroFacturaAsync]);
+    }, [numeroFactura, numeroFacturaTocado, validarNumeroFacturaAsync, proveedorId]);
 
     useEffect(() => {
         let mounted = true;
@@ -198,6 +198,7 @@ export default function CreateShopping() {
         setProveedorId(id);
         setProveedor(found?.nombreProveedor || "");
         setProveedorTocado(true);
+        setEstadoNumeroFactura(null);
     };
 
     // Al crear un proveedor desde la modal: añadirlo al select y auto-seleccionarlo
@@ -208,24 +209,9 @@ export default function CreateShopping() {
         setProveedorTocado(true);
     };
 
-    const handleAnadirProducto = (nuevoProducto) => {
-        const { esActualizacion, sobreescribirConSugerido, isNew, nombre, categoriaId, serial, garantia, tipoStock, caracteristicas, ...producto } = nuevoProducto;
-        const productoConEstado = { ...producto, sobreescribirConSugerido, isNew: !!isNew, nombre, categoriaId, serial, garantia, tipoStock, caracteristicas };
-
-        if (esActualizacion) {
-            // Actualizar el producto ya existente en la tabla
-            setProductos((prev) =>
-                prev.map((p) =>
-                    String(p.id) === String(producto.id)
-                        ? productoConEstado
-                        : p
-                )
-            );
-        } else {
-            const updated = [...productos, productoConEstado];
-            setProductos(updated);
-            setCurrentPage(Math.ceil(updated.length / ITEMS_PER_PAGE));
-        }
+    const handleCargarCompra = (productosCargados) => {
+        setProductos(productosCargados);
+        setCurrentPage(Math.max(1, Math.ceil(productosCargados.length / ITEMS_PER_PAGE)));
         setShowModal(false);
     };
 
@@ -655,7 +641,7 @@ export default function CreateShopping() {
             {showModal && (
                 <AddProductModal
                     onClose={() => setShowModal(false)}
-                    onAnadir={handleAnadirProducto}
+                    onCargarCompra={handleCargarCompra}
                     productosYaAgregados={productos}
                 />
             )}

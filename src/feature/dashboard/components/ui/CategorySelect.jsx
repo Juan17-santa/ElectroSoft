@@ -11,7 +11,8 @@ export default function CategorySelect({
     width = "w-full",
     hasError = false,
     onlyActive = true,
-    multiple = false
+    multiple = false,
+    required = true
 }) {
     const [open, setOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -103,7 +104,7 @@ export default function CategorySelect({
                 {label && (
                     <label className="flex items-center gap-2 text-yellow-500 font-medium">
                         {Icon && <Icon size={16} />}
-                        <span>{label} *</span>
+                        <span>{label}{required ? " *" : ""}</span>
                     </label>
                 )}
 

@@ -1,4 +1,4 @@
-import { Ban, CircleCheck, Eye } from "lucide-react";
+import { Ban, CircleCheck, Eye, Pencil } from "lucide-react";
 import CancellationInfoTooltip from "../../../components/ui/CancellationInfoTooltip";
 import { Restricted } from "../../../components/ui/Restricted";
 
@@ -9,6 +9,7 @@ export default function OrdersTable({
     onDetails,
     onCancel,
     onProcess,
+    onEdit,
     currentPage = 1,
     recordsPerPage = 6
 }) {
@@ -23,8 +24,7 @@ export default function OrdersTable({
     return (
         <div className="p-0.5 rounded-2xl bg-yellow-200">
             <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
-                <table className="min-w-250 w-full text-sm table-fixed">
-
+                <table className="min-w-300 w-full text-sm table-fixed">
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
                             <th className="px-4 py-2 w-14 font-semibold">#</th>
@@ -102,8 +102,8 @@ export default function OrdersTable({
 
                                         {/* ESTADO */}
                                         <td className="px-4 py-2 text-center">
-                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${order.status === "Pendiente"
-                                                ? "bg-yellow-100 text-yellow-700"
+                                            <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${order.status === "Por procesar"
+                                                ? "bg-blue-100 text-blue-700"
                                                 : "bg-red-100 text-red-600"
                                                 }`}>
                                                 {order.status}
@@ -136,6 +136,17 @@ export default function OrdersTable({
                                                                 ? "text-gray-400"
                                                                 : "text-green-600"}
                                                         />
+                                                    </button>
+                                                </Restricted>
+
+                                                <Restricted scope="Pedidos" action="Editar">
+                                                    <button
+                                                        onClick={() => onEdit(order)}
+                                                        disabled={order.status === "Anulado"}
+                                                        className={`p-2 rounded-lg transition ${order.status === "Anulado" ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
+                                                        title={order.status === "Anulado" ? "No disponible (pedido anulado)" : "Editar pedido"}
+                                                    >
+                                                        <Pencil size={18} className={order.status === "Anulado" ? "text-gray-400" : "text-yellow-600"} />
                                                     </button>
                                                 </Restricted>
 

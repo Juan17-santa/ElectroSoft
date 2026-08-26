@@ -297,7 +297,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                     {apiError && <p className="text-xs text-red-500 mt-3">{apiError}</p>}
 
                     {/* SECCIÓN CARACTERÍSTICAS */}
-                    <div className="mt-6 border-2 border-yellow-300 rounded-xl p-5 bg-gradient-to-b from-yellow-50 to-transparent">
+                    <div className="mt-6 border-2 border-yellow-300 rounded-xl p-5 bg-linear-to-b from-yellow-50 to-transparent">
                         <p className="text-sm font-semibold text-yellow-600 mb-4">
                             Características <span className="text-xs font-normal text-gray-400">(opcional)</span>
                         </p>
@@ -390,7 +390,7 @@ export default function CreateProductModal({ onClose, onSuccess }) {
                         <div className="flex justify-end">
                             <button type="button" onClick={agregarCaracteristica}
                                 disabled={!charForm.nombre.trim() || !charForm.valor.trim()}
-                                className="flex items-center gap-1.5 bg-gradient-to-r from-white to-yellow-300 px-4 py-2 rounded-lg text-sm font-medium shadow hover:shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                                className="flex items-center gap-1.5 bg-linear-to-r from-white to-yellow-300 px-4 py-2 rounded-lg text-sm font-medium shadow hover:shadow-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                 <Plus size={14} /> Añadir característica
                             </button>
                         </div>
