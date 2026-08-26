@@ -11,7 +11,7 @@ export default function UsersTable({
     onToggleEstado,
     onDelete,
 }) {
-    const GLOBAL_USER_EMAIL = "administrador@gmail.com";
+    const GLOBAL_USER_EMAIL = "admin@gmail.com";
     const currentUser = authStorage.getUser();
 
     return (
@@ -104,7 +104,7 @@ export default function UsersTable({
                                                     onClick={() => user.email !== GLOBAL_USER_EMAIL && onToggleEstado(user.id)}
                                                     className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-all duration-300
                                                     ${user.email === GLOBAL_USER_EMAIL
-                                                            ? "cursor-not-allowed opacity-50 bg-green-500"
+                                                            ? "cursor-not-allowed opacity-50 bg-gray-400"
                                                             : `cursor-pointer ${user.estado ? "bg-green-500" : "bg-red-500"}`
                                                         }`}
                                                 >
@@ -115,7 +115,9 @@ export default function UsersTable({
                                                 </div>
                                                 <span
                                                     className={`text-xs font-semibold
-                                                    ${user.estado ? "text-green-600" : "text-red-600"}`}
+                                                    ${user.email === GLOBAL_USER_EMAIL
+                                                            ? "text-gray-500"
+                                                            : user.estado ? "text-green-600" : "text-red-600"}`}
                                                 >
                                                     {user.estado ? "Activo" : "Inactivo"}
                                                 </span>
@@ -137,14 +139,15 @@ export default function UsersTable({
 
                                             <Restricted scope="Usuarios" action="Editar">
                                                 <button
-                                                    onClick={() => user.estado && onEdit(user)}
-                                                    disabled={!user.estado}
+                                                    onClick={() => user.email !== GLOBAL_USER_EMAIL && user.estado && onEdit(user)}
+                                                    disabled={user.email === GLOBAL_USER_EMAIL || !user.estado}
                                                     className={`p-2 rounded-lg transition
-                                                        ${!user.estado
+                                                        ${user.email === GLOBAL_USER_EMAIL || !user.estado
                                                             ? "bg-gray-100 cursor-not-allowed opacity-40"
                                                             : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
+                                                    title={user.email === GLOBAL_USER_EMAIL ? "Usuario protegido" : "Editar usuario"}
                                                 >
-                                                    <Pencil size={18} className={!user.estado ? "text-gray-400" : "text-yellow-600"} />
+                                                    <Pencil size={18} className={user.email === GLOBAL_USER_EMAIL || !user.estado ? "text-gray-400" : "text-yellow-600"} />
                                                 </button>
                                             </Restricted>
 
@@ -162,7 +165,7 @@ export default function UsersTable({
                                                         !user.estado
                                                     }
                                                     className={`p-2 rounded-lg transition
-            ${user.email === GLOBAL_USER_EMAIL ||
+                                                        ${user.email === GLOBAL_USER_EMAIL ||
                                                             user.id === currentUser?.id ||
                                                             !user.estado
                                                             ? "bg-gray-100 cursor-not-allowed opacity-40"
