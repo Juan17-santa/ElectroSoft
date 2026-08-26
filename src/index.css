@@ -47,6 +47,54 @@ body {
   font-family: "Poppins", sans-serif;
 }
 
+/* SCROLLBARS
+   Estilo inspirado en la pista de scroll del Sidebar en modo colapsado:
+   thumb gris (gray-400) delgado y redondeado sobre pista transparente,
+   con opacidad 60% en reposo y 100% al pasar el mouse. */
+:root {
+  --scrollbar-thumb: rgba(156, 163, 175, 0.6); /* gray-400 @ 60% (reposo) */
+  --scrollbar-thumb-hover: #9ca3af;            /* gray-400 @ 100% (hover) */
+  --scrollbar-track: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Firefox: solo soporta estado estático, se usa la opacidad de reposo */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* WebKit/Blink (Chrome, Edge, Safari) */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background-clip: content-box;
+  transition: background-color 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
 /* ANIMACION PARA LAS ALERTAS */
 @keyframes slide-in {
   from {
@@ -77,38 +125,4 @@ body {
 
 .animate-slide-out-right {
   animation: slide-out-right 0.35s ease-in forwards;
-}
-
-/* ANIMACION NUDGE PARA LAS FLECHAS DE SCROLL DEL SIDEBAR */
-@keyframes nudge-up {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
-@keyframes nudge-down {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(3px);
-  }
-}
-
-.animate-nudge-up {
-  animation: nudge-up 1.4s ease-in-out infinite;
-}
-
-.animate-nudge-down {
-  animation: nudge-down 1.4s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-nudge-up,
-  .animate-nudge-down {
-    animation: none;
-  }
 }

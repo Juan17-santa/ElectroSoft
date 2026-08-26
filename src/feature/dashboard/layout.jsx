@@ -19,7 +19,7 @@ export default function Layout() {
 
                 <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} isCollapsed={isCollapsed} />
 
-                <div className="flex-1 p-3 overflow-auto flex flex-col">
+                <div className="flex-1 p-1 overflow-auto flex flex-col">
                     <Outlet />
                 </div>
 

@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useLocation, NavLink, useNavigate } from 'react-router-dom';
 import {
     ChartNoAxesCombined, ShoppingCart, BadgeDollarSign, UsersRound, ShieldCheck,
-    LogOut, ChevronDown, ChevronUp, X, Lightbulb,
+    LogOut, ChevronDown, X, Lightbulb,
     Layers, Package, Truck, ShoppingBag, UserRound, ClipboardList, Receipt, Wallet, Undo2
 } from 'lucide-react';
 import { logout } from "../../auth/services/authService";
@@ -34,15 +34,6 @@ export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     const navigate = useNavigate();
     const { showToast } = useToast();
     const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-    // Pista de scroll integrada (solo desktop)
-    const scrollRef = useRef(null);
-    const trackRef = useRef(null);
-    const scrollTimer = useRef(null);
-    const [scrollMetrics, setScrollMetrics] = useState({ scrollTop: 0, scrollHeight: 1, clientHeight: 1, trackTop: 0, trackHeight: 1 });
-    const [isHovering, setIsHovering] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isScrolling, setIsScrolling] = useState(false);
 
     const handleLogout = () => {
         setShowLogoutModal(true);
@@ -132,99 +123,6 @@ export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
     const handleNavigate = () => {
         setIsOpen(false);
     };
-
-    // Sincroniza el deslizador con el scroll nativo del contenedor (única fuente de scroll)
-    const updateScrollMetrics = useCallback(() => {
-        const el = scrollRef.current;
-        if (!el) return;
-        let trackTop = 0;
-        let trackHeight = el.clientHeight;
-        if (trackRef.current) {
-            const trackRect = trackRef.current.getBoundingClientRect();
-            const elRect = el.getBoundingClientRect();
-            trackTop = elRect.top - trackRect.top;
-            trackHeight = el.clientHeight;
-        }
-        setScrollMetrics({
-            scrollTop: el.scrollTop,
-            scrollHeight: el.scrollHeight,
-            clientHeight: el.clientHeight,
-            trackTop,
-            trackHeight,
-        });
-    }, []);
-
-    useEffect(() => {
-        const el = scrollRef.current;
-        if (!el) return;
-
-        const onScroll = () => {
-            updateScrollMetrics();
-            setIsScrolling(true);
-            if (scrollTimer.current) clearTimeout(scrollTimer.current);
-            scrollTimer.current = setTimeout(() => setIsScrolling(false), 400);
-        };
-
-        el.addEventListener('scroll', onScroll);
-        window.addEventListener('resize', updateScrollMetrics);
-
-        const observer = new ResizeObserver(() => updateScrollMetrics());
-        observer.observe(el);
-        if (el.firstElementChild) observer.observe(el.firstElementChild);
-
-        updateScrollMetrics();
-
-        return () => {
-            el.removeEventListener('scroll', onScroll);
-            window.removeEventListener('resize', updateScrollMetrics);
-            observer.disconnect();
-            if (scrollTimer.current) clearTimeout(scrollTimer.current);
-        };
-    }, [updateScrollMetrics]);
-
-    // Arrastre del deslizador -> scrollTop nativo
-    useEffect(() => {
-        if (!isDragging) return;
-
-        const handleMove = (e) => {
-            const el = scrollRef.current;
-            const track = trackRef.current;
-            if (!el || !track) return;
-            const { trackTop, trackHeight, clientHeight, scrollHeight } = scrollMetrics;
-            const thumbHeight = Math.max((clientHeight / scrollHeight) * trackHeight, 24);
-            const usable = trackHeight - thumbHeight;
-            if (usable <= 0) return;
-            const trackRect = track.getBoundingClientRect();
-            const ratio = Math.min(Math.max((e.clientY - trackRect.top - trackTop) / usable, 0), 1);
-            el.scrollTop = ratio * (scrollHeight - clientHeight);
-        };
-
-        const handleUp = () => setIsDragging(false);
-
-        window.addEventListener('mousemove', handleMove);
-        window.addEventListener('mouseup', handleUp);
-        return () => {
-            window.removeEventListener('mousemove', handleMove);
-            window.removeEventListener('mouseup', handleUp);
-        };
-    }, [isDragging, scrollMetrics]);
-
-    const handleThumbMouseDown = (e) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const scrollByDirection = (direction) => {
-        const el = scrollRef.current;
-        if (!el) return;
-        el.scrollBy({ top: direction * el.clientHeight * 0.8, behavior: 'smooth' });
-    };
-
-    const { scrollTop, scrollHeight, clientHeight, trackTop, trackHeight } = scrollMetrics;
-    const maxScroll = scrollHeight - clientHeight;
-    const thumbHeight = Math.max(maxScroll > 0 ? (clientHeight / scrollHeight) * trackHeight : 0, 24);
-    const thumbTop = maxScroll > 0 ? trackTop + (scrollTop / maxScroll) * (trackHeight - thumbHeight) : trackTop;
-    const thumbActive = isHovering || isDragging || isScrolling;
 
     // Ícono + tooltip para modo colapsado (con portal para evitar el clipping del overflow)
     const CollapsedIcon = ({ path, label, Icon, exact = false }) => {
@@ -351,7 +249,7 @@ export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
 
                 <nav className="flex flex-col h-full">
 
-                    <div ref={scrollRef} className="flex-1 overflow-y-auto md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden">
+                    <div className={`flex-1 overflow-y-auto ${isCollapsed ? "" : "md:[scrollbar-width:none] md:[&::-webkit-scrollbar]:hidden"}`}>
 
                         {isCollapsed ? (
                             /* ---------- MODO COLAPSADO: solo íconos + tooltip ---------- */
@@ -547,42 +445,7 @@ export const Sidebar = ({ isOpen, setIsOpen, isCollapsed }) => {
                     </div>
                 </nav>
 
-{/* Pista de scroll integrada (solo desktop): el borde del Sidebar es la pista */}
-                <div
-                    ref={trackRef}
-                    onMouseEnter={() => setIsHovering(true)}
-                    onMouseLeave={() => setIsHovering(false)}
-                    className="hidden md:block absolute right-0 top-0 bottom-0 w-2.5 bg-transparent select-none"
-                >
-                    {scrollTop > 0 && (
-                        <button
-                            onClick={() => scrollByDirection(-1)}
-                            title="Desplazar hacia arriba"
-                            style={{ top: trackTop + 2 }}
-                            className={`absolute right-0 w-6 h-6 flex items-center justify-center text-gray-700 cursor-pointer transition-opacity duration-300 ${thumbActive ? "opacity-100" : "opacity-90"}`}
-                        >
-                            <ChevronUp size={24} className="animate-nudge-up" />
-                        </button>
-                    )}
-                    {maxScroll > 0 && scrollTop < maxScroll && (
-                        <button
-                            onClick={() => scrollByDirection(1)}
-                            title="Desplazar hacia abajo"
-                            style={{ top: trackTop + trackHeight - 32 }}
-                            className={`absolute right-0 w-6 h-6 flex items-center justify-center text-gray-700 cursor-pointer transition-opacity duration-300 ${thumbActive ? "opacity-100" : "opacity-90"}`}
-                        >
-                            <ChevronDown size={24} className="animate-nudge-down" />
-                        </button>
-                    )}
-                    {maxScroll > 0 && (
-                        <div
-                            onMouseDown={handleThumbMouseDown}
-                            style={{ top: thumbTop, height: thumbHeight }}
-                            className={`absolute right-px w-1 rounded-full bg-gray-400 transition-opacity duration-300 cursor-grab ${thumbActive ? "opacity-100" : "opacity-60"} ${isDragging ? "cursor-grabbing" : ""}`}
-                        />
-                    )}
-                </div>
-            </aside>
+</aside>
         </>
     )
 }
