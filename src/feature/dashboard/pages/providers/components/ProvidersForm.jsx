@@ -379,6 +379,7 @@ export default function ProviderForm({
                             value={formData.categoriesAssociated}
                             onChange={setCategoriasAsociadas}
                             multiple
+                            required={false}
                             placeholder="Seleccionar categorías"
                             width="w-full"
                         />
