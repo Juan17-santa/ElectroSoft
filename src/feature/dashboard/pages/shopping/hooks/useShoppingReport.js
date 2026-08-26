@@ -165,7 +165,6 @@ export function useShoppingReport(getSearchTerm, notify) {
 
         // ─── HEADERS MANUALES (CLAVE) ───────────────────────
         excelData.push([
-            "ID",
             "N° FACTURA",
             "FECHA COMPRA",
             "PROVEEDOR",
@@ -183,7 +182,6 @@ export function useShoppingReport(getSearchTerm, notify) {
 
             if (productos.length === 0) {
                 excelData.push([
-                    String(index + 1).padStart(2, "0"),
                     compra.numeroFactura,
                     compra.fechaCompra,
                     compra.proveedor,
@@ -194,7 +192,6 @@ export function useShoppingReport(getSearchTerm, notify) {
             } else {
                 productos.forEach((prod, i) => {
                     excelData.push([
-                        i === 0 ? String(index + 1).padStart(2, "0") : "",
                         i === 0 ? compra.numeroFactura : "",
                         i === 0 ? compra.fechaCompra : "",
                         i === 0 ? compra.proveedor : "",
