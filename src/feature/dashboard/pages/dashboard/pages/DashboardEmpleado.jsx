@@ -121,6 +121,14 @@ export default function DashboardEmpleado() {
                     {/* STAT CARDS */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <StatCard
+                            label="Monto de compras"
+                            value={Number(comprasStats?.totalCompras) || 0}
+                            icon={ShoppingCart}
+                            color="#f59e0b"
+                            isMoney
+                            showDelta={false}
+                        />
+                        <StatCard
                             label="Monto de ventas"
                             value={Number(ventasStats?.totalVentas) || 0}
                             icon={DollarSign}
@@ -134,14 +142,6 @@ export default function DashboardEmpleado() {
                             icon={Package}
                             color="#6366f1"
                             isMoney={false}
-                            showDelta={false}
-                        />
-                        <StatCard
-                            label="Monto de compras"
-                            value={Number(comprasStats?.totalCompras) || 0}
-                            icon={ShoppingCart}
-                            color="#f59e0b"
-                            isMoney
                             showDelta={false}
                         />
                         <StatCard

@@ -42,7 +42,7 @@ export default function Dashboard() {
             setIsLoading(true);
             try {
                 const [compras, sales, products, clients, devolutions, categories] = await Promise.all([
-                    ServicesShopping.fetchAll().then((r) => r?.data || []).catch(() => []),
+                    ServicesShopping.fetchAllForDashboard().catch(() => []),
                     SalesService.get().catch(() => []),
                     ServicesProducts.get().catch(() => []),
                     ClientsService.get().catch(() => []),
@@ -98,26 +98,19 @@ export default function Dashboard() {
     const salesPrev = raw.sales.filter(s => inM(s.fecha, prevYM.y, prevYM.m) && s.estado !== "Anulado");
 
     const sum = (arr, fn) => arr.reduce((a, x) => a + fn(x), 0);
+    const montoCobrado = (sale) => {
+        const tipo = String(sale.tipoVenta || "Contado").toLowerCase();
+        if (tipo === "contado") return parseMoney(sale.total);
+        return parseMoney(sale.montoPagado);
+    };
     const delta = (cur, prev) => {
         if (!prev) return null;
         const d = ((cur - prev) / Math.abs(prev)) * 100;
         return Number.isFinite(d) ? d : null;
     };
 
-    // Reembolsos que descuentan del monto de ventas: solo gestiones de reembolso,
-    // no anuladas ni rechazadas, con monto mayor a 0 (el monto incluye IVA).
-    const esReembolsoValido = (d) =>
-        d.estadoResolucion !== "Anulada" &&
-        d.estadoResolucion !== "RECHAZADA" &&
-        (d.gestion === "REEMBOLSO_TOTAL" || d.gestion === "REEMBOLSO_PARCIAL") &&
-        Number(d.montoReembolso) > 0;
-    const sumReembolso = (arr) => sum(arr, d => Number(d.montoReembolso || 0));
-
-    const reembolsosNow = raw.devolutions.filter(d => esReembolsoValido(d) && inM(d.creadoEn || d.fecha, year, month));
-    const reembolsosPrev = raw.devolutions.filter(d => esReembolsoValido(d) && inM(d.creadoEn || d.fecha, prevYM.y, prevYM.m));
-
-    const totalVentas = sum(salesNow, s => parseMoney(s.total)) - sumReembolso(reembolsosNow);
-    const prevVentas = sum(salesPrev, s => parseMoney(s.total)) - sumReembolso(reembolsosPrev);
+    const totalVentas = sum(salesNow, montoCobrado);
+    const prevVentas = sum(salesPrev, montoCobrado);
     const prodVend = sum(salesNow, s => sum(s.productos || [], p => Number(p.cantidad || 0)));
     const prevProdVend = sum(salesPrev, s => sum(s.productos || [], p => Number(p.cantidad || 0)));
 
@@ -133,8 +126,7 @@ export default function Dashboard() {
     }));
     const serieVentas = MESES.map((mes, i) => ({
         mes,
-        total: sum(raw.sales.filter(s => inM(s.fecha, year, i) && s.estado !== "Anulado"), s => parseMoney(s.total))
-            - sumReembolso(raw.devolutions.filter(d => esReembolsoValido(d) && inM(d.creadoEn || d.fecha, year, i))),
+        total: sum(raw.sales.filter(s => inM(s.fecha, year, i) && s.estado !== "Anulado"), montoCobrado),
     }));
 
     const prodMap = {};
@@ -157,7 +149,7 @@ export default function Dashboard() {
     const tipoMap = {};
     salesNow.forEach(s => {
         const t = s.tipoVenta === "Credito" ? "Crédito" : (s.tipoVenta || "Otro");
-        tipoMap[t] = (tipoMap[t] || 0) + parseMoney(s.total);
+        tipoMap[t] = (tipoMap[t] || 0) + montoCobrado(s);
     });
 
     const tipoDonut = Object.entries(tipoMap)
@@ -221,9 +213,9 @@ export default function Dashboard() {
                         animationDelay: "50ms",
                     }}>
                     <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
-                        <StatCard icon={DollarSign} label="Monto de Ventas" value={totalVentas} delta={delta(totalVentas, prevVentas)} color="#FFC107" isMoney delay={0} />
-                        <StatCard icon={Package} label="Productos Vendidos" value={prodVend} delta={delta(prodVend, prevProdVend)} color="#6366f1" isMoney={false} delay={80} />
-                        <StatCard icon={ShoppingBag} label="Monto de Compras" value={totalCompras} delta={delta(totalCompras, prevCompras)} color="#f59e0b" isMoney delay={160} />
+                        <StatCard icon={ShoppingBag} label="Monto de Compras" value={totalCompras} delta={delta(totalCompras, prevCompras)} color="#f59e0b" isMoney delay={0} />
+                        <StatCard icon={DollarSign} label="Monto de Ventas" value={totalVentas} delta={delta(totalVentas, prevVentas)} color="#FFC107" isMoney delay={80} />
+                        <StatCard icon={Package} label="Productos Vendidos" value={prodVend} delta={delta(prodVend, prevProdVend)} color="#6366f1" isMoney={false} delay={160} />
                         <StatCard icon={TrendingUp} label="Compras vs Ventas" value={ganancia} delta={delta(ganancia, prevGanancia)} color={ganancia >= 0 ? "#10b981" : "#ef4444"} isMoney delay={240} />
                     </div>
                 </div>
