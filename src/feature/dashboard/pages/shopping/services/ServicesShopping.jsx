@@ -238,7 +238,7 @@ export const ServicesShopping = {
         return { products, providers };
     },
 
-    async fetchAll({ page = 1, limit = 15, search = "" } = {}) {
+    async fetchAll({ page = 1, limit = 10000, search = "" } = {}) {
         const params = {};
         params.page = String(page);
         params.limit = String(limit);
@@ -250,6 +250,19 @@ export const ServicesShopping = {
             data,
             pagination: payload?.pagination || { page, limit, total: data.length, totalPages: 1 },
         };
+    },
+
+    async fetchAllForDashboard() {
+        const firstPage = await this.fetchAll({ page: 1, limit: 100 });
+        const totalPages = Number(firstPage.pagination?.totalPages || 1);
+        if (totalPages <= 1) return firstPage.data;
+
+        const pages = await Promise.all(
+            Array.from({ length: totalPages - 1 }, (_, index) =>
+                this.fetchAll({ page: index + 2, limit: 100 })
+            )
+        );
+        return [firstPage.data, ...pages.map((page) => page.data)].flat();
     },
 
     async fetchById(id) {
