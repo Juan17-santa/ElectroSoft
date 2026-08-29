@@ -1,20 +1,19 @@
 @import "tailwindcss";
 
 /* CURSORES PERSONALIZADOS
-   Estilo Bibata Modern Ice (pack de cursores para Windows), versión 32x32.
-   Los hotspots son los exactos del pack para ese tamaño.
+   Estilo Bibata Modern Ice (pack de cursores para Windows), versión 24x24.
+   Los hotspots son los exactos del pack para 32x32, escalados a 24x24.
    El fallback "auto" garantiza un cursor nativo si la imagen no carga o
    es rechazada por el navegador. */
 @theme {
-  --cursor-pointer: url("/link-32.png") 11 1, auto;
-  --cursor-text: url("/text-32.png") 13 13, auto;
-  --cursor-default: url("/pointer-32.png") 5 1, auto;
-  --cursor-not-allowed: url("/unavailable-32.png") 5 1, auto;
-  --cursor-grabbing: url("/grabbing-32.png") 13 6, auto;
+  --cursor-pointer: url("/link-24.png") 8 1, auto;
+  --cursor-text: url("/text-24.png") 10 10, auto;
+  --cursor-default: url("/pointer-24.png") 4 1, auto;
+  --cursor-not-allowed: url("/unavailable-24.png") 4 1, auto;
 }
 
 * {
-  cursor: url("/pointer-32.png") 5 1, auto;
+  cursor: url("/pointer-24.png") 4 1, auto;
 }
 
 a,
@@ -23,14 +22,14 @@ summary,
 [role="button"],
 input[type="checkbox"],
 input[type="radio"] {
-  cursor: url("/link-32.png") 11 1, auto;
+  cursor: url("/link-24.png") 8 1, auto;
 }
 
 input,
 textarea,
 select,
 [contenteditable] {
-  cursor: url("/text-32.png") 13 13, auto;
+  cursor: url("/text-24.png") 10 10, auto;
 }
 
 /* Los descendientes de elementos interactivos (íconos, símbolos, spans)
@@ -43,6 +42,17 @@ summary *,
 input[type="checkbox"] *,
 input[type="radio"] * {
   cursor: inherit;
+}
+
+/* Elementos no interactivos (disabled / readonly / aria-disabled):
+   siempre muestran el cursor "no disponible", sin depender de que cada
+   componente añada la clase cursor-not-allowed. El !important garantiza
+   que gane sobre las reglas base y sobre cursor-pointer. */
+:disabled,
+[disabled],
+[readonly],
+[aria-disabled="true"] {
+  cursor: url("/unavailable-24.png") 4 1, auto !important;
 }
 
 body {

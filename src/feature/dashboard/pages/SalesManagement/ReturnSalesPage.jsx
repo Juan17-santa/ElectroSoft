@@ -9,6 +9,7 @@ import Pagination from "../../components/ui/Pagination";
 import StatusHistoryModal from "../devolutions/components/StatusHistoryModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { logoBase64 } from "../../../../utils/logoBase64";
 import { useToast } from "../../../../context/ToastContext";
 
 const formatCOP = (v) => "$" + Number(v || 0).toLocaleString("es-CO");
@@ -201,19 +202,50 @@ export default function ReturnSalesPage() {
         const numeroVenta = String(sale.numeroVenta || "").padStart(2, "0");
         const fileName = `devolucion_${numeroVenta}.pdf`;
         const headColor = [234, 179, 8];
+        const pageWidth = doc.internal.pageSize.width;
 
-        // Título
-        doc.setFontSize(18);
+        // --- BANNER INSTITUCIONAL (idéntico a PDFReportGenerator) ---
+        // Fondo claro para ahorrar tinta en impresión
+        doc.setFillColor(245, 245, 245);
+        doc.rect(0, 0, pageWidth, 32, "F");
+
+        // Logo (bombillo)
+        try {
+            doc.addImage(logoBase64, "PNG", 12, 6, 20, 20);
+        } catch { void 0; }
+
+        // Nombre de Empresa
+        doc.setTextColor(50, 50, 50); // Gris oscuro
+        doc.setFontSize(24);
         doc.setFont("helvetica", "bold");
-        doc.text(`Devolución de venta — ${numeroVenta}`, 14, 22);
+        doc.text("ElectroSoft", 35, 15);
 
-        // Fecha de generación
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.text("CL 51 # 55 - 69 Local 133", 35, 21);
+        doc.text("Tel: +57 313 6345398", 35, 26);
+
+        // Título del Reporte (alineado a la derecha)
+        doc.setTextColor(80, 80, 80); // Gris oscuro
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(`DEVOLUCIÓN — ${numeroVenta}`, pageWidth - 14, 21, { align: "right" });
+
+        // --- INFORMACIÓN DEL REPORTE ---
+        doc.setTextColor(80, 80, 80);
         doc.setFontSize(10);
         doc.setFont("helvetica", "normal");
-        doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 30);
+
+        // Fecha de emisión alineada a la derecha
+        doc.text(
+            `Fecha de emisión: ${new Date().toLocaleDateString()}`,
+            pageWidth - 14,
+            41,
+            { align: "right" }
+        );
 
         // Información general
-        let currentY = 36;
+        let currentY = 41;
         const infoLines = [
             `ID venta: ${numeroVenta}`,
             `Fecha creación: ${sale.fecha ?? "—"}`,
@@ -226,6 +258,12 @@ export default function ReturnSalesPage() {
             doc.text(line, 14, currentY);
             currentY += 6;
         });
+
+        // Línea separadora sutil
+        currentY += 2;
+        doc.setDrawColor(220, 220, 220);
+        doc.line(14, currentY, pageWidth - 14, currentY);
+        currentY += 5;
 
         // Tabla 1: Productos de la venta
         doc.setFontSize(11);
@@ -358,6 +396,7 @@ export default function ReturnSalesPage() {
                                     const fechaVencimiento = new Date(fechaVenta);
                                     fechaVencimiento.setMonth(fechaVencimiento.getMonth() + mesesGarantia);
                                     const garantiaValida = new Date() <= fechaVencimiento;
+                                    const diasRestantesGarantia = Math.ceil((fechaVencimiento.getTime() - new Date().getTime()) / 86400000);
 
                                     return (
                                         <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
@@ -374,7 +413,9 @@ export default function ReturnSalesPage() {
                                                 {mesesGarantia === 0 ? (
                                                     <span className="text-xs text-gray-500">Sin garantía</span>
                                                 ) : garantiaValida ? (
-                                                    <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">Vigente</span>
+                                                    <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full font-medium">
+                                                        Vigente (por {diasRestantesGarantia} {diasRestantesGarantia === 1 ? "día" : "días"})
+                                                    </span>
                                                 ) : (
                                                     <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full font-medium">Expiró</span>
                                                 )}

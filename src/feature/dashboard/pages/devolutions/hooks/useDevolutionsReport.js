@@ -107,7 +107,7 @@ export function useDevolutionsReport(notify) {
 
         // ─── RESUMEN GENERAL ─────────────────────────────────
         excelData.push(["RESUMEN GENERAL"]);
-        excelData.push(["Rango", `${fechaInicio} - ${fechaFin}`]);
+        excelData.push(["Rango", `${formatFechaDisplay(fechaInicio)} - ${formatFechaDisplay(fechaFin)}`]);
         excelData.push(["Total devoluciones", totalDevoluciones]);
         excelData.push(["Productos devueltos", totalProductosDevueltos]);
         excelData.push(["Resueltas", `${resueltas} (${pctResueltas}%)`]);
@@ -117,7 +117,7 @@ export function useDevolutionsReport(notify) {
         excelData.push([]);
 
         // ─── LISTADO ─────────────────────────────────────────
-         excelData.push(["TIPO", "REFERENCIA", "CLIENTE / PRODUCTO", "FECHA", "CANTIDAD", "VALOR", "MONTO REEMBOLSADO", "MOTIVO", "GESTION", "ESTADO"]);
+         excelData.push(["TIPO", "REFERENCIA", "CLIENTE / PRODUCTO", "FECHA INICIO", "ULTIMA ACTUALIZACION", "CANTIDAD", "VALOR", "MONTO REEMBOLSADO", "MOTIVO", "GESTION", "ESTADO"]);
 
         grupos.forEach((grupo) => {
             const idVenta = grupo[0].idVenta;
@@ -132,7 +132,8 @@ export function useDevolutionsReport(notify) {
                 "VENTA",
                 referenciaVenta,
                 venta?.cliente || venta?.numeroDocumento || "-",
-                 venta?.fecha || "-",
+                 "",
+                 "",
                  "",
                  "",
                  "",
@@ -150,6 +151,7 @@ export function useDevolutionsReport(notify) {
                         "",
                         devolucion.producto || "-",
                          formatFechaDisplay(devolucion.fechaDevolucion),
+                         formatFechaDisplay(devolucion.fechaEstado),
                          String(devolucion.cantidad ?? "-"),
                          fmt(calcularMonto(devolucion, venta)),
                          devolucion.gestion === "REEMBOLSO_TOTAL" || devolucion.gestion === "REEMBOLSO_PARCIAL"

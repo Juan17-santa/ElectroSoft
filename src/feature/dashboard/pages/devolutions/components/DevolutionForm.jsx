@@ -1,5 +1,5 @@
 import {
-    AlertTriangle, Box, Boxes, Wrench, User,
+    AlertTriangle, Boxes, Wrench, User,
     ShieldCheck, FileText, CalendarDays, ClipboardList, Tag,
     GitBranch, AlertCircle, CheckCircle2, DollarSign,
     Plus
@@ -68,7 +68,6 @@ export default function DevolutionForm({
     productosList    = [],
     estadoCampo      = () => null,
     onFieldBlur      = () => {},
-    sinProductos     = false,
     readOnlyFields   = [],
     garantiaVencidaMap = {},
     stockDisponible  = null,
@@ -117,37 +116,19 @@ export default function DevolutionForm({
         <div className="p-6 flex flex-col h-full gap-6 overflow-auto">
 
             <div>
-                <p className="text-xl font-semibold flex items-center gap-2">
+                <p className="text-xl font-semibold flex items-center gap-2 flex-wrap">
                     {title}
+                    {form.producto && (
+                        <>
+                            <span className="text-gray-300 select-none" aria-hidden="true">|</span>
+                            <span className="font-medium text-gray-700">{form.producto}</span>
+                        </>
+                    )}
                 </p>
                 <div className="h-0.5 bg-linear-to-r from-yellow-400 to-transparent mt-3" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 px-10 gap-y-6">
-
-                <Field icon={Box} label="Producto *">
-                    {esReadOnly("producto") ? (
-                            <input type="text" value={form.producto} readOnly className={fieldBase("producto")} />
-                        ) : (!form.idVenta || productosList.length === 0) ? (
-                            <div className={`${fieldBase("producto")} opacity-40 cursor-not-allowed`}>{form.idVenta ? "Seleccionar..." : "Primero elige venta"}</div>
-                        ) : (
-                            <CustomSelect
-                                value={form.producto}
-                                onChange={(val) => { onChange("producto", val); onFieldBlur("producto"); }}
-                                options={productosList.map((p) => ({ value: p.nombre, label: p.nombre }))}
-                                placeholder={form.idVenta ? "Seleccionar..." : "Primero elige venta"}
-                                width="w-full"
-                            />
-                        )}
-                    {sinProductos && !esReadOnly("producto") ? (
-                        <div className="flex items-center gap-1 text-xs mt-1 text-amber-600">
-                            <AlertCircle size={12} />
-                            <span>Todos los productos de esta venta ya tienen devolución completa.</span>
-                        </div>
-                    ) : (
-                        <FieldStatus estado={estadoCampo("producto")} />
-                    )}
-                </Field>
 
                 <Field icon={AlertTriangle} label="Motivo *">
                     <CustomSelect
@@ -185,26 +166,6 @@ export default function DevolutionForm({
                     <FieldStatus estado={estadoCampo("submotivo")} />
                 </Field>
 
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 px-10 gap-y-6">
-
-                <Field icon={Boxes} label="Cantidad *">
-                    <input
-                        type="number"
-                        min="1"
-                        max="9999"
-                        value={form.cantidad}
-                        onChange={(e) => onChange("cantidad", e.target.value)}
-                        onKeyDown={blockInvalidKeys}
-                        onBlur={() => onFieldBlur("cantidad")}
-                        readOnly={esReadOnly("cantidad")}
-                        placeholder="Ingresa cantidad..."
-                        className={`${fieldBase("cantidad")} ${esReadOnly("cantidad") ? "cursor-not-allowed" : ""}`}
-                    />
-                    <FieldStatus estado={estadoCampo("cantidad")} />
-                </Field>
-
                 <Field icon={Wrench} label="Condición producto *">
                     <CustomSelect
                         value={form.condicionProducto}
@@ -236,6 +197,26 @@ export default function DevolutionForm({
                         </label>
                     )}
                     <FieldStatus estado={estadoCampo("condicionProducto")} />
+                </Field>
+
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 px-10 gap-y-6">
+
+                <Field icon={Boxes} label="Cantidad *">
+                    <input
+                        type="number"
+                        min="1"
+                        max="9999"
+                        value={form.cantidad}
+                        onChange={(e) => onChange("cantidad", e.target.value)}
+                        onKeyDown={blockInvalidKeys}
+                        onBlur={() => onFieldBlur("cantidad")}
+                        readOnly={esReadOnly("cantidad")}
+                        placeholder="Ingresa cantidad..."
+                        className={`${fieldBase("cantidad")} ${esReadOnly("cantidad") ? "cursor-not-allowed" : ""}`}
+                    />
+                    <FieldStatus estado={estadoCampo("cantidad")} />
                 </Field>
 
                 <Field icon={User} label="Responsable *">
