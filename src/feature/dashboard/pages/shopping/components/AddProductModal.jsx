@@ -3,6 +3,7 @@ import { X, Box, Boxes, DollarSign, Plus, AlertCircle, CheckCircle2, TrendingUp,
 import { formatCOP, parseCOP, blockInvalidKeys } from "../helpers/shoppingHelpers";
 import CreateProductModal from "./CreateProductModal";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
+import Pagination from "../../../components/ui/Pagination";
 import { ServicesShopping } from "../services/ServicesShopping";
 
 function FieldStatus({ estado }) {
@@ -19,6 +20,7 @@ function FieldStatus({ estado }) {
 const sanitizeMoneyDigits = (value) => value.replace(/[^0-9]/g, "").replace(/^0+(?=\d)/, "");
 
 const RESULTS_PER_PAGE = 5;
+const PRODUCTOS_PER_PAGE = 3;
 
 export default function AddProductModal({ onClose, onCargarCompra, productosYaAgregados = [] }) {
     const [productosList, setProductosList] = useState([]);
@@ -37,6 +39,7 @@ export default function AddProductModal({ onClose, onCargarCompra, productosYaAg
     const [productSearch, setProductSearch] = useState("");
     const [showProductResults, setShowProductResults] = useState(false);
     const [resultPage, setResultPage] = useState(1);
+    const [productPage, setProductPage] = useState(1);
 
     const productDropdownRef = useRef(null);
 
@@ -228,6 +231,10 @@ export default function AddProductModal({ onClose, onCargarCompra, productosYaAg
 
     const totalModal = productosModal.reduce((total, item) => total + Number(item.subtotal || 0), 0);
 
+    const totalProductPages = Math.max(1, Math.ceil(productosModal.length / PRODUCTOS_PER_PAGE));
+    const productActual = Math.min(productPage, totalProductPages);
+    const paginatedProductosModal = productosModal.slice((productActual - 1) * PRODUCTOS_PER_PAGE, productActual * PRODUCTOS_PER_PAGE);
+
     return (
         <>
             {/* OVERLAY global — cubre toda la ventana incluido navbar y sidebar */}
@@ -414,7 +421,7 @@ export default function AddProductModal({ onClose, onCargarCompra, productosYaAg
                         {/* CANTIDAD */}
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center text-yellow-400 gap-2 text-sm font-medium"><Boxes size={18} /><span>Cantidad *</span></div>
-                            <input type="number" min="1" placeholder="Unidades a comprar" value={modalCantidad}
+                            <input type="number" min="1" placeholder="Cuánto?" value={modalCantidad}
                                 onChange={(e) => { setModalCantidad(e.target.value); setTocados((t) => ({ ...t, cantidad: true })); }}
                                 onKeyDown={blockInvalidKeys}
                                 onBlur={() => setTocados((t) => ({ ...t, cantidad: true }))}
@@ -499,47 +506,56 @@ export default function AddProductModal({ onClose, onCargarCompra, productosYaAg
                     )}
 
                     {productosModal.length > 0 && (
-                        <div className="mt-5 border border-gray-200 rounded-xl overflow-x-auto">
-                            <table className="w-full min-w-125 text-xs">
-                                <thead className="bg-gray-100 text-gray-700">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left">Producto</th>
-                                        <th className="px-3 py-2 text-center">Cantidad</th>
-                                        <th className="px-3 py-2 text-right">Coste</th>
-                                        <th className="px-3 py-2 text-right">Subtotal</th>
-                                        <th className="px-3 py-2 text-center">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {productosModal.map((producto) => (
-                                        <tr key={producto.id} className="border-t border-gray-100">
-                                            <td className="px-3 py-2 font-medium text-gray-700">{producto.nombre}</td>
-                                            <td className="px-3 py-2">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <button type="button" onClick={() => updateModalQuantity(producto.id, producto.cantidad - 1)} className="p-1 rounded bg-gray-100 hover:bg-gray-200">-</button>
-                                                    <span className="w-7 text-center font-semibold">{producto.cantidad}</span>
-                                                    <button type="button" onClick={() => updateModalQuantity(producto.id, producto.cantidad + 1)} className="p-1 rounded bg-gray-100 hover:bg-gray-200">+</button>
-                                                </div>
-                                            </td>
-                                            <td className="px-3 py-2 text-right">{fmt(producto.costeProducto)}</td>
-                                            <td className="px-3 py-2 text-right font-semibold">{fmt(producto.subtotal)}</td>
-                                            <td className="px-3 py-2 text-center">
-                                                <button type="button" onClick={() => removeModalProduct(producto.id)} className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600" title="Eliminar producto">
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </td>
+                        <>
+                            <div className="mt-5 border border-gray-200 rounded-xl overflow-x-auto">
+                                <table className="w-full min-w-125 text-xs">
+                                    <thead className="bg-gray-100 text-gray-700">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left">Producto</th>
+                                            <th className="px-3 py-2 text-center">Cantidad</th>
+                                            <th className="px-3 py-2 text-right">Coste</th>
+                                            <th className="px-3 py-2 text-right">Precio venta</th>
+                                            <th className="px-3 py-2 text-right">Subtotal</th>
+                                            <th className="px-3 py-2 text-center">Acción</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot className="border-t border-gray-200 bg-blue-50">
-                                    <tr>
-                                        <td colSpan="3" className="px-3 py-2 text-right font-semibold text-gray-700">Total de la compra:</td>
-                                        <td className="px-3 py-2 text-right font-bold text-green-600">{fmt(totalModal)}</td>
-                                        <td />
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {paginatedProductosModal.map((producto) => (
+                                            <tr key={producto.id} className="border-t border-gray-100">
+                                                <td className="px-3 py-2 font-medium text-gray-700">{producto.nombre}</td>
+                                                <td className="px-3 py-2">
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <button type="button" onClick={() => updateModalQuantity(producto.id, producto.cantidad - 1)} className="p-1 rounded bg-gray-100 hover:bg-gray-200">-</button>
+                                                        <span className="w-7 text-center font-semibold">{producto.cantidad}</span>
+                                                        <button type="button" onClick={() => updateModalQuantity(producto.id, producto.cantidad + 1)} className="p-1 rounded bg-gray-100 hover:bg-gray-200">+</button>
+                                                    </div>
+                                                </td>
+                                                <td className="px-3 py-2 text-right">{fmt(producto.costeProducto)}</td>
+                                                <td className="px-3 py-2 text-right">{fmt(producto.precioVenta)}</td>
+                                                <td className="px-3 py-2 text-right font-semibold">{fmt(producto.subtotal)}</td>
+                                                <td className="px-3 py-2 text-center">
+                                                    <button type="button" onClick={() => removeModalProduct(producto.id)} className="p-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-600" title="Eliminar producto">
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot className="border-t border-gray-200 bg-gray-100">
+                                        <tr>
+                                            <td colSpan="4" className="px-3 py-2 text-right font-semibold text-gray-700">Total de la compra:</td>
+                                            <td className="px-3 py-2 text-right font-bold text-green-600">{fmt(totalModal)}</td>
+                                            <td />
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            {totalProductPages > 1 && (
+                                <div className="flex justify-end mt-3">
+                                    <Pagination currentPage={productActual} totalPages={totalProductPages} onPageChange={setProductPage} />
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {/* BOTONES */}
