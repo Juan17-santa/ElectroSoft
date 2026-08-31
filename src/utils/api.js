@@ -26,6 +26,16 @@ api.interceptors.response.use(
         window.location.href = "/";
       }
     }
+
+    const backendMessage =
+      error.response?.data?.error ||
+      error.response?.data?.message ||
+      error.message;
+
+    if (backendMessage) {
+      error.message = backendMessage;
+    }
+
     return Promise.reject(error);
   }
 );
