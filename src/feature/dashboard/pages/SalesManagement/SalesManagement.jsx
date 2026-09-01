@@ -415,6 +415,19 @@ export default function SalesManagement() {
                                             </td>
                                             <td className="px-3 py-3">
                                                 <div className="flex justify-center flex-nowrap gap-1.5 h-9">
+                                                    {/* VER DETALLES */}
+                                                    <div className="flex-none flex items-center justify-center w-9 h-9">
+                                                        <Restricted scope="Ventas" action="Ver">
+                                                            <button
+                                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                                onClick={() => handleViewDetails(sale)}
+                                                                title="Ver detalles"
+                                                            >
+                                                                <Eye size={18} className="text-blue-600" />
+                                                            </button>
+                                                        </Restricted>
+                                                    </div>
+
                                                     {/* DEVOLVER */}
                                                     <Restricted scope="Ventas" action="Devolver">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
@@ -471,36 +484,6 @@ export default function SalesManagement() {
                                                         </div>
                                                     </Restricted>
 
-                                                    {/* VER DETALLES */}
-                                                    <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                        <Restricted scope="Ventas" action="Ver">
-                                                            <button
-                                                                className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                                onClick={() => handleViewDetails(sale)}
-                                                                title="Ver detalles"
-                                                            >
-                                                                <Eye size={18} className="text-blue-600" />
-                                                            </button>
-                                                        </Restricted>
-                                                    </div>
-
-                                                    {/* ANULAR */}
-                                                    <Restricted scope="Ventas" action="anular">
-                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            {sale.estado === "Anulado" || sale.estado === "ANULADA" ? (
-                                                                <CancellationInfoTooltip cancelInfo={{
-                                                                    fechaAnulacion: sale.anuladaEn || sale.fecha,
-                                                                    motivo: sale.observaciones || "Anulación registrada sin motivo."
-                                                                }} />
-                                                            ) : (
-                                                                <BanButton
-                                                                    validacion={validarAnulacion(sale)}
-                                                                    onClick={() => handleAnull(sale)}
-                                                                />
-                                                            )}
-                                                        </div>
-                                                    </Restricted>
-
                                                     {/* CREDITO */}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
                                                         {(() => {
@@ -519,6 +502,23 @@ export default function SalesManagement() {
                                                             );
                                                         })()}
                                                     </div>
+
+                                                    {/* ANULAR */}
+                                                    <Restricted scope="Ventas" action="anular">
+                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
+                                                            {sale.estado === "Anulado" || sale.estado === "ANULADA" ? (
+                                                                <CancellationInfoTooltip cancelInfo={{
+                                                                    fechaAnulacion: sale.anuladaEn || sale.fecha,
+                                                                    motivo: sale.observaciones || "Anulación registrada sin motivo."
+                                                                }} />
+                                                            ) : (
+                                                                <BanButton
+                                                                    validacion={validarAnulacion(sale)}
+                                                                    onClick={() => handleAnull(sale)}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    </Restricted>
                                                 </div>
                                             </td>
                                         </tr>

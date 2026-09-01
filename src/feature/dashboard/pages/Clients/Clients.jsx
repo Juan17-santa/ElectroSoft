@@ -164,7 +164,7 @@ export default function Clients() {
                         <table className="min-w-240 w-full text-sm table-fixed">
                             <thead className="bg-gray-200">
                                 <tr className="text-left border-b border-gray-300">
-                                    <th className="px-3 py-2 font-semibold w-8">ID</th>
+                                    <th className="px-3 py-2 font-semibold w-8">#</th>
                                     <th className="px-3 py-2 font-semibold w-24">Documento</th>
                                     <th className="px-3 py-2 font-semibold w-32">Nombre</th>
                                     <th className="px-3 py-2 font-semibold w-36">Email</th>
@@ -217,27 +217,6 @@ export default function Clients() {
                                             </td>
                                             <td className="px-3 py-2 w-36">
                                                 <div className="flex justify-center flex-nowrap gap-1.5 h-9">
-                                                    {hasPermission("Clientes", "Editar") && (
-                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
-                                                            <Restricted scope="Clientes" action="Cupo">
-                                                            <button
-                                                                onClick={() => handleAsignarCupo(client)}
-                                                                disabled={client.totalCompras < 1000000}
-                                                                className={`p-2 rounded-lg transition ${client.totalCompras >= 1000000
-                                                                    ? "bg-green-200 text-green-700 hover:bg-green-300 cursor-pointer"
-                                                                    : "bg-gray-300 cursor-not-allowed opacity-50"
-                                                                    }`}
-                                                                title={
-                                                                    client.totalCompras >= 1000000
-                                                                        ? "Asignar cupo"
-                                                                        : "Debe superar $1.000.000 en compras"
-                                                                }
-                                                            >
-                                                                <CreditCard size={18} />
-                                                            </button>
-                                                            </Restricted>
-                                                        </div>
-                                                    )}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
                                                         <Restricted scope="Clientes" action="Ver">
                                                             <button
@@ -260,6 +239,27 @@ export default function Clients() {
                                                             </button>
                                                         </div>
                                                     </Restricted>
+                                                    {hasPermission("Clientes", "Editar") && (
+                                                        <div className="flex-none flex items-center justify-center w-9 h-9">
+                                                            <Restricted scope="Clientes" action="Cupo">
+                                                            <button
+                                                                onClick={() => handleAsignarCupo(client)}
+                                                                disabled={client.totalCompras < 1000000}
+                                                                className={`p-2 rounded-lg transition ${client.totalCompras >= 1000000
+                                                                    ? "bg-green-200 text-green-700 hover:bg-green-300 cursor-pointer"
+                                                                    : "bg-gray-300 cursor-not-allowed opacity-50"
+                                                                    }`}
+                                                                title={
+                                                                    client.totalCompras >= 1000000
+                                                                        ? "Asignar cupo"
+                                                                        : "Debe superar $1.000.000 en compras"
+                                                                }
+                                                            >
+                                                                <CreditCard size={18} />
+                                                            </button>
+                                                            </Restricted>
+                                                        </div>
+                                                    )}
                                                     <Restricted scope="Clientes" action="Eliminar">
                                                         <div className="flex-none flex items-center justify-center w-9 h-9">
                                                             <button

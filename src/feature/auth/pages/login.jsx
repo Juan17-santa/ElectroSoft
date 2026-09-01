@@ -185,7 +185,7 @@ export default function Login() {
                 </label>
                 <input
                   type="email"
-                  placeholder="admin@electrosoft.com"
+                  placeholder="ejemplo@gmail.com"
                   value={email}
                   onChange={handleEmailChange}
                   className={getInputClass(emailTouched, emailError, email)}

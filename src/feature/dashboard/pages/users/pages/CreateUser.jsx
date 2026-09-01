@@ -64,7 +64,7 @@ export default function CreateUser({ isOpen, onClose, onSuccess }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in p-4 sm:p-6">
-            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full max-w-4xl max-h-[90vh] shadow-xl overflow-y-auto relative animate-scale-in border border-gray-200">
+            <div className="bg-gray-100 p-6 rounded-2xl flex flex-col gap-6 w-full max-w-4xl shadow-xl overflow-hidden relative animate-scale-in border border-gray-200">
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="text-lg sm:text-xl font-semibold mb-1">Nuevo usuario</p>

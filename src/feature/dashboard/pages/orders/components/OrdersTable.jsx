@@ -24,17 +24,16 @@ export default function OrdersTable({
     return (
         <div className="p-0.5 rounded-2xl bg-yellow-200">
             <div className="bg-gray-100 rounded-2xl border-none overflow-x-auto">
-                <table className="min-w-300 w-full text-sm table-fixed">
+                <table className="min-w-full w-full text-sm table-fixed">
                     <thead className="bg-gray-200">
                         <tr className="text-left border-b border-gray-300">
-                            <th className="px-4 py-2 w-14 font-semibold">#</th>
-                            <th className="px-4 py-2 w-52 font-semibold">Nombre cliente</th>
-                            <th className="px-4 py-2 w-32 font-semibold">Fecha creación</th>
-                            <th className="px-4 py-2 w-28 font-semibold">Total</th>
-                            <th className="px-4 py-2 w-32 font-semibold">Fecha vencimiento</th>
+                            <th className="px-3 py-2 w-8 font-semibold">#</th>
+                            <th className="px-4 py-2 w-32 font-semibold">Nombre cliente</th>
+                            <th className="px-4 py-2 w-40 font-semibold">Creación / Vencimiento</th>
+                            <th className="px-4 py-2 w-20 font-semibold">Total</th>
                             <th className="px-4 py-2 w-24 font-semibold">Forma Pago</th>
-                            <th className="px-4 py-2 w-32 font-semibold text-center">Estado</th>
-                            <th className="px-4 py-2 font-semibold w-36 text-center">Acciones</th>
+                            <th className="px-4 py-2 w-28 font-semibold text-center">Estado</th>
+                            <th className="px-4 py-2 w-32 font-semibold text-center">Acciones</th>
                         </tr>
                     </thead>
 
@@ -42,7 +41,7 @@ export default function OrdersTable({
 
                         {loading ? (
                             <tr>
-                                <td colSpan="8" className="text-center py-4 text-gray-500">
+                                <td colSpan="7" className="text-center py-4 text-gray-500">
                                     <div className="flex items-center justify-center gap-2">
                                         <svg className="animate-spin h-4 w-4 text-yellow-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
                                         Cargando pedidos...
@@ -51,7 +50,7 @@ export default function OrdersTable({
                             </tr>
                         ) : data.length === 0 ? (
                             <tr>
-                                <td colSpan="8" className="text-center py-4 text-gray-500">
+                                <td colSpan="7" className="text-center py-4 text-gray-500">
                                     No se encontraron pedidos.
                                 </td>
                             </tr>
@@ -74,7 +73,7 @@ export default function OrdersTable({
                                     <tr key={order._id} className="border-b border-gray-200">
 
                                         {/* ID CONSECUTIVO */}
-                                        <td className="px-4 py-2">{idFormateado}</td>
+                                        <td className="px-3 py-2 text-center">{idFormateado}</td>
 
                                         {/* CLIENTE (NOMBRE Y DOCUMENTO) */}
                                         <td className="px-4 py-2">
@@ -88,14 +87,15 @@ export default function OrdersTable({
                                             </div>
                                         </td>
 
-                                        {/* FECHA CREACION */}
-                                        <td className="px-4 py-2">{formatDate(order.orderDate)}</td>
+                                        {/* FECHA CREACIÓN / VENCIMIENTO */}
+                                        <td className="px-4 py-2">
+                                            <span className="text-gray-700">{formatDate(order.orderDate)}</span>
+                                            <span className="text-gray-900 mx-1 font-bold">/</span>
+                                            <span className="text-gray-700">{formatDate(order.dueDate)}</span>
+                                        </td>
 
                                         {/* TOTAL */}
                                         <td className="px-4 py-2">${order.total?.toLocaleString() || "0"}</td>
-
-                                        {/* FECHA VENCIMIENTO */}
-                                        <td className="px-4 py-2">{formatDate(order.dueDate)}</td>
 
                                         {/* FORMA PAGO */}
                                         <td className="px-4 py-2">{order.paymentMethod || "-"}</td>
@@ -113,6 +113,28 @@ export default function OrdersTable({
                                         {/* ACCIONES */}
                                         <td className="px-4 py-2">
                                             <div className="flex justify-center gap-2">
+
+                                                {/* VER DETALLE */}
+                                                <Restricted scope="Pedidos" action="Ver">
+                                                    <button
+                                                        onClick={() => onDetails(order)}
+                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
+                                                        title="Ver detalle"
+                                                    >
+                                                        <Eye size={18} className="text-blue-600" />
+                                                    </button>
+                                                </Restricted>
+
+                                                <Restricted scope="Pedidos" action="Editar">
+                                                    <button
+                                                        onClick={() => onEdit(order)}
+                                                        disabled={order.status === "Anulado"}
+                                                        className={`p-2 rounded-lg transition ${order.status === "Anulado" ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
+                                                        title={order.status === "Anulado" ? "No disponible (pedido anulado)" : "Editar pedido"}
+                                                    >
+                                                        <Pencil size={18} className={order.status === "Anulado" ? "text-gray-400" : "text-yellow-600"} />
+                                                    </button>
+                                                </Restricted>
 
                                                 {/* PROCESAR VENTA (DESHABILITADO SI EL PEDIDO ESTÁ ANULADO) */}
                                                 <Restricted scope="Pedidos" action="procesar">
@@ -136,28 +158,6 @@ export default function OrdersTable({
                                                                 ? "text-gray-400"
                                                                 : "text-green-600"}
                                                         />
-                                                    </button>
-                                                </Restricted>
-
-                                                <Restricted scope="Pedidos" action="Editar">
-                                                    <button
-                                                        onClick={() => onEdit(order)}
-                                                        disabled={order.status === "Anulado"}
-                                                        className={`p-2 rounded-lg transition ${order.status === "Anulado" ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
-                                                        title={order.status === "Anulado" ? "No disponible (pedido anulado)" : "Editar pedido"}
-                                                    >
-                                                        <Pencil size={18} className={order.status === "Anulado" ? "text-gray-400" : "text-yellow-600"} />
-                                                    </button>
-                                                </Restricted>
-
-                                                {/* VER DETALLE */}
-                                                <Restricted scope="Pedidos" action="Ver">
-                                                    <button
-                                                        onClick={() => onDetails(order)}
-                                                        className="p-2 rounded-lg bg-blue-100 hover:bg-blue-200 transition cursor-pointer"
-                                                        title="Ver detalle"
-                                                    >
-                                                        <Eye size={18} className="text-blue-600" />
                                                     </button>
                                                 </Restricted>
 
