@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAuthUser, logout } from "../../auth/services/authService";
 import { useToast } from "../../../context/ToastContext";
+import { authStorage } from "../../../utils/authStorage.js";
 import ConfirmModal from "./ui/ConfirmModal";
 import { Menu } from "lucide-react";
 import AvatarBadge from "../../../components/AvatarBadge";
@@ -153,6 +154,7 @@ export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
                                             }}
                                             className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl
                                             text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
+                                            title="Editar tu perfil"
                                         >
                                             <Pencil size={16} />
                                             Editar perfil

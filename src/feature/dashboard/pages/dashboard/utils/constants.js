@@ -9,11 +9,25 @@ export const currentMonth = now.getMonth();
 
 export const toDate = (f) => {
     if (!f) return null;
-    if (/^\d{4}-\d{2}-\d{2}/.test(f)) return new Date(f);
-    if (/^\d{2}\/\d{2}\/\d{4}/.test(f)) {
-        const [d, m, y] = f.split("/");
-        return new Date(`${y}-${m}-${d}`);
+
+    // Fecha con hora explícita (ISO completo, ej: 2026-09-01T14:30:00.000Z)
+    // -> se puede parsear directo, ya trae info de zona horaria
+    if (/^\d{4}-\d{2}-\d{2}T/.test(f)) return new Date(f);
+
+    // Fecha sola "YYYY-MM-DD" -> construir en hora LOCAL para evitar
+    // que JS la interprete como medianoche UTC y se corra un día/mes atrás
+    if (/^\d{4}-\d{2}-\d{2}$/.test(f)) {
+        const [y, m, d] = f.split("-").map(Number);
+        return new Date(y, m - 1, d); // mes 0-indexado
     }
+
+    
+    // Fecha tipo "DD/MM/YYYY"
+    if (/^\d{2}\/\d{2}\/\d{4}/.test(f)) {
+        const [d, m, y] = f.split("/").map(Number);
+        return new Date(y, m - 1, d);
+    }
+
     return new Date(f);
 };
 

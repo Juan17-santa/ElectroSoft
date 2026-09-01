@@ -101,9 +101,9 @@ export default function UsersTable({
                                         <div className="flex flex-col items-center gap-1">
                                             <Restricted scope="Usuarios" action="Estado">
                                                 <div
-                                                    onClick={() => user.email !== GLOBAL_USER_EMAIL && onToggleEstado(user.id)}
+                                                    onClick={() => user.email !== GLOBAL_USER_EMAIL && user.id !== currentUser?.id && onToggleEstado(user.id)}
                                                     className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-all duration-300
-                                                    ${user.email === GLOBAL_USER_EMAIL
+                                                    ${user.email === GLOBAL_USER_EMAIL || user.id === currentUser?.id
                                                             ? "cursor-not-allowed opacity-50 bg-gray-400"
                                                             : `cursor-pointer ${user.estado ? "bg-green-500" : "bg-red-500"}`
                                                         }`}
@@ -115,7 +115,7 @@ export default function UsersTable({
                                                 </div>
                                                 <span
                                                     className={`text-xs font-semibold
-                                                    ${user.email === GLOBAL_USER_EMAIL
+                                                    ${user.email === GLOBAL_USER_EMAIL || user.id === currentUser?.id
                                                             ? "text-gray-500"
                                                             : user.estado ? "text-green-600" : "text-red-600"}`}
                                                 >

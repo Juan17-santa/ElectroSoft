@@ -91,7 +91,7 @@ export default function VentaCreditoCard({ venta, onDetalle, onAbonar, isAbonarD
 
                 {/* Barra progreso + aviso */}
                 <div className="flex flex-col gap-1 flex-1">
-                    <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-gray-400 mb-0.5">
+                    <div className="flex flex-col sm:justify-between text-xs text-gray-400 mb-0.5">
                         <span>{porcentajePagado.toFixed(0)}% pagado</span>
                         <span>{(venta.abonos || []).length} abono{(venta.abonos || []).length !== 1 ? "s" : ""}</span>
                     </div>

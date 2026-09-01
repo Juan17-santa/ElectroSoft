@@ -151,7 +151,7 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
     // El backend devuelve invoiceNumber (inglés), purchaseDate, createdAt, cancelledAt
     // El frontend trabaja internamente con numeroFactura, fechaCompra, fechaCreacion, anuladaEn
     const invoiceNumber = shopping.invoiceNumber ?? shopping.numeroFactura ?? "";
-    const purchaseDate = shopping.purchaseDate ?? shopping.fechaCompra ?? "";
+    const purchaseDate = shopping.purchaseDateIso ?? shopping.purchaseDate ?? shopping.fechaCompra ?? "";
     const createdAt = shopping.createdAt ?? shopping.fechaCreacion ?? new Date(0).toISOString();
     const cancelledAt = shopping.cancelledAt ?? shopping.anuladaEn ?? null;
 
