@@ -41,6 +41,7 @@ export default function useEditProfile() {
     const [showPasswordSection, setShowPasswordSection] = useState(false);
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
+    const [passwordLoading, setPasswordLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     useEffect(() => {
         const user = getAuthUser();
@@ -211,6 +212,7 @@ export default function useEditProfile() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (loading) return;
 
         if (!validate()) return;
 
@@ -252,8 +254,10 @@ export default function useEditProfile() {
     };
 
     const handleChangePassword = async () => {
+        if (passwordLoading) return;
         if (!validatePassword()) return;
 
+        setPasswordLoading(true);
         const result = await changePassword(
             passwordData.currentPassword,
             passwordData.newPassword
@@ -267,11 +271,12 @@ export default function useEditProfile() {
         } else {
             showToast("error", result.message || "No se pudo cambiar la contraseña.");
         }
+        setPasswordLoading(false);
     };
 
     return {
         formData, passwordData, showPasswordSection, setShowPasswordSection,
-        errors, touched, passwordTouched, loading,
+        errors, touched, passwordTouched, loading, passwordLoading,
         success, // 🔥 NUEVO
         handleChange, handlePasswordChange,
         handleSubmit, handleChangePassword,

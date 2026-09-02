@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { getAuthUser, logout } from "../../auth/services/authService";
 import { useToast } from "../../../context/ToastContext";
-import { authStorage } from "../../../utils/authStorage.js";
 import ConfirmModal from "./ui/ConfirmModal";
 import { Menu } from "lucide-react";
 import AvatarBadge from "../../../components/AvatarBadge";
 
 export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
+    const GLOBAL_USER_EMAIL = "admin@gmail.com";
     const [open, setOpen] = useState(false);
     const [user, setUser] = useState(null);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -37,6 +37,7 @@ export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
     const avatarLetter = user?.avatarLetter || nombre.charAt(0);
     const avatarColor = user?.avatarColor;
     const ultimoAcc = user?.ultimoAcceso || null;
+    const isProtectedUser = user?.email?.toLowerCase() === GLOBAL_USER_EMAIL;
 
     const handleLogout = () => {
         setOpen(false);
@@ -148,15 +149,18 @@ export const Navbar = ({ setIsOpen, isCollapsed, setIsCollapsed }) => {
 
                                     <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
                                         <button
+                                            disabled={isProtectedUser}
                                             onClick={() => {
                                                 setOpen(false);
                                                 navigate("/dashboard/editprofile");
                                             }}
-                                            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl
-                                            text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
-                                            title="Editar tu perfil"
+                                            className={`flex items-center gap-2 w-full px-4 py-2.5 rounded-xl
+                                            text-sm font-medium transition ${isProtectedUser
+                                                ? "cursor-not-allowed text-gray-400"
+                                                : "text-blue-600 hover:bg-blue-50"}`}
+                                            title={isProtectedUser ? "Usuario protegido" : "Editar tu perfil"}
                                         >
-                                            <Pencil size={16} />
+                                            <Pencil size={16} className={isProtectedUser ? "text-gray-400" : "text-blue-600"} />
                                             Editar perfil
                                         </button>
 
