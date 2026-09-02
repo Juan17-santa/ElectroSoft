@@ -34,6 +34,8 @@ export default function ForgotPassword() {
   };
 
   const handleSend = async () => {
+    if (loading) return;
+
     setEmailTouched(true);
     if (!Validations.campoRequerido(email)) {
       setEmailError("El email es obligatorio.");
@@ -45,10 +47,15 @@ export default function ForgotPassword() {
     }
 
     setLoading(true);
-    const result = await requestPasswordReset(email);
-    setLoading(false);
+    try {
+      const result = await requestPasswordReset(email);
 
-    if (result.ok) {
+      if (!result.ok) {
+        setLoading(false);
+        showToast("error", result.message);
+        return;
+      }
+
       localStorage.setItem("reset_email", email);
       await emailjs.send(
         EMAILJS_SERVICE_ID,
@@ -58,8 +65,9 @@ export default function ForgotPassword() {
       );
       showToast("success", `Código enviado a ${email}. Revisa tu bandeja de entrada.`);
       setTimeout(() => navigate("/verify-code"), 2500);
-    } else {
-      showToast("error", result.message);
+    } catch (error) {
+      setLoading(false);
+      showToast("error", error.message || "No se pudo enviar el código.");
     }
   };
 

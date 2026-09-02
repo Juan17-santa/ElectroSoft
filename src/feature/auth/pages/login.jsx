@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Lightbulb, CheckCircle, AlertCircle, Shield } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Lightbulb, CheckCircle, AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/authService";
 import { Validations } from "../../../utils/validations";
@@ -47,6 +47,8 @@ export default function Login() {
   };
 
   const handleLogin = async () => {
+    if (loading) return;
+
     setEmailTouched(true);
     setPasswordTouched(true);
 
@@ -80,7 +82,6 @@ export default function Login() {
       return;
     }
 
-    setLoading(false);
     showToast("success", `Bienvenid@, ${result.user?.fullName}.`);
     const firstRoute = getFirstAllowedRoute(result.user?.permissions || []);
     setTimeout(() => navigate(firstRoute), 2000);

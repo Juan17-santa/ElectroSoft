@@ -177,6 +177,7 @@ export default function EditProfile() {
         touched,
         passwordTouched,
         loading,
+        passwordLoading,
         success,
         handleChange,
         handlePasswordChange,
@@ -245,9 +246,10 @@ export default function EditProfile() {
                         </button>
                         <button
                             onClick={handleChangePassword}
-                            className="flex-1 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-3 rounded-xl transition shadow-md hover:shadow-lg active:scale-[0.98]"
+                            disabled={passwordLoading}
+                            className="flex-1 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-60 disabled:cursor-not-allowed text-black font-semibold py-3 rounded-xl transition shadow-md hover:shadow-lg active:scale-[0.98]"
                         >
-                            Confirmar
+                            {passwordLoading ? "Cambiando..." : "Confirmar"}
                         </button>
                     </div>
                 </Modal>

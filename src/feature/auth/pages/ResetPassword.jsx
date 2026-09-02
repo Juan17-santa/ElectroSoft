@@ -30,6 +30,7 @@ export default function ResetPassword() {
   const [pass2Touched, setPass2Touched] = useState(false);
   const [pass1Error, setPass1Error] = useState("");
   const [pass2Error, setPass2Error] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -74,6 +75,8 @@ export default function ResetPassword() {
   };
 
   const handleReset = async () => {
+    if (loading) return;
+
     setPass1Touched(true);
     setPass2Touched(true);
 
@@ -97,12 +100,14 @@ export default function ResetPassword() {
 
     if (!valid) return;
 
+    setLoading(true);
     const result = await resetPassword(pass1);
 
     if (result.ok) {
       showToast("success", "Contraseña cambiada con éxito.");
       setTimeout(() => navigate("/"), 2000);
     } else {
+      setLoading(false);
       showToast("error", result.message);
     }
   };
@@ -272,9 +277,10 @@ export default function ResetPassword() {
                 </button>
                 <button
                   onClick={handleReset}
-                  className="flex-1 py-3.5 bg-amber-400 hover:bg-amber-500 text-slate-800 font-semibold rounded-xl shadow-lg shadow-amber-400/25 transition-all duration-200 hover:shadow-xl hover:shadow-amber-400/35 active:scale-[0.98]"
+                  disabled={loading}
+                  className="flex-1 py-3.5 bg-amber-400 hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed text-slate-800 font-semibold rounded-xl shadow-lg shadow-amber-400/25 transition-all duration-200 hover:shadow-xl hover:shadow-amber-400/35 active:scale-[0.98]"
                 >
-                  Confirmar
+                  {loading ? "Cambiando..." : "Confirmar"}
                 </button>
               </div>
             </div>

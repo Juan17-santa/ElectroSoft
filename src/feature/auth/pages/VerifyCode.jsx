@@ -8,6 +8,7 @@ export default function VerifyCode() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
+  const [loading, setLoading] = useState(false);
   const inputRefs = useRef([]);
 
   // ─── Lógica original intacta ───────────────────────────────────────────────
@@ -44,12 +45,15 @@ export default function VerifyCode() {
   };
 
   const handleVerify = async () => {
+    if (loading) return;
+
     const code = digits.join("");
     if (code.length !== 6) {
       showToast("error", "Ingresa los 6 dígitos.");
       return;
     }
 
+    setLoading(true);
     const email = localStorage.getItem("reset_email");
     const ok = await verifyCode(email, code);
 
@@ -57,6 +61,7 @@ export default function VerifyCode() {
       showToast("success", "Código verificado. Redirigiendo...");
       setTimeout(() => navigate("/reset-password"), 2000);
     } else {
+      setLoading(false);
       showToast("error", "Código incorrecto. Intenta de nuevo.");
       setDigits(["", "", "", "", "", ""]);
       inputRefs.current[0].focus();
@@ -153,9 +158,10 @@ export default function VerifyCode() {
                 </button>
                 <button
                   onClick={handleVerify}
-                  className="flex-1 py-3.5 bg-amber-400 hover:bg-amber-500 text-slate-800 font-semibold rounded-xl shadow-lg shadow-amber-400/25 transition-all duration-200 hover:shadow-xl hover:shadow-amber-400/35 active:scale-[0.98]"
+                  disabled={loading}
+                  className="flex-1 py-3.5 bg-amber-400 hover:bg-amber-500 disabled:opacity-60 disabled:cursor-not-allowed text-slate-800 font-semibold rounded-xl shadow-lg shadow-amber-400/25 transition-all duration-200 hover:shadow-xl hover:shadow-amber-400/35 active:scale-[0.98]"
                 >
-                  Verificar
+                  {loading ? "Verificando..." : "Verificar"}
                 </button>
               </div>
             </div>
