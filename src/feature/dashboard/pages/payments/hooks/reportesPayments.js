@@ -15,6 +15,7 @@ const abbreviateDocType = (type) => {
     if (t.includes("extranjer")) return "CE";
     if (t.includes("identidad")) return "TI";
     if (t.includes("pasaporte")) return "PA";
+    if (t.includes("tributaria")) return "NIT";
     return type;
 };
 
