@@ -158,14 +158,17 @@ export default function RoleForm({
                                 {scope.actions.map(action => {
                                     const permission = `${scope.name}:${action}`;
                                     const isChecked  = formData.permisos.includes(permission);
+                                    const isAccess   = action === "acceso";
+                                    const isDisabledAccess = isAccess && isUpdate;
                                     return (
                                         <div key={action} className="flex items-center gap-1.5 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
-                                            <span className="text-[10px] font-bold text-gray-600 uppercase">
+                                            <span className={`text-[10px] font-bold uppercase ${isDisabledAccess ? "text-gray-400" : "text-gray-600"}`}>
                                                 {action}
                                             </span>
                                             <div
-                                                onClick={() => handlePermissionChange(scope.name, action)}
-                                                className={`w-4 h-4 rounded-sm hover:scale-110 transition cursor-pointer flex items-center justify-center
+                                                onClick={!isDisabledAccess ? () => handlePermissionChange(scope.name, action) : undefined}
+                                                className={`w-4 h-4 rounded-sm transition flex items-center justify-center
+                                                    ${isDisabledAccess ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:scale-110"}
                                                     ${isChecked ? "bg-green-500 text-white" : "bg-gray-300 text-transparent"}`}
                                             >
                                                 <Check size={12} strokeWidth={4} />
