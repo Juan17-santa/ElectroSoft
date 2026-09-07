@@ -11,7 +11,14 @@ export function useClientForm({ initialData = null, onSubmit }) {
 
     const [formData, setFormData] = useState(defaultData);
     const [loading, setLoading] = useState(false);
-    const [errors, setErrors] = useState({});
+    const [errors, setErrors] = useState({
+        tipoDocumento: null,
+        documento: null,
+        nombres: null,
+        apellidos: null,
+        email: null,
+        telefono: null
+    });
     const debounceRef = useRef(null);
 
     const [tocado, setTocado] = useState({
@@ -29,6 +36,14 @@ export function useClientForm({ initialData = null, onSubmit }) {
                 apellidos: true,
                 email: true,
                 telefono: true
+            });
+            setErrors({
+                tipoDocumento: null,
+                documento: null,
+                nombres: null,
+                apellidos: null,
+                email: null,
+                telefono: null
             });
         }
     }, [initialData]);
@@ -154,7 +169,14 @@ export function useClientForm({ initialData = null, onSubmit }) {
             tipoDocumento: false, documento: false, nombres: false,
             apellidos: false, email: false, telefono: false
         });
-        setErrors({});
+        setErrors({
+            tipoDocumento: null,
+            documento: null,
+            nombres: null,
+            apellidos: null,
+            email: null,
+            telefono: null
+        });
     };
 
     const handleBlur = (e) => {

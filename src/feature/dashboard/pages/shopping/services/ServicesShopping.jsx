@@ -96,6 +96,15 @@ function normalizeDocumentType(documentType = {}) {
     };
 }
 
+function formatPurchaseDate(shopping = {}) {
+    const raw = String(shopping.purchaseDate ?? shopping.fechaCompra ?? "").trim();
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) return raw;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return `${raw.slice(8, 10)}/${raw.slice(5, 7)}/${raw.slice(0, 4)}`;
+    const match = String(shopping.purchaseDateIso ?? "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+    return raw;
+}
+
 function normalizeShopping(shopping = {}, catalogs = {}) {
     const products = catalogs.products || [];
     const providers = catalogs.providers || [];
@@ -151,7 +160,7 @@ function normalizeShopping(shopping = {}, catalogs = {}) {
     // El backend devuelve invoiceNumber (inglés), purchaseDate, createdAt, cancelledAt
     // El frontend trabaja internamente con numeroFactura, fechaCompra, fechaCreacion, anuladaEn
     const invoiceNumber = shopping.invoiceNumber ?? shopping.numeroFactura ?? "";
-    const purchaseDate = shopping.purchaseDateIso ?? shopping.purchaseDate ?? shopping.fechaCompra ?? "";
+    const purchaseDate = formatPurchaseDate(shopping);
     const createdAt = shopping.createdAt ?? shopping.fechaCreacion ?? new Date(0).toISOString();
     const cancelledAt = shopping.cancelledAt ?? shopping.anuladaEn ?? null;
 

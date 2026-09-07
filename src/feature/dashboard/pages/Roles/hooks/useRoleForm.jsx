@@ -45,6 +45,8 @@ export function useRoleForm({ initialData = null, onSubmit }) {
 
     // Agrega o quita un permiso individual: "ventas:crear"
     const handlePermissionChange = (scopeName, action) => {
+        if (action === "acceso") return; // el permiso de acceso se deriva automáticamente
+
         const permission = `${scopeName}:${action}`;
         const accessPermission = `${scopeName}:acceso`;
 
@@ -52,11 +54,6 @@ export function useRoleForm({ initialData = null, onSubmit }) {
             let permisos = prev.permisos.includes(permission)
                 ? prev.permisos.filter(p => p !== permission)
                 : [...prev.permisos, permission];
-
-            // Si es acceso, no hacer nada especial
-            if (action === "acceso") {
-                return { ...prev, permisos };
-            }
 
             // Verificar si quedan otras acciones además de acceso
             const otherActions = permisos.filter(

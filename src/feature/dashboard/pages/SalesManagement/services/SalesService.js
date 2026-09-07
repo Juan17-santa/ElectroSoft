@@ -7,6 +7,7 @@ const abbreviateDocType = (type) => {
     if (t.includes("extranjer")) return "CE";
     if (t.includes("identidad")) return "TI";
     if (t.includes("pasaporte")) return "PA";
+    if (t.includes("tributaria")) return "NIT";
     if (type.length === 24 && /^[a-fA-F0-9]{24}$/.test(type)) return "";
     return type;
 };
@@ -34,7 +35,7 @@ const mapSaleToFrontend = (sale) => {
         id: sale._id,
         // Extrae solo los números del numeroFactura, eliminando prefijos como "FAC"
         numeroVenta: String(sale.numeroFactura || "").replace(/\D/g, ""),
-        numeroDocumento: sale.clienteId?.documentNumber ? `${abbreviateDocType(sale.clienteId.documentType?.name || sale.clienteId.documentType)} ${sale.clienteId.documentNumber}`.trim() : "N/A",
+        numeroDocumento: sale.clienteId?.documentNumber ? `${sale.clienteId.documentType?.abbreviation || abbreviateDocType(sale.clienteId.documentType?.name || sale.clienteId.documentType)} ${sale.clienteId.documentNumber}`.trim() : "N/A",
         // NUEVO: número de documento sin el tipo (CC/CE/TI...), para usar en navegación
         // y lookups del módulo de Pagos, donde solo se necesita el número puro.
         documentoNumero: sale.clienteId?.documentNumber || "",
@@ -82,7 +83,7 @@ export const SalesService = {
         }
     },
 
-    async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, estado, productos, subtotal, iva, total, montoPagado, montoPorPagar, montoCredito, montoContado }) {
+    async create({ numeroDocumento, tipoVenta, diasPlazo, fecha, productos, total, montoPagado, montoPorPagar, montoCredito, montoContado }) {
         try {
 
             const payload = {
