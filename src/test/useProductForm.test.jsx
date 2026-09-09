@@ -26,11 +26,17 @@ import useProductForm from '../feature/dashboard/pages/products/hooks/useProduct
 // En este caso, todas las pruebas que hagamos estarán relacionadas con el hook useProductForm.
 describe('useProductForm', () => {
 
+    // ==================================================
+    // 1. VALIDACIÓN DE NOMBRE
+    // ==================================================
+
     // beforeEach se ejecuta antes de cada test dentro del bloque describe.
     // Aquí lo usamos para limpiar cualquier estado o mock que pueda haber quedado de un test anterior.
     beforeEach(() => {
         jest.clearAllMocks();
     });
+
+    describe('Validación de nombre', () => {
 
     // test define un caso específico que queremos comprobar.
     // Este caso verifica que el formulario muestre el error correcto
@@ -144,9 +150,13 @@ describe('useProductForm', () => {
         expect(result.current.errors.nombre).toBe('');
     });
 
-    // =========================
-    // CATEGORÍA
-    // =========================
+    });
+
+    // ==================================================
+    // 2. VALIDACIÓN DE CATEGORÍA
+    // ==================================================
+
+    describe('Validación de categoría', () => {
 
     test('muestra error cuando no se selecciona una categoría', () => {
         const { result } = renderHook(() =>
@@ -191,10 +201,14 @@ describe('useProductForm', () => {
         expect(result.current.errors.categoriaId).toBe('');
     });
 
+    });
 
-    // =========================
-    // PRECIO
-    // =========================
+
+    // ==================================================
+    // 3. VALIDACIÓN DE PRECIO
+    // ==================================================
+
+    describe('Validación de precio', () => {
 
     test('permite dejar el precio vacío', () => {
         const { result } = renderHook(() =>
@@ -259,10 +273,14 @@ describe('useProductForm', () => {
         expect(result.current.errors.precio).toBe('');
     });
 
+    });
 
-    // =========================
-    // STOCK
-    // =========================
+
+    // ==================================================
+    // 4. VALIDACIÓN DE STOCK
+    // ==================================================
+
+    describe('Validación de stock', () => {
 
     test('permite dejar el stock vacío', () => {
         const { result } = renderHook(() =>
@@ -327,10 +345,14 @@ describe('useProductForm', () => {
         expect(result.current.errors.stock).toBe('');
     });
 
+    });
 
-    // =========================
-    // SERIAL
-    // =========================
+
+    // ==================================================
+    // 5. VALIDACIÓN DE SERIAL
+    // ==================================================
+
+    describe('Validación de serial', () => {
 
     test('muestra error cuando el serial está vacío', () => {
         const { result } = renderHook(() =>
@@ -456,10 +478,14 @@ describe('useProductForm', () => {
         });
     });
 
+    });
 
-    // =========================
-    // TIPO DE STOCK
-    // =========================
+
+    // ==================================================
+    // 6. VALIDACIÓN DE TIPO DE STOCK
+    // ==================================================
+
+    describe('Validación de tipo de stock', () => {
 
     test('muestra error cuando no se selecciona tipo de stock', () => {
         const { result } = renderHook(() =>
@@ -548,10 +574,14 @@ describe('useProductForm', () => {
         );
     });
 
+    });
 
-    // =========================
-    // GARANTÍA
-    // =========================
+
+    // ==================================================
+    // 7. VALIDACIÓN DE GARANTÍA
+    // ==================================================
+
+    describe('Validación de garantía', () => {
 
     test('muestra error cuando no se selecciona garantía', () => {
         const { result } = renderHook(() =>
@@ -619,10 +649,14 @@ describe('useProductForm', () => {
         );
     });
 
+    });
 
-    // =========================
-    // ENVÍO DEL FORMULARIO
-    // =========================
+
+    // ==================================================
+    // 8. ENVÍO DEL FORMULARIO
+    // ==================================================
+
+    describe('Envío del formulario', () => {
 
     test('crea el producto cuando el formulario es válido', async () => {
         const onSuccess = jest.fn();
@@ -726,6 +760,8 @@ describe('useProductForm', () => {
         expect(onError).toHaveBeenCalledWith(
             'Error al crear producto'
         );
+    });
+
     });
 
 });
