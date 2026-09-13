@@ -170,6 +170,9 @@ export default function Roles() {
                                                                 ${role.estado ? "translate-x-4" : "translate-x-0"}`}
                                                             />
                                                         </div>
+                                                        <span className={`text-xs font-semibold ${role.estado ? "text-green-600" : "text-red-600"}`}>
+                                                            {role.estado ? "Activo" : "Inactivo"}
+                                                        </span>
                                                     </Restricted>
                                                 </div>
                                             </td>

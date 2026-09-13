@@ -1,4 +1,4 @@
-import { Eye, Undo2, Ban, Wallet } from "lucide-react";
+import { Eye, Undo2, Ban, Wallet, FileText } from "lucide-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SalesService } from "./services/SalesService";
@@ -487,16 +487,21 @@ export default function SalesManagement() {
                                                     {/* CREDITO */}
                                                     <div className="flex-none flex items-center justify-center w-9 h-9">
                                                         {(() => {
-                                                            const isCreditDisabled = !(sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto") || sale.estado === "Anulado" || sale.estado === "Devuelto";
+                                                            const isCreditSale = sale.tipoVenta === "Credito" || sale.tipoVenta === "Crédito" || sale.tipoVenta === "Mixto";
+                                                            const isFinalized = sale.estado === "Finalizado" || sale.estado === "Finalizada" || sale.estado === "Finalizadas" || Number(sale.montoPorPagar || 0) <= 0;
+                                                            const isCreditDisabled = !isCreditSale || sale.estado === "Anulado" || sale.estado === "Devuelto";
+                                                            const buttonTitle = isCreditDisabled ? "Crédito no disponible" : (isFinalized ? "Detalle del crédito" : "Abonar");
+                                                            const CreditActionIcon = isFinalized ? FileText : Wallet;
+
                                                             return (
                                                                 <Restricted scope="Ventas" action="Abonar">
                                                                     <button
                                                                         className={`p-2 rounded-lg transition duration-300 ${isCreditDisabled ? "bg-gray-100 cursor-not-allowed" : "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"}`}
                                                                         onClick={() => handleViewCredit(sale)}
-                                                                        title={isCreditDisabled ? "Crédito no disponible" : "Detalles del crédito"}
+                                                                        title={buttonTitle}
                                                                         disabled={isCreditDisabled}
                                                                     >
-                                                                        <Wallet size={18} className={isCreditDisabled ? "text-gray-400" : "text-yellow-600"} />
+                                                                        <CreditActionIcon size={18} className={isCreditDisabled ? "text-gray-400" : "text-yellow-600"} />
                                                                     </button>
                                                                 </Restricted>
                                                             );

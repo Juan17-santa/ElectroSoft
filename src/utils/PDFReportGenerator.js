@@ -40,27 +40,30 @@ export const generatePDFReport = ({
     doc.text("CL 51 # 55 - 69 Local 133", 35, 21);
     doc.text("Tel: +57 313 6345398", 35, 26);
 
-    // Título del Reporte (alineado a la derecha)
-    doc.setTextColor(80, 80, 80); // Gris oscuro
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(title.toUpperCase(), pageWidth - 14, 21, { align: "right" });
-
     // --- INFORMACIÓN DEL REPORTE ---
     doc.setTextColor(80, 80, 80);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    
+
     // Fecha de generación alineada a la derecha
     doc.text(
-        `Fecha de emisión: ${new Date().toLocaleDateString()}`, 
-        pageWidth - 14, 
-        41, 
+        `Fecha de emisión: ${new Date().toLocaleDateString()}`,
+        pageWidth - 14,
+        45,
         { align: "right" }
     );
 
+    // Título del documento como cabecera del bloque de información
+    if (title) {
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(title.toUpperCase(), 14, 45);
+    }
+
     // INFO EXTRA
-    let currentY = 41;
+    let currentY = title ? 58 : 41;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
     extraInfo.forEach(info => {
         doc.text(info, 14, currentY);
         currentY += 6;

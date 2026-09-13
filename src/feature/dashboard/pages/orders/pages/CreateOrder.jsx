@@ -30,6 +30,7 @@ export default function CreateOrder() {
         addProduct,
         handleQuantityChange,
         handleQuantityBlur,
+        getMaxStockForProduct,
         currentProducts,
         currentPage,
         setCurrentPage,
@@ -113,6 +114,7 @@ export default function CreateOrder() {
                     addProduct={addProduct}
                     handleQuantityChange={handleQuantityChange}
                     handleQuantityBlur={handleQuantityBlur}
+                    getMaxStockForProduct={getMaxStockForProduct}
                     currentProducts={currentProducts}
                     currentPage={currentPage}
                     setCurrentPage={setCurrentPage}

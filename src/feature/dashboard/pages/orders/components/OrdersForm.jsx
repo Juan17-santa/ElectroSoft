@@ -25,6 +25,7 @@ export default function OrdersForm({
     addProduct,
     handleQuantityChange,
     handleQuantityBlur,
+    getMaxStockForProduct,
     currentProducts,
     currentPage,
     setCurrentPage,
@@ -85,11 +86,18 @@ export default function OrdersForm({
         // BUSCAR SI EL PRODUCTO YA ESTA EN EL PEDIDO
         const productInOrder = formData.productos?.find(p => p.id === product.id)
 
-        // CANTIDAD YA USADA
+        // CANTIDAD YA USADA (LO QUE HAY ACTUALMENTE EN LA TABLA DEL PEDIDO)
         const usedStock = productInOrder ? productInOrder.cantidad : 0
 
-        // RETORNAR LA DIFERENCIA ENTRE EL STOCK TOTAL Y EL USADO
-        return product.stock - usedStock
+        // EN EDICIÓN, EL STOCK TOTAL "DISPONIBLE" PARA ESTE PEDIDO INCLUYE LO QUE
+        // EL PEDIDO YA TENÍA RESERVADO ORIGINALMENTE (product.stock DEL BACKEND YA
+        // EXCLUYE ESA RESERVA). EN CREACIÓN, EL STOCK DEL PRODUCTO ES EL TOTAL REAL.
+        const maxStock = (isEdit && getMaxStockForProduct)
+            ? getMaxStockForProduct(product.id)
+            : (product.stock || 0)
+
+        // RETORNAR LA DIFERENCIA ENTRE EL STOCK TOTAL DISPONIBLE PARA EL PEDIDO Y EL USADO
+        return maxStock - usedStock
     }
 
     return (

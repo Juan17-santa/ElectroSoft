@@ -169,27 +169,15 @@ export default function SaleDetailsPage() {
                         )}`
                         : "$0";
 
-                const tipoDocumento =
-                    sale.clienteId?.documentType
-                        ?.abbreviation ||
-                    sale.clienteId?.documentType
-                        ?.name ||
-                    "";
-
                 const numeroDoc =
                     sale.numeroDocumento ||
                     sale.clienteId
                         ?.documentNumber ||
                     "-";
 
-                const docText =
-                    tipoDocumento
-                        ? `${tipoDocumento} ${numeroDoc}`
-                        : numeroDoc;
-
                 const extraInfo = [
                     `Cliente: ${sale.cliente || "-"}`,
-                    `Documento: ${docText}`,
+                    `Documento: ${numeroDoc}`,
                     `Correo: ${sale.clienteId?.email || "-"}`,
                     `Fecha creación: ${sale.fecha}`,
                     `Estado: ${sale.estado}`,
@@ -486,11 +474,7 @@ export default function SaleDetailsPage() {
                                             Documento
                                         </p>
                                         <p className="text-sm font-semibold text-gray-800">
-                                            {sale.clienteId?.documentType?.abbreviation ||
-                                                sale.clienteId?.documentType?.name || ""}
-                                            {" "}
-                                            {sale.numeroDocumento ||
-                                                sale.clienteId?.documentNumber || "-"}
+                                            {sale.numeroDocumento || "-"}
                                         </p>
                                     </div>
 

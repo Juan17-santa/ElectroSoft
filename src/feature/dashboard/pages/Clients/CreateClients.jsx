@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ClientsService } from "./services/ClientsService";
 import { useClientForm } from "./hooks/useClientForm";
 import ClientForm from "./components/ClientForm";
@@ -27,6 +27,19 @@ export default function CreateClients({ isOpen, onClose, onSuccess }) {
         }
     });
 
+    const handleClose = () => {
+        formHook.resetForm();
+        setFormError(null);
+        onClose();
+    };
+
+    useEffect(() => {
+        if (!isOpen) {
+            formHook.resetForm();
+            setFormError(null);
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (
@@ -39,7 +52,7 @@ export default function CreateClients({ isOpen, onClose, onSuccess }) {
                         <p className="text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
                     >
                         <X size={20} />
@@ -50,7 +63,7 @@ export default function CreateClients({ isOpen, onClose, onSuccess }) {
                     {...formHook}
                     formError={formError}
                     setFormError={setFormError}
-                    onCancel={onClose}
+                    onCancel={handleClose}
                     buttonText="Crear cliente"
                 />
             </div>

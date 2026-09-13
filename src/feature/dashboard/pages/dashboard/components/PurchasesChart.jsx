@@ -7,9 +7,9 @@ export const PurchasesChart = ({ data, year }) => {
     const isEmpty = data.every(d => d.total === 0);
 
     return (
-        <Card title="Evolución mensual de compras" subtitle={`Año ${year}`} delay={300} className="h-full">
+        <Card title="Evolución mensual de compras" subtitle={`Año ${year}`} delay={300} className="h-full" style={{ minHeight: 360 }}>
             {isEmpty ? <Empty msg="Sin datos de compras para este año" /> :
-                <ResponsiveContainer width="100%" height={200}>
+                <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="gc" x1="0" y1="0" x2="0" y2="1">

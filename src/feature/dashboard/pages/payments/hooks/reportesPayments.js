@@ -121,7 +121,7 @@ export const generarReporteCliente = (resumen, ventas) => {
 
     rows.push(["DATOS DEL CLIENTE"]);
     rows.push(["Nombre",    `${resumen.nombres} ${resumen.apellidos}`]);
-    rows.push(["Documento", `${resumen.tipoDocumento} ${resumen.documento}`]);
+    rows.push(["Documento", `${abbreviateDocType(resumen.tipoDocumento)} ${resumen.documento}`.replace(/\s{2,}/g, ' ').trim()]);
     rows.push(["Email",     resumen.email    || "—"]);
     rows.push(["Teléfono",  resumen.telefono || "—"]);
     rows.push(["Estado",    resumen.estado === false ? "Suspendido" : "Activo"]);
@@ -217,40 +217,47 @@ export const generarReporteClientePDF = (resumen, ventas) => {
             const estadoVenta = v.estado === "Anulada" || v.estado === "Anulado"
                 ? "Vencida"
                 : v.estado === "Finalizado" ? "Finalizado" : "Pendiente";
-                
+
             data.push([
                 v.numeroVenta || `V-${v.id}`,
                 v.fecha || "—",
-                fmt(v.total),
+                estadoVenta,
                 fmt(v.montoPagado || 0),
                 fmt(v.montoPorPagar),
-                estadoVenta
+                fmt(v.total)
             ]);
-            
+
             const abonos = (v.abonos || []);
             if (abonos.length > 0) {
                 const validAbonos = abonos.filter(a => !a.anulado);
                 if (validAbonos.length > 0) {
                     validAbonos.forEach((a, i) => {
-                        data.push([{
-                            content: `     - Abono #${i + 1}`,
-                            styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248] }
-                        }, {
-                            content: a.fecha || '—',
-                            styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248] }
-                        }, {
-                            content: '—',
-                            styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248], halign: 'center' }
-                        }, {
-                            content: fmt(a.monto),
-                            styles: { fontStyle: 'bold', textColor: [34, 153, 84], fillColor: [248, 248, 248] }
-                        }, {
-                            content: '—',
-                            styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248], halign: 'center' }
-                        }, {
-                            content: 'Aprobado',
-                            styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248] }
-                        }]);
+                        data.push([
+                            {
+                                content: `     - Abono #${i + 1}`,
+                                styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248] }
+                            },
+                            {
+                                content: a.fecha || '—',
+                                styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248] }
+                            },
+                            {
+                                content: 'Aprobado',
+                                styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248] }
+                            },
+                            {
+                                content: fmt(a.monto),
+                                styles: { fontStyle: 'bold', textColor: [34, 153, 84], fillColor: [248, 248, 248] }
+                            },
+                            {
+                                content: '—',
+                                styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248], halign: 'center' }
+                            },
+                            {
+                                content: '—',
+                                styles: { fontStyle: 'italic', textColor: [100, 100, 100], fillColor: [248, 248, 248], halign: 'center' }
+                            }
+                        ]);
                     });
                 }
             }
@@ -271,7 +278,7 @@ export const generarReporteClientePDF = (resumen, ventas) => {
     generatePDFReport({
         title: `ESTADO DE CUENTA — ${resumen.nombres} ${resumen.apellidos}`,
         fileName: `estado_cuenta_${resumen.documento}_${hoy()}.pdf`,
-        columns: ["N° Venta", "Fecha", "Total", "Pagado", "Pendiente", "Estado"],
+        columns: ["N° Venta", "Fecha", "Estado", "Pagado", "Pendiente", "Total"],
         data: data,
         extraInfo: [
             `DATOS DEL CLIENTE`,

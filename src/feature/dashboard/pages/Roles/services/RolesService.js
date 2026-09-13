@@ -67,6 +67,15 @@ export const RolesService = {
     await api.delete(`/roles/${id}`);
   },
 
+  async checkNameExists(nombre, excludeId = "") {
+    const roles = await this.get();
+    const target = String(nombre || "").trim().toLowerCase();
+    return roles.some(role => {
+      const sameName = String(role.nombre || "").trim().toLowerCase() === target;
+      return sameName && String(role.id) !== String(excludeId);
+    });
+  },
+
   async toggleEstado(id) {
     const response = await api.patch(`/roles/${id}/toggle-status`);
     return response.data.data;

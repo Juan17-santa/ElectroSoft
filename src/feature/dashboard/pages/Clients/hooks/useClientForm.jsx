@@ -114,11 +114,17 @@ export function useClientForm({ initialData = null, onSubmit }) {
             debounceRef.current = setTimeout(async () => {
                 if (name === "email") {
                     const exists = await checkEmailExists(value, formData.id);
-                    setErrors(prev => ({ ...prev, email: exists ? "Este email ya está registrado" : null }));
+                    setErrors(prev => ({
+                        ...prev,
+                        email: exists ? "Este email ya está registrado" : null,
+                    }));
                 }
                 if (name === "documento") {
                     const exists = await checkDocumentExists(value, formData.id);
-                    setErrors(prev => ({ ...prev, documento: exists ? "Este documento ya está registrado" : null }));
+                    setErrors(prev => ({
+                        ...prev,
+                        documento: exists ? "Este documento ya está registrado" : null,
+                    }));
                 }
             }, 600);
         }
@@ -183,7 +189,11 @@ export function useClientForm({ initialData = null, onSubmit }) {
         const { name, value } = e.target;
         tocar(name);
         const syncError = validateField(name, value);
-        setErrors(prev => ({ ...prev, [name]: syncError }));
+
+        setErrors(prev => ({
+            ...prev,
+            [name]: syncError || prev[name] || null,
+        }));
     };
 
     return {

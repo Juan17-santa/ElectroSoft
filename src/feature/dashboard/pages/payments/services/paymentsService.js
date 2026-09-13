@@ -138,16 +138,16 @@ const incluirPagoInicialMixto = (venta, abonos) => {
     const montoContado = Number(venta?.montoContado || 0);
     if (!esMixta || montoContado <= 0) return abonos;
 
-    const pagosActivos = abonos
-        .filter(abono => !abono.anulado)
-        .reduce((total, abono) => total + Number(abono.monto || 0), 0);
+    const yaExisteInicial = (abonos || []).some(abono =>
+        abono?.esPagoInicial === true ||
+        String(abono?.id || "").startsWith("inicial-") ||
+        (Number(abono?.monto || 0) === montoContado && String(abono?.metodoPago || "").toUpperCase() === "EFECTIVO" && !abono?.anulado)
+    );
 
-    // El backend aplica el contado al crear la venta, pero no siempre lo
-    // devuelve como documento en /payments. Se representa solo en la UI.
-    if (pagosActivos >= montoContado) return abonos;
+    if (yaExisteInicial) return abonos;
 
     return [
-        ...abonos,
+        ...(abonos || []),
         {
             id: `inicial-${venta.id}`,
             fecha: localDate(venta.fecha),
@@ -441,8 +441,6 @@ const paymentsService = {
 
         let saldo = venta.total;
 
-        //   FIX: Ordenar los abonos cronológicamente (más antiguos primero)
-        // El backend los envía descendentes, lo que causaba que el saldo se restara "el doble" visualmente
         const abonosCronologicos = [...(venta.abonos || [])].sort((a, b) => {
             const valA = a.timestamp || a.id;
             const valB = b.timestamp || b.id;
@@ -450,19 +448,40 @@ const paymentsService = {
             return valA - valB;
         });
 
+        const pagoInicialMixto = (venta.tipoVenta === "Mixto" || venta.formaPago === "Mixto")
+            ? Number(venta.montoContado || 0)
+            : 0;
+
         abonosCronologicos.forEach((abono, i, arr) => {
-            if (!abono.anulado) saldo -= Number(abono.monto);
-            const esUltimo = i === arr.length - 1 && saldo <= 0 && !abono.anulado;
+            const esPagoInicial = Boolean(abono.esPagoInicial);
+            const montoValido = Number(abono.monto || 0);
+            if (!abono.anulado) saldo -= montoValido;
+            const esUltimo = i === arr.length - 1 && saldo <= 0 && !abono.anulado && !esPagoInicial;
             rows.push({
                 fecha: abono.fecha,
-                abono: -Number(abono.monto),
+                abono: -montoValido,
                 saldoPendiente: Math.max(saldo, 0),
                 metodoPago: abono.metodoPago,
                 tipo: abono.anulado ? "anulado" : esUltimo ? "ultimo" : "abono",
-                esUltimoReal: i === arr.length - 1,
+                esUltimoReal: i === arr.length - 1 && !abono.anulado && !esPagoInicial,
+                esPagoInicial,
                 anulado: abono.anulado || false,
             });
         });
+
+        if (pagoInicialMixto > 0 && !rows.some(row => row.metodoPago === "EFECTIVO" && row.esPagoInicial)) {
+            const rowInicial = {
+                fecha: venta.fecha,
+                abono: -pagoInicialMixto,
+                saldoPendiente: Math.max(venta.total - pagoInicialMixto, 0),
+                metodoPago: "EFECTIVO",
+                tipo: "abono",
+                esUltimoReal: false,
+                esPagoInicial: true,
+                anulado: false,
+            };
+            rows.push(rowInicial);
+        }
 
         return rows.reverse();
     },
