@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, CheckCircle2, Info, User, FileText, CreditCard, BadgeCheck } from "lucide-react";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import Alert from "../../../components/ui/Alert";
+import ValidationMessage from "../../../components/ui/ValidationMessage";
 import { ServicesOrders } from "../services/ServicesOrders";
 import { ClientsService } from "../../Clients/services/ClientsService";
 import paymentsService from "../../payments/services/paymentsService";
@@ -85,6 +86,37 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
             currency: "COP",
             minimumFractionDigits: 0
         }).format(value || 0);
+
+    const diasPlazoError = (() => {
+        if (!diasPlazo || diasPlazo === "") {
+            return "Digite un plazo en días.";
+        }
+        const plazo = Number(diasPlazo);
+        if (Number.isNaN(plazo) || plazo <= 0) {
+            return "Digite un plazo válido en días.";
+        }
+        return "";
+    })();
+
+    const requestedCreditError = (() => {
+        if (activeOrder.paymentMethod !== "Mixto") return "";
+        if (requestedCredit <= 0) {
+            return "Debe indicar cuánto crédito utilizar.";
+        }
+        if (requestedCredit < MINIMUM_CREDIT_AMOUNT) {
+            return "El monto a crédito debe ser mínimo de $10.000.";
+        }
+        if (requestedCredit > clienteCupoDisponible) {
+            return "El crédito solicitado supera el cupo disponible.";
+        }
+        if (requestedCredit > activeOrder.total) {
+            return "El crédito solicitado supera el total de la venta.";
+        }
+        if (activeOrder.total - requestedCredit < MINIMUM_CREDIT_AMOUNT) {
+            return "La parte de contado debe ser mínimo de $10.000.";
+        }
+        return "";
+    })();
 
     const handleCreditChange = (e) => {
         const raw = e.target.value.replace(/\D/g, "");
@@ -226,6 +258,11 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                                             placeholder="Ej: 45"
                                             className="bg-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 shadow-inner border border-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
                                         />
+                                        <ValidationMessage
+                                            error={diasPlazoError}
+                                            success={diasPlazo && !diasPlazoError}
+                                            successMessage="Plazo válido"
+                                        />
                                     </div>
                                 </div>
                             )}
@@ -258,6 +295,11 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                                             placeholder="Ej: 45"
                                             className="bg-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700 shadow-inner border border-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition"
                                         />
+                                        <ValidationMessage
+                                            error={diasPlazoError}
+                                            success={diasPlazo && !diasPlazoError}
+                                            successMessage="Plazo válido"
+                                        />
                                     </div>
 
                                     <div className="flex flex-col gap-2">
@@ -274,7 +316,7 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
 
                             {/* FILA 3 (EXCLUSIVA PAGO MIXTO) */}
                             {activeOrder.paymentMethod === "Mixto" && (
-                                <div className="grid grid-cols-2 gap-5 w-full items-end">
+                                <div className="grid grid-cols-2 gap-5 w-full items-start">
                                     <div className="flex flex-col gap-2">
                                         <label className="text-sm font-medium text-gray-700">
                                             Crédito a utilizar
@@ -285,6 +327,11 @@ export default function ConfirmSaleModal({ isOpen, onClose, order, onConfirm, lo
                                             onChange={handleCreditChange}
                                             placeholder="0"
                                             className="w-full bg-gray-100 rounded-xl px-4 py-3 border border-gray-200 focus:ring-2 focus:ring-yellow-400 outline-none text-sm"
+                                        />
+                                        <ValidationMessage
+                                            error={requestedCreditError}
+                                            success={requestedCredit > 0 && !requestedCreditError}
+                                            successMessage="Crédito válido"
                                         />
                                     </div>
 

@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Validations } from "../../../../../utils/validations";
+import { RolesService } from "../services/RolesService";
 
 export function useRoleForm({ initialData = null, onSubmit }) {
 
@@ -9,15 +10,16 @@ export function useRoleForm({ initialData = null, onSubmit }) {
         descripcion: "",
         estado: true,
         fechaCreacion: new Date().toLocaleDateString("es-CO"),
-        permisos: [], // array plano: ["ventas:ver", "ventas:crear"]
+        permisos: [],
     });
 
+    const debounceRef = useRef(null);
+    const nameCheckSequence = useRef(0);
     const [tocado, setTocado] = useState({ nombre: false });
     const [formError, setFormError] = useState(null);
+    const [estadoNombre, setEstadoNombre] = useState(null);
 
     const tocar = (campo) => setTocado(prev => ({ ...prev, [campo]: true }));
-    // Validación en tiempo real
-    const estadoNombre = (formData.nombre !== "" || tocado.nombre) ? Validations.validarNombreRol(formData.nombre) : null;
 
     useEffect(() => {
         if (initialData) {
@@ -36,6 +38,41 @@ export function useRoleForm({ initialData = null, onSubmit }) {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
         setFormError(null);
+
+        if (name !== "nombre") return;
+
+        if (!value.trim()) {
+            setEstadoNombre({ valido: false, mensaje: "El nombre del rol es requerido." });
+            return;
+        }
+
+        const syncValidation = Validations.validarNombreRol(value);
+        if (!syncValidation.valido) {
+            setEstadoNombre({ valido: false, mensaje: syncValidation.mensaje });
+            return;
+        }
+
+        const currentCheck = nameCheckSequence.current + 1;
+        nameCheckSequence.current = currentCheck;
+        setEstadoNombre({ valido: true, mensaje: "Listo" });
+
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(async () => {
+            try {
+                const exists = await RolesService.checkNameExists(value, formData.id || initialData?.id);
+                if (currentCheck !== nameCheckSequence.current) return;
+
+                if (exists) {
+                    setEstadoNombre({ valido: false, mensaje: "Este nombre de rol ya está registrado." });
+                } else {
+                    setEstadoNombre({ valido: true, mensaje: "Listo" });
+                }
+            } catch {
+                if (currentCheck === nameCheckSequence.current) {
+                    setEstadoNombre({ valido: true, mensaje: "Listo" });
+                }
+            }
+        }, 250);
     };
 
     const handleSelectChange = (name, value) => {
@@ -43,9 +80,8 @@ export function useRoleForm({ initialData = null, onSubmit }) {
         setFormError(null);
     };
 
-    // Agrega o quita un permiso individual: "ventas:crear"
     const handlePermissionChange = (scopeName, action) => {
-        if (action === "acceso") return; // el permiso de acceso se deriva automáticamente
+        if (action === "acceso") return;
 
         const permission = `${scopeName}:${action}`;
         const accessPermission = `${scopeName}:acceso`;
@@ -55,18 +91,15 @@ export function useRoleForm({ initialData = null, onSubmit }) {
                 ? prev.permisos.filter(p => p !== permission)
                 : [...prev.permisos, permission];
 
-            // Verificar si quedan otras acciones además de acceso
             const otherActions = permisos.filter(
                 p => p.startsWith(`${scopeName}:`) && p !== accessPermission
             );
 
             if (otherActions.length > 0) {
-                // Agregar acceso automáticamente
                 if (!permisos.includes(accessPermission)) {
                     permisos = [...permisos, accessPermission];
                 }
             } else {
-                // Quitar acceso si no hay otras acciones
                 permisos = permisos.filter(p => p !== accessPermission);
             }
 
@@ -75,7 +108,6 @@ export function useRoleForm({ initialData = null, onSubmit }) {
         setFormError(null);
     };
 
-    // Marca o desmarca todos los permisos de un módulo
     const handleScopeToggle = (scopeName, allActions) => {
         const scopePermissions = allActions.map(a => `${scopeName}:${a}`);
         setFormData(prev => {
@@ -90,14 +122,26 @@ export function useRoleForm({ initialData = null, onSubmit }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        setFormError(null);
         setTocado({ nombre: true });
 
+        let hasNameError = false;
+        let hasPermissionError = false;
+
         const vNombre = Validations.validarNombreRol(formData.nombre);
-        if (!vNombre.valido) return;
+        if (!vNombre.valido) {
+            setEstadoNombre({ valido: false, mensaje: vNombre.mensaje });
+            hasNameError = true;
+        } else if (estadoNombre && !estadoNombre.valido) {
+            setEstadoNombre({ valido: false, mensaje: estadoNombre.mensaje || "El nombre del rol ya está registrado." });
+            hasNameError = true;
+        }
 
         if (formData.permisos.length === 0) {
             setFormError("Debe elegir al menos un permiso para crear/editar este rol.");
+            hasPermissionError = true;
+        }
+
+        if (hasNameError || hasPermissionError) {
             return;
         }
 

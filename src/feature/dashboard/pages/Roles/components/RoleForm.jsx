@@ -2,8 +2,6 @@ import { Tag, FileText, Check, AlertCircle, CheckCircle2, Activity, Calendar } f
 import CustomSelect from "../../../components/ui/CustomSelect";
 import PrimaryButton from "../../../components/ui/PrimaryButton";
 import { PERMISSION_SCOPES } from "../services/RolesService";
-import { useEffect } from "react";
-import { useToast } from "../../../../../context/ToastContext";
 
 function FieldStatus({ estado }) {
     if (estado === null || estado === undefined) return null;
@@ -20,7 +18,6 @@ export default function RoleForm({
     tocar,
     estadoNombre,
     formError,
-    setFormError,
     handleChange,
     handleSelectChange,
     handlePermissionChange,
@@ -30,21 +27,15 @@ export default function RoleForm({
     buttonText,
     isUpdate = false
 }) {
-    const { showToast } = useToast();
-
-    useEffect(() => {
-        if (formError) {
-            showToast("error", formError);
-            setFormError(null);
-        }
-    }, [formError, showToast, setFormError]);
 
     const ringClass = (estado) => {
         if (!estado) return "border border-gray-200 focus-within:ring-2 focus-within:ring-yellow-400 focus-within:border-transparent";
         return estado.valido
-            ? "border-green-300 ring-2 ring-green-300 bg-green-50"
-            : "border-red-300 ring-2 ring-red-300 bg-red-50";
+            ? "border border-gray-200 focus-within:ring-2 focus-within:ring-yellow-400"
+            : "border border-red-300 focus-within:ring-2 focus-within:ring-red-500";
     };
+
+    const submitDisabled = Boolean(formError) || Boolean(estadoNombre && !estadoNombre.valido);
 
     const statusOptions = [
         { label: "Activo",   value: true  },
@@ -63,7 +54,7 @@ export default function RoleForm({
                         <span>Nombre del rol *</span>
                     </div>
                     <div className="flex flex-col">
-                        <div className={`rounded-xl px-4 py-3 flex items-center justify-between shadow-md transition-all duration-300 ${ringClass(estadoNombre)} ${!estadoNombre || estadoNombre.valido ? "bg-gray-200" : ""}`}>
+                        <div className={`rounded-xl px-4 py-3 flex items-center justify-between shadow-md transition-all duration-300 bg-gray-200 ${ringClass(estadoNombre)}`}>
                             <input
                                 type="text"
                                 name="nombre"
@@ -180,6 +171,13 @@ export default function RoleForm({
                         </div>
                     );
                 })}
+
+                {formError && (
+                    <div className="col-span-full flex items-center gap-1 text-xs mt-1 text-red-500">
+                        <AlertCircle size={12} />
+                        <span>{formError}</span>
+                    </div>
+                )}
             </div>
 
             {/* BOTONES */}
@@ -192,7 +190,7 @@ export default function RoleForm({
                     <span>✕</span>
                     Cancelar
                 </button>
-                <PrimaryButton type="submit">
+                <PrimaryButton type="submit" disabled={submitDisabled}>
                     {buttonText}
                 </PrimaryButton>
             </div>

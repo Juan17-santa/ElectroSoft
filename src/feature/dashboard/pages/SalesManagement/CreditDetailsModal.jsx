@@ -83,7 +83,8 @@ export default function CreditDetailsPage() {
                 ...abono,
                 index,
                 id: abono.id || index,
-                saldoPendiente: saldoPendiente > 0 ? saldoPendiente : 0
+                saldoPendiente: saldoPendiente > 0 ? saldoPendiente : 0,
+                esPagoInicial: Boolean(abono.esPagoInicial)
             };
         });
 
@@ -92,7 +93,7 @@ export default function CreditDetailsPage() {
         let foundUltimoValido = false;
         return reversedRows.map(row => {
             let esUltimoActivo = false;
-            if (!row.anulado && !foundUltimoValido) {
+            if (!row.anulado && !row.esPagoInicial && !foundUltimoValido) {
                 esUltimoActivo = true;
                 foundUltimoValido = true;
             }
@@ -357,22 +358,23 @@ export default function CreditDetailsPage() {
 
                     {/* Tabla de abonos */}
                     {paymentRows.length > 0 ? (
-                        <div className="border border-gray-200 rounded-sm overflow-auto">
+                        <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                             <table className="min-w-150 w-full text-sm">
-                                <thead>
+                                <thead className="bg-gray-100">
                                     <tr className="border-b border-gray-200">
-                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Fecha</th>
-                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Abono</th>
-                                        <th className="px-4 py-2.5 text-left font-semibold text-gray-800">Saldo pendiente</th>
-                                        <th className="px-4 py-2.5 text-center font-semibold w-12"></th>
+                                        <th className="px-4 py-3 text-left font-semibold text-gray-700 uppercase text-xs">Fecha</th>
+                                        <th className="px-4 py-3 text-left font-semibold text-gray-700 uppercase text-xs">Método</th>
+                                        <th className="px-4 py-3 text-left font-semibold text-gray-700 uppercase text-xs">Abono</th>
+                                        <th className="px-4 py-3 text-left font-semibold text-gray-700 uppercase text-xs">Saldo pendiente</th>
+                                        <th className="px-4 py-3 text-left font-semibold text-gray-700 uppercase text-xs">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="bg-white divide-y divide-gray-100">
                                     {paymentRows.map((row, index) => {
                                         const isPositive = row.monto > 0;
                                         return (
-                                            <tr key={index} className={`border-b border-gray-100 last:border-b-0 ${row.anulado ? 'opacity-60 bg-red-50' : ''}`}>
-                                                <td className="px-4 py-2.5">
+                                            <tr key={index} className={`${row.anulado ? 'bg-red-50/40 text-gray-400 line-through' : 'text-gray-600 hover:bg-gray-50'}`}>
+                                                <td className="px-4 py-3">
                                                     <div className="flex items-center gap-2">
                                                         <span className={`${row.anulado ? 'text-red-500' : (isPositive && index > 0 ? 'text-yellow-600' : 'text-gray-700')} text-sm`}>
                                                             {row.fecha.split(' ')[0]}
@@ -384,16 +386,19 @@ export default function CreditDetailsPage() {
                                                         )}
                                                     </div>
                                                 </td>
+                                                <td className="px-4 py-3 text-gray-500 text-xs font-medium uppercase">
+                                                    {row.metodoPago || '—'}
+                                                </td>
                                                 <td className={`px-4 py-3 font-semibold text-base ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-green-600' : 'text-gray-700')}`}>
                                                     {isPositive ? '+' : ''}{formatCOP(row.monto)}
                                                 </td>
                                                 <td className={`px-4 py-3 text-base ${row.anulado ? 'text-red-500 line-through' : (isPositive && index > 0 ? 'text-yellow-600 font-semibold' : 'text-gray-700')}`}>{formatCOP(row.saldoPendiente)}</td>
-                                                <td className="px-4 py-2.5 text-center">
-                                                    {!row.anulado && row.esUltimoActivo && (
+                                                <td className="px-4 py-3 text-left">
+                                                    {!row.anulado && !row.esPagoInicial && row.esUltimoActivo && (
                                                         <button
                                                             type="button"
                                                             onClick={(e) => { e.preventDefault(); handleRemovePayment(row.id); }}
-                                                            className="text-red-400 hover:text-red-600 transition cursor-pointer"
+                                                            className="inline-flex items-center justify-center p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 transition cursor-pointer"
                                                             title="Anular abono"
                                                         >
                                                             <Ban size={16} />

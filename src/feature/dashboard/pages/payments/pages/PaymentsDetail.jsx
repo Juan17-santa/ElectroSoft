@@ -336,7 +336,8 @@ export default function PaymentDetail() {
                                                     <td className="px-4 py-2.5">
                                                         {row.esUltimoReal &&
                                                             !isAnulado &&
-                                                            !isInicio && (
+                                                            !isInicio &&
+                                                            !row.esPagoInicial && (
                                                                 <button
                                                                     onClick={
                                                                         handleAnularAbono

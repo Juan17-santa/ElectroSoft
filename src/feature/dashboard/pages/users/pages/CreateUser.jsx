@@ -44,6 +44,15 @@ export default function CreateUser({ isOpen, onClose, onSuccess }) {
         resetForm,
     } = useUserForm({ navigate: null }); // We don't navigate anymore
 
+    const handleClose = () => {
+        resetForm();
+        onClose();
+    };
+
+    useEffect(() => {
+        if (!isOpen) resetForm();
+    }, [isOpen]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -70,7 +79,7 @@ export default function CreateUser({ isOpen, onClose, onSuccess }) {
                         <p className="text-lg sm:text-xl font-semibold mb-1">Nuevo usuario</p>
                         <p className="text-xs sm:text-sm text-gray-600">Complete todos los campos del formulario</p>
                     </div>
-                    <button onClick={onClose}
+                    <button onClick={handleClose}
                         className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
                         <X size={20} />
                     </button>
@@ -81,7 +90,7 @@ export default function CreateUser({ isOpen, onClose, onSuccess }) {
                     errors={errors}
                     handleChange={handleChange}
                     handleSubmit={handleSubmit}
-                    onCancel={onClose}
+                    onCancel={handleClose}
                     buttonText={loading ? "Creando..." : "Crear usuario"}
                     roles={roles}
                     documentTypes={documentTypes}

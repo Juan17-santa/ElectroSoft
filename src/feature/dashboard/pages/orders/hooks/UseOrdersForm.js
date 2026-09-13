@@ -54,8 +54,23 @@ export function useOrdersForm({ onSuccess, onShowAlert, mode = "create", initial
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
 
+    // GUARDA LA CANTIDAD ORIGINAL (LA QUE YA ESTABA GUARDADA EN EL PEDIDO) POR PRODUCTO.
+    // ESTO NO CAMBIA MIENTRAS SE EDITA: ES LA BASE PARA SABER CUÁNTO STOCK "PERTENECE"
+    // REALMENTE A ESTE PEDIDO, SIN IMPORTAR CUÁNTO SE HAYA SUBIDO/BAJADO EN PANTALLA.
+    const originalQuantitiesRef = useRef({});
+    const originalQuantitiesLoadedRef = useRef(false);
+
     useEffect(() => {
         if (!initialData || mode !== "update") return;
+        if (!originalQuantitiesLoadedRef.current) {
+            const map = {};
+            (initialData.products || []).forEach(product => {
+                const id = product.product?._id || product.product;
+                map[id] = product.quantity;
+            });
+            originalQuantitiesRef.current = map;
+            originalQuantitiesLoadedRef.current = true;
+        }
         setFormData({
             documento: initialData.client?.documentNumber || initialData.documentNumber || "",
             clienteId: initialData.client?._id || initialData.client || null,
@@ -375,10 +390,20 @@ export function useOrdersForm({ onSuccess, onShowAlert, mode = "create", initial
         setErrors(prev => ({ ...prev, productos: "" }));
     };
 
+    // CALCULA EL "POOL" TOTAL DE STOCK QUE PUEDE OCUPAR ESTE PEDIDO PARA UN PRODUCTO:
+    // EL STOCK REAL ACTUAL (QUE YA EXCLUYE LO QUE ESTE PEDIDO TIENE RESERVADO) MÁS LO
+    // QUE ESTE PEDIDO YA TENÍA ORIGINALMENTE RESERVADO DE ESE PRODUCTO. ES UN VALOR FIJO
+    // POR PRODUCTO, NO SE MUEVE AUNQUE EL USUARIO SIGA SUMANDO/RESTANDO EN PANTALLA.
+    const getMaxStockForProduct = (productId) => {
+        const productInfo = products.find(p => (p.id || p._id) === productId);
+        if (!productInfo) return mode === "update" ? (originalQuantitiesRef.current[productId] || 0) : 0;
+        const originalQty = mode === "update" ? (originalQuantitiesRef.current[productId] || 0) : 0;
+        return (productInfo.stock || 0) + originalQty;
+    };
+
     const handleQuantityChange = (productId, newQuantity) => {
         const productInfo = products.find(p => (p.id || p._id) === productId);
-        const currentQuantity = formData.productos.find(p => p.id === productId)?.cantidad || 0;
-        const maxStock = productInfo ? (productInfo.stock || 0) + (mode === "update" ? Number(currentQuantity) : 0) : 999999;
+        const maxStock = getMaxStockForProduct(productId);
 
         if (newQuantity === "") {
             setFormData(prev => {
@@ -572,6 +597,7 @@ export function useOrdersForm({ onSuccess, onShowAlert, mode = "create", initial
         addProduct,
         handleQuantityChange,
         handleQuantityBlur,
+        getMaxStockForProduct,
         currentPage,
         setCurrentPage,
         totalPages,

@@ -30,10 +30,10 @@ export default function ClientForm({
     }, [formError, showToast, setFormError]);
 
     const ringClass = (campo) => {
-        if (!tocado[campo]) return "focus:ring-yellow-400 bg-gray-200";
+        if (!tocado[campo]) return "bg-gray-200 border border-gray-200 focus:ring-2 focus:ring-yellow-400";
         return errors[campo]
-            ? "ring-2 ring-red-400 bg-red-50 focus:ring-red-400"
-            : "ring-2 ring-green-400 bg-green-50 focus:ring-green-400";
+            ? "bg-gray-200 border border-red-300 focus:ring-2 focus:ring-red-400"
+            : "bg-gray-200 border border-gray-200 focus:ring-2 focus:ring-yellow-400";
     };
 
     const [documentTypes, setDocumentTypes] = useState([]);
@@ -200,7 +200,7 @@ export default function ClientForm({
                 </button>
                 <PrimaryButton
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || Object.values(errors).some(Boolean)}
                 >
                     {loading ? "Guardando..." : buttonText}
                 </PrimaryButton>

@@ -15,7 +15,7 @@ export default function UpdateOrder() {
 
     const {
         formData, errors, handleChange, handleSubmit,
-        products, clients, addProduct, handleQuantityChange, handleQuantityBlur,
+        products, clients, addProduct, handleQuantityChange, handleQuantityBlur, getMaxStockForProduct,
         currentProducts, currentPage, setCurrentPage, totalPages, indexOfFirstItem,
         itemsPerPage, paymentOptions, loading, submitted, showSummaryModal,
         setShowSummaryModal, requestedCredit, setRequestedCredit,
@@ -65,7 +65,8 @@ export default function UpdateOrder() {
                 buttonText="Guardar cambios" onCancel={() => navigate("/dashboard/orders")}
                 showCreateClient={false} isEdit products={products} clients={clients}
                 addProduct={addProduct} handleQuantityChange={handleQuantityChange}
-                handleQuantityBlur={handleQuantityBlur} currentProducts={currentProducts}
+                handleQuantityBlur={handleQuantityBlur} getMaxStockForProduct={getMaxStockForProduct}
+                currentProducts={currentProducts}
                 currentPage={currentPage} setCurrentPage={setCurrentPage} totalPages={totalPages}
                 indexOfFirstItem={indexOfFirstItem} itemsPerPage={itemsPerPage}
                 paymentOptions={paymentOptions} loading={loading} submitted={submitted}
