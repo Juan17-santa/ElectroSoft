@@ -99,9 +99,9 @@ export function useClientForm({ initialData = null, onSubmit }) {
 
     const handleChange = (e) => {
         let { name, value } = e.target;
-        if (name === "documento") value = value.replace(/\D/g, "").slice(0, 15);
-        if (name === "telefono") value = value.replace(/\D/g, "").slice(0, 15);
-        if (name === "nombres" || name === "apellidos") { value = value.replace(/[0-9]/g, ""); value = value.slice(0, 40); }
+        if (name === "documento") value = value.replace(/\D/g, "").slice(0, 12);
+        if (name === "telefono") value = value.replace(/\D/g, "").slice(0, 14);
+        if (name === "nombres" || name === "apellidos") { value = value.slice(0, 50); }
 
         setFormData(prev => ({ ...prev, [name]: value }));
         tocar(name);

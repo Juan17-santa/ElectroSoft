@@ -9,7 +9,7 @@ import { usePermissions } from "../../../../hooks/usePermissions";
 import { Restricted } from "../../components/ui/Restricted";
 import { useToast } from "../../../../context/ToastContext";
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 10;
 const PROTECTED_ROLES = ["Administrador", "Empleado", "Super Administrador"];
 
 export default function Roles() {

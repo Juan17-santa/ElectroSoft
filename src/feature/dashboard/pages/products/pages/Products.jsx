@@ -20,7 +20,7 @@ export default function Products() {
     const [confirmData, setConfirmData] = useState(null);
     const [productToView, setProductToView] = useState(null);
     const [presentPage, setPresentPage] = useState(1);
-    const recordsPerPage = 6;
+    const recordsPerPage = 10;
 
     const {
         data,

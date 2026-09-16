@@ -36,6 +36,7 @@ export default function useProductForm({
     const [formData, setFormData] = useState({
         nombre: "",
         categoriaId: "",
+        tipoProducto: "nuevo",
         precio: "0",
         stock: "0",
         tipoStock: "",
@@ -99,12 +100,13 @@ export default function useProductForm({
     };
 
     // VALIDACIÓN INDIVIDUAL POR CAMPO
-    const validateField = (name, value) => {
+    const validateField = (name, value, currentType = formData.tipoProducto) => {
 
         let error = "";
         
         // Convertir a string para operaciones de trim
-        const strValue = String(value).trim();
+        const strValue = String(value ?? "").trim();
+        const isExistingProduct = currentType === "existente";
 
         switch (name) {
 
@@ -127,23 +129,23 @@ export default function useProductForm({
                 break;
 
             case "precio":
-                if (!strValue) {
-                    error = "";
-                } else if (!/^\d+(\.\d{1,2})?$/.test(strValue)) {
+                if (isExistingProduct && !strValue) {
+                    error = "El precio es obligatorio para productos existentes";
+                } else if (strValue && !/^\d+(\.\d{1,2})?$/.test(strValue)) {
                     error = "El precio debe usar un formato numérico válido";
-                } else if (Number(strValue) < 0) {
+                } else if (strValue && Number(strValue) < 0) {
                     error = "El precio no puede ser negativo";
                 }
                 break;
 
             case "stock":
-                if (!strValue) {
-                    error = "";
-                } else if (!/^[0-9]+$/.test(strValue)) {
+                if (isExistingProduct && !strValue) {
+                    error = "El stock es obligatorio para productos existentes";
+                } else if (strValue && !/^[0-9]+$/.test(strValue)) {
                     error = "El stock solo debe contener números";
-                } else if (Number(strValue) < 0) {
+                } else if (strValue && Number(strValue) < 0) {
                     error = "El stock no puede ser negativo";
-                } else if (!Number.isInteger(Number(strValue))) {
+                } else if (strValue && !Number.isInteger(Number(strValue))) {
                     error = "El stock debe ser un número entero";
                 }
                 break;
@@ -192,17 +194,32 @@ export default function useProductForm({
             ? normalizeNumericString(name, value).slice(0, 15)
             : limitedTextValue;
 
-        setFormData(prev => ({
-            ...prev,
-            [name]: normalizedValue
-        }));
+        const nextFormData = {
+            ...formData,
+            [name]: normalizedValue,
+        };
 
-        const error = validateField(name, normalizedValue);
+        if (name === "tipoProducto" && value === "nuevo") {
+            nextFormData.precio = "0";
+            nextFormData.stock = "0";
+        }
+
+        setFormData(nextFormData);
+
+        const error = validateField(name, normalizedValue, nextFormData.tipoProducto);
 
         setErrors(prev => ({
             ...prev,
             [name]: error
         }));
+
+        if (name === "tipoProducto") {
+            setErrors(prev => ({
+                ...prev,
+                precio: validateField("precio", nextFormData.precio, nextFormData.tipoProducto),
+                stock: validateField("stock", nextFormData.stock, nextFormData.tipoProducto),
+            }));
+        }
 
         // VALIDACIÓN ASINCRÓNICA ESPECIAL PARA SERIAL
         if (name === "serial" && !error) {
@@ -236,7 +253,7 @@ export default function useProductForm({
         let newErrors = {};
 
         Object.keys(formData).forEach(key => {
-            const error = validateField(key, formData[key]);
+            const error = validateField(key, formData[key], formData.tipoProducto);
             if (error) newErrors[key] = error;
         });
 

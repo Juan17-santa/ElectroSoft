@@ -27,7 +27,7 @@ export default function Orders() {
 
     // FUNCION PAGINADOR
     const [presentPage, setPresentPage] = useState(1);
-    const recordsPerPage = 6;
+    const recordsPerPage = 10;
 
     // MODAL DEL GENERAR REPORTE
     const [showReportModal, setShowReportModal] = useState(false);

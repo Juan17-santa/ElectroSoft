@@ -231,14 +231,14 @@ describe("useClientForm", () => {
             expect(result.current.errors.nombres).toBe("Mínimo 3 caracteres.");
         });
 
-        test("elimina números y acepta nombres válidos", () => {
+        test("acepta números en nombres y mantiene validación", () => {
             const { result } = renderHook(() =>
                 useClientForm({ onSubmit: jest.fn() })
             );
 
-            changeField(result, "nombres", "Mateo123");
+            changeField(result, "nombres", "Mateo6");
 
-            expect(result.current.formData.nombres).toBe("Mateo");
+            expect(result.current.formData.nombres).toBe("Mateo6");
             expect(result.current.errors.nombres).toBeNull();
         });
 
@@ -252,14 +252,14 @@ describe("useClientForm", () => {
             expect(result.current.errors.apellidos).toBe("No se permiten espacios dobles.");
         });
 
-        test("limita nombres y apellidos a 40 caracteres", () => {
+        test("limita nombres y apellidos a 50 caracteres", () => {
             const { result } = renderHook(() =>
                 useClientForm({ onSubmit: jest.fn() })
             );
 
-            changeField(result, "nombres", "A".repeat(45));
+            changeField(result, "nombres", "A".repeat(55));
 
-            expect(result.current.formData.nombres).toHaveLength(40);
+            expect(result.current.formData.nombres).toHaveLength(50);
             expect(result.current.errors.nombres).toBeNull();
         });
     });

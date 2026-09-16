@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ServicesDevolutions } from "../services/ServicesDevolutions";
 
-export const ITEMS_PER_PAGE = 6;
+export const ITEMS_PER_PAGE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function useDevolutions() {

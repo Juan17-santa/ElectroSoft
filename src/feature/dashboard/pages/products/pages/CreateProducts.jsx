@@ -299,6 +299,55 @@ export default function CreateProducts() {
                 </button>
             </div>
 
+            <div className="flex justify-center px-4 md:px-20 mt-4">
+                <div className="grid grid-cols-2 gap-4 w-full max-w-xl">
+                    {[
+                        { value: "nuevo", label: "Producto nuevo" },
+                        { value: "existente", label: "Producto existente" }
+                    ].map((option) => {
+                        const isSelected = formData.tipoProducto === option.value;
+
+                        return (
+                            <button
+                                key={option.value}
+                                type="button"
+                                onClick={() =>
+                                    handleChange({
+                                        target: {
+                                            name: "tipoProducto",
+                                            value: option.value,
+                                        },
+                                    })
+                                }
+                                className={`rounded-2xl border-2 p-3 bg-white text-left transition-all duration-300 cursor-pointer ${
+                                    isSelected
+                                        ? "border-yellow-400 bg-yellow-50 shadow-sm"
+                                        : "border-gray-200 hover:border-yellow-300 bg-white"
+                                }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span
+                                        className={`shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${
+                                            isSelected ? "border-yellow-400" : "border-gray-300"
+                                        }`}
+                                    >
+                                        <span
+                                            className={`w-2 h-2 rounded-full transition-transform duration-300 ${
+                                                isSelected ? "bg-yellow-400 scale-100" : "scale-0"
+                                            }`}
+                                        />
+                                    </span>
+
+                                    <span className="text-sm font-semibold text-gray-800 leading-tight">
+                                        {option.label}
+                                    </span>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
             <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12 mt-6 px-4 md:px-20">
 
@@ -341,57 +390,61 @@ export default function CreateProducts() {
                         />
                     </div>
 
-                    <div className="flex flex-col gap-3">
-                        <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                            <DollarSign size={16} /> Precio 
-                        </label>
-                        <input
-                            name="precio"
-                            value={formatNumericInputValue(formData.precio, true)}
-                            onChange={handleChange}
-                            type="text"
-                            inputMode="decimal"
-                            placeholder="Digite el precio"
-                            onKeyDown={(e) => {
-                                if (["e", "E", "+", "-"].includes(e.key)) {
-                                    e.preventDefault();
-                                }
-                            }}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.precio ? 'border-red-500' : 'border-transparent'
-                                }`}
-                        />
-                        <ValidationMessage
-                            error={errors.precio}
-                            success={formData.precio}
-                            successMessage="Precio valido"
-                        />
-                    </div>
+                    {formData.tipoProducto === "existente" && (
+                        <>
+                            <div className="flex flex-col gap-3">
+                                <label className="flex items-center gap-2 text-yellow-500 font-medium">
+                                    <DollarSign size={16} /> Precio *
+                                </label>
+                                <input
+                                    name="precio"
+                                    value={formatNumericInputValue(formData.precio, true)}
+                                    onChange={handleChange}
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="Digite el precio"
+                                    onKeyDown={(e) => {
+                                        if (["e", "E", "+", "-"].includes(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.precio ? 'border-red-500' : 'border-transparent'
+                                        }`}
+                                />
+                                <ValidationMessage
+                                    error={errors.precio}
+                                    success={formData.precio}
+                                    successMessage="Precio valido"
+                                />
+                            </div>
 
-                    <div className="flex flex-col gap-3">
-                        <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                            <Boxes size={16} /> Stock
-                        </label>
-                        <input
-                            name="stock"
-                            value={formatNumericInputValue(formData.stock, false)}
-                            onChange={handleChange}
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="Digite el stock"
-                            onKeyDown={(e) => {
-                                if (["e", "E", "+", "-", "."].includes(e.key)) {
-                                    e.preventDefault();
-                                }
-                            }}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.stock ? 'border-red-500' : 'border-transparent'
-                                }`}
-                        />
-                        <ValidationMessage
-                            error={errors.stock}
-                            success={formData.stock}
-                            successMessage="Stock valido"
-                        />
-                    </div>
+                            <div className="flex flex-col gap-3">
+                                <label className="flex items-center gap-2 text-yellow-500 font-medium">
+                                    <Boxes size={16} /> Stock *
+                                </label>
+                                <input
+                                    name="stock"
+                                    value={formatNumericInputValue(formData.stock, false)}
+                                    onChange={handleChange}
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="Digite el stock"
+                                    onKeyDown={(e) => {
+                                        if (["e", "E", "+", "-", "."].includes(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.stock ? 'border-red-500' : 'border-transparent'
+                                        }`}
+                                />
+                                <ValidationMessage
+                                    error={errors.stock}
+                                    success={formData.stock}
+                                    successMessage="Stock valido"
+                                />
+                            </div>
+                        </>
+                    )}
 
                     <div className="flex flex-col gap-3">
                         <label className="flex items-center gap-2 text-yellow-500 font-medium">

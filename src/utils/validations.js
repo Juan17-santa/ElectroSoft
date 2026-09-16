@@ -77,9 +77,8 @@ export const Validations = {
         const valStr = String(value || "");
         if (!valStr) return { valido: false, mensaje: "Este campo es requerido." };
         if (valStr.trim().length < 3) return { valido: false, mensaje: "Mínimo 3 caracteres." };
-        if (valStr.length > 40) return { valido: false, mensaje: "Máximo 40 caracteres." };
-        if (/[0-9]/.test(valStr)) return { valido: false, mensaje: "No debe contener números." };
-        if (!/^[\p{L}\s]+$/u.test(valStr.normalize("NFC"))) return { valido: false, mensaje: "Solo se permiten letras." };
+        if (valStr.length > 50) return { valido: false, mensaje: "Máximo 50 caracteres." };
+        if (!/^(?=.*[\p{L}])[\p{L}\p{N}\s]+$/u.test(valStr.normalize("NFC"))) return { valido: false, mensaje: "Debe contener letras y puede incluir números." };
         if (/\s{2,}/.test(valStr)) return { valido: false, mensaje: "No se permiten espacios dobles." };
         return { valido: true, mensaje: "" };
     },

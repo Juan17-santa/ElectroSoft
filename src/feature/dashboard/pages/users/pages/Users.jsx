@@ -25,7 +25,7 @@ export default function Users() {
     const [userToView, setUserToView] = useState(null);
 
     const [currentPage, setCurrentPage] = useState(1);
-    const recordsPerPage = 6;
+    const recordsPerPage = 10;
 
     useEffect(() => { getUsers(); }, []);
 
