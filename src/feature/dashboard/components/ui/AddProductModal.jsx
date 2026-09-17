@@ -26,7 +26,8 @@ export default function AddProductModal({
     isCredit = false,
     quotaAmount = 0,
     currentSaleTotal = 0,
-    onSwitchToMixed
+    onSwitchToMixed,
+    excludedProductIds = []
 }) {
     // ── BUSCADOR / COMBO ─────────────────────────────────────────────────────
     const [searchTerm, setSearchTerm] = useState("");
@@ -62,9 +63,12 @@ export default function AddProductModal({
     };
 
     // ── PRODUCTOS FILTRADOS + PAGINADOS ──────────────────────────────────────
-    const filteredProducts = products.filter((p) =>
-        (p.nombre || "").toLowerCase().includes((searchTerm || "").toLowerCase())
-    );
+    const filteredProducts = products.filter((p) => {
+        const alreadySelected = excludedProductIds.some((id) => String(id) === String(p.id));
+        const alreadyInQueue = queue.some((q) => String(q.id) === String(p.id));
+        const matchesSearch = (p.nombre || "").toLowerCase().includes((searchTerm || "").toLowerCase());
+        return !alreadySelected && !alreadyInQueue && matchesSearch;
+    });
     const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
     const paginatedItems = filteredProducts.slice(
         (currentPage - 1) * ITEMS_PER_PAGE,
@@ -175,6 +179,7 @@ export default function AddProductModal({
         );
         setSelectedProduct(null); setSearchTerm(""); setQuantity("");
         setProductError(""); setQuantityError("");
+        setCurrentPage(1);
     };
 
     const handleRemoveFromQueue = (id) => {
@@ -377,7 +382,6 @@ export default function AddProductModal({
                                         <div>
                                             {paginatedItems.length > 0 ? paginatedItems.map((p) => {
                                                 const stock = getRealStock(p);
-                                                const inQueue = queue.some((q) => String(q.id) === String(p.id));
                                                 const isSelected = selectedProduct && String(selectedProduct.id) === String(p.id);
                                                 return (
                                                     <button key={p.id} type="button"
@@ -389,18 +393,6 @@ export default function AddProductModal({
                                                                 {p.nombre}
                                                             </span>
 
-                                                            {inQueue && (
-                                                                <span
-                                                                    className="shrink-0 font-semibold px-1.5 py-0.5 rounded w-fit mt-1"
-                                                                    style={{
-                                                                        backgroundColor: "#fef9c3",
-                                                                        color: "#a16207",
-                                                                        fontSize: "10px"
-                                                                    }}
-                                                                >
-                                                                    En lista
-                                                                </span>
-                                                            )}
                                                         </div>
 
                                                         <p className="text-xs font-medium text-gray-500 text-right tabular-nums self-center">

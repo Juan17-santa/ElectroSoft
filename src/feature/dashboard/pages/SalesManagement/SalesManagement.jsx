@@ -22,7 +22,7 @@ const formatCOP = (val) => {
     }).format(val || 0);
 };
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 10;
 const ESTADOS_DEVOLUCION_VENTA = ["Devuelto", "Devolución Parcial", "Devolucion Parcial", "DevoluciÃ³n Parcial"];
 
 function esVentaConDevolucion(estado) {

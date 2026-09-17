@@ -22,7 +22,7 @@ export default function Payments() {
     const [search, setSearch] = useState("");
     const [showReportModal, setShowReportModal] = useState(false);
     const [presentPage, setPresentPage] = useState(1);
-    const recordsPerPage = 6;
+    const recordsPerPage = 10;
 
     const cargarDatos = useCallback(async () => {
         setLoading(true);

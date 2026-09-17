@@ -17,7 +17,7 @@ export default function Providers() {
     const [confirmData, setConfirmData] = useState(null);
 
     const [presentPage, setPresentPage] = useState(1);
-    const recordsPerPage = 6;
+    const recordsPerPage = 10;
 
     const handleDetailsNavigation = (provider) => {
         navigate(`/dashboard/providers/detail/${provider._id}`);
@@ -67,6 +67,8 @@ export default function Providers() {
                         <ProvidersTable
                             data={data}
                             loading={loading}
+                            currentPage={presentPage}
+                            recordsPerPage={recordsPerPage}
                             onDetails={handleDetailsNavigation}
                             onEdit={handleEditNavigation}
                             onDelete={deleteProvider}

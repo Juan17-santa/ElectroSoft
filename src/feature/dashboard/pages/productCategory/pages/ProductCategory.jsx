@@ -25,7 +25,7 @@ export default function ProductCategory() {
 
     // PAGINACIÓN 
     const [presentPage, setPresentPage] = useState(1);
-    const recordsPerPage = 6;
+    const recordsPerPage = 10;
 
     // FUNCION PARA ABRIR EL MODAL EN MODO CREAR
     const handleOpenCreate = () => {

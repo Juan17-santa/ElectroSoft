@@ -1,4 +1,4 @@
-import { Package, Tag, DollarSign, Boxes, Hash, ShieldCheck, X, Trash, ChevronLeft, ChevronRight, ChevronDown, Ruler } from "lucide-react";
+import { Package, Tag, Hash, ShieldCheck, X, Trash, ChevronLeft, ChevronRight, ChevronDown, Ruler } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ServicesProducts } from "../services/ServicesProducts";
@@ -177,56 +177,6 @@ export default function EditProducts() {
                             error={errors.categoriaId}
                             success={formData.categoriaId}
                             successMessage="Categoria valida"
-                        />
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                        <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                            <DollarSign size={16} /> Precio 
-                        </label>
-                        <input
-                            name="precio"
-                            value={formatNumericInputValue(formData.precio, true)}
-                            onChange={handleChange}
-                            type="text"
-                            inputMode="decimal"
-                            onKeyDown={(e) => {
-                                if (["e", "E", "+", "-"].includes(e.key)) {
-                                    e.preventDefault();
-                                }
-                            }}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.precio ? 'border-red-500' : 'border-transparent'
-                                }`}
-                        />
-                        <ValidationMessage
-                            error={errors.precio}
-                            success={formData.precio}
-                            successMessage="Precio valido"
-                        />
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                        <label className="flex items-center gap-2 text-yellow-500 font-medium">
-                            <Boxes size={16} /> Stock 
-                        </label>
-                        <input
-                            name="stock"
-                            value={formatNumericInputValue(formData.stock, false)}
-                            onChange={handleChange}
-                            type="text"
-                            inputMode="numeric"
-                            onKeyDown={(e) => {
-                                if (["e", "E", "+", "-", "."].includes(e.key)) {
-                                    e.preventDefault();
-                                }
-                            }}
-                            className={`bg-gray-200 rounded-xl px-4 py-3 text-sm shadow-md border-2 ${errors.stock ? 'border-red-500' : 'border-transparent'
-                                }`}
-                        />
-                        <ValidationMessage
-                            error={errors.stock}
-                            success={formData.stock}
-                            successMessage="Stock valido"
                         />
                     </div>
 

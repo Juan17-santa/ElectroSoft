@@ -471,6 +471,7 @@ export default function OrdersForm({
                 onClose={() => setOpenProductModal(false)}
                 onConfirm={(productosSeleccionados) => addProduct(productosSeleccionados)}
                 products={products}
+                excludedProductIds={(formData.productos || []).map((producto) => producto.id)}
                 getAvailableStock={getAvailableStock}
                 title="Agregar Productos al Pedido"
                 confirmText="Cargar al pedido"
